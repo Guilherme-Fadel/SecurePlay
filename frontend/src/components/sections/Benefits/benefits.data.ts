@@ -1,0 +1,66 @@
+import { Shield, Star, Heart, Zap, Award, Users } from 'lucide-react';
+
+// Por enquanto esta hardcoded, mas deepois podemos implementar uam API pra buscar no backend
+
+export const BENEFITS = [
+  {
+    id: 1,
+    title: 'PROTEÇÃO DE DADOS',
+    description: 'Escudo completo contra vazamentos e ataques cibernéticos',
+    icon: Shield,
+    color: 'bg-[var(--primary)]',
+    textColor: 'text-[var(--primary)]',
+    borderColor: 'border-[var(--primary)]',
+    glow: true,
+  },
+  {
+    id: 2,
+    title: 'CONFORMIDADE',
+    description: 'Atenda LGPD, ISO 27001 e outras regulamentações com facilidade',
+    icon: Star,
+    color: 'bg-[var(--accent)]',
+    textColor: 'text-[var(--accent)]',
+    borderColor: 'border-[var(--accent)]',
+    glow: true,
+  },
+  {
+    id: 3,
+    title: 'CONFIANÇA',
+    description: 'Aumente a credibilidade com clientes e parceiros',
+    icon: Heart,
+    color: 'bg-[var(--secondary)]',
+    textColor: 'text-[var(--secondary)]',
+    borderColor: 'border-[var(--secondary)]',
+    glow: true,
+  },
+  {
+    id: 4,
+    title: 'AGILIDADE',
+    description: 'Processos otimizados e automatizados para sua equipe',
+    icon: Zap,
+    color: 'bg-[var(--primary)]',
+    textColor: 'text-[var(--primary)]',
+    borderColor: 'border-[var(--primary)]',
+    glow: false,
+  },
+  {
+    id: 5,
+    title: 'CERTIFICAÇÕES',
+    description: 'Conquiste selos e certificados reconhecidos pelo mercado',
+    icon: Award,
+    color: 'bg-[var(--accent)]',
+    textColor: 'text-[var(--accent)]',
+    borderColor: 'border-[var(--accent)]',
+    glow: false,
+  },
+  {
+    id: 6,
+    title: 'CULTURA DE SEGURANÇA',
+    description: 'Equipe engajada e consciente sobre boas práticas',
+    icon: Users,
+    color: 'bg-[var(--secondary)]',
+    textColor: 'text-[var(--secondary)]',
+    borderColor: 'border-[var(--secondary)]',
+    glow: false,
+  },
+];
