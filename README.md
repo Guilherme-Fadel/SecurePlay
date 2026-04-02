@@ -30,6 +30,9 @@ precisa ser executado **localmente** para testes.
 -   NestJS
 -   TypeORM
 -   MySQL
+-   JWT Authentication
+-   Fastify / Express support
+-   Class Validator
 
 ## Ambiente
 
@@ -79,6 +82,12 @@ Para iniciar o backend:
 npm start
 ```
 
+Modo desenvolvimento (com watch):
+
+``` bash
+npm run start:dev
+```
+
 ------------------------------------------------------------------------
 
 # Banco de Dados
@@ -98,10 +107,28 @@ Atualmente:
 
 # Scripts Disponíveis
 
-  Script        Descrição
-  ------------- ----------------------------
-  npm run dev   Inicia o frontend com Vite
-  npm start     Inicia o backend
+  ``` bash
+## Frontend
+
+  Script          Descrição
+  --------------- ----------------------------
+  npm run dev     Inicia o frontend com Vite
+  npm run build   Gera build de produção
+```
+
+  ``` bash
+## Backend
+
+  Script                Descrição
+  --------------------- ------------------------------------------
+  npm start             Inicia o servidor NestJS
+  npm run start:dev     Inicia em modo desenvolvimento com watch
+  npm run start:debug   Inicia em modo debug
+  npm run start:prod    Executa build de produção
+  npm run build         Compila o projeto
+  npm run lint          Executa o ESLint
+  npm run format        Formata o código com Prettier
+```
 
 ------------------------------------------------------------------------
 
