@@ -116,7 +116,7 @@ body,
   --line-loose: 1.6;
 
     /* letter space */
-  --tracking-wide: 0.5px;
+  --tracking-normal: 0.5px;
   --tracking-wide: 1px;
 }
 
