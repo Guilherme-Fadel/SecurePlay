@@ -18,7 +18,7 @@ export function FloatingIcons() {
             delay: Math.random() * 2,
           }}
         >
-          <div className="flex items-center justify-center w-full h-full text-xs text-[var(--text-primary)]">
+          <div className="flex items-center justify-center w-full h-full  text-[var(--text-primary)]">
             ★
           </div>
         </motion.div>

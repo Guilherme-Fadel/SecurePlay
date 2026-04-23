@@ -42,7 +42,7 @@ body,
 
 :root {
 
-
+  /* cores */
   --primary: #1f6ae1;
   --primary-rgb: 31, 106, 225;
 
@@ -94,4 +94,102 @@ body,
   --secondary-30: rgba(var(--secondary-rgb), 0.3);
   --secondary-60: rgba(var(--secondary-rgb), 0.6);
 
+  /* fontes */
+
+    /* family */
+  --font-family-base: 'VT323', monospace;
+  --font-family-inter: 'Inter', monospace;
+
+    /* size */
+  --font-xs: 14px;
+  --font-sm: 16px;
+  --font-base: 18px;
+  --font-lg: 22px;
+  --font-xl: 28px;
+  --font-2xl: 36px;
+  --font-3xl: 48px;
+  --font-4xl: 64px;
+
+    /* type format */
+  --line-tight: 1.2;
+  --line-normal: 1.4;
+  --line-loose: 1.6;
+
+    /* letter space */
+  --tracking-wide: 0.5px;
+  --tracking-wide: 1px;
 }
+
+/* Base global */
+body {
+  font-family: var(--font-family-base);
+  font-size: var(--font-base);
+  line-height: var(--line-normal);
+  letter-spacing: var(--tracking-wide);
+}
+
+/* text */
+
+p {
+  font-family: var(--font-family-inter);
+  font-size: var(--font-sm);
+  line-height: var(--line-normal);
+}
+
+span {
+  font-size: var(--font-lg);
+}
+
+small {
+  font-size: var(--font-sm);
+}
+
+/* headings */
+
+h1 {
+  font-size: var(--font-4xl);
+  line-height: var(--line-tight);
+  letter-spacing: var(--tracking-wide);
+}
+
+h2 {
+  font-size: var(--font-3xl);
+  line-height: var(--line-tight);
+  letter-spacing: var(--tracking-wide);
+}
+
+h3 {
+  font-size: var(--font-2xl);
+  line-height: var(--line-tight);
+}
+
+h4 {
+  font-size: var(--font-xl);
+}
+
+h5 {
+  font-size: var(--font-lg);
+}
+
+h6 {
+  font-size: var(--font-base);
+}
+
+/* responsivo*/
+
+@media (min-width: 768px) {
+  h1 { font-size: 72px; }
+  h2 { font-size: 56px; }
+  h3 { font-size: 42px; }
+}
+
+/* utilitario */
+
+.text-xs { font-size: var(--font-xs); }
+.text-sm { font-size: var(--font-sm); }
+.text-base { font-size: var(--font-base); }
+.text-lg { font-size: var(--font-lg); }
+.text-xl { font-size: var(--font-xl); }
+.text-2xl { font-size: var(--font-2xl); }
+.text-3xl { font-size: var(--font-3xl); }
+.text-4xl { font-size: var(--font-4xl); }

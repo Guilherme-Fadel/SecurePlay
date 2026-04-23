@@ -12,7 +12,7 @@ export default function Home() {
       </Sidebar>
 
         <main className="flex-1 p-6 bg-[var(--background-primary)]">
-        <h1 className="text-2xl font-bold">Home</h1>
+        <h1 className=" font-bold">Home</h1>
         <p>Conteúdo da página aqui</p>
         </main>
     </div>

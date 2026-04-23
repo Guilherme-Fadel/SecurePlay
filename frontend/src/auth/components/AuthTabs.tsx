@@ -20,7 +20,7 @@ export function AuthTabs({ mode, switchMode }: AuthTabsProps) {
           }
         `}
       >
-        <span className="pixel-text text-sm tracking-wider">ENTRAR</span>
+        <span className="tracking-wide">ENTRAR</span>
 
         {mode === 'login' && (
           <motion.div
@@ -40,7 +40,7 @@ export function AuthTabs({ mode, switchMode }: AuthTabsProps) {
           }
         `}
       >
-        <span className="pixel-text text-sm tracking-wider">CRIAR CONTA</span>
+        <span className="tracking-wide">CRIAR CONTA</span>
 
         {mode === 'register' && (
           <motion.div

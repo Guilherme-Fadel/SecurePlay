@@ -38,10 +38,10 @@ export function CTASection() {
 
             <GameButton
               onClick={() => navigate('/start')}
-              className="cursor-none mt-8 text-base px-10 py-5 border-4 border-[var(--border-primary)]
+              className="cursor-none mt-8  px-10 py-5 border-4 border-[var(--border-primary)]
                          shadow-[12px_12px_0px_0px_rgba(31,106,225,1)]
                          hover:shadow-[6px_6px_0px_0px_rgba(31,106,225,1)]
-                         font-['Press_Start_2P'] bg-[var(--secondary)] text-[var(--background)]
+                          bg-[var(--secondary)] text-[var(--background)]
                          inline-flex items-center gap-4"
             >
               AVANÇAR PARA O PRÓXIMO NÍVEL
@@ -73,17 +73,17 @@ export function CTASection() {
 function CTAContent() {
   return (
     <>
-      <h2 className="font-['Press_Start_2P'] text-2xl md:text-4xl text-[var(--text-primary)] mb-6">
+      <h2 className="md: text-[var(--text-primary)] mb-6">
         PRONTO PARA
         <br />
-        <span className="text-[var(--secondary)]">PROTEGER SEUS DADOS?</span>
+        <h2 className="text-[var(--secondary)]">PROTEGER SEUS DADOS?</h2>
       </h2>
 
-      <p className="text-[var(--text-primary)] text-lg md:text-xl max-w-2xl mx-auto mb-8 font-['Inter']">
+      <h5 className="text-[var(--text-primary)]  md: max-w-2xl mx-auto mb-8">
         Junte-se a centenas de empresas que já subiram de nível.
         <br />
         Sua jornada começa agora!
-      </p>
+      </h5>
     </>
   );
 }

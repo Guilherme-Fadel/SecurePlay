@@ -30,7 +30,7 @@ function NavItem({ label, onClick }: any) {
   return (
     <button
       onClick={onClick}
-      className="cursor-none text-[var(--text-primary)] font-['Press_Start_2P'] text-xs hover:text-[var(--secondary)] transition-colors relative group"
+      className="cursor-none text-[var(--text-primary)]   hover:text-[var(--secondary)] transition-colors relative group"
     >
       {label}
 

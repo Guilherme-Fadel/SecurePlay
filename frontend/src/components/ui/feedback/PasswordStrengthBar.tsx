@@ -30,7 +30,7 @@ export function PasswordStrengthBar({ password }: PasswordStrengthBarProps) {
       </div>
 
       <p
-        className="text-xs pixel-text tracking-wider"
+        className="tracking-wide"
         style={{ color }}
       >
         Nível: {LEVEL_LABELS[strength]}

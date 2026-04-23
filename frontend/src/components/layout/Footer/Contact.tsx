@@ -3,7 +3,7 @@ import { Mail, Phone, MapPin } from 'lucide-react';
 export function Contact() {
   return (
     <div>
-      <h3 className="font-['Press_Start_2P'] text-xs text-[var(--secondary)] mb-6">
+      <h3 className="text-[var(--secondary)] mb-6">
         CONTATO
       </h3>
 
@@ -23,7 +23,7 @@ function ContactItem({ icon: Icon, children }: any) {
         <Icon className="w-3 h-3 text-[var(--text-primary)]" />
       </div>
 
-      <span className="text-[var(--text-primary)] text-sm">
+      <span className="text-[var(--text-primary)]">
         {children}
       </span>
     </li>

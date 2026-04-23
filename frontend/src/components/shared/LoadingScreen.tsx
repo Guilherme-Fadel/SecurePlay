@@ -79,10 +79,10 @@ export function LoadingScreen() {
               transition={{ delay: 0.3 }}
               className="mb-8"
             >
-              <h1 className="font-['Press_Start_2P'] text-2xl text-[var(--text-primary)]">
+              <h1 className="text-[var(--text-primary)]">
                 SECUREPLAY
               </h1>
-              <p className="font-['Press_Start_2P'] text-xs text-[var(--secondary)]">
+              <p className="text-[var(--secondary)]">
                 CARREGANDO...
               </p>
             </motion.div>
@@ -93,7 +93,7 @@ export function LoadingScreen() {
               transition={{ delay: 0.5 }}
               className="w-80 max-w-[90vw]"
             >
-              <div className="mb-2 flex justify-between text-xs font-['Press_Start_2P']">
+              <div className="mb-2 flex justify-between">
                 <span className="text-[var(--text-primary)]">PROGRESSO</span>
                 <span className="text-[var(--secondary)]">{progress}%</span>
               </div>
@@ -116,7 +116,7 @@ export function LoadingScreen() {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.7 }}
-                className="mt-6 text-[10px] text-[var(--text-primary)] font-['Press_Start_2P']"
+                className="mt-6  text-[var(--text-primary)]"
               >
                 {getLoadingMessage(progress)}
               </motion.p>

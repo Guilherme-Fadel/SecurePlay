@@ -122,7 +122,7 @@ function ScanLines() {
       className="absolute inset-0 opacity-5 pointer-events-none"
       style={{
         backgroundImage:
-          "repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(var(--overlay-dark), 0.5) 2px, rgba(var(--overlay-dark), 0.5) 4px)",
+        "repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(var(--overlay-dark), 0.5) 2px, rgba(var(--overlay-dark), 0.5) 4px)",
       }}
     />
   );

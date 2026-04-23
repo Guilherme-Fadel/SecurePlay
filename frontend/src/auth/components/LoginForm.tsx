@@ -19,7 +19,7 @@ export function LoginForm({ login, loading, errors, onSubmit }: LoginFormProps) 
       onSubmit={onSubmit}
       className="space-y-4"
     >
-      <p className="text-[var(--text-primary)] text-sm mb-6">
+      <p className="text-[var(--text-primary)]  mb-6">
         Digite suas credenciais para continuar a missão
       </p>
 
@@ -46,7 +46,7 @@ export function LoginForm({ login, loading, errors, onSubmit }: LoginFormProps) 
       <div className="flex justify-end">
         <button
           type="button"
-          className="text-[var(--secondary)] text-sm hover:underline"
+          className="text-[var(--secondary)]  hover:underline"
           onClick={() =>
             toast.info('Recuperação de senha', {
               description: 'Um link será enviado para seu e-mail',
@@ -58,7 +58,7 @@ export function LoginForm({ login, loading, errors, onSubmit }: LoginFormProps) 
       </div>
 
       <GameButton type="submit" isLoading={loading.isLoading}>
-        <span className="pixel-text text-sm tracking-wider">
+        <span className="tracking-wide">
           INICIAR MISSÃO
         </span>
       </GameButton>

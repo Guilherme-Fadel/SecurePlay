@@ -12,13 +12,13 @@ export const GameCheckbox = forwardRef<HTMLInputElement, GameCheckboxProps>(
     const isChecked = Boolean(checked);
 
     const baseBox =
-      "w-5 h-5 border-2 transition-all duration-200";
+    "w-5 h-5 border-2 transition-all duration-200";
 
     const checkedStyle =
-      "bg-[var(--secondary)] border-[var(--secondary)]";
+    "bg-[var(--secondary)] border-[var(--secondary)]";
 
     const uncheckedStyle =
-      "bg-[var(--surface-alt)] border-[var(--secondary)]/50 group-hover:border-[var(--secondary)]";
+    "bg-[var(--surface-alt)] border-[var(--secondary)]/50 group-hover:border-[var(--secondary)]";
 
     const boxStyle = `
       ${baseBox}
@@ -53,7 +53,7 @@ export const GameCheckbox = forwardRef<HTMLInputElement, GameCheckboxProps>(
           <div className="absolute inset-0 border-2 border-[var(--background)] -z-10 translate-x-0.5 translate-y-0.5" />
         </div>
 
-        <span className="text-[var(--text-primary)] text-sm leading-tight flex-1">
+        <span className="text-[var(--text-primary)]  leading-tight flex-1">
           {label}
         </span>
 

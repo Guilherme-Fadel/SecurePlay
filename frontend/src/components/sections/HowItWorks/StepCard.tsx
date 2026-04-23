@@ -36,7 +36,7 @@ export function StepCard({ step, index, isLast }: StepCardProps) {
         </div>
 
         <div className="absolute -top-2 -right-2 w-10 h-10 bg-[var(--background)] border-4 border-[var(--border-primary)] flex items-center justify-center">
-          <span className="font-['Press_Start_2P'] text-[var(--text-primary)] text-[10px]">
+          <span className=" text-[var(--text-primary)]">
             {step.id}
           </span>
         </div>
@@ -49,19 +49,19 @@ export function StepCard({ step, index, isLast }: StepCardProps) {
 
 
       <h3
-        className="font-['Press_Start_2P'] text-sm mb-3"
+        className="mb-3"
         style={{ color: step.color }}
       >
         {step.title}
       </h3>
 
-      <p className="text-[var(--text-primary)] text-sl font-['Inter'] leading-relaxed">
+      <p className="text-[var(--text-primary)] text-sl  leading-relaxed">
         {step.description}
       </p>
 
 
       {!isLast && (
-        <div className="hidden lg:block absolute top-14 -right-6 text-[var(--primary)] text-2xl">
+        <div className="hidden lg:block absolute top-14 -right-6 text-[var(--primary)]">
           ▶
         </div>
       )}

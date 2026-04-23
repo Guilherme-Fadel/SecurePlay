@@ -10,7 +10,7 @@ export function CTATitle() {
       className="text-center mb-12"
     >
       <div className="inline-block bg-[var(--accent)] border-4 border-[var(--border-primary)] px-12 py-4 relative">
-        <span className="font-['Press_Start_2P'] text-2xl md:text-3xl text-[var(--background)]">
+        <span className="md: text-[var(--background)]">
           FASE FINAL
         </span>
       </div>

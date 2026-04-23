@@ -25,7 +25,7 @@ function IndicatorBox() {
       <div className="flex items-center gap-2">
         <ShieldIcon />
 
-        <span className="pixel-text text-[10px] text-[var(--secondary)] tracking-wider">
+        <span className="text-[var(--secondary)] tracking-wide">
           LV.1
         </span>
       </div>

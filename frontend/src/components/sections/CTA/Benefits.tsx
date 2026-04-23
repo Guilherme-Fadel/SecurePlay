@@ -13,7 +13,7 @@ export function CTABenefits() {
             {item.icon}
           </div>
 
-          <span className="text-[var(--text-primary)] font-['Press_Start_2P'] text-xs">
+          <span className="text-[var(--text-primary)]">
             {item.label}
           </span>
         </div>

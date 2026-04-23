@@ -8,7 +8,7 @@ export function Logo() {
         <div className="absolute -top-1 -right-1 w-3 h-3 bg-[var(--secondary)] border-2 border-[var(--border-primary)]"></div>
       </div>
 
-      <span className="text-[var(--text-primary)] font-['Press_Start_2P'] text-sm">
+      <span className="text-[var(--text-primary)]">
         SECURE PLAY
       </span>
     </div>

@@ -9,12 +9,12 @@ export function Brand() {
           <div className="absolute -top-1 -right-1 w-3 h-3 bg-[var(--secondary)] border-2 border-[var(--border-primary)]"></div>
         </div>
 
-        <span className="text-[var(--text-primary)] font-['Press_Start_2P'] text-sm">
+        <span className="text-[var(--text-primary)]">
           SECUREPLAY
         </span>
       </div>
 
-      <p className="text-[var(--text-primary)] text-sm leading-relaxed mb-6 max-w-md">
+      <p className="text-[var(--text-primary)]  leading-relaxed mb-6 max-w-md">
         Transformando segurança da informação em uma jornada educativa e gamificada.
       </p>
 
@@ -22,7 +22,7 @@ export function Brand() {
         {['📱', '💼', '🎮'].map((emoji) => (
           <button
             key={emoji}
-            className="cursor-none w-10 h-10 bg-[var(--surface-alt)] border-2 border-[var(--border-primary)] hover:border-[var(--secondary)] hover:bg-[var(--primary)] transition-all flex items-center justify-center text-lg"
+            className="cursor-none w-10 h-10 bg-[var(--surface-alt)] border-2 border-[var(--border-primary)] hover:border-[var(--secondary)] hover:bg-[var(--primary)] transition-all flex items-center justify-center"
           >
             {emoji}
           </button>

@@ -21,11 +21,11 @@ export function FAQItem({ faq, index, isOpen, onToggle }: any) {
           className="cursor-none w-full px-6 py-6 flex justify-between items-center gap-4 text-left hover:bg-[var(--primary)]/10"
         >
           <div className="flex items-center gap-4">
-            <div className="w-12 h-12 bg-[var(--primary)] border-4 border-[var(--border-primary)] flex items-center justify-center text-xl">
+            <div className="w-12 h-12 bg-[var(--primary)] border-4 border-[var(--border-primary)] flex items-center justify-center">
               {faq.icon}
             </div>
 
-            <span className="text-xl text-[var(--text-primary)]">
+            <span className=" text-[var(--text-primary)]">
               {faq.question}
             </span>
           </div>
@@ -53,7 +53,7 @@ export function FAQItem({ faq, index, isOpen, onToggle }: any) {
             >
               <div className="px-6 pb-6 ml-16">
                 <div className="bg-[var(--background)] border-l-4 border-[var(--secondary)] p-6">
-                  <p className="text-[var(--text-primary)] text-sm font-['Inter']">
+                  <p className="text-[var(--text-primary)]">
                     {faq.answer}
                   </p>
                 </div>

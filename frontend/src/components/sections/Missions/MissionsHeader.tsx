@@ -9,16 +9,16 @@ export function MissionsHeader() {
       className="text-center mb-16"
     >
       <div className="inline-block bg-[var(--surface-alt)] border-4 border-[var(--primary)] px-6 py-2 mb-6">
-        <span className="text-[var(--primary)] font-['Press_Start_2P'] text-xs">
+        <span className="text-[var(--primary)]">
           MENU DE MISSÕES
         </span>
       </div>
 
-      <h2 className="font-['Press_Start_2P'] text-3xl md:text-5xl text-[var(--text-primary)] mb-6">
+      <h2 className="md: text-[var(--text-primary)] mb-6">
         SUAS MISSÕES
       </h2>
 
-      <p className="text-[var(--text-primary)] text-lg max-w-2xl mx-auto font-['Inter']">
+      <p className="text-[var(--text-primary)]  max-w-2xl mx-auto">
         Complete cada fase para desbloquear novos conhecimentos
       </p>
     </motion.div>

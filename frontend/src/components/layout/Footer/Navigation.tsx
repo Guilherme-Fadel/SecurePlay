@@ -11,7 +11,7 @@ const NAV_LINKS = [
 export function Navigation() {
   return (
     <div>
-      <h3 className="font-['Press_Start_2P'] text-xs text-[var(--secondary)] mb-6">
+      <h3 className="text-[var(--secondary)] mb-6">
         NAVEGAÇÃO
       </h3>
 
@@ -20,7 +20,7 @@ export function Navigation() {
           <li key={link.label}>
             <Link
               to={link.to}
-              className="cursor-none text-[var(--text-primary)] text-sm hover:text-[var(--secondary)] transition-colors flex items-center gap-2"
+              className="cursor-none text-[var(--text-primary)]  hover:text-[var(--secondary)] transition-colors flex items-center gap-2"
             >
               <span className="w-2 h-2 bg-[var(--primary)] border border-[var(--border-primary)]" />
               {link.label}

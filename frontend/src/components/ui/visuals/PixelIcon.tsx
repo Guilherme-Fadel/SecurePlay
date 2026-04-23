@@ -15,7 +15,7 @@ const iconMap = {
   mail: MailIcon,
   shield: ShieldIcon,
   eye: EyeIcon,
-  "eye-off": EyeOffIcon,
+"eye-off": EyeOffIcon,
 };
 
 

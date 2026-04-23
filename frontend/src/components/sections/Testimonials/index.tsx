@@ -20,18 +20,18 @@ export function TestimonialsSection() {
           viewport={{ once: true }}
         >
           <div className="inline-block bg-[var(--surface-alt)] border-4 border-[var(--secondary)] px-6 py-2 mb-6">
-            <span className="text-[var(--secondary)] font-['Press_Start_2P'] text-xs">
+            <span className="text-[var(--secondary)]">
               HALL DA FAMA
             </span>
           </div>
 
-          <h2 className="font-['Press_Start_2P'] text-3xl md:text-5xl text-[var(--text-primary)] mb-4">
+          <h2 className="md: text-[var(--text-primary)] mb-4">
             JOGADORES ELITE
           </h2>
 
-          <p className="text-[var(--text-primary)] text-lg font-['Inter']">
+          <h4 className="text-[var(--text-primary)]">
             Veja o que nossos campeões dizem
-          </p>
+          </h4>
         </motion.div>
       </div>
 
@@ -54,10 +54,10 @@ export function TestimonialsSection() {
           </div>
 
           <div className="text-left">
-            <div className="font-['Press_Start_2P'] text-xs text-[var(--accent)]">
+            <div className="text-[var(--accent)]">
               +100 EMPRESAS
             </div>
-            <div className="text-[var(--text-primary)] font-['Press_Start_2P'] text-[10px]">
+            <div className="text-[var(--text-primary)]">
               98% SATISFAÇÃO • 4.9★
             </div>
           </div>

@@ -35,7 +35,7 @@ export function Sidebar({ children }: SidebarProps) {
             {expanded && (
                 
                 <>  
-                    <h1 className="text-sm font-['Press_Start_2P'] text-[var(--text-primary)]">
+                    <h1 className="text-[var(--text-primary)]">
                         Secure Play
                     </h1>
                 </>
@@ -71,7 +71,7 @@ export function Sidebar({ children }: SidebarProps) {
             <h4 className="font-semibold text-[var(--text-primary)]">
               Guilherme Fadel
             </h4>
-            <span className="text-xs text-[var(--text-primary)]/70">
+            <span className=" text-[var(--text-primary)]/70">
               gui_teste@gmail.com
             </span>
           </div>
@@ -98,9 +98,9 @@ export function Sidebar({ children }: SidebarProps) {
                   group-hover:opacity-100
                   group-hover:scale-100
                   z-50
-                "
+              "
               >
-                <ul className="text-xs font-['Press_Start_2P'] text-[var(--text-primary)]">
+                <ul className="text-[var(--text-primary)]">
                   <li className="px-4 py-2 hover:bg-[var(--background-primary)]/10 cursor-pointer">
                     Perfil
                   </li>
@@ -142,7 +142,7 @@ export function SidebarItem({
     <li
     className={`
       relative flex items-center py-2 px-3 my-1
-      font-['Press_Start_2P'] text-xs rounded-md cursor-pointer
+        rounded-md cursor-pointer
       transition-colors group
       hover:bg-sidebar-accent hover:text-sidebar-foreground
       text-sidebar-primary-foreground
@@ -172,7 +172,7 @@ export function SidebarItem({
         <div
         className={`
           absolute left-full ml-6 px-2 py-1 rounded-md
-          bg-sidebar-accent text-sidebar-foreground text-xs
+          bg-sidebar-accent text-sidebar-foreground 
           invisible opacity-0 -translate-x-3
           transition-all
           group-hover:visible group-hover:opacity-100 group-hover:translate-x-0

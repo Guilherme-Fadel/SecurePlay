@@ -17,10 +17,10 @@ export const GameInput = forwardRef<HTMLInputElement, GameInputProps>(
     const inputType = isPassword && showPassword ? "text" : type;
 
     const baseWrapper =
-      "relative border-2 bg-[var(--surface-alt)] transition-all duration-200";
+    "relative border-2 bg-[var(--surface-alt)] transition-all duration-200";
 
     const focusStyle =
-      "border-[var(--secondary)] shadow-[0_0_12px_rgba(58,242,165,0.3)] translate-x-0.5 -translate-y-0.5";
+    "border-[var(--secondary)] shadow-[0_0_12px_rgba(58,242,165,0.3)] translate-x-0.5 -translate-y-0.5";
 
     const errorStyle = "border-[var(--accent)]";
 
@@ -35,7 +35,7 @@ export const GameInput = forwardRef<HTMLInputElement, GameInputProps>(
     return (
       <div className="space-y-2">
 
-        <label className="text-[var(--text-primary)] text-sm tracking-wide block">
+        <label className="text-[var(--text-primary)]  tracking-wide block">
           {label}
         </label>
 
@@ -121,8 +121,8 @@ function InputShadow({ isFocused }: { isFocused: boolean }) {
 function InputError({ message }: { message: string }) {
   return (
     <div className="flex items-start gap-2 mt-1">
-      <span className="text-[var(--accent)] text-xs mt-0.5">⚠</span>
-      <p className="text-[var(--accent)] text-xs">{message}</p>
+      <span className="text-[var(--accent)]  mt-0.5">⚠</span>
+      <p className="text-[var(--accent)] ">{message}</p>
     </div>
   );
 }

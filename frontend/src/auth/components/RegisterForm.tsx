@@ -25,7 +25,7 @@ export function RegisterForm({
       onSubmit={onSubmit}
       className="space-y-4"
     >
-      <p className="text-[var(--text-primary)] text-sm mb-6">
+      <p className="text-[var(--text-primary)]  mb-6">
         Crie seu personagem e comece a aventura
       </p>
 
@@ -80,14 +80,14 @@ export function RegisterForm({
         />
 
         {errors.terms && (
-          <p className="text-[var(--accent)] text-xs mt-2 ml-8">
+          <p className="text-[var(--accent)]  mt-2 ml-8">
             ⚠ {errors.terms}
           </p>
         )}
       </div>
 
       <GameButton type="submit" isLoading={loading.isLoading}>
-        <span className="pixel-text text-sm tracking-wider">
+        <span className="tracking-wide">
           CRIAR PERSONAGEM
         </span>
       </GameButton>

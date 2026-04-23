@@ -40,10 +40,10 @@ export function PressStartScreen() {
               animate={{ scale: 1 }}
               transition={{ duration: 0.5, type: 'spring' }}
             >
-              <h1 className="pixel-text text-4xl md:text-5xl text-[var(--secondary)] mb-4 tracking-wider">
+              <h1 className="md: text-[var(--secondary)] mb-4 tracking-wide">
                 SECURITY
               </h1>
-              <h2 className="pixel-text text-2xl md:text-3xl text-[var(--primary)] tracking-wider">
+              <h2 className="md: text-[var(--primary)] tracking-wide">
                 QUEST
               </h2>
             </motion.div>
@@ -83,7 +83,7 @@ export function PressStartScreen() {
   
             <motion.button
               onClick={handleStart}
-              className="pixel-text text-lg text-[var(--text-primary)] hover:text-[var(--secondary)] transition-colors tracking-wider cursor-none"
+              className="text-[var(--text-primary)] hover:text-[var(--secondary)] transition-colors tracking-wide cursor-none"
               animate={{ opacity: [1, 0.3, 1] }}
               transition={{ duration: 1.5, repeat: Infinity }}
             >
@@ -94,7 +94,7 @@ export function PressStartScreen() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 1 }}
-              className="text-[var(--text-secondary)] text-sm"
+              className="text-[var(--text-secondary)]"
             >
               Pressione ENTER ou clique para começar
             </motion.p>

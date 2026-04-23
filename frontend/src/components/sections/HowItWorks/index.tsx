@@ -22,12 +22,12 @@ export function HowItWorksSection() {
           viewport={{ once: true }}
         >
           <div className="inline-block bg-[var(--surface-alt)] border-4 border-[var(--secondary)] px-6 py-2 mb-6">
-            <span className="text-[var(--secondary)] font-['Press_Start_2P'] text-xs">
+            <span className="text-[var(--secondary)]">
               MAPA DO JOGO
             </span>
           </div>
 
-          <h2 className="font-['Press_Start_2P'] text-3xl md:text-5xl text-[var(--text-primary)]">
+          <h2 className="md: text-[var(--text-primary)]">
             COMO FUNCIONA
           </h2>
         </motion.div>

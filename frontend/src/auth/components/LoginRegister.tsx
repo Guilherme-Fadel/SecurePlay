@@ -76,10 +76,10 @@ export function LoginRegister() {
           <PixelMascot className="w-24 h-24" />
         </div>
 
-        <h1 className="pixel-text text-2xl text-[var(--secondary)] mb-2 tracking-wider">
+        <h1 className="text-[var(--secondary)] mb-2 tracking-wide">
           SISTEMA DE SEGURANÇA
         </h1>
-        <p className="text-[var(--text-primary)] text-sm opacity-80">
+        <p className="text-[var(--text-primary)]  opacity-80">
           Governança & Proteção de Dados
         </p>
       </motion.div>
@@ -128,7 +128,7 @@ export function LoginRegister() {
         animate={{ opacity: 1 }}
         transition={{ delay: 0.4 }}
       >
-        <p className="text-[var(--text-secondary)] text-xs">
+        <p className="text-[var(--text-secondary)]">
           Segurança descomplicada • Proteção gamificada
         </p>
       </motion.div>

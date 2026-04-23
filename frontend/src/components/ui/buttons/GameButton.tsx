@@ -20,16 +20,16 @@ export function GameButton({
   const primary = variant === "primary";
 
   const baseStyle =
-    "relative inline-flex items-center justify-center py-4 font-bold tracking-wide border-2 transition-all duration-200";
+  "relative inline-flex items-center justify-center py-4 px-1 tracking-wide border-2 transition-all duration-200";
 
   const disabledStyle =
-    "disabled:opacity-50 disabled:cursor-not-allowed";
+  "disabled:opacity-50 disabled:cursor-not-allowed";
 
   const primaryStyle =
-    "bg-[var(--primary)] border-[var(--primary)] text-[var(--text-primary)] hover:bg-[var(--primary-hover)]";
+  "bg-[var(--primary)] border-[var(--primary)] text-[var(--text-primary)] hover:bg-[var(--primary-hover)]";
 
   const secondaryStyle =
-    "bg-[var(--surface-alt)] border-[var(--border)] text-[var(--text-primary)] hover:bg-[--border-light]";
+  "bg-[var(--surface-alt)] border-[var(--border)] text-[var(--text-primary)] hover:bg-[--border-light]";
 
   const buttonStyle = `
     ${baseStyle}
@@ -70,9 +70,9 @@ export function GameButton({
 
       <div
         className="
-          absolute inset-0 border-2 border-[var(--background)] -z-10
+          absolute inset-0 border-[var(--background)] -z-10
           transition-all duration-200 translate-x-1 translate-y-1
-        "
+      "
       />
 
     </motion.button>
