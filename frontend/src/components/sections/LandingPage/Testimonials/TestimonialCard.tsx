@@ -22,12 +22,12 @@ export function TestimonialCard({ testimonial, index }: Props) {
 
       <div className="flex items-start justify-between mb-5">
         <div className="relative">
-          <div className="w-14 h-14 bg-[var(--primary)] border-4 border-[var(--border-primary)] flex items-center justify-center text-2xl">
+          <div className="w-14 h-14 bg-[var(--primary)] border-4 border-[var(--border-primary)] flex items-center justify-center">
             {testimonial.avatar}
           </div>
 
           <div className="absolute -bottom-2 -right-2 bg-[var(--accent)] border-2 border-[var(--border-primary)] px-2 py-1">
-            <span className="font-['Press_Start_2P'] text-[8px] text-[var(--background)]">
+            <span className="text-[var(--background)]">
               {testimonial.level}
             </span>
           </div>
@@ -43,15 +43,15 @@ export function TestimonialCard({ testimonial, index }: Props) {
         </div>
       </div>
 
-      <p className="text-[var(--text-primary)] text-sm font-['Inter'] mb-5 leading-relaxed">
-        "{testimonial.message}"
+      <p className="text-[var(--text-primary)]   mb-5 leading-relaxed">
+      "{testimonial.message}"
       </p>
 
       <div className="pt-3 border-t-2 border-[var(--primary)]">
-        <div className="font-['Press_Start_2P'] text-xs text-[var(--text-primary)]">
+        <div className="text-[var(--text-primary)]">
           {testimonial.name}
         </div>
-        <div className="text-[var(--secondary)] text-[10px] font-['Press_Start_2P']">
+        <div className="text-[var(--secondary)]">
           {testimonial.role}
         </div>
       </div>

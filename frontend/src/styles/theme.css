@@ -101,11 +101,11 @@ body,
   --font-family-inter: 'Inter', monospace;
 
     /* size */
-  --font-xs: 14px;
-  --font-sm: 16px;
-  --font-base: 18px;
-  --font-lg: 22px;
-  --font-xl: 28px;
+  --font-xs: 16px;
+  --font-sm: 18px;
+  --font-base: 20px;
+  --font-lg: 24px;
+  --font-xl: 30px;
   --font-2xl: 36px;
   --font-3xl: 48px;
   --font-4xl: 64px;
@@ -136,7 +136,14 @@ p {
   line-height: var(--line-normal);
 }
 
+button {
+  font-family: var(--font-family-base);
+  font-size: var(--font-lg);
+  line-height: var(--line-normal);
+}
+
 span {
+  font-family: var(--font-family-base);
   font-size: var(--font-lg);
 }
 

@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { GameButton } from '../../ui/buttons/GameButton';
+import { GameButton } from '../../../ui/buttons/GameButton';
 
 import { HeroBackground } from './Background';
 import { HeroBadge } from './Badge';
@@ -29,10 +29,10 @@ export function HeroSection() {
         >
           <GameButton
             onClick={() => navigate('/start')}
-            className="cursor-none px-12 py-6 text-sm border-4 border-[var(--border-primary)] 
+            className="cursor-none px-12 py-6  border-4 border-[var(--border-primary)] 
                        shadow-[8px_8px_0px_0px_rgba(31,106,225,1)]
                        hover:shadow-[4px_4px_0px_0px_rgba(31,106,225,1)]
-                       font-['Press_Start_2P'] bg-[var(--secondary)] text-[var(--background)]"
+                        bg-[var(--secondary-dark)] text-[var(--background)]"
           >
             INICIAR MISSÃO
           </GameButton>

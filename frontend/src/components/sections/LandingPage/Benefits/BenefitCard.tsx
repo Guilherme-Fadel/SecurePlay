@@ -22,11 +22,11 @@ export function BenefitCard({ item, index }: any) {
           <div className={`absolute top-2 left-2 w-full h-full border-4 -z-10 ${item.borderColor} opacity-50`} />
         </div>
 
-        <h3 className={`font-['PRESS_START_2P'] text-sm text-center mb-4 ${item.textColor}`}>
+        <h3 className={`  text-center mb-4 ${item.textColor}`}>
           {item.title}
         </h3>
 
-        <p className="text-[var(--text-primary)] text-sm text-center font-['Inter']">
+        <p className="text-[var(--text-primary)]  text-center">
           {item.description}
         </p>
 
@@ -42,7 +42,7 @@ export function BenefitCard({ item, index }: any) {
         </div>
       </div>
 
-      <div className={"absolute inset-0 border-4 " + item.borderColor + " opacity-0 group-hover:opacity-100 transition-opacity"} />
+      <div className={"absolute inset-0 border-4" + item.borderColor + " opacity-0 group-hover:opacity-100 transition-opacity"} />
     </motion.div>
   );
 }

@@ -11,7 +11,7 @@ export function HeroBadge() {
     >
       <Sparkles className="w-5 h-5 text-[var(--accent)]" />
       
-      <span className="text-[var(--accent)] font-['Press_Start_2P'] text-xs">
+      <span className="text-[var(--accent)]">
         NÍVEL 1: INICIANTE
       </span>
     </motion.div>
