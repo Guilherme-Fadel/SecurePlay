@@ -6,6 +6,8 @@ export default function Home() {
   return (
     <div className="flex h-screen">
 
+      <PixelCursor></PixelCursor>
+      
       <Sidebar>
         <SidebarItem icon={<HomeIcon />} text="Home" />
         <SidebarItem icon={<User />} text="Perfil" />

@@ -35,9 +35,9 @@ export function Sidebar({ children }: SidebarProps) {
             {expanded && (
                 
                 <>  
-                    <h1 className="text-[var(--text-primary)]">
+                    <span className="text-[var(--text-primary)]">
                         Secure Play
-                    </h1>
+                    </span>
                 </>
             )}
 
@@ -68,12 +68,12 @@ export function Sidebar({ children }: SidebarProps) {
               ${expanded ? "w-40" : "w-0"}
             `}
           >
-            <h4 className="font-semibold text-[var(--text-primary)]">
+            <h6 className="text-[var(--text-primary)]">
               Guilherme Fadel
-            </h4>
-            <span className=" text-[var(--text-primary)]/70">
+            </h6>
+            <h6 className=" text-[var(--text-primary)]/70">
               gui_teste@gmail.com
-            </span>
+            </h6>
           </div>
         </div>
 
@@ -144,10 +144,9 @@ export function SidebarItem({
       relative flex items-center py-2 px-3 my-1
         rounded-md cursor-pointer
       transition-colors group
-      hover:bg-sidebar-accent hover:text-sidebar-foreground
-      text-sidebar-primary-foreground
+      hover:bg-[var(--surface)] text-[var(--text-primary)]
 
-      ${active ? "bg-sidebar-accent text-sidebar-foreground" : ""}
+      ${active ? "bg-sidebar-accent text-[var(--text-primary)]" : ""}
     `}
 >
       {icon}
