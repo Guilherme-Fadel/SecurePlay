@@ -8,9 +8,8 @@ export class AuthController {
   constructor(private authService: AuthService) {}
 
   @Post('login')
-@HttpCode(HttpStatus.OK)
-signIn(@Body() dto: any) {
-  console.log('Recebido login no backend:', dto);
-  return this.authService.signIn(dto);
-}
+  @HttpCode(HttpStatus.OK)
+  signIn(@Body() dto: any) {
+    return this.authService.signIn(dto);
+  }
 }
