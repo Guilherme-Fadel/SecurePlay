@@ -1,5 +1,7 @@
-import { Controller, Get } from '@nestjs/common';
+import { Controller, Get, UseGuards, Req } from '@nestjs/common';
 import { AppService } from './app.service';
+import { JwtAuthGuard } from './auth/auth.guard';
+import type { FastifyRequest } from 'fastify';
 
 @Controller()
 export class AppController {
@@ -9,4 +11,14 @@ export class AppController {
   health() {
     return {message: 'Server is Running'};
   }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('home')
+  home(@Req() req: FastifyRequest) {
+    return {
+      message: 'Acesso autorizado',
+      user: (req as any).user,
+    };
+  }
+
 }
