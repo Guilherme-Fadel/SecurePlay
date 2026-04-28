@@ -67,22 +67,22 @@ Sempre que for visualizar ou iniciar uma nova feature realizar:
 Exemplo: Branch Main
 
 ``` bash
-#Verificar se está na branch correta
+# Verificar se está na branch correta
 git status
 
-#Atualizar o repositório
+# Atualizar o repositório
 git fetch 
 
-#Atualizar repositório local mais atual
+# Atualizar repositório local mais atual
 git pull origin main 
 
-#Verificar se teve autualização do packagejson, caso não tiver, desconsiderar codigos abaixo
+# Verificar se teve autualização do packagejson, caso não tiver, desconsiderar codigos abaixo
 
-#Atualizar dependencias front
+# Atualizar dependencias front
 cd frontend
 npm install
 
-#Atualizar dependencias back
+# Atualizar dependencias back
 cd backend
 npm install
 ```
@@ -90,19 +90,32 @@ npm install
 Fluxo de Feature
 
 ``` bash
-#Acessar diretório raiz
+# Acessar diretório raiz
 cd diretorio_raiz
 
-#Adicionar as alterações
+# Adicionar as alterações
 git add .
 
-#Commitar as alterações
+# Commitar as alterações
 git commit -m "O que foi realizado"
 
-#Atualizar repositório remoto com as alterações
+# Atualizar repositório remoto com as alterações
 git push origin developer
 
+# Mudar de branch
 git checkout main
+
+# Verificar se está na branch correta
+git status
+
+# Juntar novas alterações com o código atual / Se tiver conflito, não FORCE
+git merge origin developer
+
+# Subir alterações na branch main
+git push origin main
+
+# Verificar se não ficou nada para trás
+git status
 
 ```
 
