@@ -76,7 +76,7 @@ function CTAContent() {
       <h2 className="md: text-[var(--text-primary)] mb-6">
         PRONTO PARA
         <br />
-        <h2 className="text-[var(--secondary)]">PROTEGER SEUS DADOS?</h2>
+        <div className="text-[var(--secondary)]">PROTEGER SEUS DADOS?</div>
       </h2>
 
       <h5 className="text-[var(--text-primary)]  md: max-w-2xl mx-auto mb-8">

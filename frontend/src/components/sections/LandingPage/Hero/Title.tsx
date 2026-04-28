@@ -11,9 +11,9 @@ export function HeroTitle() {
       SUBA DE NÍVEL NA
       <br />
 
-      <h1 className="text-[var(--secondary)]">SEGURANÇA</h1>
+      <div className="text-[var(--secondary)]">SEGURANÇA</div>
 
-      <h1 className="text-[var(--primary)]">DA INFORMAÇÃO</h1>
+      <div className="text-[var(--primary)]">DA INFORMAÇÃO</div>
     </motion.h1>
   );
 }

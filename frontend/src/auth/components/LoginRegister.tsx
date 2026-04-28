@@ -1,3 +1,5 @@
+import { useNavigate } from 'react-router-dom';
+
 import { motion, AnimatePresence } from 'motion/react';
 import { PixelMascot } from '../../components/ui/visuals/PixelMascot';
 import { SecurityLevelIndicator } from '../../components/ui/feedback/SecurityLevelIndicator';
@@ -12,8 +14,8 @@ import { LoginForm } from './LoginForm';
 import { RegisterForm } from './RegisterForm';
 
 export function LoginRegister() {
-  const { mode, switchMode, loading, login, register, errors } =
-    useLoginRegister();
+  const { mode, switchMode, loading, login, register, errors } = useLoginRegister();
+  const navigate = useNavigate();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -28,10 +30,14 @@ export function LoginRegister() {
         return;
       }
 
-      localStorage.setItem('Token', result.token!);
+      console.log(result.token!)
+      localStorage.setItem('token', result.token!);
       localStorage.setItem('nome', result.nome!);
 
       toast.success(result.mensagem);
+
+      navigate('/home');
+
       login.reset();
     } finally {
       loading.stop();

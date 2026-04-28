@@ -22,8 +22,8 @@ export async function loginService(
     console.log(response.data);
     return {
       sucesso: true,
-      mensagem: response.data.message,
-      token: response.data.token,
+      mensagem: response.data.message ?? 'Login realizado',
+       token: response.data.token,
       nome: response.data.nome,
     };
 
