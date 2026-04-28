@@ -39,8 +39,9 @@ precisa ser executado **localmente** para testes.
 -   Node.js **\>= 20**
 
 ------------------------------------------------------------------------
+# GIT PASSO A PASSO
 
-# Instalação
+## Primeira Instalação
 
 Clone o repositório:
 
@@ -57,6 +58,51 @@ npm install
 
 cd backend
 npm install
+```
+
+## Boas Práticas
+
+Sempre que for visualizar ou iniciar uma nova feature realizar:
+
+Exemplo: Branch Main
+
+``` bash
+#Verificar se está na branch correta
+git status
+
+#Atualizar o repositório
+git fetch 
+
+#Atualizar repositório local mais atual
+git pull origin main 
+
+#Verificar se teve autualização do packagejson, caso não tiver, desconsiderar codigos abaixo
+
+#Atualizar dependencias front
+cd frontend
+npm install
+
+#Atualizar dependencias back
+cd backend
+npm install
+```
+
+Fluxo de Feature
+
+``` bash
+#Acessar diretório raiz
+cd diretorio_raiz
+
+#Adicionar as alterações
+git add .
+
+#Commitar as alterações
+git commit -m "O que foi realizado"
+
+#Atualizar repositório remoto com as alterações
+git push origin developer
+
+git checkout main
 
 ```
 
