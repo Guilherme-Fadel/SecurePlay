@@ -1,11 +1,15 @@
-import { Body, Controller, Get, Post, HttpCode, HttpStatus, Request, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Post, HttpCode, HttpStatus, Request, UseGuards, NotFoundException } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { LoginDto } from 'src/entities/usuarios/dto/login.dto';
 import { JwtAuthGuard } from './auth.guard';
+import { UsuarioService } from 'src/entities/usuarios/usuario.service';
 
 @Controller('auth')
 export class AuthController {
-  constructor(private authService: AuthService) {}
+  constructor(
+    private authService: AuthService,
+    private usuarioService: UsuarioService
+  ) {}
 
   @Post('login')
   @HttpCode(HttpStatus.OK)
@@ -15,10 +19,7 @@ export class AuthController {
 
   @Get('token')
   @UseGuards(JwtAuthGuard)
-  me(@Request() req: any) {
-    return {
-      userId: req.user.userId,
-      email: req.user.email,
-    };
+  async me(@Request() req: any) {
+    return this.usuarioService.getUsuarioDados(req.user.userId)
   }
 }

@@ -1,5 +1,6 @@
 import { ChevronDown } from 'lucide-react';
 import { cn } from '../../../../lib/utils';
+import { useCurrentUser } from '../../../../hooks/useCurrentUser';
 
 interface UserMenuProps {
   open: boolean;
@@ -8,6 +9,8 @@ interface UserMenuProps {
 }
 
 export function UserMenu({ open, onToggle, onClose }: UserMenuProps) {
+  const { user, loading } = useCurrentUser();
+
   return (
     <div className="relative">
       <button
@@ -15,17 +18,17 @@ export function UserMenu({ open, onToggle, onClose }: UserMenuProps) {
         className="flex items-center gap-3 px-3 py-2 hover:bg-[var(--background)] rounded-md transition-colors"
       >
         <img
-          src="https://ui-avatars.com/api/?name=Guilherme+Fadel&background=c7d2fe&color=3730a3&bold=true"
+          src={`https://ui-avatars.com/api/?name=${encodeURIComponent(user?.name ?? '')}&background=c7d2fe&color=3730a3&bold=true`}
           alt="User avatar"
           className="w-9 h-9 rounded-md flex-shrink-0"
         />
 
         <div className="text-left hidden md:block">
           <p className="text-[var(--text-primary)] text-[var(--font-xs)] leading-tight">
-            Guilherme Fadel
+            {loading ? '...' : user?.name}
           </p>
           <p className="text-[var(--text-secondary)] text-[var(--font-xs)] font-[var(--font-family-inter)] leading-tight">
-            Nível 42
+            Nivel {loading ? '...' : user?.level}
           </p>
         </div>
 

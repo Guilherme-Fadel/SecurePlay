@@ -13,4 +13,7 @@ export class Usuario {
 
   @Column({ length: 255 })
   password: string;
+
+  @Column({default: 1})
+  level: number
 }
