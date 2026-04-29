@@ -22,6 +22,8 @@ interface SidebarProps {
   children: ReactNode
 }
 
+export type Section = 'dashboard' | 'desafios' | 'ranking' | 'conquistas' | 'treinamentos' | 'configuracoes'
+
 export function Sidebar({ children }: SidebarProps) {
   const [expanded, setExpanded] = useState<boolean>(true)
 
@@ -60,6 +62,8 @@ export function Sidebar({ children }: SidebarProps) {
 
 
 interface SidebarItemProps {
+  id: Section
+  onSelect: (id: Section) => void
   icon: ReactNode
   text: string
   active?: boolean
@@ -67,6 +71,8 @@ interface SidebarItemProps {
 }
 
 export function SidebarItem({
+  id,
+  onSelect,
   icon,
   text,
   active = false,
@@ -76,6 +82,7 @@ export function SidebarItem({
 
   return (
     <li
+    onClick={() => onSelect(id)}
     className={`
       relative flex items-center py-2 px-3 my-1
       rounded-md cursor-pointer

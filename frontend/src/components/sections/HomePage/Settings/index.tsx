@@ -2,12 +2,11 @@ import { PageTransition } from "../../../shared/PageTransition"
 
 
 
-export function Dashboard() {
+export function Settings(){
 
     return (
         <PageTransition>
-            <h1 className="font-bold">Dashboard</h1>
+            <h1 className="font-bold">Settings</h1>
         </PageTransition>
     )
-    
 }
