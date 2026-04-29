@@ -4,6 +4,8 @@ import { Header } from "../components/shared/layout/header/index"
 import {Sidebar, SidebarItem} from "../components/shared/Sidebar"
 import { PixelCursor } from "../components/ui/visuals/PixelCursor"
 import { TrophyIcon, LayoutDashboard, Target, AwardIcon, BookOpenIcon, SettingsIcon } from "lucide-react"
+import { Dashboard } from '../components/sections/HomePage/Dashboard/index';
+
 
 export default function Home() {
   return (
@@ -26,7 +28,8 @@ export default function Home() {
           <div className="flex flex-col flex-1 min-w-0">
             <Header />
             <main className="flex-1 p-6 bg-[var(--background)]">
-              <h1 className="font-bold">Home</h1>
+              
+            <Dashboard />
 
             </main>
           </div>
