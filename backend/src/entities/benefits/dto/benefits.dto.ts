@@ -11,6 +11,10 @@ export class CreateBenefitsDto {
 
   @IsNotEmpty()
   @IsString()
+  icon: string;
+
+  @IsNotEmpty()
+  @IsString()
   color: string;
 
   @IsNotEmpty()

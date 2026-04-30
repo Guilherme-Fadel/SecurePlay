@@ -1,7 +1,10 @@
 import { motion } from 'motion/react';
+import { Shield, Star, Heart, Zap, Award, Users } from 'lucide-react';
 
-export function BenefitCard({ item, index }: any) {
-  const Icon = item.icon;
+export function BenefitCard({ item }: any) {
+  const iconMap: Record<string, React.ElementType> = { Shield, Star, Heart, Zap, Award, Users };
+
+  const Icon = iconMap[item.icon]
 
   return (
     <motion.div

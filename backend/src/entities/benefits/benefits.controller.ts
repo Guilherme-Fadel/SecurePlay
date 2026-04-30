@@ -16,7 +16,6 @@ export class BenefitsController {
   }
 
   @Get('buscar')
-  @UseGuards(JwtAuthGuard)
   async buscarBenefits(@Query('id') id?: number): Promise<Benefits | Benefits[]> {
     return this.benefitsService.getBenefits(id)
   }

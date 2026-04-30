@@ -11,6 +11,9 @@ export class Benefits {
   @Column({ length: 100 })
   description: string;
 
+  @Column({length: 50})
+  icon: string
+
   @Column({ length: 255 })
   color: string;
 
