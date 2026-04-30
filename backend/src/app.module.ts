@@ -4,11 +4,13 @@ import { AppService } from './app.service';
 import { AuthModule } from './auth/auth.module';
 import { UsuarioModule } from './entities/usuarios/usuario.module';
 import { ConfigModule } from '@nestjs/config/dist/config.module';
+import { BenefitsModule } from './entities/benefits/benefits.module';
 
 @Module({
   imports: [
     AuthModule,
     UsuarioModule,
+    BenefitsModule,
     ConfigModule.forRoot({
       isGlobal: true,
     })
