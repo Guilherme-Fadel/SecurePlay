@@ -12,7 +12,7 @@ export class BenefitsService {
     private benefitsRepository: Repository<Benefits>,
   ) {}
 
-  async createBenefits(data: CreateBenefitsDto): Promise<ResultadoDto>{
+  async insertBenefits(data: CreateBenefitsDto): Promise<ResultadoDto>{
 
     const benefitsExistente = await this.getBenefitsByTitle(data.title)
 

@@ -33,7 +33,7 @@ export async function registerService(
     return { sucesso: false, mensagem: 'Aceite os termos para continuar' };
   }
 
-  const response = await api.post('/usuarios/criarUsuario', {
+  const response = await api.post('/usuarios/criar', {
     name,
     email,
     password,

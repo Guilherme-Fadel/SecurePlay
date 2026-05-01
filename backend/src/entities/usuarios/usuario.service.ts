@@ -38,7 +38,7 @@ export class UsuarioService {
     return usuario ?? undefined
   }
 
-  async createUsuario(data: UsuarioCadastrarDto): Promise<ResultadoDto> {
+  async insertUsuario(data: UsuarioCadastrarDto): Promise<ResultadoDto> {
     const usuarioExistente = await this.getUsuarioByEmail(data.email);
 
     if (usuarioExistente) {
