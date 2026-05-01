@@ -7,7 +7,7 @@ export function BenefitsGrid() {
   const {benefits, loading} = useBenefits();
 
   if (loading){
-    return <p>Carregando</p>
+    return <p>Carregando...</p>
   }
 
   if (!benefits){

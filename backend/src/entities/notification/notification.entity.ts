@@ -24,7 +24,7 @@ export class Notification{
     @Column({length: 100})
     type: string
 
-    @Column()
+    @Column({default: false})
     readed: boolean
 
     @Column({ default: () => 'CURRENT_TIMESTAMP' })

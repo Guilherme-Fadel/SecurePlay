@@ -23,6 +23,28 @@ export class NotificationService {
    });
   }
 
+  async markAllAsRead(usuario_id: number): Promise<ResultadoDto> {
+    await this.notificationRepository.update({ usuario_id, readed: false }, { readed: true });
+
+    return {
+      sucesso: true,
+      mensagem: 'Todas as notificações marcadas como lidas'
+    };
+  }
+
+  async markAsRead(id: number): Promise<ResultadoDto> {
+    const result = await this.notificationRepository.update(id, { readed: true });
+
+    if (result.affected === 0) {
+      throw new NotFoundException('Notificação não encontrada');
+    }
+
+    return {
+      sucesso: true,
+      mensagem: 'Notificação marcada como lida'
+    };
+  }
+
   async deleteNotification(id: number): Promise<ResultadoDto> {
 
     const result = await this.notificationRepository.delete(id)
@@ -74,7 +96,10 @@ export class NotificationService {
   }
 
   async getNotificationByUserId(usuario_id: number): Promise<Notification[]> {
-    const result = await this.notificationRepository.find({ where: { usuario_id } })
+    const result = await this.notificationRepository.find({
+      where: { usuario_id },
+      order: { created_at: 'DESC' }
+    })
     return result ?? undefined
   }
 

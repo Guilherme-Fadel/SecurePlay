@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, UseGuards, Query, Delete, Param } from "@nestjs/common";
+import { Controller, Get, Post, Body, UseGuards, Query, Delete, Param, Patch } from "@nestjs/common";
 import { ResultadoDto } from "src/resultado.dto";
 import { JwtAuthGuard } from "src/auth/auth.guard";
 import { NotificationService } from "./notification.service";
@@ -16,14 +16,26 @@ export class NotificationController{
     }
   
     @Get('buscar')
-    async buscarNotification(@Query('id') id?: number): Promise<CreateNotificationDto[]> {
-      return this.notificationService.getNotification(id)
+    async buscarNotification(@Query('id') id?: string): Promise<CreateNotificationDto[]> {
+      return this.notificationService.getNotification(id ? Number(id) : undefined)
     }
   
     @Delete('deletar/:id')
     @UseGuards(JwtAuthGuard)
     async deletarNotification(@Param('id') id: number): Promise<ResultadoDto>{
       return this.notificationService.deleteNotification(id);
+    }
+
+    @Patch('ler/:id')
+    @UseGuards(JwtAuthGuard)
+    async lerNotification(@Param('id') id: string): Promise<ResultadoDto>{
+      return this.notificationService.markAsRead(Number(id));
+    }
+
+    @Patch('ler-todas/:usuario_id')
+    @UseGuards(JwtAuthGuard)
+    async lerTodasNotification(@Param('usuario_id') usuario_id: string): Promise<ResultadoDto>{
+      return this.notificationService.markAllAsRead(Number(usuario_id));
     }
 
 }

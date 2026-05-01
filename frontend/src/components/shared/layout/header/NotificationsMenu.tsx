@@ -1,26 +1,6 @@
 import { Bell } from 'lucide-react';
-
-const NOTIFICATIONS = [
-  {
-    id: 1,
-    title: 'Testando Formato da Notificação',
-    description: 'Testando Formato da Notificação"',
-    time: 'Há 2 horas',
-  },
-  {
-    id: 2,
-    title: 'Testando Formato da Notificação 2',
-    description: 'Testando Formato da Notificação 2"',
-    time: 'Há 4 horas',
-  },
-  {
-    id: 3,
-    title: 'Testando Formato da Notificação com Scroll',
-    description: 'Testando Formato da Notificação com Scroll"',
-    time: 'Há 8 horas',
-  }
-  
-];
+import { useNotification } from '../../../../hooks/useNotification';
+import { timeAgo } from '../../../../services/notification';
 
 interface NotificationsMenuProps {
   open: boolean;
@@ -29,6 +9,10 @@ interface NotificationsMenuProps {
 }
 
 export function NotificationsMenu({ open, onToggle, onClose }: NotificationsMenuProps) {
+  const { notification, loading, hasUnread, markAsRead } = useNotification();
+
+  if (loading) return null;
+
   return (
     <div className="relative">
       <button
@@ -36,7 +20,9 @@ export function NotificationsMenu({ open, onToggle, onClose }: NotificationsMenu
         className="relative p-2 hover:bg-[var(--background)] rounded-md transition-colors text-[var(--text-primary)]"
       >
         <Bell size={20} />
-        <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-[var(--secondary)] rounded-full shadow-[0_0_6px_var(--secondary)]" />
+        {hasUnread && (
+          <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full shadow-[0_0_6px_rgba(239,68,68,0.8)]" />
+        )}
       </button>
 
       {open && (
@@ -49,17 +35,28 @@ export function NotificationsMenu({ open, onToggle, onClose }: NotificationsMenu
             </div>
 
             <div className="max-h-96 overflow-y-auto">
-              {NOTIFICATIONS.map((n) => (
+              {notification.length === 0 && (
+                <p className="p-4 text-[var(--text-secondary)] text-sm text-center">Nenhuma notificação</p>
+              )}
+              {notification.map((item) => (
                 <div
-                  key={n.id}
-                  className="p-4 border-b border-[var(--border)] hover:bg-[var(--background)] cursor-pointer transition-colors"
+                  key={item.id}
+                  onClick={() => { if (!item.readed) markAsRead(item.id); }}
+                  className={`p-4 border-b border-[var(--border)] transition-colors hover:bg-[var(--background)] ${!item.readed ? 'cursor-pointer border-l-2 border-l-red-500' : 'cursor-default'}`}
                 >
-                  <p className="text-[var(--text-primary)] text-[var(--font-xs)]">{n.title}</p>
+                  <div className="flex items-center justify-between gap-2">
+                    <p className={`text-[var(--font-xs)] ${!item.readed ? 'text-[var(--text-primary)] font-semibold' : 'text-[var(--text-secondary)]'}`}>
+                      {item.title}
+                    </p>
+                    {!item.readed && (
+                      <span className="w-2 h-2 min-w-[8px] bg-red-500 rounded-full" />
+                    )}
+                  </div>
                   <p className="text-[var(--text-secondary)] text-[var(--font-xs)] mt-1 font-[var(--font-family-inter)]">
-                    {n.description}
+                    {item.message}
                   </p>
                   <p className="text-[var(--text-secondary)] text-[var(--font-xs)] mt-1 font-[var(--font-family-inter)]">
-                    {n.time}
+                    {timeAgo(item.created_at)}
                   </p>
                 </div>
               ))}

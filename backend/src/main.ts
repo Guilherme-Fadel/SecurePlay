@@ -15,7 +15,11 @@ async function bootstrap() {
     new FastifyAdapter({ logger: true }),
   );
 
-  app.enableCors();
+  app.enableCors({
+    origin: '*',
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+  });
   await app.listen(3001, '0.0.0.0');
 }
 bootstrap();
