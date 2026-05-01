@@ -1,41 +1,53 @@
-import { Controller, Get, Post, Body, UseGuards, Query, Delete, Param, Patch } from "@nestjs/common";
+import { Controller, Get, Post, Body, UseGuards, Query, Delete, Param, Patch, Request, ForbiddenException } from "@nestjs/common";
 import { ResultadoDto } from "src/resultado.dto";
 import { JwtAuthGuard } from "src/auth/auth.guard";
 import { NotificationService } from "./notification.service";
 import { CreateNotificationDto } from "./dto/notification.dto";
-import { Notification } from "./notification.entity";
 
 @Controller('notification')
+@UseGuards(JwtAuthGuard)
 export class NotificationController{
   constructor(private readonly notificationService: NotificationService){}
 
   @Post('criar')
-    @UseGuards(JwtAuthGuard)
-    async criarNotification(@Body() data: CreateNotificationDto): Promise<ResultadoDto> {
-      return this.notificationService.insertNotification(data)
-    }
-  
-    @Get('buscar')
-    async buscarNotification(@Query('id') id?: string): Promise<CreateNotificationDto[]> {
-      return this.notificationService.getNotification(id ? Number(id) : undefined)
-    }
-  
-    @Delete('deletar/:id')
-    @UseGuards(JwtAuthGuard)
-    async deletarNotification(@Param('id') id: number): Promise<ResultadoDto>{
-      return this.notificationService.deleteNotification(id);
+  async criarNotification(@Body() data: CreateNotificationDto): Promise<ResultadoDto> {
+    return this.notificationService.insertNotification(data)
+  }
+
+  @Get('buscar')
+  async buscarNotification(@Query('id') id: string, @Request() req: any): Promise<CreateNotificationDto[]> {
+    const usuarioId = Number(id);
+
+    if (!id || isNaN(usuarioId)) {
+      throw new ForbiddenException('ID do usuário é obrigatório');
     }
 
-    @Patch('ler/:id')
-    @UseGuards(JwtAuthGuard)
-    async lerNotification(@Param('id') id: string): Promise<ResultadoDto>{
-      return this.notificationService.markAsRead(Number(id));
+    if (req.user.userId !== usuarioId) {
+      throw new ForbiddenException('Acesso negado');
     }
 
-    @Patch('ler-todas/:usuario_id')
-    @UseGuards(JwtAuthGuard)
-    async lerTodasNotification(@Param('usuario_id') usuario_id: string): Promise<ResultadoDto>{
-      return this.notificationService.markAllAsRead(Number(usuario_id));
+    return this.notificationService.getNotification(usuarioId);
+  }
+
+  @Delete('deletar/:id')
+  async deletarNotification(@Param('id') id: string, @Request() req: any): Promise<ResultadoDto>{
+    return this.notificationService.deleteNotification(Number(id), req.user.userId);
+  }
+
+  @Patch('ler/:id')
+  async lerNotification(@Param('id') id: string, @Request() req: any): Promise<ResultadoDto>{
+    return this.notificationService.markAsRead(Number(id), req.user.userId);
+  }
+
+  @Patch('ler-todas/:usuario_id')
+  async lerTodasNotification(@Param('usuario_id') usuario_id: string, @Request() req: any): Promise<ResultadoDto>{
+    const usuarioId = Number(usuario_id);
+
+    if (req.user.userId !== usuarioId) {
+      throw new ForbiddenException('Acesso negado');
     }
+
+    return this.notificationService.markAllAsRead(usuarioId);
+  }
 
 }

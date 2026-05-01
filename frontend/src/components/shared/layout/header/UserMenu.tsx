@@ -1,6 +1,8 @@
 import { ChevronDown } from 'lucide-react';
 import { cn } from '../../../../lib/utils';
 import { useCurrentUser } from '../../../../hooks/useCurrentUser';
+import { logoutUser } from '../../../../services/login/logout';
+import { useNavigate } from 'react-router-dom';
 
 interface UserMenuProps {
   open: boolean;
@@ -10,6 +12,7 @@ interface UserMenuProps {
 
 export function UserMenu({ open, onToggle, onClose }: UserMenuProps) {
   const { user, loading } = useCurrentUser();
+  const navigate = useNavigate();
 
   return (
     <div className="relative">
@@ -54,7 +57,9 @@ export function UserMenu({ open, onToggle, onClose }: UserMenuProps) {
                 Configurações
               </button>
               <div className="border-t border-[var(--border)] my-2" />
-              <button className="w-full text-left px-3 py-2 hover:bg-[var(--background)] rounded-md transition-colors text-[var(--danger)]">
+              <button 
+              onClick={() => { logoutUser(); navigate('/login'); }}
+              className="w-full text-left px-3 py-2 hover:bg-[var(--background)] rounded-md transition-colors text-[var(--danger)]">
                 Sair
               </button>
             </div>

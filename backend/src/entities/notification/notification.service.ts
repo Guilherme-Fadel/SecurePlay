@@ -1,4 +1,4 @@
-import { Injectable, Inject, NotFoundException } from "@nestjs/common";
+import { Injectable, Inject, NotFoundException, ForbiddenException } from "@nestjs/common";
 import { Repository } from "typeorm";
 import { Notification } from "./notification.entity";
 import { CreateNotificationDto } from "./dto/notification.dto";
@@ -32,12 +32,18 @@ export class NotificationService {
     };
   }
 
-  async markAsRead(id: number): Promise<ResultadoDto> {
-    const result = await this.notificationRepository.update(id, { readed: true });
+  async markAsRead(id: number, requestingUserId: number): Promise<ResultadoDto> {
+    const notification = await this.notificationRepository.findOne({ where: { id } });
 
-    if (result.affected === 0) {
+    if (!notification) {
       throw new NotFoundException('Notificação não encontrada');
     }
+
+    if (notification.usuario_id !== requestingUserId) {
+      throw new ForbiddenException('Acesso negado');
+    }
+
+    await this.notificationRepository.update(id, { readed: true });
 
     return {
       sucesso: true,
@@ -45,13 +51,18 @@ export class NotificationService {
     };
   }
 
-  async deleteNotification(id: number): Promise<ResultadoDto> {
+  async deleteNotification(id: number, requestingUserId: number): Promise<ResultadoDto> {
+    const notification = await this.notificationRepository.findOne({ where: { id } });
 
-    const result = await this.notificationRepository.delete(id)
-
-    if (result.affected === 0){
-        throw new NotFoundException('Notificação não encontrado');
+    if (!notification) {
+      throw new NotFoundException('Notificação não encontrada');
     }
+
+    if (notification.usuario_id !== requestingUserId) {
+      throw new ForbiddenException('Acesso negado');
+    }
+
+    await this.notificationRepository.delete(id);
 
     return ({
         sucesso: true,

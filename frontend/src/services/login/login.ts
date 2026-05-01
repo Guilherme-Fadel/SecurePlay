@@ -19,7 +19,6 @@ export async function loginService(
   try {
 
     const response = await api.post('/auth/login', { email, password });
-    console.log(response.data);
     return {
       sucesso: true,
       mensagem: response.data.message ?? 'Login realizado',
