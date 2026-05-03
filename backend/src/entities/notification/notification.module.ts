@@ -3,6 +3,7 @@ import { DatabaseModule } from '../../database/database.molule';
 import { notificationProviders } from './notification.providers';
 import { NotificationService } from './notification.service';
 import { NotificationController } from './notification.controller';
+import { OwnershipGuard } from 'src/auth/ownership.guard';
 
 @Module({
   imports: [DatabaseModule],
@@ -10,6 +11,7 @@ import { NotificationController } from './notification.controller';
   providers: [
     ...notificationProviders,
     NotificationService,
+    OwnershipGuard,
   ],
   exports: [NotificationService],
 })
