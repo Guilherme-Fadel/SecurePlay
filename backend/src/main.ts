@@ -5,7 +5,6 @@ import {
   NestFastifyApplication,
 } from '@nestjs/platform-fastify';
 import { existsSync, unlinkSync } from 'fs';
-import { ValidationPipe } from '@nestjs/common';
 
 async function bootstrap() {
   const dbFile = 'db.sqlite';
@@ -21,9 +20,6 @@ async function bootstrap() {
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
   });
-
-  app.useGlobalPipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true }));
-
   await app.listen(3001, '0.0.0.0');
 }
 bootstrap();
