@@ -1,6 +1,7 @@
 import { Controller, Get, Post, Body, UseGuards, Query, Delete, Param, Patch, Request, ForbiddenException } from "@nestjs/common";
 import { ResultadoDto } from "src/resultado.dto";
 import { JwtAuthGuard } from "src/auth/auth.guard";
+import { OwnershipGuard } from "src/auth/ownership.guard";
 import { NotificationService } from "./notification.service";
 import { CreateNotificationDto } from "./dto/notification.dto";
 
@@ -10,11 +11,13 @@ export class NotificationController{
   constructor(private readonly notificationService: NotificationService){}
 
   @Post('criar')
+  @UseGuards(OwnershipGuard)
   async criarNotification(@Body() data: CreateNotificationDto): Promise<ResultadoDto> {
     return this.notificationService.insertNotification(data)
   }
 
   @Get('buscar')
+  @UseGuards(OwnershipGuard)
   async buscarNotification(@Query('id') id: string, @Request() req: any): Promise<CreateNotificationDto[]> {
     const usuarioId = Number(id);
 
@@ -22,9 +25,6 @@ export class NotificationController{
       throw new ForbiddenException('ID do usuário é obrigatório');
     }
 
-    if (req.user.userId !== usuarioId) {
-      throw new ForbiddenException('Acesso negado');
-    }
 
     return this.notificationService.getNotification(usuarioId);
   }
@@ -40,14 +40,9 @@ export class NotificationController{
   }
 
   @Patch('ler-todas/:usuario_id')
-  async lerTodasNotification(@Param('usuario_id') usuario_id: string, @Request() req: any): Promise<ResultadoDto>{
-    const usuarioId = Number(usuario_id);
-
-    if (req.user.userId !== usuarioId) {
-      throw new ForbiddenException('Acesso negado');
-    }
-
-    return this.notificationService.markAllAsRead(usuarioId);
+  @UseGuards(OwnershipGuard)
+  async lerTodasNotification(@Param('usuario_id') usuario_id: string): Promise<ResultadoDto>{
+    return this.notificationService.markAllAsRead(Number(usuario_id));
   }
 
 }

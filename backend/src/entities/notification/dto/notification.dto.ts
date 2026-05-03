@@ -1,4 +1,4 @@
-import { IsBoolean, IsNotEmpty, IsString, IsNumber, IsDate } from 'class-validator';
+import { IsBoolean, IsNotEmpty, IsString, IsNumber } from 'class-validator';
 
 export class CreateNotificationDto {
   @IsNotEmpty()
@@ -20,8 +20,4 @@ export class CreateNotificationDto {
   @IsNotEmpty()
   @IsBoolean()
   readed: boolean;
-
-  @IsNotEmpty()
-  @IsDate()
-  created_at: Date;
 }
