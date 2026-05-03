@@ -1,6 +1,6 @@
 import { Controller, Get, Post, Body, UseGuards, Query, Delete, Param } from "@nestjs/common";
 import { BenefitsService } from "./benefits.service";
-import type { CreateBenefitsDto } from "./dto/benefits.dto";
+import { CreateBenefitsDto } from "./dto/benefits.dto";
 import { ResultadoDto } from "src/resultado.dto";
 import { JwtAuthGuard } from "src/auth/auth.guard";
 
