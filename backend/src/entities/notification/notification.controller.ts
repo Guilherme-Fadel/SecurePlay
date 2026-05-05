@@ -1,13 +1,11 @@
 import { Controller, Get, Post, Body, UseGuards, Query, Delete, Param, Patch, Request, ForbiddenException } from "@nestjs/common";
 import { ResultadoDto } from "src/resultado.dto";
-import { JwtAuthGuard } from "src/auth/auth.guard";
 import { OwnershipGuard } from "src/auth/ownership.guard";
 import { OwnerField } from "src/auth/owner-field.decorator";
 import { NotificationService } from "./notification.service";
 import { CreateNotificationDto } from "./dto/notification.dto";
 
 @Controller('notification')
-@UseGuards(JwtAuthGuard)
 export class NotificationController{
   constructor(private readonly notificationService: NotificationService){}
 

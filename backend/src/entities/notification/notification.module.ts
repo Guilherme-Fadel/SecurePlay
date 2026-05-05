@@ -4,9 +4,10 @@ import { notificationProviders } from './notification.providers';
 import { NotificationService } from './notification.service';
 import { NotificationController } from './notification.controller';
 import { OwnershipGuard } from 'src/auth/ownership.guard';
+import { AuthModule } from 'src/auth/auth.module';
 
 @Module({
-  imports: [DatabaseModule],
+  imports: [DatabaseModule, AuthModule],
   controllers: [NotificationController],
   providers: [
     ...notificationProviders,
@@ -17,4 +18,3 @@ import { OwnershipGuard } from 'src/auth/ownership.guard';
 })
 
 export class NotificationModule {}
-   
