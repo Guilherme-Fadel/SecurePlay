@@ -27,12 +27,13 @@ precisa ser executado **localmente** para testes.
 
 ## Backend
 
--   NestJS
--   TypeORM
--   MySQL
--   JWT Authentication
--   Fastify / Express support
--   Class Validator
+- NestJS
+- TypeORM
+- MySQL
+- Redis
+- JWT Authentication
+- Fastify / Express support
+- Class Validator
 
 ## Ambiente
 
@@ -149,17 +150,30 @@ npm run start:dev
 
 ------------------------------------------------------------------------
 
-# Banco de Dados
+# Banco de Dados e Redis
 
-O projeto utiliza **MySQL**.
+O projeto utiliza:
 
-Atualmente:
+**MySQL** hospedado em nuvem
 
--   O banco **não está disponível em nuvem**
--   É necessário **configurar um banco local** para testes
--   As credenciais devem ser ajustadas no backend conforme o ambiente
-    local
+**Redis** para gerenciamento de tokens JWT e sessões
 
+As credenciais e variáveis de ambiente devem ser configuradas conforme o ambiente utilizado.
+
+Exemplo:
+``` bash
+DATABASE_HOST=
+DATABASE_PORT=
+DATABASE_USER=
+DATABASE_PASSWORD=
+DATABASE_NAME=
+
+REDIS_HOST=
+REDIS_PORT=
+REDIS_PASSWORD=
+
+JWT_SECRET=
+```
 ------------------------------------------------------------------------
 
 
