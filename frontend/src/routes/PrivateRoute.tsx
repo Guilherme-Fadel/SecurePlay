@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Navigate } from 'react-router-dom';
-import { validateToken } from '../services/auth/validateToken';
+import { validateToken } from '@/services/auth/validateToken';
 
 type Status = 'checking' | 'valid' | 'invalid';
 

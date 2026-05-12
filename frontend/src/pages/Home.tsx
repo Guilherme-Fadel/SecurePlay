@@ -1,10 +1,10 @@
-import { PageTransition } from '../components/shared/PageTransition';
-import { LoadingScreen } from '../components/shared/LoadingScreen';
-import { Header } from "../components/shared/layout/header/index"
-import { Sidebar, SidebarItem, type Section } from '../components/shared/Sidebar'
-import { PixelCursor } from "../components/ui/visuals/PixelCursor"
+import { PageTransition } from '@/components/shared/PageTransition';
+import { LoadingScreen } from '@/components/shared/LoadingScreen';
+import { Header } from "@/components/shared/layout/header/index"
+import { Sidebar, SidebarItem, type Section } from '@/components/shared/Sidebar'
+import { PixelCursor } from "@/components/ui/visuals/PixelCursor"
 import { TrophyIcon, LayoutDashboard, Target, AwardIcon, BookOpenIcon, SettingsIcon } from "lucide-react"
-import { Dashboard, Awards, Challenges, Ranking, Training, Settings } from '../components/sections/HomePage/index';
+import { Dashboard, Awards, Challenges, Ranking, Training, Settings } from '@/components/sections/HomePage/index';
 import { useState } from 'react';
 
 

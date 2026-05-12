@@ -1,6 +1,6 @@
 import { Bell } from 'lucide-react';
-import { useNotification } from '../../../../hooks/useNotification';
-import { timeAgo } from '../../../../services/notification';
+import { useNotification } from '@/hooks/useNotification';
+import { timeAgo } from '@/services/notification';
 
 interface NotificationsMenuProps {
   open: boolean;

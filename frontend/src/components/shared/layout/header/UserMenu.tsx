@@ -1,7 +1,7 @@
 import { ChevronDown } from 'lucide-react';
-import { cn } from '../../../../lib/utils';
-import { useCurrentUser } from '../../../../hooks/useCurrentUser';
-import { logoutUser } from '../../../../services/login/logout';
+import { cn } from '@/lib/utils';
+import { useCurrentUser } from '@/hooks/useCurrentUser';
+import { logoutUser } from '@/services/login/logout';
 import { useNavigate } from 'react-router-dom';
 
 interface UserMenuProps {

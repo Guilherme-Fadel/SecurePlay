@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { CurrentUser, getMe } from "../services/me";
+import { CurrentUser, getMe } from "@/services/me";
 
 
 

@@ -2,7 +2,7 @@ import { useNavigate } from 'react-router-dom';
 import { motion } from 'motion/react';
 import { ArrowRight, Sparkles } from 'lucide-react';
 
-import { GameButton } from '../../../ui/buttons/GameButton';
+import { GameButton } from '@/components/ui/buttons/GameButton';
 
 import { CTABackground } from './Background';
 import { FloatingIcons } from './FloatingIcons';

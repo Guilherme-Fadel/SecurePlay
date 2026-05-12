@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { GameButton } from '../../../ui/buttons/GameButton';
+import { GameButton } from '@/components/ui/buttons/GameButton';
 
 import { HeroBackground } from './Background';
 import { HeroBadge } from './Badge';

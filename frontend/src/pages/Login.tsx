@@ -1,9 +1,9 @@
 import { motion } from 'motion/react';
 import { Toaster } from 'sonner';
-import { PixelBackground } from '../components/ui/visuals/PixelBackground';
-import { LoginRegister } from '../auth/components/LoginRegister';
-import { PixelCursor } from '../components/ui/visuals/PixelCursor';
-import { PageTransition } from '../components/shared/PageTransition';
+import { PixelBackground } from '@/components/ui/visuals/PixelBackground';
+import { LoginRegister } from '@/auth/components/LoginRegister';
+import { PixelCursor } from '@/components/ui/visuals/PixelCursor';
+import { PageTransition } from '@/components/shared/PageTransition';
 
 export default function Login() {
   return (

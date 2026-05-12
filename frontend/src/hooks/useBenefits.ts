@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Benefits, getBenefits } from '../services/benefits';
+import { Benefits, getBenefits } from '@/services/benefits';
 
 export function useBenefits(){
     const [benefits, setBenefits] = useState<Benefits[] | null>(null);

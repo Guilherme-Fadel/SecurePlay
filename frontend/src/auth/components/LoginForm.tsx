@@ -1,6 +1,6 @@
 import { motion } from 'motion/react';
-import { GameInput } from '../../components/ui/inputs/GameInput';
-import { GameButton } from '../../components/ui/buttons/GameButton';
+import { GameInput } from '@/components/ui/inputs/GameInput';
+import { GameButton } from '@/components/ui/buttons/GameButton';
 import { toast } from 'sonner';
 
 interface LoginFormProps {

@@ -1,4 +1,4 @@
-import { PageTransition } from "../../../shared/PageTransition"
+import { PageTransition } from "@/components/shared/PageTransition"
 
 
 

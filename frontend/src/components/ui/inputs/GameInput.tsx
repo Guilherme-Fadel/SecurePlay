@@ -1,5 +1,5 @@
 import { useState, forwardRef } from "react";
-import { PixelIcon } from "../visuals/PixelIcon";
+import { PixelIcon } from "@/components/ui/visuals/PixelIcon";
 
 interface GameInputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   icon: "lock" | "user" | "mail" | "shield";

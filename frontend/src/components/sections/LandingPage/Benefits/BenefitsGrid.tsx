@@ -1,5 +1,5 @@
 import { BenefitCard } from './BenefitCard';
-import { useBenefits } from '../../../../hooks/useBenefits'
+import { useBenefits } from '@/hooks/useBenefits'
 
 
 export function BenefitsGrid() {

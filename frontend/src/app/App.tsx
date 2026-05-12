@@ -1,11 +1,11 @@
 import { Routes, Route, useLocation } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
-import { PrivateRoute, PublicRoute } from '../routes/PrivateRoute';
+import { PrivateRoute, PublicRoute } from '@/routes/PrivateRoute';
 
-import Landing from '../pages/Landing';
-import Start from '../pages/Start';
-import Login from '../pages/Login';
-import Home from '../pages/Home';
+import Landing from '@/pages/Landing';
+import Start from '@/pages/Start';
+import Login from '@/pages/Login';
+import Home from '@/pages/Home';
 
 export default function App() {
   const location = useLocation();

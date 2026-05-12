@@ -1,8 +1,8 @@
 import { motion } from 'motion/react';
-import { GameInput } from '../../components/ui/inputs/GameInput';
-import { GameButton } from '../../components/ui/buttons/GameButton';
-import { GameCheckbox } from '../../components/ui/inputs/GameCheckbox';
-import { PasswordStrengthBar } from '../../components/ui/feedback/PasswordStrengthBar';
+import { GameInput } from '@/components/ui/inputs/GameInput';
+import { GameButton } from '@/components/ui/buttons/GameButton';
+import { GameCheckbox } from '@/components/ui/inputs/GameCheckbox';
+import { PasswordStrengthBar } from '@/components/ui/feedback/PasswordStrengthBar';
 
 interface RegisterFormProps {
   register: any;

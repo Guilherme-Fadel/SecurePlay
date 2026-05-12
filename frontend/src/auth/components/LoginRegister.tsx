@@ -1,13 +1,13 @@
 import { useNavigate } from 'react-router-dom';
 
 import { motion, AnimatePresence } from 'motion/react';
-import { PixelMascot } from '../../components/ui/visuals/PixelMascot';
-import { SecurityLevelIndicator } from '../../components/ui/feedback/SecurityLevelIndicator';
+import { PixelMascot } from '@/components/ui/visuals/PixelMascot';
+import { SecurityLevelIndicator } from '@/components/ui/feedback/SecurityLevelIndicator';
 import { toast } from 'sonner';
 
-import { useLoginRegister } from '../../hooks/useLoginRegister';
-import { loginService } from '../../services/login/login.ts';
-import { registerService } from '../../services/register/register';
+import { useLoginRegister } from '@/hooks/useLoginRegister';
+import { loginService } from '@/services/login/login.ts';
+import { registerService } from '@/services/register/register';
 
 import { AuthTabs } from './AuthTabs';
 import { LoginForm } from './LoginForm';

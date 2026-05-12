@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Notification, getNotification, markNotificationAsRead } from '../services/notification';
-import { getMe } from '../services/me';
+import { Notification, getNotification, markNotificationAsRead } from '@/services/notification';
+import { getMe } from '@/services/me';
 
 const POLL_INTERVAL = 10000;
 
