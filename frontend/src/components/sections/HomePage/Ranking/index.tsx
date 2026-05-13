@@ -1,12 +1,5 @@
-import { PageTransition } from "@/components/shared/PageTransition"
+import { UnderDevelopment } from "@/components/shared/UnderDevelopment"
 
-
-
-export function Ranking(){
-
-    return (
-        <PageTransition>
-            <h1 className="font-bold">Ranking</h1>
-        </PageTransition>
-    )
+export function Ranking() {
+  return <UnderDevelopment section="Ranking" />
 }

@@ -1,12 +1,5 @@
-import { PageTransition } from "@/components/shared/PageTransition"
+import { UnderDevelopment } from "@/components/shared/UnderDevelopment"
 
-
-
-export function Challenges(){
-
-    return (
-        <PageTransition>
-            <h1 className="font-bold">Challenges</h1>
-        </PageTransition>
-    )
+export function Challenges() {
+  return <UnderDevelopment section="Desafios" />
 }

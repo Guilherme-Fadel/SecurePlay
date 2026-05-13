@@ -1,11 +1,5 @@
-import { PageTransition } from "@/components/shared/PageTransition"
-
-
+import { UnderDevelopment } from "@/components/shared/UnderDevelopment"
 
 export function Awards() {
-    return (
-        <PageTransition>
-            <h1 className="font-bold">Awards</h1>
-        </PageTransition>
-    )
+  return <UnderDevelopment section="Conquistas" />
 }

@@ -1,12 +1,5 @@
-import { PageTransition } from "@/components/shared/PageTransition"
+import { UnderDevelopment } from "@/components/shared/UnderDevelopment"
 
-
-
-export function Training(){
-
-    return (
-        <PageTransition>
-            <h1 className="font-bold">Training</h1>
-        </PageTransition>
-    )
+export function Training() {
+  return <UnderDevelopment section="Treinamentos" />
 }

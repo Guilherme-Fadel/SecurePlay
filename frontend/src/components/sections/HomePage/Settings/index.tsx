@@ -1,12 +1,5 @@
-import { PageTransition } from "@/components/shared/PageTransition"
+import { UnderDevelopment } from "@/components/shared/UnderDevelopment"
 
-
-
-export function Settings(){
-
-    return (
-        <PageTransition>
-            <h1 className="font-bold">Settings</h1>
-        </PageTransition>
-    )
+export function Settings() {
+  return <UnderDevelopment section="Configurações" />
 }
