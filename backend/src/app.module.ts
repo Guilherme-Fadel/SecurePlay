@@ -6,6 +6,7 @@ import { UsuarioModule } from './entities/usuarios/usuario.module';
 import { ConfigModule } from '@nestjs/config/dist/config.module';
 import { BenefitsModule } from './entities/benefits/benefits.module';
 import { NotificationModule } from './entities/notification/notification.module';
+import { DashboardModule } from './dashboard/dashboard.module';
 import { APP_GUARD } from '@nestjs/core';
 import { JwtAuthGuard } from './auth/auth.guard';
 import { RedisModule } from './redis/redis.module';
@@ -17,6 +18,7 @@ import { RedisModule } from './redis/redis.module';
     UsuarioModule,
     BenefitsModule,
     NotificationModule,
+    DashboardModule,
     ConfigModule.forRoot({
       isGlobal: true,
     })
