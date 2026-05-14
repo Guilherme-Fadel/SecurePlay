@@ -2,6 +2,8 @@ import { Injectable, Inject } from '@nestjs/common';
 import { Repository } from 'typeorm';
 import { UsuarioStats } from '../entities/usuario-stats/usuario-stats.entity';
 import { UsuarioChallenge } from '../entities/usuario-challenge/usuario-challenge.entity';
+import { Challenge } from '../entities/challenge/challenge.entity';
+import { RedisService } from '../redis/redis.service';
 
 const XP_PER_LEVEL = 1000;
 
@@ -21,6 +23,11 @@ export class DashboardService {
 
     @Inject('USUARIO_CHALLENGE_REPOSITORY')
     private usuarioChallengeRepository: Repository<UsuarioChallenge>,
+
+    @Inject('CHALLENGE_REPOSITORY')
+    private challengeRepository: Repository<Challenge>,
+
+    private redisService: RedisService,
   ) {}
 
   private async getOrCreateStats(usuario_id: number): Promise<UsuarioStats> {
@@ -55,6 +62,41 @@ export class DashboardService {
       xpToNextLevel:      calcXpToNextLevel(stats.total_points),
       level:              calcLevel(stats.total_points),
     };
+  }
+
+  async getDailyChallenge(usuario_id: number): Promise<Challenge | null> {
+    const cacheKey = `daily-challenge:${usuario_id}`;
+
+    const cached = await this.redisService.get(cacheKey);
+    if (cached) {
+      return JSON.parse(cached) as Challenge;
+    }
+
+    const completedIds = await this.usuarioChallengeRepository
+      .find({ where: { usuario_id, completed: true }, select: ['challenge_id'] })
+      .then((rows) => rows.map((r) => r.challenge_id));
+
+    const query = this.challengeRepository
+      .createQueryBuilder('c')
+      .where('c.active = :active', { active: true });
+
+    if (completedIds.length > 0) {
+      query.andWhere('c.id NOT IN (:...completedIds)', { completedIds });
+    }
+
+    const challenge = await query
+      .orderBy('RAND()')
+      .getOne();
+
+    if (challenge) {
+      const now = new Date();
+      const endOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 0, 0, 0);
+      const ttl = Math.floor((endOfDay.getTime() - now.getTime()) / 1000);
+
+      await this.redisService.set(cacheKey, JSON.stringify(challenge), ttl);
+    }
+
+    return challenge;
   }
 
   async addPoints(usuario_id: number, points: number): Promise<void> {

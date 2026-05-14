@@ -3,6 +3,7 @@ import { InfoCard } from '@/components/ui/visuals/InfoCard';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { useDashboardStats } from '@/hooks/useDashboard';
 import { OverviewCards } from '@/components/sections/HomePage/Dashboard/OverviewCards';
+import { DailyChallenge } from './DailyChallenge';
 
 
 export function Dashboard() {
@@ -17,7 +18,7 @@ export function Dashboard() {
           <InfoCard.Section className="flex items-start justify-between flex-wrap gap-4">
             <div>
               <h3 className="text-[var(--text-primary)] mb-1">
-                Bem-vindo de volta, {user?.name ?? '—'}! 
+                Bem-vindo de volta, {user?.name ?? '—'}!
               </h3>
               <p className="text-[var(--text-secondary)]">
                 Continue sua jornada de segurança.{' '}
@@ -42,6 +43,12 @@ export function Dashboard() {
         </InfoCard>
 
         <OverviewCards />
+        <div className='grid grid-cols-1 sm:grid-cols-1 lg:grid-cols-2 gap-4'>
+          <DailyChallenge />
+
+        </div>        
+
+
 
       </div>
     </PageTransition>

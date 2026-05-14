@@ -9,4 +9,9 @@ export class DashboardController {
   async getStats(@Request() req: any) {
     return this.dashboardService.getStats(req.user.userId);
   }
+
+  @Get('daily-challenge')
+  async getDailyChallenge(@Request() req: any) {
+    return this.dashboardService.getDailyChallenge(req.user.userId);
+  }
 }

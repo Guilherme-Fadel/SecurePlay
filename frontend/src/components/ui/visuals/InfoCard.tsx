@@ -51,10 +51,10 @@ function Header({ title, subtitle, icon: Icon, variant = 'default', action, clas
         )}
         <div>
           <h5 className="text-[var(--text-primary)] leading-tight">{title}</h5>
-          {subtitle && <p className="text-[var(--text-secondary)] mt-0.5">{subtitle}</p>}
+          {subtitle && <p className="text-[var(--text-secondary)]">{subtitle}</p>}
         </div>
       </div>
-      {action && <div className="ml-4 shrink-0">{action}</div>}
+      {action && <div className="ml-1 text-[var(--text-secondary)] text-lg shrink-1">{action}</div>}
     </div>
   );
 }
@@ -141,15 +141,6 @@ function Footer({ children, className }: InfoCardFooterProps) {
       {children}
     </div>
   );
-}
-
-
-interface InfoCardProgressBarProps {
-  value: number;
-  variant?: CardVariant;
-  label?: string;
-  showPercent?: boolean;
-  className?: string;
 }
 
 
