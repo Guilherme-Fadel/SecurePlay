@@ -3,6 +3,7 @@ import { Reflector } from '@nestjs/core';
 import { AuthGuard } from '@nestjs/passport';
 import { RedisService } from '../redis/redis.service';
 import { IS_PUBLIC_KEY } from './public.decorator';
+import { extractTokenFromHeader } from '../common/utils/token.utils';
 
 @Injectable()
 export class JwtAuthGuard extends AuthGuard('jwt') {
@@ -26,8 +27,7 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
     await super.canActivate(context);
 
     const request = context.switchToHttp().getRequest();
-    const authHeader = request.headers['authorization'];
-    const token = authHeader?.split(' ')[1];
+    const token = extractTokenFromHeader(request.headers['authorization']);
 
     if (!token) {
       throw new UnauthorizedException('Token não encontrado');

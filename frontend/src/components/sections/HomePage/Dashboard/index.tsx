@@ -30,7 +30,7 @@ export function Dashboard() {
             <div className="flex items-center gap-6 shrink-0">
               <div className="text-right">
                 <p className="text-[var(--text-secondary)]">Nível</p>
-                <p className="text-[var(--text-primary)] font-semibold">{user?.level ?? '—'}</p>
+                <p className="text-[var(--text-primary)] font-semibold">{stats?.level ?? '—'}</p>
               </div>
               <div className="text-right">
                 <p className="text-[var(--text-secondary)]">XP restantes</p>

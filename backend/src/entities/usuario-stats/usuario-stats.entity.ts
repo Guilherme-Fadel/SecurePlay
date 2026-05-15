@@ -16,9 +16,6 @@ export class UsuarioStats {
   @Column({ default: 0 })
   total_points: number;
 
-  @Column({ default: 0 })
-  xp_today: number;
-
   @UpdateDateColumn()
   updated_at: Date;
 }

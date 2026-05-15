@@ -3,7 +3,9 @@ import { api } from '@/services/api';
 export interface DashboardStats {
   totalPoints: number;
   completedChallenges: number;
+  totalActiveChallenges: number;
   globalRanking: number;
+  totalUsers: number;
   xpToday: number;
   xpToNextLevel: number;
   level: number;

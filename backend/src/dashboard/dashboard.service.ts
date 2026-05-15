@@ -4,16 +4,8 @@ import { UsuarioStats } from '../entities/usuario-stats/usuario-stats.entity';
 import { UsuarioChallenge } from '../entities/usuario-challenge/usuario-challenge.entity';
 import { Challenge } from '../entities/challenge/challenge.entity';
 import { RedisService } from '../redis/redis.service';
-
-const XP_PER_LEVEL = 1000;
-
-function calcLevel(totalPoints: number): number {
-  return Math.floor(totalPoints / XP_PER_LEVEL) + 1;
-}
-
-function calcXpToNextLevel(totalPoints: number): number {
-  return XP_PER_LEVEL - (totalPoints % XP_PER_LEVEL);
-}
+import { calcLevel, calcXpToNextLevel } from '../common/utils/xp.utils';
+import { ttlUntilEndOfDay } from '../common/utils/date.utils';
 
 @Injectable()
 export class DashboardService {
@@ -41,6 +33,20 @@ export class DashboardService {
     return stats;
   }
 
+  private async getRedisXpToday(usuario_id: number): Promise<number> {
+    const key = `xp-today:${usuario_id}`;
+    const cached = await this.redisService.get(key);
+    return cached ? parseInt(cached, 10) : 0;
+  }
+
+  /** Incrementa o XP diário no Redis com TTL até meia-noite */
+  private async incrementRedisXpToday(usuario_id: number, points: number): Promise<void> {
+    const key = `xp-today:${usuario_id}`;
+    const current = await this.getRedisXpToday(usuario_id);
+    const ttl = ttlUntilEndOfDay();
+    await this.redisService.set(key, String(current + points), ttl);
+  }
+
   async getStats(usuario_id: number) {
     const stats = await this.getOrCreateStats(usuario_id);
 
@@ -48,29 +54,35 @@ export class DashboardService {
       where: { usuario_id, completed: true },
     });
 
+    const totalActiveChallenges = await this.challengeRepository.count({
+      where: { active: true },
+    });
+
+    const totalUsers = await this.statsRepository.count();
+
     const globalRanking = await this.statsRepository
       .createQueryBuilder('s')
       .where('s.total_points > :pts', { pts: stats.total_points })
       .getCount()
       .then((count) => count + 1);
 
+    const xpToday = await this.getRedisXpToday(usuario_id);
+
     return {
       totalPoints:        stats.total_points,
       completedChallenges,
+      totalActiveChallenges,
       globalRanking,
-      xpToday:            stats.xp_today,
+      totalUsers,
+      xpToday,
       xpToNextLevel:      calcXpToNextLevel(stats.total_points),
       level:              calcLevel(stats.total_points),
     };
   }
 
   async getDailyChallenge(usuario_id: number): Promise<Challenge | null> {
-    const cacheKey = `daily-challenge:${usuario_id}`;
-
-    const cached = await this.redisService.get(cacheKey);
-    if (cached) {
-      return JSON.parse(cached) as Challenge;
-    }
+    const cached = await this.getRedisDailyChallenge(usuario_id);
+    if (cached) return cached;
 
     const completedIds = await this.usuarioChallengeRepository
       .find({ where: { usuario_id, completed: true }, select: ['challenge_id'] })
@@ -89,23 +101,31 @@ export class DashboardService {
       .getOne();
 
     if (challenge) {
-      const now = new Date();
-      const endOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 0, 0, 0);
-      const ttl = Math.floor((endOfDay.getTime() - now.getTime()) / 1000);
-
-      await this.redisService.set(cacheKey, JSON.stringify(challenge), ttl);
+      await this.setRedisDailyChallenge(usuario_id, challenge);
     }
 
     return challenge;
+  }
+
+  private async getRedisDailyChallenge(usuario_id: number): Promise<Challenge | null> {
+    const cacheKey = `daily-challenge:${usuario_id}`;
+    const cached = await this.redisService.get(cacheKey);
+    return cached ? (JSON.parse(cached) as Challenge) : null;
+  }
+
+  /** Armazena o desafio diário no Redis com TTL até meia-noite */
+  private async setRedisDailyChallenge(usuario_id: number, challenge: Challenge): Promise<void> {
+    const cacheKey = `daily-challenge:${usuario_id}`;
+    const ttl = ttlUntilEndOfDay();
+    await this.redisService.set(cacheKey, JSON.stringify(challenge), ttl);
   }
 
   async addPoints(usuario_id: number, points: number): Promise<void> {
     const stats = await this.getOrCreateStats(usuario_id);
 
     stats.total_points += points;
-    stats.xp_today     += points;
-
     await this.statsRepository.save(stats);
-  }
 
+    await this.incrementRedisXpToday(usuario_id, points);
+  }
 }

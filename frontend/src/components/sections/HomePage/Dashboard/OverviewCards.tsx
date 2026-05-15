@@ -5,6 +5,14 @@ import { useDashboardStats } from '@/hooks/useDashboard';
 export function OverviewCards() {
   const { stats, loading } = useDashboardStats();
 
+  const completionPercent = stats && stats.totalActiveChallenges > 0
+    ? Math.round((stats.completedChallenges / stats.totalActiveChallenges) * 100)
+    : 0;
+
+  const rankingSubtitle = stats
+    ? `Top ${stats.globalRanking} de ${stats.totalUsers} usuários`
+    : undefined;
+
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
 
@@ -13,7 +21,7 @@ export function OverviewCards() {
           <InfoCard.Stat
             label="Pontuação"
             value={loading ? '—' : stats?.totalPoints.toLocaleString('pt-BR') ?? '—'}
-            subtitle={loading ? undefined : stats ? `+${stats.xpToday} esta semana` : undefined}
+            subtitle={loading ? undefined : stats ? `+${stats.xpToday} XP hoje` : undefined}
             icon={Trophy}
             variant="accent"
           />
@@ -25,7 +33,7 @@ export function OverviewCards() {
           <InfoCard.Stat
             label="Nível"
             value={loading ? '—' : stats?.level ?? '—'}
-            subtitle={loading ? undefined : stats ? `${stats.xpToNextLevel} para o próximo nível` : undefined}
+            subtitle={loading ? undefined : stats ? `${stats.xpToNextLevel} XP para o próximo nível` : undefined}
             icon={TrendingUp}
             variant="primary"
           />
@@ -36,8 +44,8 @@ export function OverviewCards() {
         <InfoCard.Section>
           <InfoCard.Stat
             label="Desafios Concluídos"
-            value={loading ? '—' : `${stats?.completedChallenges ?? 0}/100`}
-            subtitle="1% Completado"
+            value={loading ? '—' : `${stats?.completedChallenges ?? 0}/${stats?.totalActiveChallenges ?? 0}`}
+            subtitle={loading ? undefined : `${completionPercent}% Completado`}
             icon={Target}
             variant="secondary"
           />
@@ -49,7 +57,7 @@ export function OverviewCards() {
           <InfoCard.Stat
             label="Ranking"
             value={loading ? '—' : stats ? `#${stats.globalRanking}` : '—'}
-            subtitle="Top 5% da empresa"
+            subtitle={loading ? undefined : rankingSubtitle}
             icon={Award}
           />
         </InfoCard.Section>

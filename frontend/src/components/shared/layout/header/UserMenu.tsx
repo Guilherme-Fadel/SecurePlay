@@ -1,6 +1,7 @@
 import { ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
+import { useDashboardStats } from '@/hooks/useDashboard';
 import { logoutUser } from '@/services/login/logout';
 import { useNavigate } from 'react-router-dom';
 
@@ -12,6 +13,7 @@ interface UserMenuProps {
 
 export function UserMenu({ open, onToggle, onClose }: UserMenuProps) {
   const { user, loading } = useCurrentUser();
+  const { stats } = useDashboardStats();
   const navigate = useNavigate();
 
   return (
@@ -31,7 +33,7 @@ export function UserMenu({ open, onToggle, onClose }: UserMenuProps) {
             {loading ? '...' : user?.name}
           </p>
           <p className="text-[var(--text-secondary)] text-[var(--font-xs)] font-[var(--font-family-inter)] leading-tight">
-            Nivel {loading ? '...' : user?.level}
+            Nivel {stats?.level ?? (loading ? '...' : user?.level)}
           </p>
         </div>
 
