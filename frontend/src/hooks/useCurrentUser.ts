@@ -1,17 +1,7 @@
-import { useState, useEffect } from 'react';
-import { CurrentUser, getMe } from "@/services/me";
-
-
+import { CurrentUser, getMe } from '@/services/me';
+import { useCachedQuery } from './useCachedQuery';
 
 export function useCurrentUser() {
-  const [user, setUser] = useState<CurrentUser | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    getMe()
-      .then(setUser)
-      .finally(() => setLoading(false));
-  }, []);
-
+  const { data: user, loading } = useCachedQuery<CurrentUser>('currentUser', getMe);
   return { user, loading };
 }
