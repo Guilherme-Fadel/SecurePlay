@@ -4,11 +4,18 @@ import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { useDashboardStats } from '@/hooks/useDashboard';
 import { OverviewCards } from '@/components/sections/HomePage/Dashboard/OverviewCards';
 import { DailyChallenge } from './DailyChallenge';
+import { useEffect } from 'react';
+import { useSectionContext } from '@/contexts/SectionContext';
 
 
 export function Dashboard() {
-  const { user } = useCurrentUser();
-  const { stats } = useDashboardStats();
+  const { user, loading: userLoading } = useCurrentUser();
+  const { stats, loading: statsLoading } = useDashboardStats();
+  const { setLoading } = useSectionContext();
+
+  useEffect(() => {
+    setLoading('dashboard', userLoading || statsLoading);
+  }, [userLoading, statsLoading, setLoading]);
 
   return (
     <PageTransition>

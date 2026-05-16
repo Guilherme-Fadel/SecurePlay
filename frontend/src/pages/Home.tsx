@@ -1,13 +1,16 @@
 import { PageTransition } from '@/components/shared/PageTransition';
 import { LoadingScreen } from '@/components/shared/LoadingScreen';
+import { HomeLoadingOverlay } from '@/components/shared/HomeLoadingOverlay';
 import { Header } from "@/components/shared/layout/header/index"
-import { Sidebar, SidebarItem, type Section } from '@/components/shared/Sidebar'
+import { Sidebar, SidebarItem } from '@/components/shared/Sidebar'
 import { PixelCursor } from "@/components/ui/visuals/PixelCursor"
 import { TrophyIcon, LayoutDashboard, Target, AwardIcon, BookOpenIcon, SettingsIcon } from "lucide-react"
-import { Dashboard, Awards, Challenges, Ranking, Training, Settings } from '@/components/sections/HomePage/index';
+import { Dashboard, Awards, Challenges, Ranking, Training, Settings, Perfil } from '@/components/sections/HomePage/index';
 import { useState } from 'react';
 import { SectionContext } from '@/contexts/SectionContext';
+import { useHomeLoading } from '@/hooks/useHomeLoading';
 
+export type Section = 'dashboard' | 'desafios' | 'ranking' | 'conquistas' | 'treinamentos' | 'configuracoes' | 'perfil'
 
 export default function Home() {
   
@@ -18,14 +21,16 @@ export default function Home() {
       conquistas:    <Awards />,
       treinamentos:  <Training />,
       configuracoes: <Settings />,
+      perfil:        <Perfil />
     }
 
   const [activeSection, setActiveSection] = useState<Section>('dashboard')
+  const { isLoading, setLoading } = useHomeLoading();
 
 
   return (
     <PageTransition>
-      <SectionContext.Provider value={{ activeSection, setActiveSection }}>
+      <SectionContext.Provider value={{ activeSection, setActiveSection, setLoading }}>
         <LoadingScreen />
         <PixelCursor />
 
@@ -78,7 +83,8 @@ export default function Home() {
 
           <div className="flex flex-col flex-1 min-w-0">
             <Header />
-            <main className="flex-1 p-6 bg-[var(--background)]">
+            <main className="relative flex-1 p-6 bg-[var(--background)]">
+              <HomeLoadingOverlay isLoading={isLoading} />
               {sections[activeSection]}
             </main>
           </div>

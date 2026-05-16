@@ -55,7 +55,7 @@ export function UserMenu({ open, onToggle, onClose }: UserMenuProps) {
           <div className="absolute right-0 top-14 w-48 bg-[var(--surface)] border-2 border-[var(--border)] rounded-lg shadow-xl z-50">
             <div className="p-2">
               <button 
-              onClick={() => { setActiveSection('dashboard'); onClose(); }}
+              onClick={() => { setActiveSection('perfil'); onClose(); }}
               className="w-full text-left px-3 py-2 hover:bg-[var(--background)] rounded-md transition-colors text-[var(--text-primary)]">
                 Meu Perfil
               </button>

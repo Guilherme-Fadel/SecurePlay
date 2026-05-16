@@ -1,3 +1,4 @@
+import { Section } from "@/pages/Home"
 import { Menu, ChevronLeft } from "lucide-react"
 import {createContext, useContext, useState, ReactNode} from "react"
 
@@ -21,8 +22,6 @@ function useSidebar() {
 interface SidebarProps {
   children: ReactNode
 }
-
-export type Section = 'dashboard' | 'desafios' | 'ranking' | 'conquistas' | 'treinamentos' | 'configuracoes'
 
 export function Sidebar({ children }: SidebarProps) {
   const [expanded, setExpanded] = useState<boolean>(true)

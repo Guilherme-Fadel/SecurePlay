@@ -1,9 +1,10 @@
 import { createContext, useContext } from 'react';
-import type { Section } from '@/components/shared/Sidebar';
+import type { Section } from '@/pages/Home';
 
 interface SectionContextProps {
   activeSection: Section;
   setActiveSection: (section: Section) => void;
+  setLoading: (key: string, loading: boolean) => void;
 }
 
 const SectionContext = createContext<SectionContextProps | undefined>(undefined);

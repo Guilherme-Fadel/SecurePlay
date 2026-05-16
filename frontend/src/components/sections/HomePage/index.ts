@@ -4,3 +4,5 @@ export { Ranking }     from './Ranking'
 export { Awards }      from './Awards'
 export { Training }    from './Training'
 export { Settings }    from './Settings'
+export { Perfil }    from './Perfil'
+
