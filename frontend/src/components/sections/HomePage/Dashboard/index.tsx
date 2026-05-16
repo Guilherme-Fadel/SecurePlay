@@ -15,6 +15,7 @@ export function Dashboard() {
 
   useEffect(() => {
     setLoading('dashboard', userLoading || statsLoading);
+    return () => setLoading('dashboard', false);
   }, [userLoading, statsLoading, setLoading]);
 
   return (
