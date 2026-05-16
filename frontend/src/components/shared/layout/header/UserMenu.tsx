@@ -4,6 +4,7 @@ import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { useDashboardStats } from '@/hooks/useDashboard';
 import { logoutUser } from '@/services/login/logout';
 import { useNavigate } from 'react-router-dom';
+import { useSectionContext } from '@/contexts/SectionContext';
 
 interface UserMenuProps {
   open: boolean;
@@ -15,7 +16,8 @@ export function UserMenu({ open, onToggle, onClose }: UserMenuProps) {
   const { user, loading } = useCurrentUser();
   const { stats } = useDashboardStats();
   const navigate = useNavigate();
-
+  const { setActiveSection } = useSectionContext();
+  
   return (
     <div className="relative">
       <button
@@ -52,10 +54,14 @@ export function UserMenu({ open, onToggle, onClose }: UserMenuProps) {
 
           <div className="absolute right-0 top-14 w-48 bg-[var(--surface)] border-2 border-[var(--border)] rounded-lg shadow-xl z-50">
             <div className="p-2">
-              <button className="w-full text-left px-3 py-2 hover:bg-[var(--background)] rounded-md transition-colors text-[var(--text-primary)]">
+              <button 
+              onClick={() => { setActiveSection('dashboard'); onClose(); }}
+              className="w-full text-left px-3 py-2 hover:bg-[var(--background)] rounded-md transition-colors text-[var(--text-primary)]">
                 Meu Perfil
               </button>
-              <button className="w-full text-left px-3 py-2 hover:bg-[var(--background)] rounded-md transition-colors text-[var(--text-primary)]">
+              <button 
+              onClick={() => { setActiveSection('configuracoes'); onClose(); }}
+              className="w-full text-left px-3 py-2 hover:bg-[var(--background)] rounded-md transition-colors text-[var(--text-primary)]">
                 Configurações
               </button>
               <div className="border-t border-[var(--border)] my-2" />

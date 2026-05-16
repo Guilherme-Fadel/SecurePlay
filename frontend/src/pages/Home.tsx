@@ -6,6 +6,7 @@ import { PixelCursor } from "@/components/ui/visuals/PixelCursor"
 import { TrophyIcon, LayoutDashboard, Target, AwardIcon, BookOpenIcon, SettingsIcon } from "lucide-react"
 import { Dashboard, Awards, Challenges, Ranking, Training, Settings } from '@/components/sections/HomePage/index';
 import { useState } from 'react';
+import { SectionContext } from '@/contexts/SectionContext';
 
 
 export default function Home() {
@@ -21,12 +22,10 @@ export default function Home() {
 
   const [activeSection, setActiveSection] = useState<Section>('dashboard')
 
-  console.log(activeSection)
-
 
   return (
     <PageTransition>
-      <>
+      <SectionContext.Provider value={{ activeSection, setActiveSection }}>
         <LoadingScreen />
         <PixelCursor />
 
@@ -85,7 +84,7 @@ export default function Home() {
           </div>
 
         </div>
-      </>
+      </SectionContext.Provider>
     </PageTransition>
   );
 }

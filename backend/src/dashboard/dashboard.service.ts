@@ -39,7 +39,6 @@ export class DashboardService {
     return cached ? parseInt(cached, 10) : 0;
   }
 
-  /** Incrementa o XP diário no Redis com TTL até meia-noite */
   private async incrementRedisXpToday(usuario_id: number, points: number): Promise<void> {
     const key = `xp-today:${usuario_id}`;
     const current = await this.getRedisXpToday(usuario_id);
@@ -113,7 +112,6 @@ export class DashboardService {
     return cached ? (JSON.parse(cached) as Challenge) : null;
   }
 
-  /** Armazena o desafio diário no Redis com TTL até meia-noite */
   private async setRedisDailyChallenge(usuario_id: number, challenge: Challenge): Promise<void> {
     const cacheKey = `daily-challenge:${usuario_id}`;
     const ttl = ttlUntilEndOfDay();
