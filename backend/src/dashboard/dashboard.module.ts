@@ -2,9 +2,9 @@ import { Module } from '@nestjs/common';
 import { DatabaseModule } from '../database/database.molule';
 import { DashboardController } from './dashboard.controller';
 import { DashboardService } from './dashboard.service';
-import { usuarioStatsProviders } from '../entities/usuario-stats/usuario-stats.providers';
-import { usuarioChallengeProviders } from '../entities/usuario-challenge/usuario-challenge.providers';
-import { challengeProviders } from '../entities/challenge/challenge.providers';
+import { usuarioStatsProviders } from '../usuario-stats/usuario-stats.providers';
+import { usuarioChallengeProviders } from '../usuario-challenge/usuario-challenge.providers';
+import { challengeProviders } from '../challenge/challenge.providers';
 import { RedisModule } from '../redis/redis.module';
 
 @Module({

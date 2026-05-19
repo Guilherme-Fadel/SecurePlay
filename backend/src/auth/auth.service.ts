@@ -1,8 +1,8 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
-import { UsuarioService } from 'src/entities/usuarios/usuario.service';
-import { LoginDto } from 'src/entities/usuarios/dto/login.dto';
+import { UsuarioService } from 'src/usuario/usuario.service';
+import { LoginDto } from 'src/usuario/dto/login.dto';
 import { RedisService } from 'src/redis/redis.service';
 import { extractTokenFromHeader, calcTokenTtl } from 'src/common/utils/token.utils';
 

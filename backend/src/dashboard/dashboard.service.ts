@@ -1,8 +1,8 @@
 import { Injectable, Inject } from '@nestjs/common';
 import { Repository } from 'typeorm';
-import { UsuarioStats } from '../entities/usuario-stats/usuario-stats.entity';
-import { UsuarioChallenge } from '../entities/usuario-challenge/usuario-challenge.entity';
-import { Challenge } from '../entities/challenge/challenge.entity';
+import { UsuarioStats } from '../usuario-stats/usuario-stats.entity';
+import { UsuarioChallenge } from '../usuario-challenge/usuario-challenge.entity';
+import { Challenge } from '../challenge/challenge.entity';
 import { RedisService } from '../redis/redis.service';
 import { calcLevel, calcXpToNextLevel } from '../common/utils/xp.utils';
 import { ttlUntilEndOfDay } from '../common/utils/date.utils';
