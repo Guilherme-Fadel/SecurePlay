@@ -7,6 +7,7 @@ import { ConfigModule } from '@nestjs/config/dist/config.module';
 import { BenefitsModule } from './benefits/benefits.module';
 import { NotificationModule } from './notification/notification.module';
 import { DashboardModule } from './dashboard/dashboard.module';
+import { ChallengeModule } from './challenge/challenge.module';
 import { APP_GUARD } from '@nestjs/core';
 import { JwtAuthGuard } from './auth/auth.guard';
 import { RolesGuard } from './auth/roles.guard';
@@ -19,6 +20,7 @@ import { RedisModule } from './redis/redis.module';
     UsuarioModule,
     BenefitsModule,
     NotificationModule,
+    ChallengeModule,
     DashboardModule,
     ConfigModule.forRoot({
       isGlobal: true,

@@ -1,8 +1,8 @@
 import { Injectable, Inject } from '@nestjs/common';
 import { Repository } from 'typeorm';
 import { UsuarioStats } from '../usuario-stats/usuario-stats.entity';
-import { UsuarioChallenge } from '../usuario-challenge/usuario-challenge.entity';
 import { Challenge } from '../challenge/challenge.entity';
+import { ChallengeService } from '../challenge/challenge.service';
 import { RedisService } from '../redis/redis.service';
 import { calcLevel, calcXpToNextLevel } from '../common/utils/xp.utils';
 import { ttlUntilEndOfDay } from '../common/utils/date.utils';
@@ -13,12 +13,7 @@ export class DashboardService {
     @Inject('USUARIO_STATS_REPOSITORY')
     private statsRepository: Repository<UsuarioStats>,
 
-    @Inject('USUARIO_CHALLENGE_REPOSITORY')
-    private usuarioChallengeRepository: Repository<UsuarioChallenge>,
-
-    @Inject('CHALLENGE_REPOSITORY')
-    private challengeRepository: Repository<Challenge>,
-
+    private challengeService: ChallengeService,
     private redisService: RedisService,
   ) {}
 
@@ -49,13 +44,8 @@ export class DashboardService {
   async getStats(usuario_id: number) {
     const stats = await this.getOrCreateStats(usuario_id);
 
-    const completedChallenges = await this.usuarioChallengeRepository.count({
-      where: { usuario_id, completed: true },
-    });
-
-    const totalActiveChallenges = await this.challengeRepository.count({
-      where: { active: true },
-    });
+    const completedChallenges = await this.challengeService.countCompleted(usuario_id);
+    const totalActiveChallenges = await this.challengeService.countTotalActive();
 
     const totalUsers = await this.statsRepository.count();
 
@@ -80,42 +70,7 @@ export class DashboardService {
   }
 
   async getDailyChallenge(usuario_id: number): Promise<Challenge | null> {
-    const cached = await this.getRedisDailyChallenge(usuario_id);
-    if (cached) return cached;
-
-    const completedIds = await this.usuarioChallengeRepository
-      .find({ where: { usuario_id, completed: true }, select: ['challenge_id'] })
-      .then((rows) => rows.map((r) => r.challenge_id));
-
-    const query = this.challengeRepository
-      .createQueryBuilder('c')
-      .where('c.active = :active', { active: true });
-
-    if (completedIds.length > 0) {
-      query.andWhere('c.id NOT IN (:...completedIds)', { completedIds });
-    }
-
-    const challenge = await query
-      .orderBy('RAND()')
-      .getOne();
-
-    if (challenge) {
-      await this.setRedisDailyChallenge(usuario_id, challenge);
-    }
-
-    return challenge;
-  }
-
-  private async getRedisDailyChallenge(usuario_id: number): Promise<Challenge | null> {
-    const cacheKey = `daily-challenge:${usuario_id}`;
-    const cached = await this.redisService.get(cacheKey);
-    return cached ? (JSON.parse(cached) as Challenge) : null;
-  }
-
-  private async setRedisDailyChallenge(usuario_id: number, challenge: Challenge): Promise<void> {
-    const cacheKey = `daily-challenge:${usuario_id}`;
-    const ttl = ttlUntilEndOfDay();
-    await this.redisService.set(cacheKey, JSON.stringify(challenge), ttl);
+    return this.challengeService.getDailyChallenge(usuario_id);
   }
 
   async addPoints(usuario_id: number, points: number): Promise<void> {
