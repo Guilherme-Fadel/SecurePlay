@@ -1,13 +1,16 @@
-import { Controller, Get, Post, Body, UseGuards, Query, Delete, Param } from "@nestjs/common";
+import { Controller, Get, Post, Body, Query, Delete, Param } from "@nestjs/common";
 import { BenefitsService } from "./benefits.service";
 import { CreateBenefitsDto } from "./dto/benefits.dto";
 import { ResultadoDto } from "src/resultado.dto";
+import { Roles } from "src/auth/roles.decorator";
+import { Role } from "src/auth/roles.enum";
 
 @Controller('benefits')
 export class BenefitsController {
   constructor(private readonly benefitsService: BenefitsService) {}
 
   @Post('criar')
+  @Roles(Role.ADMIN)
   async criarBenefits(@Body() data: CreateBenefitsDto): Promise<ResultadoDto> {
     return this.benefitsService.insertBenefits(data)
   }
@@ -18,6 +21,7 @@ export class BenefitsController {
   }
 
   @Delete('deletar/:id')
+  @Roles(Role.ADMIN)
   async deletarBenefits(@Param('id') id: number): Promise<ResultadoDto>{
     return this.benefitsService.deleteBenefits(id);
   }

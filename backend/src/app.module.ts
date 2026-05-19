@@ -9,6 +9,7 @@ import { NotificationModule } from './entities/notification/notification.module'
 import { DashboardModule } from './dashboard/dashboard.module';
 import { APP_GUARD } from '@nestjs/core';
 import { JwtAuthGuard } from './auth/auth.guard';
+import { RolesGuard } from './auth/roles.guard';
 import { RedisModule } from './redis/redis.module';
 
 @Module({
@@ -29,6 +30,10 @@ import { RedisModule } from './redis/redis.module';
     {
       provide: APP_GUARD,
       useClass: JwtAuthGuard,
+    },
+    {
+      provide: APP_GUARD,
+      useClass: RolesGuard,
     },
   ],
 })

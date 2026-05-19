@@ -1,6 +1,7 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
+import { Role } from './roles.enum';
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy){
@@ -16,9 +17,14 @@ export class JwtStrategy extends PassportStrategy(Strategy){
     }
 
     async validate(payload: any){
-        return{
+        const validRoles = Object.values(Role);
+        if (!payload.role || !validRoles.includes(payload.role)) {
+            throw new UnauthorizedException('Ocorreu um erro inesperado');
+        }
+        return {
             userId: payload.sub,
             email: payload.email,
+            role: payload.role,
         };
     }
 }

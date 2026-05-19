@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { OwnerFieldOptions } from './owner-field.decorator';
+import { Role } from './roles.enum';
 
 @Injectable()
 export class OwnershipGuard implements CanActivate {
@@ -13,7 +14,19 @@ export class OwnershipGuard implements CanActivate {
 
   canActivate(context: ExecutionContext): boolean {
     const request = context.switchToHttp().getRequest();
-    const tokenUserId = request.user?.userId;
+    const user = request.user;
+
+    if (!user || !user.role) {
+      throw new ForbiddenException('Acesso negado');
+    }
+
+    if (user.role === Role.ADMIN) {
+      return true;
+    }
+
+    if (!Object.values(Role).includes(user.role)) {
+      throw new ForbiddenException('Acesso negado');
+    }
 
     const ownerField = this.reflector.get<OwnerFieldOptions>(
       'ownerField',
@@ -26,11 +39,11 @@ export class OwnershipGuard implements CanActivate {
 
     const resourceUserId = request[ownerField.source]?.[ownerField.field];
 
-    if (!tokenUserId || !resourceUserId) {
+    if (!user.userId || !resourceUserId) {
       throw new ForbiddenException('Acesso negado');
     }
 
-    if (tokenUserId !== Number(resourceUserId)) {
+    if (user.userId !== Number(resourceUserId)) {
       throw new ForbiddenException('Acesso negado');
     }
 

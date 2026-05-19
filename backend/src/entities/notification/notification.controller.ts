@@ -4,6 +4,8 @@ import { OwnershipGuard } from "src/auth/ownership.guard";
 import { OwnerField } from "src/auth/owner-field.decorator";
 import { NotificationService } from "./notification.service";
 import { CreateNotificationDto } from "./dto/notification.dto";
+import { Roles } from "src/auth/roles.decorator";
+import { Role } from "src/auth/roles.enum";
 
 @Controller('notification')
 export class NotificationController{
@@ -11,6 +13,7 @@ export class NotificationController{
 
   @Post('criar')
   @UseGuards(OwnershipGuard)
+  @Roles(Role.ADMIN)
   @OwnerField('usuario_id', 'body')
   async criarNotification(@Body() data: CreateNotificationDto): Promise<ResultadoDto> {
     return this.notificationService.insertNotification(data)
