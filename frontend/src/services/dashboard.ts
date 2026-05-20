@@ -27,6 +27,6 @@ export interface DashboardDailyChallenge {
 }
 
 export async function getDashboardDailyChallenge(): Promise<DashboardDailyChallenge> {
-  const response = await api.get('/dashboard/daily-challenge');
+  const response = await api.get('/challenges/daily');
   return response.data;
 }

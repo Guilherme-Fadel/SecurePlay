@@ -1,7 +1,6 @@
 import { Injectable, Inject } from '@nestjs/common';
 import { Repository } from 'typeorm';
 import { UsuarioStats } from '../usuario-stats/usuario-stats.entity';
-import { Challenge } from '../challenge/challenge.entity';
 import { ChallengeService } from '../challenge/challenge.service';
 import { RedisService } from '../redis/redis.service';
 import { calcLevel, calcXpToNextLevel } from '../common/utils/xp.utils';
@@ -67,10 +66,6 @@ export class DashboardService {
       xpToNextLevel:      calcXpToNextLevel(stats.total_points),
       level:              calcLevel(stats.total_points),
     };
-  }
-
-  async getDailyChallenge(usuario_id: number): Promise<Challenge | null> {
-    return this.challengeService.getDailyChallenge(usuario_id);
   }
 
   async addPoints(usuario_id: number, points: number): Promise<void> {
