@@ -1,3 +1,6 @@
+import { Type } from 'class-transformer';
+import { IsArray, IsNumber, ValidateNested } from 'class-validator';
+
 export interface QuestionResponseDto {
   id: number;
   text: string;
@@ -15,4 +18,19 @@ export interface ChallengeQuestionsResponseDto {
     points: number;
   };
   questions: QuestionResponseDto[];
+}
+
+export class AnswerDto {
+  @IsNumber()
+  questionId: number;
+
+  @IsNumber()
+  selectedIndex: number;
+}
+
+export class SubmitChallengeDto {
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => AnswerDto)
+  answers: AnswerDto[];
 }

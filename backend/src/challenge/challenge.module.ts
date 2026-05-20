@@ -5,6 +5,7 @@ import { ChallengeController } from './challenge.controller';
 import { challengeProviders } from './challenge.providers';
 import { questionProviders } from '../question/question.providers';
 import { usuarioChallengeProviders } from '../usuario-challenge/usuario-challenge.providers';
+import { usuarioStatsProviders } from '../usuario-stats/usuario-stats.providers';
 import { RedisModule } from '../redis/redis.module';
 
 @Module({
@@ -14,6 +15,7 @@ import { RedisModule } from '../redis/redis.module';
     ...challengeProviders,
     ...questionProviders,
     ...usuarioChallengeProviders,
+    ...usuarioStatsProviders,
     ChallengeService,
   ],
   exports: [ChallengeService],

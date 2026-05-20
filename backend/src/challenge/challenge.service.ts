@@ -1,10 +1,12 @@
-import { Injectable, Inject, NotFoundException } from '@nestjs/common';
+import { Injectable, Inject, NotFoundException, BadRequestException } from '@nestjs/common';
 import { Repository } from 'typeorm';
 import { Challenge } from './challenge.entity';
 import { Question } from '../question/question.entity';
 import { UsuarioChallenge } from '../usuario-challenge/usuario-challenge.entity';
+import { UsuarioStats } from '../usuario-stats/usuario-stats.entity';
 import { RedisService } from '../redis/redis.service';
 import { ttlUntilEndOfDay } from '../common/utils/date.utils';
+import { SubmitChallengeDto } from './dto/challenge.dto';
 
 @Injectable()
 export class ChallengeService {
@@ -17,6 +19,9 @@ export class ChallengeService {
 
     @Inject('USUARIO_CHALLENGE_REPOSITORY')
     private usuarioChallengeRepository: Repository<UsuarioChallenge>,
+
+    @Inject('USUARIO_STATS_REPOSITORY')
+    private statsRepository: Repository<UsuarioStats>,
 
     private redisService: RedisService,
   ) {}
@@ -101,6 +106,101 @@ export class ChallengeService {
         options: q.options,
         order: q.order,
       })),
+    };
+  }
+
+  async submitChallenge(challengeId: number, usuario_id: number, dto: SubmitChallengeDto) {
+    const challenge = await this.challengeRepository.findOne({
+      where: { id: challengeId, active: true },
+    });
+
+    if (!challenge) {
+      throw new NotFoundException('Desafio não encontrado');
+    }
+
+    const existing = await this.usuarioChallengeRepository.findOne({
+      where: { usuario_id, challenge_id: challengeId, completed: true },
+    });
+
+    if (existing) {
+      throw new BadRequestException('Você já completou este desafio');
+    }
+
+    const questions = await this.questionRepository.find({
+      where: { challenge_id: challengeId },
+    });
+
+    if (questions.length === 0) {
+      throw new NotFoundException('Nenhuma pergunta encontrada para este desafio');
+    }
+
+    const questionMap = new Map(questions.map((q) => [q.id, q]));
+
+    let correctCount = 0;
+    const corrections = dto.answers.map((answer) => {
+      const question = questionMap.get(answer.questionId);
+
+      if (!question) {
+        return { questionId: answer.questionId, correct: false, correctIndex: -1, explanation: null };
+      }
+
+      const isCorrect = answer.selectedIndex === question.correct_index;
+      if (isCorrect) correctCount++;
+
+      return {
+        questionId: question.id,
+        correct: isCorrect,
+        correctIndex: question.correct_index,
+        explanation: question.explanation,
+      };
+    });
+
+    const totalQuestions = questions.length;
+    const score = Math.round((correctCount / totalQuestions) * 100);
+    const completed = score >= 70;
+    const pointsEarned = completed ? challenge.points : Math.round(challenge.points * (score / 100));
+
+    let usuarioChallenge = await this.usuarioChallengeRepository.findOne({
+      where: { usuario_id, challenge_id: challengeId },
+    });
+
+    if (!usuarioChallenge) {
+      usuarioChallenge = this.usuarioChallengeRepository.create({
+        usuario_id,
+        challenge_id: challengeId,
+      });
+    }
+
+    usuarioChallenge.progress = score;
+    usuarioChallenge.completed = completed;
+    if (completed) {
+      usuarioChallenge.completed_at = new Date();
+    }
+
+    await this.usuarioChallengeRepository.save(usuarioChallenge);
+
+    if (pointsEarned > 0) {
+      let stats = await this.statsRepository.findOne({ where: { usuario_id } });
+      if (!stats) {
+        stats = this.statsRepository.create({ usuario_id });
+      }
+      stats.total_points += pointsEarned;
+      await this.statsRepository.save(stats);
+
+      const xpKey = `xp-today:${usuario_id}`;
+      const currentXp = await this.redisService.get(xpKey);
+      const newXp = (currentXp ? parseInt(currentXp, 10) : 0) + pointsEarned;
+      const ttl = ttlUntilEndOfDay();
+      await this.redisService.set(xpKey, String(newXp), ttl);
+    }
+
+    return {
+      score,
+      correctCount,
+      totalQuestions,
+      pointsEarned,
+      completed,
+      corrections,
     };
   }
 }
