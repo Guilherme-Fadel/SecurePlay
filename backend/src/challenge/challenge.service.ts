@@ -1,6 +1,7 @@
-import { Injectable, Inject } from '@nestjs/common';
+import { Injectable, Inject, NotFoundException } from '@nestjs/common';
 import { Repository } from 'typeorm';
 import { Challenge } from './challenge.entity';
+import { Question } from '../question/question.entity';
 import { UsuarioChallenge } from '../usuario-challenge/usuario-challenge.entity';
 import { RedisService } from '../redis/redis.service';
 import { ttlUntilEndOfDay } from '../common/utils/date.utils';
@@ -10,6 +11,9 @@ export class ChallengeService {
   constructor(
     @Inject('CHALLENGE_REPOSITORY')
     private challengeRepository: Repository<Challenge>,
+
+    @Inject('QUESTION_REPOSITORY')
+    private questionRepository: Repository<Question>,
 
     @Inject('USUARIO_CHALLENGE_REPOSITORY')
     private usuarioChallengeRepository: Repository<UsuarioChallenge>,
@@ -66,5 +70,37 @@ export class ChallengeService {
     const cacheKey = `daily-challenge:${usuario_id}`;
     const ttl = ttlUntilEndOfDay();
     await this.redisService.set(cacheKey, JSON.stringify(challenge), ttl);
+  }
+
+  async getQuestions(challengeId: number) {
+    const challenge = await this.challengeRepository.findOne({
+      where: { id: challengeId, active: true },
+    });
+
+    if (!challenge) {
+      throw new NotFoundException('Desafio não encontrado');
+    }
+
+    const questions = await this.questionRepository.find({
+      where: { challenge_id: challengeId },
+      order: { order: 'ASC' },
+    });
+
+    return {
+      challenge: {
+        id: challenge.id,
+        title: challenge.title,
+        description: challenge.description,
+        difficulty: challenge.difficulty,
+        duration: challenge.duration,
+        points: challenge.points,
+      },
+      questions: questions.map((q) => ({
+        id: q.id,
+        text: q.text,
+        options: q.options,
+        order: q.order,
+      })),
+    };
   }
 }

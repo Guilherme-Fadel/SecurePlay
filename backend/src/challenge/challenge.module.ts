@@ -3,6 +3,7 @@ import { DatabaseModule } from '../database/database.molule';
 import { ChallengeService } from './challenge.service';
 import { ChallengeController } from './challenge.controller';
 import { challengeProviders } from './challenge.providers';
+import { questionProviders } from '../question/question.providers';
 import { usuarioChallengeProviders } from '../usuario-challenge/usuario-challenge.providers';
 import { RedisModule } from '../redis/redis.module';
 
@@ -11,6 +12,7 @@ import { RedisModule } from '../redis/redis.module';
   controllers: [ChallengeController],
   providers: [
     ...challengeProviders,
+    ...questionProviders,
     ...usuarioChallengeProviders,
     ChallengeService,
   ],
