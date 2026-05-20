@@ -2,11 +2,12 @@ import { InfoCard } from '@/components/ui/visuals/InfoCard';
 import { Calendar, Target, Clock, Trophy } from 'lucide-react';
 import { useDailyChallenge } from '@/hooks/useDashboard';
 import { Modal } from '@/components/ui/modal';
+import { QuizContent } from '@/components/sections/Quiz/QuizContent';
 import { useState } from 'react';
 
 export function DailyChallenge() {
   const { challenge, loading } = useDailyChallenge();
-  const [open, setOpen] = useState(false)
+  const [open, setOpen] = useState(false);
 
   if (loading) {
     return (
@@ -60,14 +61,24 @@ export function DailyChallenge() {
       </InfoCard.Section>
 
       <InfoCard.Footer className="flex justify-center">
-        <button 
-        onClick={() => setOpen(true)}
-        className="w-full px-4 py-2 rounded-lg bg-[var(--primary)] text-[var(--text-primary)] hover:bg-[var(--primary-hover)] transition-colors font-semibold">
+        <button
+          onClick={() => setOpen(true)}
+          className="w-full px-4 py-2 rounded-lg bg-[var(--primary)] text-[var(--text-primary)] hover:bg-[var(--primary-hover)] transition-colors font-semibold"
+        >
           Iniciar Desafio
         </button>
       </InfoCard.Footer>
-      <Modal open={open} onClose={() => setOpen(false)} title="Desafio Diário">
-           <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Fusce non ante molestie, viverra augue a, venenatis erat. Ut sollicitudin ultricies nisi vitae faucibus. Donec lobortis nulla eu nunc egestas rhoncus. Curabitur scelerisque gravida eros, id commodo arcu maximus vel. Donec vel tellus arcu. Curabitur aliquam nec mi quis vehicula. Aliquam gravida ut mi eget congue. Duis id eros eu purus hendrerit aliquet. Nunc ullamcorper turpis tellus, in cursus enim sodales vel. Nulla tellus ex, fringilla in mauris eu, dapibus scelerisque ipsum. Etiam mauris nunc, porttitor et lectus nec, euismod feugiat dui. Donec cursus mauris erat, eu rutrum enim pellentesque vitae. Nam dictum, odio vel dignissim facilisis, ipsum justo sagittis ligula, id fringilla sem tortor nec sapien. Duis facilisis viverra neque, quis dapibus odio lobortis non.Lorem ipsum dolor sit amet, consectetur adipiscing elit. Fusce non ante molestie, viverra augue a, venenatis erat. Ut sollicitudin ultricies nisi vitae faucibus. Donec lobortis nulla eu nunc egestas rhoncus. Curabitur scelerisque gravida eros, id commodo arcu maximus vel. Donec vel tellus arcu. Curabitur aliquam nec mi quis vehicula. Aliquam gravida ut mi eget congue. Duis id eros eu purus hendrerit aliquet. Nunc ullamcorper turpis tellus, in cursus enim sodales vel. Nulla tellus ex, fringilla in mauris eu, dapibus scelerisque ipsum. Etiam mauris nunc, porttitor et lectus nec, euismod feugiat dui. Donec cursus mauris erat, eu rutrum enim pellentesque vitae. Nam dictum, odio vel dignissim facilisis, ipsum justo sagittis ligula, id fringilla sem tortor nec sapien. Duis facilisis viverra neque, quis dapibus odio lobortis non.Lorem ipsum dolor sit amet, consectetur adipiscing elit. Fusce non ante molestie, viverra augue a, venenatis erat. Ut sollicitudin ultricies nisi vitae faucibus. Donec lobortis nulla eu nunc egestas rhoncus. Curabitur scelerisque gravida eros, id commodo arcu maximus vel. Donec vel tellus arcu. Curabitur aliquam nec mi quis vehicula. Aliquam gravida ut mi eget congue. Duis id eros eu purus hendrerit aliquet. Nunc ullamcorper turpis tellus, in cursus enim sodales vel. Nulla tellus ex, fringilla in mauris eu, dapibus scelerisque ipsum. Etiam mauris nunc, porttitor et lectus nec, euismod feugiat dui. Donec cursus mauris erat, eu rutrum enim pellentesque vitae. Nam dictum, odio vel dignissim facilisis, ipsum justo sagittis ligula, id fringilla sem tortor nec sapien. Duis facilisis viverra neque, quis dapibus odio lobortis non.</p>
+
+      <Modal
+        open={open}
+        onClose={() => setOpen(false)}
+        title={challenge.title}
+        maxWidth="max-w-xl"
+      >
+        <QuizContent
+          challengeId={challenge.id}
+          onComplete={() => setOpen(false)}
+        />
       </Modal>
     </InfoCard>
   );

@@ -77,6 +77,18 @@ export class ChallengeService {
     await this.redisService.set(cacheKey, JSON.stringify(challenge), ttl);
   }
 
+  async getStatus(challengeId: number, usuario_id: number) {
+    const record = await this.usuarioChallengeRepository.findOne({
+      where: { usuario_id, challenge_id: challengeId },
+    });
+
+    return {
+      completed: record?.completed ?? false,
+      progress: record?.progress ?? 0,
+      completedAt: record?.completed_at ?? null,
+    };
+  }
+
   async getQuestions(challengeId: number) {
     const challenge = await this.challengeRepository.findOne({
       where: { id: challengeId, active: true },
