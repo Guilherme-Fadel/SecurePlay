@@ -16,6 +16,12 @@ export class UsuarioStats {
   @Column({ default: 0 })
   total_points: number;
 
+  @Column({ default: 0 })
+  current_streak: number;
+
+  @Column({ type: 'date', nullable: true })
+  last_checkin_date: string | null;
+
   @UpdateDateColumn()
   updated_at: Date;
 }

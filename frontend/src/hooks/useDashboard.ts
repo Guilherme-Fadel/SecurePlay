@@ -3,8 +3,13 @@ import {
   getDashboardStats,
   DashboardDailyChallenge,
   getDashboardDailyChallenge,
+  WeeklyStreak,
+  getWeeklyStreak,
+  performCheckin,
 } from '@/services/dashboard';
 import { useCachedQuery } from './useCachedQuery';
+import { useState } from 'react';
+import { setCache } from '@/lib/queryCache';
 
 export function useDashboardStats() {
   const { data: stats, loading, error } = useCachedQuery<DashboardStats>(
@@ -21,3 +26,46 @@ export function useDailyChallenge() {
   );
   return { challenge, loading, error };
 }
+
+export function useWeeklyStreak() {
+  const { data: streak, loading, error } = useCachedQuery<WeeklyStreak>(
+    'weeklyStreak',
+    getWeeklyStreak,
+  );
+
+  const [checkinLoading, setCheckinLoading] = useState(false);
+  const [checkinMessage, setCheckinMessage] = useState<string | null>(null);
+  const [localStreak, setLocalStreak] = useState<WeeklyStreak | null>(null);
+
+  const doCheckin = async () => {
+    setCheckinLoading(true);
+    setCheckinMessage(null);
+    try {
+      const result = await performCheckin();
+      setCheckinMessage(result.message);
+      const updated: WeeklyStreak = {
+        checkedDays: result.checkedDays,
+        todayIndex: streak?.todayIndex ?? 0,
+        streak: result.streak,
+        checkedToday: true,
+      };
+      setLocalStreak(updated);
+      setCache('weeklyStreak', updated);
+    } catch {
+      setCheckinMessage('Erro ao realizar check-in.');
+    } finally {
+      setCheckinLoading(false);
+    }
+  };
+
+  return {
+    streak: localStreak ?? streak,
+    loading,
+    error,
+    doCheckin,
+    checkinLoading,
+    checkinMessage,
+  };
+}
+
+

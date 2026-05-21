@@ -4,7 +4,7 @@ import { UsuarioStats } from '../usuario-stats/usuario-stats.entity';
 import { ChallengeService } from '../challenge/challenge.service';
 import { RedisService } from '../redis/redis.service';
 import { calcLevel, calcXpToNextLevel } from '../common/utils/xp.utils';
-import { ttlUntilEndOfDay } from '../common/utils/date.utils';
+import { ttlUntilEndOfDay, ttlUntilEndOfWeek, getMondayOfWeek, getTodayWeekIndex, now } from '../common/utils/date.utils';
 
 @Injectable()
 export class DashboardService {
@@ -75,5 +75,73 @@ export class DashboardService {
     await this.statsRepository.save(stats);
 
     await this.incrementRedisXpToday(usuario_id, points);
+  }
+
+  async getWeeklyStreak(usuario_id: number) {
+    const key = `streak:${usuario_id}:${getMondayOfWeek()}`;
+    const raw = await this.redisService.get(key);
+    const checkedDays: boolean[] = raw ? JSON.parse(raw) : [false, false, false, false, false, false, false];
+
+    const todayIndex = getTodayWeekIndex();
+    const stats = await this.getOrCreateStats(usuario_id);
+
+    return {
+      checkedDays,
+      todayIndex,
+      streak: stats.current_streak,
+      checkedToday: checkedDays[todayIndex],
+    };
+  }
+
+  
+  async performCheckin(usuario_id: number) {
+    const key = `streak:${usuario_id}:${getMondayOfWeek()}`;
+    const raw = await this.redisService.get(key);
+    let checkedDays: boolean[] = raw ? JSON.parse(raw) : [false, false, false, false, false, false, false];
+
+    const todayIndex = getTodayWeekIndex();
+
+    if (checkedDays[todayIndex]) {
+      const stats = await this.getOrCreateStats(usuario_id);
+      return { message: 'Você já fez check-in hoje!', checkedDays, streak: stats.current_streak };
+    }
+
+    checkedDays[todayIndex] = true;
+
+    const ttl = ttlUntilEndOfWeek();
+    await this.redisService.set(key, JSON.stringify(checkedDays), ttl);
+
+    const stats = await this.getOrCreateStats(usuario_id);
+    const today = now();
+    const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+
+    if (stats.last_checkin_date) {
+      const lastDate = new Date(stats.last_checkin_date + 'T00:00:00');
+      const todayDate = new Date(todayStr + 'T00:00:00');
+      const diffDays = Math.floor((todayDate.getTime() - lastDate.getTime()) / (1000 * 60 * 60 * 24));
+
+      if (diffDays === 1) {
+        stats.current_streak += 1;
+      } else if (diffDays > 1) {
+        stats.current_streak = 1;
+      }
+      
+    } else {
+      stats.current_streak = 1;
+    }
+
+    stats.last_checkin_date = todayStr;
+    await this.statsRepository.save(stats);
+
+    const streak = stats.current_streak;
+    const bonusXp = streak * 5;
+    await this.addPoints(usuario_id, bonusXp);
+
+    return {
+      message: `Check-in realizado! +${bonusXp} XP (${streak} dias seguidos)`,
+      checkedDays,
+      streak,
+      bonusXp,
+    };
   }
 }

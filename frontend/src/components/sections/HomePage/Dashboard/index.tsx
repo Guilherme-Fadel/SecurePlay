@@ -6,6 +6,7 @@ import { OverviewCards } from '@/components/sections/HomePage/Dashboard/Overview
 import { DailyChallenge } from './DailyChallenge';
 import { useEffect } from 'react';
 import { useSectionContext } from '@/contexts/SectionContext';
+import { DailyStreak } from './DailyStreak';
 
 
 export function Dashboard() {
@@ -51,8 +52,10 @@ export function Dashboard() {
         </InfoCard>
 
         <OverviewCards />
-        <div className='grid grid-cols-1 sm:grid-cols-1 lg:grid-cols-2 gap-4'>
+        <div className='grid grid-cols-1 sm:grid-cols-1 lg:grid-cols-[5.5fr_3fr] gap-4'>
           <DailyChallenge />
+          <DailyStreak />
+
 
         </div>        
 
