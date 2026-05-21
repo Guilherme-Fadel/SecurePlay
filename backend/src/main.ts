@@ -23,6 +23,7 @@ async function bootstrap() {
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
   });
-  await app.listen(3001, '0.0.0.0');
+  const port = process.env.PORT || 3001;
+  await app.listen(port as number, '0.0.0.0');
 }
 bootstrap();

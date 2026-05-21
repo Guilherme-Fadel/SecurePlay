@@ -16,7 +16,7 @@ export default function Landing() {
   return (
     <PageTransition>
       <>
-        <LoadingScreen />
+        <LoadingScreen ready />
 
         <div className="min-h-screen bg-[var(--background)] cursor-none">
           <PixelCursor />
