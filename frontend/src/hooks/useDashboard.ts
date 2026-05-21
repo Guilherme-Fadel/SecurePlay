@@ -9,7 +9,7 @@ import {
 } from '@/services/dashboard';
 import { useCachedQuery } from './useCachedQuery';
 import { useState } from 'react';
-import { setCache } from '@/lib/queryCache';
+import { setCache, invalidate } from '@/lib/queryCache';
 
 export function useDashboardStats() {
   const { data: stats, loading, error } = useCachedQuery<DashboardStats>(
@@ -51,6 +51,8 @@ export function useWeeklyStreak() {
       };
       setLocalStreak(updated);
       setCache('weeklyStreak', updated);
+
+      invalidate('dashboardStats');
     } catch {
       setCheckinMessage('Erro ao realizar check-in.');
     } finally {

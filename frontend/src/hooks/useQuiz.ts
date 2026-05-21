@@ -7,6 +7,7 @@ import {
   type SubmitResult,
   type AnswerPayload,
 } from '@/services/challenge';
+import { invalidate } from '@/lib/queryCache';
 
 type Phase = 'idle' | 'loading' | 'playing' | 'submitting' | 'result' | 'error' | 'already_completed';
 
@@ -83,6 +84,9 @@ export function useQuiz(challengeId: number) {
     try {
       const result = await submitChallengeAnswers(challengeId, answers);
       set(prev => ({ ...prev, phase: 'result', result }));
+
+      invalidate('dashboardStats');
+      invalidate('dashboardDaily');
     } catch (err: any) {
       const msg = err?.response?.data?.message || 'Erro ao enviar respostas.';
       const phase = err?.response?.status === 400 ? 'already_completed' : 'error';

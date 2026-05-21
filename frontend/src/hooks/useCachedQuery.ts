@@ -1,5 +1,5 @@
-import { useState, useEffect, useRef } from 'react';
-import { getCached, setCache, isStale } from '@/lib/queryCache';
+import { useState, useEffect, useRef, useCallback } from 'react';
+import { getCached, setCache, isStale, subscribe } from '@/lib/queryCache';
 
 interface UseCachedQueryOptions {
   staleTime?: number;
@@ -9,6 +9,7 @@ interface UseCachedQueryResult<T> {
   data: T | null;
   loading: boolean;
   error: string | null;
+  refetch: () => void;
 }
 
 export function useCachedQuery<T>(
@@ -24,6 +25,15 @@ export function useCachedQuery<T>(
   const [data, setData] = useState<T | null>(cached);
   const [loading, setLoading] = useState(!cached);
   const [error, setError] = useState<string | null>(null);
+
+  const refetch = useCallback(() => {
+    fetcherRef.current()
+      .then(result => {
+        setCache(key, result);
+        setData(result);
+      })
+      .catch(() => {});
+  }, [key]);
 
   useEffect(() => {
     const currentCache = getCached<T>(key);
@@ -56,5 +66,19 @@ export function useCachedQuery<T>(
       .finally(() => setLoading(false));
   }, [key, staleTime]);
 
-  return { data, loading, error };
+  // Reagir a invalidações/atualizações externas do cache
+  useEffect(() => {
+    const unsubscribe = subscribe(key, () => {
+      const updated = getCached<T>(key);
+      if (updated) {
+        setData(updated);
+      } else {
+        // Cache foi invalidado, refetch
+        refetch();
+      }
+    });
+    return unsubscribe;
+  }, [key, refetch]);
+
+  return { data, loading, error, refetch };
 }
