@@ -31,7 +31,7 @@ export class ChallengeService {
     if (cached) return cached;
 
     const completedIds = await this.usuarioChallengeRepository
-      .find({ where: { usuario_id, completed: true }, select: ['challenge_id'] })
+      .find({ where: { usuario_id }, select: ['challenge_id'] })
       .then((rows) => rows.map((r) => r.challenge_id));
 
     const query = this.challengeRepository
@@ -55,7 +55,7 @@ export class ChallengeService {
 
   async countCompleted(usuario_id: number): Promise<number> {
     return this.usuarioChallengeRepository.count({
-      where: { usuario_id, completed: true },
+      where: { usuario_id },
     });
   }
 
@@ -83,7 +83,7 @@ export class ChallengeService {
     });
 
     return {
-      completed: record?.completed ?? false,
+      completed: !!record,
       progress: record?.progress ?? 0,
       completedAt: record?.completed_at ?? null,
     };
@@ -131,11 +131,11 @@ export class ChallengeService {
     }
 
     const existing = await this.usuarioChallengeRepository.findOne({
-      where: { usuario_id, challenge_id: challengeId, completed: true },
+      where: { usuario_id, challenge_id: challengeId },
     });
 
     if (existing) {
-      throw new BadRequestException('Você já completou este desafio');
+      throw new BadRequestException('Você já realizou este desafio');
     }
 
     const questions = await this.questionRepository.find({
@@ -169,25 +169,15 @@ export class ChallengeService {
 
     const totalQuestions = questions.length;
     const score = Math.round((correctCount / totalQuestions) * 100);
-    const completed = score >= 70;
-    const pointsEarned = completed ? challenge.points : Math.round(challenge.points * (score / 100));
+    const pointsEarned = Math.round(challenge.points * (score / 100));
 
-    let usuarioChallenge = await this.usuarioChallengeRepository.findOne({
-      where: { usuario_id, challenge_id: challengeId },
+    const usuarioChallenge = this.usuarioChallengeRepository.create({
+      usuario_id,
+      challenge_id: challengeId,
+      progress: score,
+      completed: true,
+      completed_at: new Date(),
     });
-
-    if (!usuarioChallenge) {
-      usuarioChallenge = this.usuarioChallengeRepository.create({
-        usuario_id,
-        challenge_id: challengeId,
-      });
-    }
-
-    usuarioChallenge.progress = score;
-    usuarioChallenge.completed = completed;
-    if (completed) {
-      usuarioChallenge.completed_at = new Date();
-    }
 
     await this.usuarioChallengeRepository.save(usuarioChallenge);
 
@@ -211,7 +201,7 @@ export class ChallengeService {
       correctCount,
       totalQuestions,
       pointsEarned,
-      completed,
+      completed: true,
       corrections,
     };
   }
