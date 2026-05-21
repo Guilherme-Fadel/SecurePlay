@@ -1,13 +1,32 @@
 import { InfoCard } from '@/components/ui/visuals/InfoCard';
-import { Calendar, Target, Clock, Trophy } from 'lucide-react';
+import { Calendar, Target, Clock, Trophy, BadgeCheck } from 'lucide-react';
 import { useDailyChallenge } from '@/hooks/useDashboard';
 import { Modal } from '@/components/ui/modal';
 import { QuizContent } from '@/components/sections/Quiz/QuizContent';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { getChallengeStatus } from '@/services/challenge';
 
 export function DailyChallenge() {
   const { challenge, loading } = useDailyChallenge();
   const [open, setOpen] = useState(false);
+  const [completed, setCompleted] = useState(false);
+  const [checkingStatus, setCheckingStatus] = useState(true);
+
+  useEffect(() => {
+    if (!challenge) {
+      setCheckingStatus(false);
+      return;
+    }
+    getChallengeStatus(challenge.id)
+      .then((status) => setCompleted(status.completed))
+      .catch(() => setCompleted(false))
+      .finally(() => setCheckingStatus(false));
+  }, [challenge]);
+
+  const handleComplete = () => {
+    setOpen(false);
+    setCompleted(true);
+  };
 
   if (loading) {
     return (
@@ -63,9 +82,14 @@ export function DailyChallenge() {
       <InfoCard.Footer className="flex justify-center">
         <button
           onClick={() => setOpen(true)}
-          className="w-full px-4 py-2 rounded-lg bg-[var(--primary)] text-[var(--text-primary)] hover:bg-[var(--primary-hover)] transition-colors font-semibold"
+          disabled={completed || checkingStatus}
+          className={`w-full px-4 py-2 rounded-lg font-semibold transition-colors ${
+            completed
+              ? 'bg-[var(--surface-alt)] text-[var(--text-secondary)] cursor-not-allowed opacity-60'
+              : 'bg-[var(--primary)] text-[var(--text-primary)] hover:bg-[var(--primary-hover)]'
+          }`}
         >
-          Iniciar Desafio
+          {completed ? 'Desafio Concluído' : 'Iniciar Desafio'}
         </button>
       </InfoCard.Footer>
 
@@ -77,7 +101,7 @@ export function DailyChallenge() {
       >
         <QuizContent
           challengeId={challenge.id}
-          onComplete={() => setOpen(false)}
+          onComplete={handleComplete}
         />
       </Modal>
     </InfoCard>
