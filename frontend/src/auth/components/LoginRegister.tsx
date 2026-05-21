@@ -30,7 +30,6 @@ export function LoginRegister() {
         return;
       }
 
-      console.log(result.token!)
       localStorage.setItem('token', result.token!);
       localStorage.setItem('nome', result.nome!);
 
