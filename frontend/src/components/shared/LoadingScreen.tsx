@@ -13,17 +13,22 @@ function getLoadingMessage(progress: number) {
   return LOADING_MESSAGES.find(m => progress <= m.max)?.text;
 }
 
-export function LoadingScreen() {
+interface LoadingScreenProps {
+  ready?: boolean;
+}
+
+export function LoadingScreen({ ready = false }: LoadingScreenProps) {
   const [isVisible, setIsVisible] = useState(true);
   const [progress, setProgress] = useState(0);
+  const [minTimePassed, setMinTimePassed] = useState(false);
 
+  // Progresso animado até 90%, depois espera o ready para ir a 100%
   useEffect(() => {
     const interval = setInterval(() => {
       setProgress(prev => {
-        if (prev >= 100) {
+        if (prev >= 90) {
           clearInterval(interval);
-          setTimeout(() => setIsVisible(false), 500);
-          return 100;
+          return 90;
         }
         return prev + 10;
       });
@@ -31,6 +36,18 @@ export function LoadingScreen() {
 
     return () => clearInterval(interval);
   }, []);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setMinTimePassed(true), 1000);
+    return () => clearTimeout(timer);
+  }, []);
+
+  useEffect(() => {
+    if (ready && minTimePassed) {
+      setProgress(100);
+      setTimeout(() => setIsVisible(false), 500);
+    }
+  }, [ready, minTimePassed]);
 
   return (
     <AnimatePresence>

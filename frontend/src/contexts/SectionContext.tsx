@@ -5,6 +5,7 @@ interface SectionContextProps {
   activeSection: Section;
   setActiveSection: (section: Section) => void;
   setLoading: (key: string, loading: boolean) => void;
+  registerBootstrap: (key: string) => void;
 }
 
 const SectionContext = createContext<SectionContextProps | undefined>(undefined);

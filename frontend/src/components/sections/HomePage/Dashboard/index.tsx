@@ -12,7 +12,11 @@ import { DailyStreak } from './DailyStreak';
 export function Dashboard() {
   const { user, loading: userLoading } = useCurrentUser();
   const { stats, loading: statsLoading } = useDashboardStats();
-  const { setLoading } = useSectionContext();
+  const { setLoading, registerBootstrap } = useSectionContext();
+
+  useEffect(() => {
+    registerBootstrap('dashboard');
+  }, [registerBootstrap]);
 
   useEffect(() => {
     setLoading('dashboard', userLoading || statsLoading);

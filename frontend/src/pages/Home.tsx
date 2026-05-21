@@ -25,13 +25,13 @@ export default function Home() {
     }
 
   const [activeSection, setActiveSection] = useState<Section>('dashboard')
-  const { isLoading, setLoading } = useHomeLoading();
+  const { isLoading, setLoading, bootstrapReady, registerBootstrap } = useHomeLoading();
 
 
   return (
     <PageTransition>
-      <SectionContext.Provider value={{ activeSection, setActiveSection, setLoading }}>
-        <LoadingScreen />
+      <SectionContext.Provider value={{ activeSection, setActiveSection, setLoading, registerBootstrap }}>
+        <LoadingScreen ready={bootstrapReady} />
         <PixelCursor />
 
         <div className="flex min-h-screen">
