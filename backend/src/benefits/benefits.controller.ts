@@ -4,6 +4,7 @@ import { CreateBenefitsDto } from "./dto/benefits.dto";
 import { ResultadoDto } from "src/resultado.dto";
 import { Roles } from "src/auth/roles.decorator";
 import { Role } from "src/auth/roles.enum";
+import { Public } from "src/auth/public.decorator";
 
 @Controller('benefits')
 export class BenefitsController {
@@ -16,6 +17,7 @@ export class BenefitsController {
   }
 
   @Get('buscar')
+  @Public()
   async buscarBenefits(@Query('id') id?: number): Promise<CreateBenefitsDto | CreateBenefitsDto[]> {
     return this.benefitsService.getBenefits(id)
   }
