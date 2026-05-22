@@ -7,6 +7,7 @@ import { DailyChallenge } from './DailyChallenge';
 import { useEffect } from 'react';
 import { useSectionContext } from '@/contexts/SectionContext';
 import { DailyStreak } from './DailyStreak';
+import { ActiveTraining } from './ActiveTraining';
 
 
 export function Dashboard() {
@@ -59,10 +60,10 @@ export function Dashboard() {
         <div className='grid grid-cols-1 sm:grid-cols-1 lg:grid-cols-[5.5fr_3fr] gap-4'>
           <DailyChallenge />
           <DailyStreak />
-
-
-        </div>        
-
+        </div>    
+        <div className='grid grid-cols-1 sm:grid-cols-1 lg:grid-cols-[5.5fr_3fr] gap-4'>
+          <ActiveTraining />
+        </div>  
 
 
       </div>

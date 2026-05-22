@@ -114,7 +114,6 @@ export function DailyChallenge() {
         open={open}
         onClose={() => setOpen(false)}
         title={challenge.title}
-        maxWidth="max-w-xl"
       >
         <QuizContent
           challengeId={challenge.id}

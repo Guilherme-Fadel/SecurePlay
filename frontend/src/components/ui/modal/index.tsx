@@ -7,6 +7,8 @@ interface ModalProps {
   onClose: () => void;
   children: ReactNode;
   title?: string;
+  Width?: string;
+  Height?: string;
   maxWidth?: string;
   maxHeight?: string;
 }
@@ -16,8 +18,10 @@ export function Modal({
   onClose,
   children,
   title,
+  Width,
+  Height,
   maxWidth = 'max-w-350',
-  maxHeight = 'max-h-200'
+  maxHeight = 'max-h-250'
 }: ModalProps) {
 
   useEffect(() => {
@@ -44,7 +48,6 @@ export function Modal({
     <AnimatePresence>
       {open && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center">
-        {/*Blur overlay*/}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -59,9 +62,8 @@ export function Modal({
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
             transition={{ duration: 0.2, ease: 'easeOut' }}
-            className={`relative z-10 w-full ${maxWidth} ${maxHeight} mx-4 bg-[var(--surface)] border-2 border-[var(--border)] rounded-xl shadow-2xl`}
+            className={`relative z-10 w-full ${maxWidth} ${maxHeight} ${Height} ${Width} mx-4 bg-[var(--surface)] border-2 border-[var(--border)] rounded-xl shadow-2xl`}
           >
-            {/*Header com title*/}
             {title && (
               <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--border)]">
                 <h2 className="text-[var(--text-primary)] text-lg font-semibold">
@@ -76,7 +78,6 @@ export function Modal({
                 </button>
               </div>
             )}
-            {/*Header sem title*/}
             {!title && (
               <button
                 onClick={onClose}
@@ -87,7 +88,6 @@ export function Modal({
               </button>
             )}
 
-            {/*Conteúdo*/}
             <div className="p-6">
               {children}
             </div>
