@@ -3,29 +3,46 @@ import { Calendar, Target, Clock, Trophy, BadgeCheck } from 'lucide-react';
 import { useDailyChallenge } from '@/hooks/useDashboard';
 import { Modal } from '@/components/ui/modal';
 import { QuizContent } from '@/components/sections/Quiz/QuizContent';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { getChallengeStatus } from '@/services/challenge';
+import { getCached, setCache } from '@/lib/queryCache';
 
 export function DailyChallenge() {
   const { challenge, loading } = useDailyChallenge();
   const [open, setOpen] = useState(false);
-  const [completed, setCompleted] = useState(false);
-  const [checkingStatus, setCheckingStatus] = useState(true);
+
+  const cacheKey = challenge ? `challenge-status:${challenge.id}` : null;
+  const cachedCompleted = cacheKey ? getCached<boolean>(cacheKey) : null;
+
+  const [completed, setCompleted] = useState(cachedCompleted ?? false);
+  const [checkingStatus, setCheckingStatus] = useState(cachedCompleted === null);
 
   useEffect(() => {
-    if (!challenge) {
+    if (!challenge || !cacheKey) {
       setCheckingStatus(false);
       return;
     }
+
+    const cached = getCached<boolean>(cacheKey);
+    if (cached !== null) {
+      setCompleted(cached);
+      setCheckingStatus(false);
+      return;
+    }
+
     getChallengeStatus(challenge.id)
-      .then((status) => setCompleted(status.completed))
+      .then((status) => {
+        setCompleted(status.completed);
+        setCache(cacheKey, status.completed);
+      })
       .catch(() => setCompleted(false))
       .finally(() => setCheckingStatus(false));
-  }, [challenge]);
+  }, [challenge, cacheKey]);
 
   const handleComplete = () => {
     setOpen(false);
     setCompleted(true);
+    if (cacheKey) setCache(cacheKey, true);
   };
 
   if (loading) {
