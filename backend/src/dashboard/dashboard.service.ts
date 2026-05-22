@@ -138,7 +138,7 @@ export class DashboardService {
     await this.addPoints(usuario_id, bonusXp);
 
     return {
-      message: `Check-in realizado! +${bonusXp} XP (${streak} dias seguidos)`,
+      message: `Check-in realizado! +${bonusXp} XP (${streak === 1 ? 'dia consecutivo' : 'dias consecutivos'}!)`,
       checkedDays,
       streak,
       bonusXp,

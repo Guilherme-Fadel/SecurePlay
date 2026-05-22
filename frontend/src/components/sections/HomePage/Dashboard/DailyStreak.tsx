@@ -23,7 +23,7 @@ export function DailyStreak() {
     <InfoCard variant="primary" className="h-full flex flex-col">
       <InfoCard.Header
         title="Sequência Semanal"
-        subtitle={`${streakCount} dias consecutivos!`}
+        subtitle={`${streakCount} ${streakCount === 1 ? 'dia consecutivo' : 'dias consecutivos'}!`}
         icon={Flame}
         variant="accent"
       />
