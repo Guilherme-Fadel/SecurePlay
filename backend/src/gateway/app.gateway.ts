@@ -20,8 +20,6 @@ export class AppGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
   private logger = new Logger('AppGateway');
 
-  private userSockets = new Map<number, Set<string>>();
-
   handleConnection(client: Socket) {
     const userId = Number(client.handshake.query.userId);
 
@@ -31,26 +29,11 @@ export class AppGateway implements OnGatewayConnection, OnGatewayDisconnect {
       return;
     }
 
-    if (!this.userSockets.has(userId)) {
-      this.userSockets.set(userId, new Set());
-    }
-    this.userSockets.get(userId)!.add(client.id);
-
-    this.logger.log(`Usuário ${userId} conectado (socket: ${client.id})`);
+    client.join(`user_${userId}`);
+    this.logger.log(`Usuário ${userId} conectado (socket: ${client.id}, room: user_${userId})`);
   }
 
   handleDisconnect(client: Socket) {
-    const userId = Number(client.handshake.query.userId);
-
-    if (userId && this.userSockets.has(userId)) {
-      const sockets = this.userSockets.get(userId)!;
-      sockets.delete(client.id);
-
-      if (sockets.size === 0) {
-        this.userSockets.delete(userId);
-      }
-    }
-
     this.logger.log(`Socket desconectado: ${client.id}`);
   }
 
@@ -63,14 +46,9 @@ export class AppGateway implements OnGatewayConnection, OnGatewayDisconnect {
     type: string;
     created_at: Date;
   }) {
-    const socketIds = this.userSockets.get(payload.usuario_id);
+    const room = `user_${payload.usuario_id}`;
 
-    if (socketIds && socketIds.size > 0) {
-      socketIds.forEach((socketId) => {
-        this.server.to(socketId).emit('new-notification', payload);
-      });
-
-      this.logger.log(`Notificação enviada para usuário ${payload.usuario_id}`);
-    }
+    this.server.to(room).emit('new-notification', payload);
+    this.logger.log(`Notificação enviada para room ${room} (usuário ${payload.usuario_id})`);
   }
 }
