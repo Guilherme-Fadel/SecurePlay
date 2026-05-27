@@ -12,9 +12,23 @@ export function useSocket(userId: number | null): Socket | null {
     const newSocket = io(SOCKET_URL, {
       query: { userId: String(userId) },
       transports: ['polling', 'websocket'],
+      reconnection: true,
+      reconnectionAttempts: 10,
+      reconnectionDelay: 2000,
     });
 
-    setSocket(newSocket);
+    newSocket.on('connect', () => {
+      console.log('[Socket] Conectado:', newSocket.id);
+      setSocket(newSocket);
+    });
+
+    newSocket.on('disconnect', (reason) => {
+      console.log('[Socket] Desconectado:', reason);
+    });
+
+    newSocket.on('connect_error', (err) => {
+      console.error('[Socket] Erro de conexão:', err.message);
+    });
 
     return () => {
       newSocket.disconnect();
