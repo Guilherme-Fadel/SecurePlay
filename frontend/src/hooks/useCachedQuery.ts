@@ -66,14 +66,12 @@ export function useCachedQuery<T>(
       .finally(() => setLoading(false));
   }, [key, staleTime]);
 
-  // Reagir a invalidações/atualizações externas do cache
   useEffect(() => {
     const unsubscribe = subscribe(key, () => {
       const updated = getCached<T>(key);
       if (updated) {
         setData(updated);
       } else {
-        // Cache foi invalidado, refetch
         refetch();
       }
     });

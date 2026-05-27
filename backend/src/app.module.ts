@@ -12,9 +12,12 @@ import { APP_GUARD } from '@nestjs/core';
 import { JwtAuthGuard } from './auth/auth.guard';
 import { RolesGuard } from './auth/roles.guard';
 import { RedisModule } from './redis/redis.module';
+import { EventEmitterModule } from '@nestjs/event-emitter';
+import { AppGateway } from './gateway/app.gateway';
 
 @Module({
   imports: [
+    EventEmitterModule.forRoot(),
     RedisModule,
     AuthModule,
     UsuarioModule,
@@ -37,6 +40,7 @@ import { RedisModule } from './redis/redis.module';
       provide: APP_GUARD,
       useClass: RolesGuard,
     },
+    AppGateway,
   ],
 })
 export class AppModule {}

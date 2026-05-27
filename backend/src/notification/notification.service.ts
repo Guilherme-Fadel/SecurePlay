@@ -3,6 +3,7 @@ import { Repository } from "typeorm";
 import { Notification } from "./notification.entity";
 import { CreateNotificationDto } from "./dto/notification.dto";
 import { ResultadoDto } from "src/resultado.dto";
+import { EventEmitter2 } from "@nestjs/event-emitter";
 
 
 @Injectable()
@@ -10,12 +11,22 @@ export class NotificationService {
 
   constructor(
   @Inject('NOTIFICATION_REPOSITORY')
-  private notificationRepository: Repository<Notification>
+  private notificationRepository: Repository<Notification>,
+  private eventEmitter: EventEmitter2,
   ) { }
 
   async insertNotification(data: CreateNotificationDto): Promise<ResultadoDto> {
 
-   await this.notificationRepository.save(data)
+   const notification = await this.notificationRepository.save(data);
+
+   this.eventEmitter.emit('notification.created', {
+     id: notification.id,
+     usuario_id: notification.usuario_id,
+     title: notification.title,
+     message: notification.message,
+     type: notification.type,
+     created_at: notification.created_at,
+   });
 
    return ({
         sucesso: true,

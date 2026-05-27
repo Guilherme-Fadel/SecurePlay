@@ -22,7 +22,6 @@ export function LoadingScreen({ ready = false }: LoadingScreenProps) {
   const [progress, setProgress] = useState(0);
   const [minTimePassed, setMinTimePassed] = useState(false);
 
-  // Progresso animado até 90%, depois espera o ready para ir a 100%
   useEffect(() => {
     const interval = setInterval(() => {
       setProgress(prev => {

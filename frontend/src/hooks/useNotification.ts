@@ -1,21 +1,14 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Notification, getNotification, markNotificationAsRead } from '@/services/notification';
 import { getMe } from '@/services/me';
-
-const POLL_INTERVAL = 10000;
+import { useSocket } from '@/hooks/useSocket';
 
 export function useNotification() {
     const [notification, setNotification] = useState<Notification[]>([]);
     const [loading, setLoading] = useState(true);
     const [userId, setUserId] = useState<number | null>(null);
 
-    const fetchNotifications = useCallback(async (uid: number) => {
-        try {
-            const data = await getNotification(uid);
-            setNotification(data);
-        } catch {
-        }
-    }, []);
+    const socket = useSocket(userId);
 
     useEffect(() => {
         getMe()
@@ -29,10 +22,18 @@ export function useNotification() {
     }, []);
 
     useEffect(() => {
-        if (!userId) return;
-        const interval = setInterval(() => fetchNotifications(userId), POLL_INTERVAL);
-        return () => clearInterval(interval);
-    }, [userId, fetchNotifications]);
+        if (!socket) return;
+
+        const handleNewNotification = (data: Notification) => {
+            setNotification((prev) => [data, ...prev]);
+        };
+
+        socket.on('new-notification', handleNewNotification);
+
+        return () => {
+            socket.off('new-notification', handleNewNotification);
+        };
+    }, [socket]);
 
     const markAsRead = useCallback(async (id: number) => {
         await markNotificationAsRead(id);

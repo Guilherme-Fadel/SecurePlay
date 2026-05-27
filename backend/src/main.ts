@@ -6,6 +6,7 @@ import {
 } from '@nestjs/platform-fastify';
 import { ValidationPipe } from '@nestjs/common';
 import { existsSync, unlinkSync } from 'fs';
+import { SocketIoAdapter } from './gateway/socket-io.adapter';
 
 async function bootstrap() {
   const dbFile = 'db.sqlite';
@@ -23,6 +24,9 @@ async function bootstrap() {
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
   });
+
+  app.useWebSocketAdapter(new SocketIoAdapter(app));
+
   const port = process.env.PORT || 3001;
   await app.listen(port as number, '0.0.0.0');
 }
