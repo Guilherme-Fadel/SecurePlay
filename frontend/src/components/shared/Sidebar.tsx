@@ -44,7 +44,7 @@ export function Sidebar({ children }: SidebarProps) {
 
           <button
             onClick={() => setExpanded((curr) => !curr)}
-            className="p-1.5 rounded-lg bg-[var(--secondary)] hover:bg-[#2ED8A0] hover:shadow-[0_0_12px_rgba(58,242,165,0.6)] transition hover:shadow-[0_0_12px_rgba(58,242,165,0.6)] transition cursor-pointer"
+            className="p-1.5 rounded-lg bg-[var(--secondary)] hover:bg-[var(--secondary-hover)] hover:shadow-[0_0_12px_var(--secondary-light-60))] transition hover:shadow-[0_0_12px_var(--secondary-light-60))] transition cursor-pointer"
           >
             {expanded ? <ChevronLeft /> : <Menu />}
           </button>

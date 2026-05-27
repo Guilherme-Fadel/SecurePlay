@@ -55,8 +55,9 @@ body,
   --secondary-rgb: 242, 53, 176;
 
   --secondary-light: #f55fc2;
+  --secondary-light-rgb: 245, 95, 194;
   --secondary-dark: #c22a8d;
-  --secondary-hover: #d9309e;
+  --secondary-hover: #b42a84;
 
 
   --accent: #D7F207;
@@ -94,6 +95,7 @@ body,
 
   --secondary-30: rgba(var(--secondary-rgb), 0.3);
   --secondary-60: rgba(var(--secondary-rgb), 0.6);
+  --secondary-light-60: rgba(var(--secondary-light-rgb), 0.6);
 
   /* fontes */
 
