@@ -61,8 +61,20 @@ export function LoginRegister() {
         return;
       }
 
+      const resultLogin = await loginService(register.email, register.password);
+
+      if (!resultLogin.sucesso) {
+        toast.error(resultLogin.mensagem);
+        register.reset();
+        switchMode('login');
+        return;
+      }
+
+      localStorage.setItem('token', resultLogin.token!);
+      localStorage.setItem('nome', resultLogin.nome!);
+
       toast.success(result.mensagem);
-      switchMode('login');
+      navigate('/home');
       register.reset();
     } finally {
       loading.stop();
