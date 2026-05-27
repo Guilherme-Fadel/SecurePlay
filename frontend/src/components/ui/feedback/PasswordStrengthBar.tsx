@@ -84,7 +84,7 @@ function StrengthSegment({
     <div
       className="h-1.5 flex-1 border border-[var(--border)] relative overflow-hidden"
       style={{
-        background: active ? color : "#2E3440",
+        background: active ? color : "var(--surface-alt)",
       }}
     >
       {active && <SegmentOverlay />}

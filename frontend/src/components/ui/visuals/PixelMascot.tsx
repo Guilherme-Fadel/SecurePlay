@@ -47,8 +47,8 @@ export function PixelMascot({ className }: PixelMascotProps) {
         <rect x="12" y="32" width="6" height="12" fill="var(--primary)" />
         <rect x="46" y="32" width="6" height="12" fill="var(--primary)" />
 
-        <rect x="22" y="48" width="6" height="10" fill="#2E3440" />
-        <rect x="36" y="48" width="6" height="10" fill="#2E3440" />
+        <rect x="22" y="48" width="6" height="10" fill="var(--surface-alt)" />
+        <rect x="36" y="48" width="6" height="10" fill="var(--surface-alt)" />
 
       </svg>
 
