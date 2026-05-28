@@ -28,8 +28,8 @@ export function Sidebar({ children }: SidebarProps) {
 
 
   return (
-    <aside className={`sticky top-0 h-screen flex-shrink-0 transition-all duration-300 ${expanded ? "w-65" : "w-18"}`}>
-      <nav className="h-full flex flex-col border-r shadow-sm bg-[var(--surface)]">
+    <aside className={`sticky top-0 h-screen flex-shrink-0 overflow-visible transition-all duration-300 z-50 ${expanded ? "w-65" : "w-18"}`}>
+      <nav className="h-full flex flex-col border-r shadow-sm bg-[var(--surface)] overflow-visible">
         <div className="p-4 pb-2 flex justify-between items-center">
           
             {expanded && (
@@ -51,7 +51,7 @@ export function Sidebar({ children }: SidebarProps) {
         </div>
 
         <SidebarContext.Provider value={{ expanded }}>
-          <ul className="flex-1 px-3">{children}</ul>
+          <ul className="flex-1 px-3 overflow-visible">{children}</ul>
         </SidebarContext.Provider>
 
       </nav>
@@ -78,14 +78,17 @@ export function SidebarItem({
   alert = false,
 }: SidebarItemProps) {
   const { expanded } = useSidebar()
+  const [hovered, setHovered] = useState(false)
 
   return (
     <li
     onClick={() => onSelect(id)}
+    onMouseEnter={() => setHovered(true)}
+    onMouseLeave={() => setHovered(false)}
     className={`
       relative flex items-center py-2 px-3 my-1
       rounded-md cursor-pointer
-      transition-colors group
+      transition-colors
       hover:bg-[var(--background)] text-[var(--text-primary)]
 
       ${active ? "bg-sidebar-accent text-[var(--text-primary)]" : ""}
@@ -109,20 +112,12 @@ export function SidebarItem({
         />
       )}
 
-      {!expanded && (
+      {!expanded && hovered && (
         <div
-        className={`
-          absolute left-full ml-6 px-2 py-1 rounded-md
-          bg-sidebar-accent text-sidebar-foreground 
-          invisible opacity-0 -translate-x-3
-          transition-all
-          group-hover:visible group-hover:opacity-100 group-hover:translate-x-0
-          text-sidebar-primary
-          text-xl
-        `}
+          className="absolute left-full ml-1 px-2 py-1 rounded-md bg-[var(--surface-alt)] text-[var(--text-primary)] text-sm whitespace-nowrap z-[9999] shadow-lg border border-[var(--border)]"
         >
-        {text}
-      </div>
+          {text}
+        </div>
       )}
     </li>
   )

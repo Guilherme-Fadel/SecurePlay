@@ -5,12 +5,12 @@ import { Header } from "@/components/shared/layout/header/index"
 import { Sidebar, SidebarItem } from '@/components/shared/Sidebar'
 import { PixelCursor } from "@/components/ui/visuals/PixelCursor"
 import { TrophyIcon, LayoutDashboard, Target, AwardIcon, BookOpenIcon, SettingsIcon } from "lucide-react"
-import { Dashboard, Awards, Challenges, Ranking, Training, Settings, Perfil } from '@/components/sections/HomePage/index';
+import { Dashboard, Awards, Challenges, Ranking, Conteudos, Settings, Perfil } from '@/components/sections/HomePage/index';
 import { useState } from 'react';
 import { SectionContext } from '@/contexts/SectionContext';
 import { useHomeLoading } from '@/hooks/useHomeLoading';
 
-export type Section = 'dashboard' | 'desafios' | 'ranking' | 'conquistas' | 'treinamentos' | 'configuracoes' | 'perfil'
+export type Section = 'dashboard' | 'desafios' | 'ranking' | 'conquistas' | 'conteudos' | 'configuracoes' | 'perfil'
 
 export default function Home() {
   
@@ -19,7 +19,7 @@ export default function Home() {
       desafios:      <Challenges />,
       ranking:       <Ranking />,
       conquistas:    <Awards />,
-      treinamentos:  <Training />,
+      conteudos:  <Conteudos />,
       configuracoes: <Settings />,
       perfil:        <Perfil />
     }
@@ -45,6 +45,13 @@ export default function Home() {
               onSelect={setActiveSection}
             />
             <SidebarItem 
+              id="conteudos" 
+              icon={<BookOpenIcon />} 
+              text="Conteúdos" 
+              active={activeSection === 'conteudos'}
+              onSelect={setActiveSection}
+            />
+            <SidebarItem 
               id="desafios" 
               icon={<Target />} 
               text="Desafios" 
@@ -63,13 +70,6 @@ export default function Home() {
               icon={<AwardIcon />} 
               text="Conquistas" 
               active={activeSection === 'conquistas'}
-              onSelect={setActiveSection}
-            />
-            <SidebarItem 
-              id="treinamentos" 
-              icon={<BookOpenIcon />} 
-              text="Treinamentos" 
-              active={activeSection === 'treinamentos'}
               onSelect={setActiveSection}
             />
             <SidebarItem 
