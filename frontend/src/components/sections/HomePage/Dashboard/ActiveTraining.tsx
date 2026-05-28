@@ -1,8 +1,6 @@
 import { InfoCard } from "@/components/ui/visuals/InfoCard";
 import { useDashboardStats } from "@/hooks/useDashboard";
 import { Award, BookOpen, BookOpenIcon, Lock, TrendingUp, Trophy } from "lucide-react";
-import { useState } from "react";
-import { Modal } from "@/components/ui/modal";
 
 
 export function ActiveTraining() {
@@ -41,8 +39,6 @@ export function ActiveTraining() {
      }
     ];
 
-    const [selectedItem, setSelectedItem] = useState<typeof activity[number] | null>(null);
-
     return(
         <InfoCard variant="primary" className="flex flex-col">
             <InfoCard.Header 
@@ -65,8 +61,7 @@ export function ActiveTraining() {
             return (
               <div
                 key={item.id}
-                onClick={() => setSelectedItem(item)}
-                className="flex items-center justify-between px-4 py-3 hover:bg-[var(--primary-hover)] transition-colors cursor-pointer rounded-lg"
+                className="flex items-center justify-between px-4 py-3 hover:bg-[var(--primary-hover)] transition-colors rounded-lg"
               >
                 <div className="flex items-center gap-3">
                   <div className="w-8 h-8 flex items-center justify-center rounded-lg bg-[var(--surface-alt)] text-[var(--text-secondary)] shrink-0">
@@ -82,19 +77,6 @@ export function ActiveTraining() {
           })
         )}
       </div>
-
-      <Modal
-        open={!!selectedItem}
-        onClose={() => setSelectedItem(null)}
-        title={selectedItem?.description ?? "Treinamento"}
-        Height="h-200"
-      >
-        <div className="p-4">
-          <p className="text-[var(--text-secondary)]">
-            Conteúdo teste
-          </p>
-        </div>
-      </Modal>
         </InfoCard>
     )
 }
