@@ -37,6 +37,7 @@ lerna-debug.log*
 
 .temp
 .tmp
+.kiro
 
 pids
 *.pid

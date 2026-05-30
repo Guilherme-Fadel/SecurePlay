@@ -8,6 +8,7 @@ import { BenefitsModule } from './benefits/benefits.module';
 import { NotificationModule } from './notification/notification.module';
 import { DashboardModule } from './dashboard/dashboard.module';
 import { ChallengeModule } from './challenge/challenge.module';
+import { ConteudoModule } from './conteudo/conteudo.module';
 import { APP_GUARD } from '@nestjs/core';
 import { JwtAuthGuard } from './auth/auth.guard';
 import { RolesGuard } from './auth/roles.guard';
@@ -24,6 +25,7 @@ import { AppGateway } from './gateway/app.gateway';
     BenefitsModule,
     NotificationModule,
     ChallengeModule,
+    ConteudoModule,
     DashboardModule,
     ConfigModule.forRoot({
       isGlobal: true,
