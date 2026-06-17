@@ -1,167 +1,145 @@
-# SecurePlay
+<p align="center">
+  <img src="./docs/screenshots/login.png" width="600" alt="SecurePlay - Tela de Login" />
+</p>
 
-SecurePlay é uma aplicação web focada em **segurança da informação
-gamificada**, desenvolvida com **React + TailwindCSS** no frontend e
-**NestJS** no backend.
+<h1 align="center">SecurePlay</h1>
 
-O projeto foi construído utilizando **TypeScript** em toda a stack e
-utiliza **MySQL** como banco de dados.
+<p align="center">
+  Plataforma gamificada de treinamento em Segurança da Informação.<br/>
+  Aprenda sobre governança, proteção de dados e resposta a incidentes — jogando.
+</p>
 
-Atualmente o banco **não está hospedado em nuvem**, portanto o ambiente
-precisa ser executado **localmente** para testes.
+<p align="center">
+  <img src="https://img.shields.io/badge/React-18-61DAFB?logo=react&logoColor=white" />
+  <img src="https://img.shields.io/badge/NestJS-10-E0234E?logo=nestjs&logoColor=white" />
+  <img src="https://img.shields.io/badge/TypeScript-5-3178C6?logo=typescript&logoColor=white" />
+  <img src="https://img.shields.io/badge/MySQL-8-4479A1?logo=mysql&logoColor=white" />
+  <img src="https://img.shields.io/badge/Redis-7-DC382D?logo=redis&logoColor=white" />
+</p>
 
-------------------------------------------------------------------------
+---
 
-# Tecnologias
+## Sobre o Projeto
 
-## Frontend
+SecurePlay transforma o aprendizado de segurança da informação em uma experiência interativa com mecânicas de jogos. Usuários progridem por módulos de conteúdo, respondem quizzes contextualizados, completam desafios diários e acumulam XP para subir de nível — tudo dentro de uma interface temática inspirada em terminais e operações de segurança.
 
--   React
--   TypeScript
--   Vite
--   TailwindCSS
--   Radix UI
--   Framer Motion
--   React Router
--   Axios
+**Público-alvo:** Colaboradores de empresas e estudantes que precisam aprender boas práticas de segurança de forma engajante.
 
-## Backend
+---
 
-- NestJS
-- TypeORM
-- MySQL
+## Funcionalidades
+
+| Feature | Descrição |
+|---------|-----------|
+|  Dashboard personalizado | Visão geral de progresso, XP, ranking e desafio do dia |
+|  Módulos de conteúdo | Operações temáticas com vídeo-aulas e materiais em fases |
+|  Quizzes interativos | Perguntas baseadas em frameworks reais (NIST, ISO 27001) |
+|  Sistema de XP e Níveis | Gamificação com pontuação, conquistas e ranking |
+|  Desafios diários | Exercícios com recompensa para manter a sequência |
+|  Sequência semanal | Check-in diário para incentivar constância |
+|  Vídeo-aulas | Player integrado com briefing e progresso por aula |
+|  Notificações em tempo real | WebSocket para alertas e atualizações |
+
+---
+
+## Screenshots
+
+<details>
+<summary><strong>Dashboard</strong></summary>
+<br/>
+<img src="./docs/screenshots/dashboard.png" width="800" alt="Dashboard" />
+</details>
+
+<details>
+<summary><strong>Central de Operações (Conteúdos)</strong></summary>
+<br/>
+<img src="./docs/screenshots/conteudos.png" width="800" alt="Central de Operações" />
+</details>
+
+<details>
+<summary><strong>Seleção de Aula</strong></summary>
+<br/>
+<img src="./docs/screenshots/selecao-aula.png" width="800" alt="Seleção de Aula" />
+</details>
+
+<details>
+<summary><strong>Quiz Interativo</strong></summary>
+<br/>
+<img src="./docs/screenshots/quiz.png" width="800" alt="Modal de Quiz" />
+</details>
+
+<details>
+<summary><strong>Vídeo-aula</strong></summary>
+<br/>
+<img src="./docs/screenshots/video-aula.png" width="800" alt="Modal de Vídeo Aula" />
+</details>
+
+---
+
+## Arquitetura & Stack
+
+```
+┌─────────────┐       ┌─────────────┐       ┌───────────┐
+│   Frontend  │◄─────►│   Backend   │◄─────►│   MySQL   │
+│  React/Vite │  REST │   NestJS    │       │  TypeORM  │
+│  Tailwind   │  + WS │  Fastify    │       └───────────┘
+└─────────────┘       │  JWT + RBAC │       ┌───────────┐
+                      │             │◄─────►│   Redis   │
+                      └─────────────┘       │  Sessions │
+                                            └───────────┘
+```
+
+**Frontend:** React 18, TypeScript, Vite, TailwindCSS, Radix UI, Framer Motion, React Router, Axios
+
+**Backend:** NestJS, TypeORM, Fastify, JWT Authentication com RBAC (Role-Based Access Control), Class Validator, WebSocket Gateway
+
+**Infraestrutura:** MySQL 8, Redis (gerenciamento de tokens e sessões), AWS S3 (upload de conteúdo)
+
+---
+
+## Destaques Técnicos
+
+- **Autenticação JWT com refresh token** gerenciado via Redis
+- **Controle de acesso por roles** (Admin, Usuário) com guards customizados
+- **Ownership guard** — usuários só acessam seus próprios recursos
+- **WebSocket** para notificações em tempo real
+- **Upload de mídia** via AWS S3
+- **Arquitetura modular** — cada domínio isolado em seu próprio módulo NestJS
+- **Validação de entrada** com class-validator e DTOs tipados
+
+---
+
+## Como Executar
+
+<details>
+<summary><strong>Pré-requisitos</strong></summary>
+
+- Node.js >= 20
+- MySQL 8
 - Redis
-- JWT Authentication
-- Fastify / Express support
-- Class Validator
+- npm
 
-## Ambiente
+</details>
 
--   Node.js **\>= 20**
+<details>
+<summary><strong>Instalação</strong></summary>
 
-------------------------------------------------------------------------
-# GIT PASSO A PASSO
-
-## Primeira Instalação
-
-Clone o repositório:
-
-``` bash
+```bash
 git clone https://github.com/Guilherme-Fadel/SecurePlay.git
 cd SecurePlay
-```
 
-Instale as dependências:
-
-``` bash
+# Frontend
 cd frontend
 npm install
 
-cd backend
+# Backend
+cd ../backend
 npm install
 ```
 
-## Boas Práticas
+Configure as variáveis de ambiente no `backend/.env`:
 
-Sempre que for visualizar ou iniciar uma nova feature realizar:
-
-Exemplo: Branch Main
-
-``` bash
-# Verificar se está na branch correta
-git status
-
-# Atualizar o repositório
-git fetch 
-
-# Atualizar repositório local mais atual
-git pull origin main 
-
-# Verificar se teve autualização do packagejson, caso não tiver, desconsiderar codigos abaixo
-
-# Atualizar dependencias front
-cd frontend
-npm install
-
-# Atualizar dependencias back
-cd backend
-npm install
-```
-
-Fluxo de Feature
-
-``` bash
-# Acessar diretório raiz
-cd diretorio_raiz
-
-# Adicionar as alterações
-git add .
-
-# Commitar as alterações
-git commit -m "O que foi realizado"
-
-# Atualizar repositório remoto com as alterações
-git push origin developer
-
-# Mudar de branch
-git checkout main
-
-# Verificar se está na branch correta
-git status
-
-# Juntar novas alterações com o código atual / Se tiver conflito, não FORCE
-git merge origin developer
-
-# Subir alterações na branch main
-git push origin main
-
-# Verificar se não ficou nada para trás
-git status
-
-```
-
-------------------------------------------------------------------------
-
-# Executando o Projeto
-
-## Frontend
-
-Para iniciar o frontend em modo desenvolvimento:
-
-``` bash
-npm run dev
-```
-
-------------------------------------------------------------------------
-
-## Backend
-
-Para iniciar o backend:
-
-``` bash
-npm start
-```
-
-Modo desenvolvimento (com watch):
-
-``` bash
-npm run start:dev
-```
-
-------------------------------------------------------------------------
-
-# Banco de Dados e Redis
-
-O projeto utiliza:
-
-**MySQL** hospedado em nuvem
-
-**Redis** para gerenciamento de tokens JWT e sessões
-
-As credenciais e variáveis de ambiente devem ser configuradas conforme o ambiente utilizado.
-
-Exemplo:
-``` bash
+```env
 DATABASE_HOST=
 DATABASE_PORT=
 DATABASE_USER=
@@ -174,43 +152,20 @@ REDIS_PASSWORD=
 
 JWT_SECRET=
 ```
-------------------------------------------------------------------------
 
+</details>
 
+<details>
+<summary><strong>Executando</strong></summary>
 
-# Scripts Disponíveis
+```bash
+# Frontend (porta 5173)
+cd frontend
+npm run dev
 
-  ``` bash
-## Frontend
-
-  Script          Descrição
-  --------------- ----------------------------
-  npm run dev     Inicia o frontend com Vite
-  npm run build   Gera build de produção
+# Backend (porta 3000)
+cd backend
+npm run start:dev
 ```
 
-  ``` bash
-## Backend
-
-  Script                Descrição
-  --------------------- ------------------------------------------
-  npm start             Inicia o servidor NestJS
-  npm run start:dev     Inicia em modo desenvolvimento com watch
-  npm run start:debug   Inicia em modo debug
-  npm run start:prod    Executa build de produção
-  npm run build         Compila o projeto
-  npm run lint          Executa o ESLint
-  npm run format        Formata o código com Prettier
-```
-
-------------------------------------------------------------------------
-
-# Requisitos
-
-Antes de rodar o projeto, verifique se você possui instalado:
-
--   **Node.js \>= 20**
--   **MySQL**
--   **npm**
-
-------------------------------------------------------------------------
+</details>
