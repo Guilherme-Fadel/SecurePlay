@@ -11,10 +11,13 @@ import { ModuloService } from './modulo/modulo.service';
 import { AulaService } from './aula/aula.service';
 import { ModuloController } from './modulo/modulo.controller';
 import { AulaController } from './aula/aula.controller';
+import { AulaQuizController } from './aula-quiz/aula-quiz.controller';
+import { S3Service } from './s3/s3.service';
+import { UploadController } from './s3/upload.controller';
 
 @Module({
   imports: [DatabaseModule, RedisModule, AuthModule],
-  controllers: [ModuloController, AulaController],
+  controllers: [ModuloController, AulaController, AulaQuizController, UploadController],
   providers: [
     ...moduloProviders,
     ...aulaProviders,
@@ -23,7 +26,8 @@ import { AulaController } from './aula/aula.controller';
     ...usuarioStatsProviders,
     ModuloService,
     AulaService,
+    S3Service,
   ],
-  exports: [ModuloService, AulaService],
+  exports: [ModuloService, AulaService, S3Service],
 })
 export class ConteudoModule {}

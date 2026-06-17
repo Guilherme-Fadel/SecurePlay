@@ -7,6 +7,7 @@ import { UsuarioStats } from '../../usuario-stats/usuario-stats.entity';
 import { Modulo } from '../modulo/modulo.entity';
 import { RedisService } from '../../redis/redis.service';
 import { EventEmitter2 } from '@nestjs/event-emitter';
+import { S3Service } from '../s3/s3.service';
 import { ttlUntilEndOfDay } from '../../common/utils/date.utils';
 import { CreateAulaDto, UpdateAulaDto } from './dto/aula.dto';
 import { SubmitQuizDto } from '../aula-quiz/dto/aula-quiz.dto';
@@ -31,6 +32,7 @@ export class AulaService {
 
     private redisService: RedisService,
     private eventEmitter: EventEmitter2,
+    private s3Service: S3Service,
   ) {}
 
   async findOne(id: number, usuario_id: number) {
@@ -60,8 +62,8 @@ export class AulaService {
       title: aula.title,
       description: aula.description,
       type: aula.type,
-      content_url: aula.content_url,
-      pages: aula.pages,
+      content_url: aula.content_url ? await this.resolveUrl(aula.content_url) : null,
+      pages: aula.pages ? await Promise.all(aula.pages.map((key) => this.resolveUrl(key))) : null,
       duration: aula.duration,
       xp: aula.xp,
       order: aula.order,
@@ -74,6 +76,19 @@ export class AulaService {
         order: q.order,
       })),
     };
+  }
+
+  private async resolveUrl(value: string): Promise<string> {
+    if (value.startsWith('http://') || value.startsWith('https://')) {
+      return value;
+    }
+    try {
+      const url = await this.s3Service.generatePresignedGetUrl(value);
+      return url;
+    } catch (error) {
+      console.error(`[AulaService] Erro ao gerar presigned URL para key "${value}":`, error?.message);
+      return value;
+    }
   }
 
   async create(dto: CreateAulaDto): Promise<Aula> {

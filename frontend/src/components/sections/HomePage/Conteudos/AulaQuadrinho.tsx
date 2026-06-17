@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ArrowLeft, ChevronLeft, ChevronRight, Radio, BookOpen } from 'lucide-react';
+import { ArrowLeft, ChevronLeft, ChevronRight, Info } from 'lucide-react';
 import { useAula } from '@/hooks/useAula';
 import { usePageNavigation } from '@/hooks/usePageNavigation';
 import { AulaQuiz } from './AulaQuiz';
@@ -13,6 +13,7 @@ interface AulaQuadrinhoProps {
 export function AulaQuadrinho({ aulaId, onBack }: AulaQuadrinhoProps) {
   const { aula, loading } = useAula(aulaId);
   const [showQuiz, setShowQuiz] = useState(false);
+  const [showBriefing, setShowBriefing] = useState(false);
 
   const pages = aula?.pages || [];
   const hasQuiz = (aula?.quiz?.length ?? 0) > 0;
@@ -26,7 +27,7 @@ export function AulaQuadrinho({ aulaId, onBack }: AulaQuadrinhoProps) {
   if (loading || !aula) {
     return (
       <div className="flex items-center justify-center h-64">
-        <p className="text-[var(--text-secondary)] text-xl">Carregando quadrinho...</p>
+        <p className="text-[var(--text-secondary)]">Carregando quadrinho...</p>
       </div>
     );
   }
@@ -36,90 +37,83 @@ export function AulaQuadrinho({ aulaId, onBack }: AulaQuadrinhoProps) {
   }
 
   return (
-    <div className="flex flex-col gap-4">
-      <div className="flex items-center gap-2 text-sm text-[var(--text-secondary)] font-[var(--font-family-inter)]">
-        <button onClick={onBack} className="hover:text-[var(--accent)] transition-colors flex items-center gap-1">
-          <ArrowLeft size={14} />
-          Voltar
-        </button>
-        <span>/</span>
-        <span className="text-[var(--text-primary)]">{aula.title}</span>
-      </div>
-
-      {aula.description && (
-        <div className="bg-[var(--surface)] border-4 border-[var(--primary)] p-4" style={{ boxShadow: '4px 4px 0 rgba(105,0,255,0.3)' }}>
-          <div className="flex items-start gap-3">
-            <Radio size={24} className="text-[var(--primary)] flex-shrink-0 mt-0.5" />
-            <div>
-              <p className="text-lg text-[var(--accent)] mb-1">Briefing</p>
-              <p className="text-sm text-[var(--text-primary)] font-[var(--font-family-inter)] leading-relaxed">
-                {aula.description}
-              </p>
-            </div>
-          </div>
-        </div>
-      )}
-
+    <div className="relative flex flex-col h-[calc(100vh-120px)]">
       <div
-        className="bg-[var(--background)] border-4 border-[var(--border)] overflow-hidden"
-        style={{ boxShadow: '4px 4px 0 rgba(0,0,0,0.5)' }}
+        className="flex-1 min-h-0 bg-[var(--background)] rounded-2xl overflow-hidden flex items-center justify-center relative"
         onTouchStart={handleTouchStart}
         onTouchEnd={handleTouchEnd}
       >
-        <div className="relative w-full aspect-[4/3] bg-[var(--surface)] flex items-center justify-center">
-          {pages[currentPage] ? (
-            <img
-              src={pages[currentPage]}
-              alt={`Página ${currentPage + 1}`}
-              className="w-full h-full object-contain"
-              loading="lazy"
-            />
-          ) : (
-            <div className="text-center">
-              <BookOpen size={48} className="text-[var(--text-secondary)] mx-auto mb-2" />
-              <p className="text-[var(--text-secondary)]">Página não disponível</p>
-            </div>
+        {pages[currentPage] && (
+          <img
+            src={pages[currentPage]}
+            alt={`Página ${currentPage + 1}`}
+            className="w-full h-full object-contain"
+            loading="lazy"
+          />
+        )}
+
+        <div className="absolute top-0 left-0 right-0 flex items-center justify-between p-3 bg-gradient-to-b from-black/60 to-transparent">
+          <button
+            onClick={onBack}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-black/50 backdrop-blur-sm text-[var(--text-primary)] hover:bg-black/70 transition-colors text-sm"
+          >
+            <ArrowLeft size={14} />
+            Voltar
+          </button>
+
+          {aula.description && (
+            <button
+              onClick={() => setShowBriefing(!showBriefing)}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-black/50 backdrop-blur-sm text-[var(--accent)] hover:bg-black/70 transition-colors text-sm"
+            >
+              <Info size={14} />
+              Briefing
+            </button>
           )}
         </div>
 
-        <div className="flex items-center justify-between p-4 bg-[var(--surface)] border-t-4 border-[var(--border)]">
-          <button
-            onClick={goPrev}
-            disabled={currentPage === 0}
-            className="flex items-center gap-1 px-4 py-2 bg-[var(--surface-alt)] border-2 border-[var(--border)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] disabled:opacity-30 transition-colors"
-          >
-            <ChevronLeft size={16} />
-            <span className="text-lg">Anterior</span>
-          </button>
-
-          <div className="flex items-center gap-2">
-            <span className="text-sm text-[var(--text-secondary)] font-[var(--font-family-inter)]">Página</span>
-            <span className="px-3 py-1 bg-[var(--primary)] text-white text-sm border-2 border-[var(--accent)]">
-              {currentPage + 1}/{pages.length}
-            </span>
+        {showBriefing && aula.description && (
+          <div className="absolute top-14 left-3 right-3 p-3 rounded-xl bg-black/80 backdrop-blur-sm border border-[var(--border)]">
+            <p className="text-[var(--accent)] text-xs font-semibold mb-1">Briefing</p>
+            <p className="text-[var(--text-primary)] font-[var(--font-family-inter)] text-xs leading-relaxed">
+              {aula.description}
+            </p>
           </div>
+        )}
 
-          <button
-            onClick={goNext}
-            className="flex items-center gap-1 px-4 py-2 bg-[var(--accent)] border-2 border-[#6a7a03] text-[var(--background)] hover:opacity-90 transition-opacity"
-          >
-            <span className="text-lg">{isLastPage ? 'Quiz' : 'Próxima'}</span>
-            <ChevronRight size={16} />
-          </button>
+        <button
+          onClick={goPrev}
+          disabled={currentPage === 0}
+          className="absolute left-2 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center text-white hover:bg-black/60 disabled:opacity-0 transition-all"
+        >
+          <ChevronLeft size={20} />
+        </button>
+
+        <button
+          onClick={goNext}
+          className="absolute right-2 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center text-white hover:bg-black/60 transition-all"
+        >
+          <ChevronRight size={20} />
+        </button>
+
+        <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex items-center gap-2 px-3 py-1.5 rounded-full bg-black/50 backdrop-blur-sm">
+          <span className="text-[var(--text-primary)] text-xs font-[var(--font-family-inter)]">
+            {currentPage + 1}/{pages.length}
+          </span>
         </div>
       </div>
 
-      <div className="flex items-center gap-1.5 justify-center flex-wrap">
+      <div className="flex items-center gap-1.5 justify-center py-2 flex-shrink-0">
         {pages.map((_, i) => (
           <button
             key={i}
             onClick={() => goTo(i)}
-            className={`w-3 h-3 border-2 transition-all ${
+            className={`w-2 h-2 rounded-full transition-all duration-200 ${
               i === currentPage
-                ? 'bg-[var(--primary)] border-[var(--accent)]'
+                ? 'bg-[var(--primary)] scale-125'
                 : i < currentPage
-                  ? 'bg-[var(--accent)] border-[#6a7a03]'
-                  : 'bg-[var(--surface-alt)] border-[var(--border)]'
+                  ? 'bg-[var(--accent)]'
+                  : 'bg-[var(--surface-alt)]'
             }`}
           />
         ))}

@@ -1,14 +1,20 @@
 interface ProgressBarProps {
   progress: number;
   className?: string;
-  height?: string;
+  variant?: 'primary' | 'secondary' | 'accent';
 }
 
-export function ProgressBar({ progress, className = '', height = 'h-2' }: ProgressBarProps) {
+const variantGradients = {
+  primary: 'from-[var(--primary)] to-[var(--accent)]',
+  secondary: 'from-[var(--secondary)] to-[var(--primary)]',
+  accent: 'from-[var(--accent)] to-[var(--primary)]',
+};
+
+export function ProgressBar({ progress, className = '', variant = 'primary' }: ProgressBarProps) {
   return (
-    <div className={`w-full ${height} bg-[var(--background)] border-2 border-[var(--border)] ${className}`}>
+    <div className={`w-full h-2 bg-[var(--surface-alt)] rounded-full overflow-hidden ${className}`}>
       <div
-        className="h-full bg-gradient-to-r from-[var(--primary)] to-[var(--accent)] transition-all duration-500"
+        className={`h-full bg-gradient-to-r ${variantGradients[variant]} rounded-full transition-all duration-500`}
         style={{ width: `${Math.min(progress, 100)}%` }}
       />
     </div>
