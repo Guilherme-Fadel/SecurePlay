@@ -15,10 +15,28 @@ import { RolesGuard } from './auth/roles.guard';
 import { RedisModule } from './redis/redis.module';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { AppGateway } from './gateway/app.gateway';
+import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 
 @Module({
   imports: [
     EventEmitterModule.forRoot(),
+    ThrottlerModule.forRoot([
+      {
+        name: 'short',
+        ttl: 1000,
+        limit: 10,
+      },
+      {
+        name: 'medium',
+        ttl: 10000,
+        limit: 50,
+      },
+      {
+        name: 'long',
+        ttl: 60000,
+        limit: 200,
+      },
+    ]),
     RedisModule,
     AuthModule,
     UsuarioModule,
@@ -41,6 +59,10 @@ import { AppGateway } from './gateway/app.gateway';
     {
       provide: APP_GUARD,
       useClass: RolesGuard,
+    },
+    {
+      provide: APP_GUARD,
+      useClass: ThrottlerGuard,
     },
     AppGateway,
   ],

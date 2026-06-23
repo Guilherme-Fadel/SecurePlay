@@ -23,10 +23,16 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
 
     if (isPublic) return true;
 
-    await super.canActivate(context);
-
     const request = context.switchToHttp().getRequest();
-    const token = extractTokenFromHeader(request.headers['authorization']);
+
+    const cookieToken = request.cookies?.token;
+    if (cookieToken && !request.headers['authorization']) {
+      request.headers['authorization'] = `Bearer ${cookieToken}`;
+    }
+
+    await (super.canActivate(context) as Promise<boolean>);
+
+    const token = cookieToken || extractTokenFromHeader(request.headers['authorization']);
 
     if (!token) {
       throw new UnauthorizedException('Token não encontrado');

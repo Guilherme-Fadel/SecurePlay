@@ -4,6 +4,7 @@ import { CreateAulaDto, UpdateAulaDto } from './dto/aula.dto';
 import { SubmitQuizDto } from '../aula-quiz/dto/aula-quiz.dto';
 import { Roles } from '../../auth/roles.decorator';
 import { Role } from '../../auth/roles.enum';
+import { Throttle } from '@nestjs/throttler';
 
 @Controller('conteudo/aulas')
 export class AulaController {
@@ -33,11 +34,13 @@ export class AulaController {
   }
 
   @Post(':id/concluir')
+  @Throttle({ short: { limit: 5, ttl: 60000 } })
   async concluir(@Param('id', ParseIntPipe) id: number, @Request() req: any) {
     return this.aulaService.concluir(id, req.user.userId);
   }
 
   @Post(':id/quiz')
+  @Throttle({ short: { limit: 10, ttl: 60000 } })
   async submitQuiz(
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: SubmitQuizDto,

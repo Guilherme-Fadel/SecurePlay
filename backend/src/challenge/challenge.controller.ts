@@ -1,6 +1,7 @@
 import { Body, Controller, Get, Param, ParseIntPipe, Post, Request } from '@nestjs/common';
 import { ChallengeService } from './challenge.service';
 import { SubmitChallengeDto } from './dto/challenge.dto';
+import { Throttle } from '@nestjs/throttler';
 
 @Controller('challenges')
 export class ChallengeController {
@@ -25,6 +26,7 @@ export class ChallengeController {
   }
 
   @Post(':id/submit')
+  @Throttle({ short: { limit: 5, ttl: 60000 } })
   async submitChallenge(
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: SubmitChallengeDto,

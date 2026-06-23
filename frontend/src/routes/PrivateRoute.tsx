@@ -8,13 +8,6 @@ export function PrivateRoute({ children }: { children: React.ReactNode }) {
   const [status, setStatus] = useState<Status>('checking');
 
   useEffect(() => {
-    const token = localStorage.getItem('token');
-
-    if (!token) {
-      setStatus('invalid');
-      return;
-    }
-
     validateToken().then((valid) => {
       setStatus(valid ? 'valid' : 'invalid');
     });
@@ -25,7 +18,6 @@ export function PrivateRoute({ children }: { children: React.ReactNode }) {
   }
 
   if (status === 'invalid') {
-    localStorage.removeItem('token');
     localStorage.removeItem('nome');
     return <Navigate to="/login" replace />;
   }
@@ -34,9 +26,19 @@ export function PrivateRoute({ children }: { children: React.ReactNode }) {
 }
 
 export function PublicRoute({ children }: { children: React.ReactNode }) {
-  const token = localStorage.getItem('token');
+  const [status, setStatus] = useState<Status>('checking');
 
-  if (token) {
+  useEffect(() => {
+    validateToken().then((valid) => {
+      setStatus(valid ? 'valid' : 'invalid');
+    });
+  }, []);
+
+  if (status === 'checking') {
+    return null;
+  }
+
+  if (status === 'valid') {
     return <Navigate to="/home" replace />;
   }
 

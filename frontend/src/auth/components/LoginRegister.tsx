@@ -30,7 +30,6 @@ export function LoginRegister() {
         return;
       }
 
-      localStorage.setItem('token', result.token!);
       localStorage.setItem('nome', result.nome!);
 
       toast.success(result.mensagem);
@@ -70,7 +69,6 @@ export function LoginRegister() {
         return;
       }
 
-      localStorage.setItem('token', resultLogin.token!);
       localStorage.setItem('nome', resultLogin.nome!);
 
       toast.success(result.mensagem);

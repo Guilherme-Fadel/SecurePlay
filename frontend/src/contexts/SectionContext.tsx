@@ -4,6 +4,9 @@ import type { Section } from '@/pages/Home';
 interface SectionContextProps {
   activeSection: Section;
   setActiveSection: (section: Section) => void;
+  navigateToSection: (section: Section) => void;
+  previousSection: Section | null;
+  goBack: () => void;
   setLoading: (key: string, loading: boolean) => void;
   registerBootstrap: (key: string) => void;
 }

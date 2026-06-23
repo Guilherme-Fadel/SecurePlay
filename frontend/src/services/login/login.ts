@@ -3,7 +3,6 @@ import { api } from '@/services/api';
 export interface LoginResult {
   sucesso: boolean;
   mensagem: string;
-  token?: string;
   nome?: string;
 }
 
@@ -22,7 +21,6 @@ export async function loginService(
     return {
       sucesso: true,
       mensagem: response.data.message ?? 'Login realizado',
-       token: response.data.token,
       nome: response.data.nome,
     };
 

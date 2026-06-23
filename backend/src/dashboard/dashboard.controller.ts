@@ -1,5 +1,6 @@
 import { Controller, Get, Post, Request } from '@nestjs/common';
 import { DashboardService } from './dashboard.service';
+import { Throttle } from '@nestjs/throttler';
 
 @Controller('dashboard')
 export class DashboardController {
@@ -16,6 +17,7 @@ export class DashboardController {
   }
 
   @Post('checkin')
+  @Throttle({ short: { limit: 3, ttl: 60000 } })
   async checkin(@Request() req: any) {
     return this.dashboardService.performCheckin(req.user.userId);
   }

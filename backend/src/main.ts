@@ -5,24 +5,26 @@ import {
   NestFastifyApplication,
 } from '@nestjs/platform-fastify';
 import { ValidationPipe } from '@nestjs/common';
-import { existsSync, unlinkSync } from 'fs';
 import { SocketIoAdapter } from './gateway/socket-io.adapter';
+import fastifyCookie from '@fastify/cookie';
 
 async function bootstrap() {
-  const dbFile = 'db.sqlite';
-  if (existsSync(dbFile)) unlinkSync(dbFile);
-
   const app = await NestFactory.create<NestFastifyApplication>(
     AppModule,
     new FastifyAdapter({ logger: true }),
   );
 
+  await app.register(fastifyCookie);
+
   app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
 
+  const allowedOrigins = (process.env.CORS_ORIGIN || 'http://localhost:5173').split(',');
+
   app.enableCors({
-    origin: '*',
+    origin: allowedOrigins,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
+    credentials: true,
   });
 
   app.useWebSocketAdapter(new SocketIoAdapter(app));

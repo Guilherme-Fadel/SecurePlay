@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ArrowLeft, ChevronLeft, ChevronRight, Info } from 'lucide-react';
+import { ArrowLeft, ChevronLeft, ChevronRight, Info, CheckCircle } from 'lucide-react';
 import { useAula } from '@/hooks/useAula';
 import { usePageNavigation } from '@/hooks/usePageNavigation';
 import { AulaQuiz } from './AulaQuiz';
@@ -17,11 +17,12 @@ export function AulaQuadrinho({ aulaId, onBack }: AulaQuadrinhoProps) {
 
   const pages = aula?.pages || [];
   const hasQuiz = (aula?.quiz?.length ?? 0) > 0;
+  const quizAlreadyAnswered = aula?.completed ?? false;
 
   const { currentPage, isLastPage, goNext, goPrev, goTo, handleTouchStart, handleTouchEnd } =
     usePageNavigation({
       totalPages: pages.length,
-      onLastPage: hasQuiz ? () => setShowQuiz(true) : undefined,
+      onLastPage: hasQuiz && !quizAlreadyAnswered ? () => setShowQuiz(true) : undefined,
     });
 
   if (loading || !aula) {
@@ -118,6 +119,15 @@ export function AulaQuadrinho({ aulaId, onBack }: AulaQuadrinhoProps) {
           />
         ))}
       </div>
+
+      {isLastPage && hasQuiz && quizAlreadyAnswered && (
+        <div className="flex items-center justify-center gap-2 py-3 px-4 mx-3 mb-2 rounded-xl bg-[var(--accent)]/10 border border-[var(--accent)]/30">
+          <CheckCircle size={16} className="text-[var(--accent)]" />
+          <span className="text-[var(--accent)] text-sm font-medium">
+            Quiz já respondido
+          </span>
+        </div>
+      )}
     </div>
   );
 }
