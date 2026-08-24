@@ -9,7 +9,7 @@ export function FAQHeader() {
       viewport={{ once: true }}
       className="text-center mb-16"
     >
-      <div className="inline-flex items-center gap-3 bg-[var(--surface-alt)] border-4 border-[var(--primary)] px-6 py-2 mb-6">
+      <div className="inline-flex items-center gap-3 bg-[var(--surface-alt)] border border-[var(--primary-30)] rounded-md px-6 py-2 mb-6">
         <HelpCircle className="w-5 h-5 text-[var(--primary)]" />
         <span className="text-[var(--primary)]">
           DÚVIDAS FREQUENTES

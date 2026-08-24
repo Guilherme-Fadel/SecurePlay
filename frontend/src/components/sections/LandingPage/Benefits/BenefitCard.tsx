@@ -4,7 +4,7 @@ import { Shield, Star, Heart, Zap, Award, Users } from 'lucide-react';
 export function BenefitCard({ item }: any) {
   const iconMap: Record<string, React.ElementType> = { Shield, Star, Heart, Zap, Award, Users };
 
-  const Icon = iconMap[item.icon]
+  const Icon = iconMap[item.icon] ?? Shield;
 
   return (
     <motion.div
@@ -15,21 +15,19 @@ export function BenefitCard({ item }: any) {
       whileHover={{ scale: 1.05, y: -5 }}
       className="group relative"
     >
-      <div className="relative bg-[var(--surface-alt)] border-4 border-[var(--border-primary)] p-8 h-full">
-        
-        <div className="relative w-20 h-20 mx-auto mb-6">
-          <div className={`w-full h-full border-4 border-[var(--border-primary)] flex items-center justify-center ${item.color}`}>
-            <Icon className="w-10 h-10 text-[var(--text-primary)]" />
-          </div>
+      <div className="relative bg-[var(--surface-alt)] border border-[var(--border)] rounded-lg p-8 h-full shadow-[0_4px_16px_rgba(0,0,0,0.25)]">
 
-          <div className={`absolute top-2 left-2 w-full h-full border-4 -z-10 ${item.borderColor} opacity-50`} />
+        <div className="relative w-20 h-20 mx-auto mb-6">
+          <div className={`w-full h-full border rounded-md flex items-center justify-center ${item.color} ${item.borderColor}`}>
+            <Icon className={`w-10 h-10 ${item.textColor}`} />
+          </div>
         </div>
 
-        <h3 className={`  text-center mb-4 ${item.textColor}`}>
+        <h3 className="text-center mb-4 text-[var(--text-primary)]">
           {item.title}
         </h3>
 
-        <p className="text-[var(--text-primary)]  text-center">
+        <p className="text-[var(--text-secondary)] text-center">
           {item.description}
         </p>
 
@@ -37,15 +35,13 @@ export function BenefitCard({ item }: any) {
           {[0, 1, 2].map((i) => (
             <div
               key={i}
-              className={`w-3 h-3 border-2 border-[var(--border-primary)] ${
+              className={`w-3 h-3 rounded-sm border border-[var(--border)] ${
                 i < (item.glow ? 3 : 2) ? item.color : ''
               }`}
             />
           ))}
         </div>
       </div>
-
-      <div className={"absolute inset-0 border-4" + item.borderColor + " opacity-0 group-hover:opacity-100 transition-opacity"} />
     </motion.div>
   );
 }

@@ -3,6 +3,7 @@ import {
   getChallengeQuestions,
   getChallengeStatus,
   submitChallengeAnswers,
+  saveChallengeProgress,
   type QuestionResponse,
   type SubmitResult,
   type AnswerPayload,
@@ -70,6 +71,10 @@ export function useQuiz(challengeId: number) {
       const updatedAnswers = [...prev.answers, answer];
       const last = prev.index >= prev.questions.length - 1;
 
+      saveChallengeProgress(challengeId, answer.questionId, answer.selectedIndex)
+        .then(() => invalidate(`challenge-status:${challengeId}`))
+        .catch(() => {});
+
       return {
         ...prev,
         answers: updatedAnswers,
@@ -78,7 +83,7 @@ export function useQuiz(challengeId: number) {
         phase: last ? 'submitting' : 'playing',
       };
     });
-  }, []);
+  }, [challengeId]);
 
   const submit = useCallback(async (answers: AnswerPayload[]) => {
     try {

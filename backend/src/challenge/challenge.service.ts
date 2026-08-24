@@ -82,10 +82,79 @@ export class ChallengeService {
       where: { usuario_id, challenge_id: challengeId },
     });
 
+    const totalQuestions = await this.questionRepository.count({
+      where: { challenge_id: challengeId },
+    });
+
+    const answeredIds = record?.answered_question_ids ?? [];
+    const answeredCount = record?.completed ? totalQuestions : answeredIds.length;
+
     return {
-      completed: !!record,
+      completed: !!record?.completed,
       progress: record?.progress ?? 0,
+      answeredCount,
+      totalQuestions,
       completedAt: record?.completed_at ?? null,
+    };
+  }
+
+  async saveProgress(
+    challengeId: number,
+    usuario_id: number,
+    questionId: number,
+    selectedIndex: number,
+  ) {
+    const question = await this.questionRepository.findOne({
+      where: { id: questionId, challenge_id: challengeId },
+    });
+
+    if (!question) {
+      throw new NotFoundException('Questão não encontrada para este desafio');
+    }
+
+    let record = await this.usuarioChallengeRepository.findOne({
+      where: { usuario_id, challenge_id: challengeId },
+    });
+
+    if (record?.completed) {
+      throw new BadRequestException('Desafio já concluído');
+    }
+
+    if (!record) {
+      record = this.usuarioChallengeRepository.create({
+        usuario_id,
+        challenge_id: challengeId,
+        progress: 0,
+        completed: false,
+        answered_question_ids: [],
+      });
+    }
+
+    const answered = new Set(record.answered_question_ids ?? []);
+
+    const isCorrect = selectedIndex === question.correct_index;
+    if (isCorrect) {
+      answered.add(questionId);
+    }
+
+    record.answered_question_ids = Array.from(answered);
+
+    const totalQuestions = await this.questionRepository.count({
+      where: { challenge_id: challengeId },
+    });
+    record.progress =
+      totalQuestions > 0
+        ? Math.round((record.answered_question_ids.length / totalQuestions) * 100)
+        : 0;
+
+    await this.usuarioChallengeRepository.save(record);
+
+    return {
+      correct: isCorrect,
+      answeredCount: record.answered_question_ids.length,
+      totalQuestions,
+      progress: record.progress,
+      completed: false,
     };
   }
 
@@ -134,7 +203,7 @@ export class ChallengeService {
       where: { usuario_id, challenge_id: challengeId },
     });
 
-    if (existing) {
+    if (existing?.completed) {
       throw new BadRequestException('Você já realizou este desafio');
     }
 
@@ -171,13 +240,14 @@ export class ChallengeService {
     const score = Math.round((correctCount / totalQuestions) * 100);
     const pointsEarned = Math.round(challenge.points * (score / 100));
 
-    const usuarioChallenge = this.usuarioChallengeRepository.create({
+    const usuarioChallenge = existing ?? this.usuarioChallengeRepository.create({
       usuario_id,
       challenge_id: challengeId,
-      progress: score,
-      completed: true,
-      completed_at: new Date(),
+      answered_question_ids: [],
     });
+    usuarioChallenge.progress = score;
+    usuarioChallenge.completed = true;
+    usuarioChallenge.completed_at = new Date();
 
     await this.usuarioChallengeRepository.save(usuarioChallenge);
 

@@ -2,3 +2,7 @@
 @source '../**/*.{js,ts,jsx,tsx}';
 
 @import 'tw-animate-css';
+
+@source inline("bg-[var(--primary-30)] bg-[var(--secondary-30)] bg-[var(--accent-30)]");
+@source inline("text-[var(--primary-light)] text-[var(--secondary)] text-[var(--accent)]");
+@source inline("border-[var(--primary)] border-[var(--secondary)] border-[var(--accent-dark)]");

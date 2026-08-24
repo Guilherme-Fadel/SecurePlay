@@ -53,7 +53,7 @@ export function ModuloCard({ modulo, onClick }: ModuloCardProps) {
             isCompleted ? 'bg-[var(--accent)]/20' : 'bg-black/60'
           }`}>
             <span className={`text-[10px] font-[var(--font-family-inter)] font-semibold ${
-              isCompleted ? 'text-[var(--accent)]' : 'text-[var(--text-primary)]'
+              isCompleted ? 'text-[var(--accent-text)]' : 'text-[var(--text-primary)]'
             }`}>
               {modulo.progress}%
             </span>
@@ -79,7 +79,7 @@ export function ModuloCard({ modulo, onClick }: ModuloCardProps) {
                 {difficulty.label}
               </span>
             </div>
-            <span className="text-[var(--accent)] text-xs font-[var(--font-family-inter)] font-semibold">
+            <span className="text-[var(--accent-text)] text-xs font-[var(--font-family-inter)] font-semibold">
               {modulo.xp_total} XP
             </span>
           </div>

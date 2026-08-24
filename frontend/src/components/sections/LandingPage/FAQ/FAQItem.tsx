@@ -11,8 +11,8 @@ export function FAQItem({ faq, index, isOpen, onToggle }: any) {
       className="group"
     >
       <div
-        className={`bg-[var(--surface-alt)] border-4 ${
-          isOpen ? 'border-[var(--secondary)]' : 'border-[var(--border-primary)]'
+        className={`bg-[var(--surface-alt)] border rounded-lg shadow-[0_4px_16px_rgba(0,0,0,0.25)] ${
+          isOpen ? 'border-[var(--secondary)]' : 'border-[var(--border)]'
         }`}
       >
 
@@ -21,7 +21,7 @@ export function FAQItem({ faq, index, isOpen, onToggle }: any) {
           className="cursor-none w-full px-6 py-6 flex justify-between items-center gap-4 text-left hover:bg-[var(--primary)]/10"
         >
           <div className="flex items-center gap-4">
-            <div className="w-12 h-12 bg-[var(--primary)] border-4 border-[var(--border-primary)] flex items-center justify-center">
+            <div className="w-12 h-12 bg-[var(--primary-15)] border border-[var(--primary-30)] rounded-md flex items-center justify-center">
               {faq.icon}
             </div>
 
@@ -31,8 +31,8 @@ export function FAQItem({ faq, index, isOpen, onToggle }: any) {
           </div>
 
           <div
-            className={`w-10 h-10 border-4 border-[var(--border-primary)] flex items-center justify-center ${
-              isOpen ? 'bg-[var(--secondary)]' : 'bg-[var(--surface-alt)]'
+            className={`w-10 h-10 border rounded-md flex items-center justify-center ${
+              isOpen ? 'bg-[var(--secondary)] border-[var(--secondary)]' : 'bg-[var(--surface-alt)] border-[var(--border)]'
             }`}
           >
             {isOpen ? (
@@ -52,7 +52,7 @@ export function FAQItem({ faq, index, isOpen, onToggle }: any) {
               className="overflow-hidden"
             >
               <div className="px-6 pb-6 ml-16">
-                <div className="bg-[var(--background)] border-l-4 border-[var(--secondary)] p-6">
+                <div className="bg-[var(--background)] border-l-2 border-[var(--secondary)] rounded-md p-6">
                   <p className="text-[var(--text-primary)]">
                     {faq.answer}
                   </p>

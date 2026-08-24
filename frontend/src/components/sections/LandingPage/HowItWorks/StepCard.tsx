@@ -29,29 +29,24 @@ export function StepCard({ step, index, isLast }: StepCardProps) {
           transition={{ type: 'spring', stiffness: 300 }}
         >
         <div
-          className="w-full h-full border-4 border-[var(--border-primary)] flex items-center justify-center"
-          style={{ backgroundColor: step.color }}
+          className="w-full h-full border rounded-md flex items-center justify-center shadow-[0_4px_16px_rgba(0,0,0,0.25)]"
+          style={{
+            backgroundColor: `color-mix(in srgb, ${step.color} 20%, transparent)`,
+            borderColor: `color-mix(in srgb, ${step.color} 40%, transparent)`,
+          }}
         >
-          <Icon className="w-10 h-10 text-[var(--text-primary)]" />
+          <Icon className="w-10 h-10" style={{ color: step.color }} />
         </div>
 
-        <div className="absolute -top-2 -right-2 w-10 h-10 bg-[var(--background)] border-4 border-[var(--border-primary)] flex items-center justify-center">
+        <div className="absolute -top-2 -right-2 w-10 h-10 bg-[var(--background)] border border-[var(--border)] rounded-md flex items-center justify-center">
           <span className=" text-[var(--text-primary)]">
             {step.id}
           </span>
         </div>
-
-        <div
-          className="absolute top-2 left-2 w-full h-full border-4 -z-10 opacity-40"
-          style={{ borderColor: step.color }}
-        />
       </motion.div>
 
 
-      <h3
-        className="mb-3"
-        style={{ color: step.color }}
-      >
+      <h3 className="mb-3 text-[var(--text-primary)]">
         {step.title}
       </h3>
 

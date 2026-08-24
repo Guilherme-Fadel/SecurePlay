@@ -70,7 +70,7 @@ export function AulaQuiz({ aula, onBack, onComplete }: AulaQuizProps) {
             {result.xpEarned > 0 && (
               <div className="flex items-center gap-2 px-4 py-2 bg-[var(--accent)]/10 rounded-xl">
                 <Sparkles size={16} className="text-[var(--accent)]" />
-                <span className="text-[var(--accent)] font-semibold">+{result.xpEarned} XP</span>
+                <span className="text-[var(--accent-text)] font-semibold">+{result.xpEarned} XP</span>
               </div>
             )}
           </InfoCard.Section>
@@ -91,7 +91,7 @@ export function AulaQuiz({ aula, onBack, onComplete }: AulaQuizProps) {
   return (
     <div className="flex flex-col gap-6 p-6 max-w-2xl mx-auto">
       <div className="flex items-center justify-between">
-        <button onClick={onBack} className="text-[var(--text-secondary)] hover:text-[var(--accent)] transition-colors">
+        <button onClick={onBack} className="text-[var(--text-secondary)] hover:text-[var(--accent-text)] transition-colors">
           ← Voltar ao quadrinho
         </button>
         <span className="px-3 py-1 rounded-lg bg-[var(--primary)]/20 text-[var(--primary)] text-xs font-[var(--font-family-inter)] font-semibold">

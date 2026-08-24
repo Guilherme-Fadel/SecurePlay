@@ -43,11 +43,24 @@ export interface SubmitResult {
 export interface ChallengeStatus {
   completed: boolean;
   progress: number;
+  answeredCount: number;
+  totalQuestions: number;
   completedAt: string | null;
+}
+
+export interface SaveProgressResult {
+  correct: boolean;
+  answeredCount: number;
+  totalQuestions: number;
+  progress: number;
+  completed: boolean;
 }
 
 export const getChallengeStatus = (id: number) =>
   api.get<ChallengeStatus>(`/challenges/${id}/status`).then(r => r.data);
+
+export const saveChallengeProgress = (id: number, questionId: number, selectedIndex: number) =>
+  api.patch<SaveProgressResult>(`/challenges/${id}/progress`, { questionId, selectedIndex }).then(r => r.data);
 
 export const getChallengeQuestions = (id: number) =>
   api.get<ChallengeQuestionsResponse>(`/challenges/${id}/questions`).then(r => r.data);

@@ -34,3 +34,11 @@ export class SubmitChallengeDto {
   @Type(() => AnswerDto)
   answers: AnswerDto[];
 }
+
+export class SaveProgressDto {
+  @IsNumber()
+  questionId: number;
+
+  @IsNumber()
+  selectedIndex: number;
+}

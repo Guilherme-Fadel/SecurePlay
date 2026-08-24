@@ -19,7 +19,7 @@ export function Contact() {
 function ContactItem({ icon: Icon, children }: any) {
   return (
     <li className="flex items-start gap-3">
-      <div className="w-6 h-6 bg-[var(--primary)] border-2 border-[var(--border-primary)] flex items-center justify-center mt-0.5">
+      <div className="w-6 h-6 bg-[var(--primary)] border border-[var(--border)] rounded-sm flex items-center justify-center mt-0.5">
         <Icon className="w-3 h-3 text-[var(--text-primary)]" />
       </div>
 

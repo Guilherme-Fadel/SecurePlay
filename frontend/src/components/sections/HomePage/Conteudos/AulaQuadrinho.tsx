@@ -65,7 +65,7 @@ export function AulaQuadrinho({ aulaId, onBack }: AulaQuadrinhoProps) {
           {aula.description && (
             <button
               onClick={() => setShowBriefing(!showBriefing)}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-black/50 backdrop-blur-sm text-[var(--accent)] hover:bg-black/70 transition-colors text-sm"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-black/50 backdrop-blur-sm text-[var(--accent-text)] hover:bg-black/70 transition-colors text-sm"
             >
               <Info size={14} />
               Briefing
@@ -75,7 +75,7 @@ export function AulaQuadrinho({ aulaId, onBack }: AulaQuadrinhoProps) {
 
         {showBriefing && aula.description && (
           <div className="absolute top-14 left-3 right-3 p-3 rounded-xl bg-black/80 backdrop-blur-sm border border-[var(--border)]">
-            <p className="text-[var(--accent)] text-xs font-semibold mb-1">Briefing</p>
+            <p className="text-[var(--accent-text)] text-xs font-semibold mb-1">Briefing</p>
             <p className="text-[var(--text-primary)] font-[var(--font-family-inter)] text-xs leading-relaxed">
               {aula.description}
             </p>
@@ -123,7 +123,7 @@ export function AulaQuadrinho({ aulaId, onBack }: AulaQuadrinhoProps) {
       {isLastPage && hasQuiz && quizAlreadyAnswered && (
         <div className="flex items-center justify-center gap-2 py-3 px-4 mx-3 mb-2 rounded-xl bg-[var(--accent)]/10 border border-[var(--accent)]/30">
           <CheckCircle size={16} className="text-[var(--accent)]" />
-          <span className="text-[var(--accent)] text-sm font-medium">
+          <span className="text-[var(--accent-text)] text-sm font-medium">
             Quiz já respondido
           </span>
         </div>

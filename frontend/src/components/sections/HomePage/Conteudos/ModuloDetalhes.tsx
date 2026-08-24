@@ -40,7 +40,7 @@ export function ModuloDetalhes({ moduloId, onBack, onSelectAula }: ModuloDetalhe
     <div className="flex flex-col gap-6 p-6">
       <button
         onClick={onBack}
-        className="flex items-center gap-2 text-[var(--text-secondary)] hover:text-[var(--accent)] transition-colors w-fit"
+        className="flex items-center gap-2 text-[var(--text-secondary)] hover:text-[var(--accent-text)] transition-colors w-fit"
       >
         <ArrowLeft size={16} />
         <span>Voltar às Operações</span>
@@ -73,7 +73,7 @@ export function ModuloDetalhes({ moduloId, onBack, onSelectAula }: ModuloDetalhe
               <span className="text-[var(--text-secondary)]">
                 {modulo.completedAulas}/{modulo.totalAulas} fases concluídas
               </span>
-              <span className="text-[var(--accent)] font-semibold">{modulo.progress}%</span>
+              <span className="text-[var(--accent-text)] font-semibold">{modulo.progress}%</span>
             </div>
           </div>
 

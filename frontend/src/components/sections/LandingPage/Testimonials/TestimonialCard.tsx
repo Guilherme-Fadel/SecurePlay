@@ -14,19 +14,19 @@ export function TestimonialCard({ testimonial, index }: Props) {
       viewport={{ once: true }}
       transition={{ duration: 0.5, delay: 0.1 }}
       whileHover={{ y: -6 }}
-      className="group relative bg-[var(--surface-alt)] border-4 border-[var(--border-primary)] p-6"
+      className="group relative bg-[var(--surface-alt)] border border-[var(--border)] rounded-lg p-6 shadow-[0_4px_16px_rgba(0,0,0,0.25)]"
     >
   
-      <div className="absolute top-0 left-0 right-0 h-2 bg-[var(--secondary)]" />
+      <div className="absolute top-0 left-0 right-0 h-2 bg-[var(--secondary)] rounded-t-lg" />
 
 
       <div className="flex items-start justify-between mb-5">
         <div className="relative">
-          <div className="w-14 h-14 bg-[var(--primary)] border-4 border-[var(--border-primary)] flex items-center justify-center">
+          <div className="w-14 h-14 bg-[var(--primary)] border border-[var(--border)] rounded-md flex items-center justify-center">
             {testimonial.avatar}
           </div>
 
-          <div className="absolute -bottom-2 -right-2 bg-[var(--accent)] border-2 border-[var(--border-primary)] px-2 py-1">
+          <div className="absolute -bottom-2 -right-2 bg-[var(--accent)] border border-[var(--border)] rounded-md px-2 py-1">
             <span className="text-[var(--background)]">
               {testimonial.level}
             </span>
@@ -47,7 +47,7 @@ export function TestimonialCard({ testimonial, index }: Props) {
       "{testimonial.message}"
       </p>
 
-      <div className="pt-3 border-t-2 border-[var(--primary)]">
+      <div className="pt-3 border-t border-[var(--border)]">
         <div className="text-[var(--text-primary)]">
           {testimonial.name}
         </div>
@@ -56,7 +56,7 @@ export function TestimonialCard({ testimonial, index }: Props) {
         </div>
       </div>
 
-      <div className="absolute inset-0 border-4 border-[var(--secondary)] opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
+      <div className="absolute inset-0 border rounded-lg border-[var(--secondary-30)] opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
     </motion.div>
   );
 }

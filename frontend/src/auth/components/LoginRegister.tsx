@@ -107,11 +107,11 @@ export function LoginRegister() {
       >
         <SecurityLevelIndicator />
 
-        <div className="relative bg-[var(--surface-alt)] border-2 border-[var(--secondary)] p-8">
-          <div className="absolute top-0 left-0 w-2 h-2 bg-[var(--secondary)]" />
-          <div className="absolute top-0 right-0 w-2 h-2 bg-[var(--secondary)]" />
-          <div className="absolute bottom-0 left-0 w-2 h-2 bg-[var(--secondary)]" />
-          <div className="absolute bottom-0 right-0 w-2 h-2 bg-[var(--secondary)]" />
+        <div className="relative bg-[var(--surface-alt)] border border-[var(--secondary-30)] rounded-lg p-8">
+          <div className="absolute top-0 left-0 w-1.5 h-1.5 bg-[var(--secondary-60)]" />
+          <div className="absolute top-0 right-0 w-1.5 h-1.5 bg-[var(--secondary-60)]" />
+          <div className="absolute bottom-0 left-0 w-1.5 h-1.5 bg-[var(--secondary-60)]" />
+          <div className="absolute bottom-0 right-0 w-1.5 h-1.5 bg-[var(--secondary-60)]" />
 
           <AuthTabs mode={mode} switchMode={switchMode} />
 
@@ -134,7 +134,7 @@ export function LoginRegister() {
           </AnimatePresence>
         </div>
 
-        <div className="absolute inset-0 border-2 border-[var(--background)] -z-10 translate-x-2 translate-y-2" />
+        <div className="absolute inset-0 rounded-lg -z-10 shadow-[0_8px_30px_rgba(0,0,0,0.35)]" />
       </motion.div>
 
       <motion.div

@@ -1,11 +1,18 @@
+import { Target, Clock, Trophy, Play, Crosshair } from 'lucide-react';
 import { InfoCard } from '@/components/ui/visuals/InfoCard';
-import { Calendar, Target, Clock, Trophy, BadgeCheck } from 'lucide-react';
 import { useDailyChallenge } from '@/hooks/useDashboard';
 import { Modal } from '@/components/ui/modal';
 import { QuizContent } from '@/components/sections/Quiz/QuizContent';
-import { useState, useEffect, useCallback } from 'react';
-import { getChallengeStatus } from '@/services/challenge';
+import { motion } from 'motion/react';
+import { useState, useEffect } from 'react';
+import { getChallengeStatus, getChallengeQuestions, QuestionResponse } from '@/services/challenge';
 import { getCached, setCache } from '@/lib/queryCache';
+
+const difficultyMeta = {
+  iniciante:     { label: 'INICIANTE',     world: '01', dots: 1, variant: 'accent' as const },
+  intermediario: { label: 'INTERMEDIÁRIO', world: '02', dots: 2, variant: 'primary' as const },
+  avancado:      { label: 'AVANÇADO',      world: '03', dots: 3, variant: 'secondary' as const },
+};
 
 export function DailyChallenge() {
   const { challenge, loading } = useDailyChallenge();
@@ -16,6 +23,24 @@ export function DailyChallenge() {
 
   const [completed, setCompleted] = useState(cachedCompleted ?? false);
   const [checkingStatus, setCheckingStatus] = useState(cachedCompleted === null);
+  const [questions, setQuestions] = useState<QuestionResponse[]>([]);
+  const [answeredCount, setAnsweredCount] = useState(0);
+
+  useEffect(() => {
+    if (!challenge) return;
+    const questionsCacheKey = `challenge-questions:${challenge.id}`;
+    const cachedQuestions = getCached<QuestionResponse[]>(questionsCacheKey);
+    if (cachedQuestions) {
+      setQuestions(cachedQuestions);
+      return;
+    }
+    getChallengeQuestions(challenge.id)
+      .then((data) => {
+        setQuestions(data.questions);
+        setCache(questionsCacheKey, data.questions);
+      })
+      .catch(() => setQuestions([]));
+  }, [challenge]);
 
   useEffect(() => {
     if (!challenge || !cacheKey) {
@@ -23,26 +48,44 @@ export function DailyChallenge() {
       return;
     }
 
-    const cached = getCached<boolean>(cacheKey);
-    if (cached !== null) {
-      setCompleted(cached);
-      setCheckingStatus(false);
-      return;
-    }
-
     getChallengeStatus(challenge.id)
       .then((status) => {
         setCompleted(status.completed);
+        setAnsweredCount(status.answeredCount);
         setCache(cacheKey, status.completed);
       })
       .catch(() => setCompleted(false))
       .finally(() => setCheckingStatus(false));
   }, [challenge, cacheKey]);
 
+  const canStart = !!challenge && !completed && !checkingStatus;
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.code === 'Enter' && canStart && !open) {
+        setOpen(true);
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [canStart, open]);
+
   const handleComplete = () => {
     setOpen(false);
     setCompleted(true);
     if (cacheKey) setCache(cacheKey, true);
+  };
+
+  const handleCloseModal = () => {
+    setOpen(false);
+    if (!challenge) return;
+    getChallengeStatus(challenge.id)
+      .then((status) => {
+        setCompleted(status.completed);
+        setAnsweredCount(status.answeredCount);
+        if (cacheKey) setCache(cacheKey, status.completed);
+      })
+      .catch(() => {});
   };
 
   if (loading) {
@@ -63,56 +106,105 @@ export function DailyChallenge() {
     );
   }
 
+  const meta = difficultyMeta[challenge.difficulty];
+
+  const totalObjectives = questions.length;
+  const doneObjectives = completed ? totalObjectives : Math.min(answeredCount, totalObjectives);
+  const progressPercent = totalObjectives > 0 ? Math.round((doneObjectives / totalObjectives) * 100) : (completed ? 100 : 0);
+
   return (
-    <InfoCard variant="primary" className="flex flex-col">
-      <InfoCard.Header
-        title="Desafio do Dia"
-        subtitle={`Dificuldade: ${challenge.difficulty}`}
-        icon={Calendar}
-        variant="primary"
-      />
+    <InfoCard variant="primary" className="h-full flex flex-col overflow-hidden">
 
-      <InfoCard.Section className="flex-1 flex flex-col gap-3">
-        <InfoCard.Stat
-          label="Objetivo"
-          value={challenge.title}
-          subtitle={challenge.description}
-          icon={Target}
-          variant="secondary"
-        />
+      <div className="flex items-start justify-between gap-3 p-4 border-b border-[var(--border)]">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 flex items-center justify-center rounded-lg border bg-[var(--primary-15)] border-[var(--primary-30)] shrink-0 text-[var(--primary)]">
+            <Crosshair size={18} />
+          </div>
+          <div>
+            <span className="text-[10px] tracking-widest text-[var(--primary)]">MISSÃO DIÁRIA</span>
+            <h5 className="text-[var(--text-primary)] leading-tight">DESAFIO DO DIA</h5>
+          </div>
+        </div>
+        <span className="text-[10px] tracking-widest px-2 py-1 rounded border border-[var(--secondary-30)] bg-[var(--secondary-15)] text-[var(--secondary)] shrink-0">
+          {meta.label}
+        </span>
+      </div>
 
-        <InfoCard.Item
-          label="Duração"
-          value={`${challenge.duration} minutos`}
-          icon={Clock}
-          variant="primary"
-        />
+      <div className="flex-1 flex flex-col gap-4 p-4">
 
-        <InfoCard.Item
-          label="Recompensa"
-          value={`+${challenge.points} XP`}
-          icon={Trophy}
-          variant="accent"
-        />
-      </InfoCard.Section>
+        <div className="relative rounded-lg border border-[var(--primary-30)] bg-[var(--primary-10)] p-4 shadow-[0_0_16px_rgba(var(--primary-rgb),0.12)]">
+          <div className="absolute top-0 left-0 h-full w-1 rounded-l-lg bg-[var(--primary)]" />
+          <div className="flex items-center gap-2 text-[10px] tracking-widest text-[var(--secondary)] mb-1">
+            <span>&#9672;</span>
+            <span>MISSÃO</span>
+          </div>
+          <h4 className="text-[var(--text-primary)] leading-tight">{challenge.title}</h4>
+          <p className="text-[var(--text-secondary)] text-sm mt-1">{challenge.description}</p>
+        </div>
 
-      <InfoCard.Footer className="flex justify-center">
-        <button
+        {totalObjectives > 0 && (
+          <div className="flex flex-col gap-1.5">
+            <div className="flex items-center justify-between text-[10px] tracking-widest text-[var(--text-secondary)]">
+              <span>PROGRESSO DA MISSÃO</span>
+              <span className="text-[var(--primary)] font-semibold">{progressPercent}%</span>
+            </div>
+            <div className="h-2.5 rounded-full bg-[var(--surface-alt)] border border-[var(--border)] overflow-hidden">
+              <motion.div
+                className="h-full rounded-full bg-gradient-to-r from-[var(--primary)] to-[var(--secondary)]"
+                initial={{ width: 0 }}
+                animate={{ width: `${progressPercent}%` }}
+                transition={{ duration: 0.7, ease: 'easeOut' }}
+              />
+            </div>
+            <span className="text-[10px] tracking-widest text-[var(--text-secondary)]">
+              {doneObjectives} / {totalObjectives} OBJETIVOS
+            </span>
+          </div>
+        )}
+
+        <div className="grid grid-cols-3 gap-3 mt-auto">
+          <div className="flex flex-col items-center justify-center text-center gap-1 rounded-lg border border-[var(--border)] bg-[var(--surface-alt)] py-3">
+            <Clock size={16} className="text-[var(--primary)]" />
+            <span className="text-[var(--text-primary)] font-semibold leading-none text-lg">{challenge.duration}</span>
+            <span className="text-[var(--text-secondary)] text-[9px] tracking-widest">MIN · TEMPO</span>
+          </div>
+
+          <motion.div
+            className="flex flex-col items-center justify-center text-center gap-1 rounded-lg border border-[var(--accent-30)] bg-[var(--accent-10)] py-3"
+            whileHover={{ scale: 1.03 }}
+          >
+            <Trophy size={16} className="text-[var(--accent)]" />
+            <span className="text-[var(--accent-text)] font-semibold leading-none text-lg">+{challenge.points}</span>
+            <span className="text-[var(--text-secondary)] text-[9px] tracking-widest">XP · RECOMPENSA</span>
+          </motion.div>
+
+          <div className="flex flex-col items-center justify-center text-center gap-1.5 rounded-lg border border-[var(--border)] bg-[var(--surface-alt)] py-3">
+            <InfoCard.Dots total={3} active={meta.dots} variant={meta.variant} />
+            <span className="text-[var(--text-secondary)] text-[9px] tracking-widest">DIFICULDADE</span>
+          </div>
+        </div>
+      </div>
+
+      <div className="px-4 py-3 border-t border-[var(--border)] flex flex-col items-center gap-2">
+        <motion.button
           onClick={() => setOpen(true)}
-          disabled={completed || checkingStatus}
-          className={`w-full px-4 py-2 rounded-lg font-semibold transition-colors ${
+          disabled={!canStart}
+          whileHover={canStart ? { scale: 1.01 } : undefined}
+          whileTap={canStart ? { scale: 0.98 } : undefined}
+          className={`w-full inline-flex items-center justify-center gap-2 px-4 py-3 rounded-md border font-semibold tracking-wide transition-all ${
             completed
-              ? 'bg-[var(--surface-alt)] text-[var(--text-secondary)] cursor-not-allowed opacity-60'
-              : 'bg-[var(--primary)] text-[var(--text-primary)] hover:bg-[var(--primary-hover)]'
+              ? 'bg-[var(--surface-alt)] border-[var(--border)] text-[var(--text-secondary)] cursor-not-allowed opacity-60'
+              : 'bg-[var(--primary)] border-[var(--primary)] text-[var(--text-primary)] hover:bg-[var(--primary-hover)] shadow-[0_0_18px_rgba(var(--primary-rgb),0.35)]'
           }`}
         >
-          {completed ? 'Desafio Concluído' : 'Iniciar Desafio'}
-        </button>
-      </InfoCard.Footer>
+          {!completed && <Play size={16} className="fill-current" />}
+          <span>{completed ? 'DESAFIO CONCLUÍDO' : doneObjectives > 0 ? 'CONTINUAR MISSÃO' : 'INICIAR DESAFIO'}</span>
+        </motion.button>
+      </div>
 
       <Modal
         open={open}
-        onClose={() => setOpen(false)}
+        onClose={handleCloseModal}
         title={challenge.title}
       >
         <QuizContent

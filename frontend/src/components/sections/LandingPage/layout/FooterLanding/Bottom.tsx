@@ -30,7 +30,7 @@ export function Bottom() {
       </div>
 
       <div className="mt-8 text-center">
-        <div className="inline-block bg-[var(--surface-alt)] border-2 border-[var(--primary)] px-6 py-2">
+        <div className="inline-block bg-[var(--surface-alt)] border border-[var(--primary-30)] rounded-md px-6 py-2">
           <span className="text-[var(--primary)]">
             🎮 FEITO COM PAIXÃO POR SEGURANÇA 🛡️
           </span>

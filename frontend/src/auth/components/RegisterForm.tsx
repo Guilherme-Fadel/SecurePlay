@@ -80,7 +80,7 @@ export function RegisterForm({
         />
 
         {errors.terms && (
-          <p className="text-[var(--accent)]  mt-2 ml-8">
+          <p className="text-[var(--danger)]  mt-2 ml-8">
             ⚠ {errors.terms}
           </p>
         )}

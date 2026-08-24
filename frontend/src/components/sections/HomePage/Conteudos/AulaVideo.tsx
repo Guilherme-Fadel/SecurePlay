@@ -43,7 +43,7 @@ export function AulaVideo({ aulaId, moduloId, onBack, onTypeResolved }: AulaVide
 
   return (
     <div className="flex flex-col gap-6 p-6">
-      <button onClick={onBack} className="flex items-center gap-2 text-[var(--text-secondary)] hover:text-[var(--accent)] transition-colors w-fit">
+      <button onClick={onBack} className="flex items-center gap-2 text-[var(--text-secondary)] hover:text-[var(--accent-text)] transition-colors w-fit">
         <ArrowLeft size={16} />
         <span>Voltar ao módulo</span>
       </button>
@@ -72,7 +72,7 @@ export function AulaVideo({ aulaId, moduloId, onBack, onTypeResolved }: AulaVide
               )}
               <div className="flex items-center gap-4 mt-3 text-xs font-[var(--font-family-inter)]">
                 <span className="text-[var(--text-secondary)]">{aula.duration} min</span>
-                <span className="text-[var(--accent)] font-semibold">{aula.xp} XP</span>
+                <span className="text-[var(--accent-text)] font-semibold">{aula.xp} XP</span>
               </div>
             </InfoCard.Section>
           </InfoCard>
@@ -92,7 +92,7 @@ export function AulaVideo({ aulaId, moduloId, onBack, onTypeResolved }: AulaVide
             <InfoCard variant="accent">
               <InfoCard.Section className="text-center py-3 flex items-center justify-center gap-2">
                 <Sparkles size={18} className="text-[var(--accent)]" />
-                <span className="text-[var(--accent)] font-semibold">+{xpGanho} XP</span>
+                <span className="text-[var(--accent-text)] font-semibold">+{xpGanho} XP</span>
               </InfoCard.Section>
             </InfoCard>
           )}
@@ -101,7 +101,7 @@ export function AulaVideo({ aulaId, moduloId, onBack, onTypeResolved }: AulaVide
             <InfoCard variant="accent" className="opacity-70">
               <InfoCard.Section className="text-center py-3 flex items-center justify-center gap-2">
                 <CheckCircle size={16} className="text-[var(--accent)]" />
-                <span className="text-[var(--accent)]">Aula concluída</span>
+                <span className="text-[var(--accent-text)]">Aula concluída</span>
               </InfoCard.Section>
             </InfoCard>
           )}

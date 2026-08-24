@@ -21,7 +21,7 @@ export function SecurityLevelIndicator() {
 
 function IndicatorBox() {
   return (
-    <div className="relative bg-[var(--primary)] border-2 border-[var(--secondary)] px-3 py-1">
+    <div className="relative bg-[var(--primary)] border border-[var(--secondary-30)] rounded-md px-3 py-1">
       <div className="flex items-center gap-2">
         <ShieldIcon />
 
@@ -50,7 +50,7 @@ function CornerPixels() {
 
 function ShadowLayer() {
   return (
-    <div className="absolute inset-0 bg-[var(--background)] -z-10 translate-x-0.5 translate-y-0.5" />
+    <div className="absolute inset-0 rounded-md -z-10 shadow-[0_2px_8px_rgba(0,0,0,0.3)]" />
   );
 }
 

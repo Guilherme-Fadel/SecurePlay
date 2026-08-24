@@ -46,7 +46,7 @@ export function AulaListItem({ aula, onClick }: AulaListItemProps) {
 
       <div className="flex items-center gap-2 text-[10px] text-[var(--text-secondary)] font-[var(--font-family-inter)] flex-shrink-0">
         <span>{aula.duration}{aula.type === 'video' ? ' min' : ' pág'}</span>
-        <span className={config.color}>{aula.xp} XP</span>
+        <span className="text-[var(--accent-text)]">{aula.xp} XP</span>
       </div>
     </div>
   );

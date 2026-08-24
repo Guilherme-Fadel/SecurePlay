@@ -9,8 +9,8 @@ export function TestimonialsSection() {
       className="relative py-24 bg-gradient-to-b from-[var(--surface)] to-[var(--background)] overflow-hidden"
     >
       <div className="absolute inset-0 opacity-5">
-        <div className="absolute top-10 left-10 w-24 h-24 border-4 border-[var(--accent)]" />
-        <div className="absolute bottom-10 right-10 w-32 h-32 border-4 border-[var(--secondary)]" />
+        <div className="absolute top-10 left-10 w-24 h-24 border border-[var(--accent)] rounded-lg" />
+        <div className="absolute bottom-10 right-10 w-32 h-32 border border-[var(--secondary)] rounded-lg" />
       </div>
 
       <div className="max-w-6xl mx-auto px-6 mb-16 text-center relative z-10">
@@ -19,7 +19,7 @@ export function TestimonialsSection() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
         >
-          <div className="inline-block bg-[var(--surface-alt)] border-4 border-[var(--secondary)] px-6 py-2 mb-6">
+          <div className="inline-block bg-[var(--surface-alt)] border border-[var(--secondary-30)] rounded-md px-6 py-2 mb-6">
             <span className="text-[var(--secondary)]">
               HALL DA FAMA
             </span>
@@ -48,8 +48,8 @@ export function TestimonialsSection() {
         viewport={{ once: true }}
         className="mt-16 text-center"
       >
-        <div className="inline-flex items-center gap-4 bg-[var(--background)] border-4 border-[var(--accent)] px-6 py-4">
-          <div className="w-10 h-10 bg-[var(--accent)] border-4 border-[var(--border-primary)] flex items-center justify-center">
+        <div className="inline-flex items-center gap-4 bg-[var(--background)] border border-[var(--accent-30)] rounded-md px-6 py-4">
+          <div className="w-10 h-10 bg-[var(--accent)] border border-[var(--border)] rounded-md flex items-center justify-center">
             🏆
           </div>
 

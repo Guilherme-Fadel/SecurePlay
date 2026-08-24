@@ -27,6 +27,9 @@ export class UsuarioChallenge {
   @Column({ default: false })
   completed: boolean;
 
+  @Column('json', { nullable: true })
+  answered_question_ids: number[];
+
   @CreateDateColumn()
   started_at: Date;
 

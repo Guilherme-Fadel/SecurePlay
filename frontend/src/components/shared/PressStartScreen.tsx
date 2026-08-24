@@ -83,11 +83,16 @@ export function PressStartScreen() {
   
             <motion.button
               onClick={handleStart}
-              className="text-[var(--text-primary)] hover:text-[var(--secondary)] transition-colors tracking-wide cursor-none"
-              animate={{ opacity: [1, 0.3, 1] }}
-              transition={{ duration: 1.5, repeat: Infinity }}
+              whileHover={{ scale: 1.03 }}
+              whileTap={{ scale: 0.98 }}
+              className="inline-flex items-center justify-center px-8 py-3 rounded-md border border-[var(--secondary-30)] bg-[var(--secondary-15)] text-[var(--text-primary)] hover:border-[var(--secondary)] transition-colors tracking-wide cursor-none shadow-[0_3px_12px_rgba(0,0,0,0.25)]"
             >
-              PRESS START
+              <motion.span
+                animate={{ opacity: [1, 0.4, 1] }}
+                transition={{ duration: 1.5, repeat: Infinity }}
+              >
+                PRESS START
+              </motion.span>
             </motion.button>
   
             <motion.p
@@ -101,17 +106,18 @@ export function PressStartScreen() {
           </div>
   
           <div className="absolute inset-0 overflow-hidden pointer-events-none">
-            {Array.from({ length: 20 }).map((_, i) => (
+            {Array.from({ length: 10 }).map((_, i) => (
               <motion.div
                 key={i}
                 className="absolute w-1 h-1 bg-[var(--secondary)]"
                 style={{
                   left: `${Math.random() * 100}%`,
                   top: `${Math.random() * 100}%`,
+                  boxShadow: '0 0 3px rgba(var(--secondary-rgb), 0.4)',
                 }}
                 animate={{
                   scale: [0, 1, 0],
-                  opacity: [0, 1, 0],
+                  opacity: [0, 0.5, 0],
                 }}
                 transition={{
                   duration: 2 + Math.random() * 2,

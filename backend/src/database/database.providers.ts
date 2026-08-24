@@ -16,6 +16,14 @@ export const databaseProviders = [
             __dirname + '/../**/*.entity{.ts,.js}',
         ],
         synchronize: true,
+        poolSize: 10,
+        extra: {
+          waitForConnections: true,
+          connectionLimit: 10,
+          queueLimit: 0,
+          enableKeepAlive: true,
+          keepAliveInitialDelay: 10000,
+        },
       });
 
       return dataSource.initialize();

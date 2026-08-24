@@ -7,7 +7,7 @@ import { DailyChallenge } from './DailyChallenge';
 import { useEffect } from 'react';
 import { useSectionContext } from '@/contexts/SectionContext';
 import { DailyStreak } from './DailyStreak';
-import { ActiveTraining } from './ActiveTraining';
+import { ActivityHistory } from './ActivityHistory';
 
 
 export function Dashboard() {
@@ -26,10 +26,10 @@ export function Dashboard() {
 
   return (
     <PageTransition>
-      <div className="flex flex-col gap-6 p-6">
+      <div className="flex flex-col gap-4 lg:h-full lg:overflow-hidden">
 
         <InfoCard variant="primary">
-          <InfoCard.Section className="flex items-start justify-between flex-wrap gap-4">
+          <InfoCard.Section className="flex items-center justify-between flex-wrap gap-4 py-3">
             <div>
               <h3 className="text-[var(--text-primary)] mb-1">
                 Bem-vindo de volta, {user?.name ?? '—'}!
@@ -57,14 +57,14 @@ export function Dashboard() {
         </InfoCard>
 
         <OverviewCards />
-        <div className='grid grid-cols-1 sm:grid-cols-1 lg:grid-cols-[5.5fr_3fr] gap-4'>
-          <DailyChallenge />
-          <DailyStreak />
-        </div>    
-        <div className='grid grid-cols-1 sm:grid-cols-1 lg:grid-cols-[5.5fr_3fr] gap-4'>
-          <ActiveTraining />
-        </div>  
 
+        <div className="grid grid-cols-1 lg:grid-cols-[5.5fr_3fr] gap-4 lg:flex-1 lg:min-h-0">
+          <DailyChallenge />
+          <div className="flex flex-col gap-4 lg:min-h-0">
+            <DailyStreak />
+            <ActivityHistory />
+          </div>
+        </div>
 
       </div>
     </PageTransition>

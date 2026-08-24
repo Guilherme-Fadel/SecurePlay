@@ -13,9 +13,9 @@ export function AuthTabs({ mode, switchMode }: AuthTabsProps) {
       <button
         onClick={() => switchMode('login')}
         className={`
-          flex-1 py-3 border-2 transition-all duration-200 relative
+          flex-1 py-3 border rounded-md transition-all duration-200 relative
           ${mode === 'login'
-            ? 'bg-[var(--primary)] border-[var(--primary)] text-[var(--text-primary)]'
+            ? 'bg-[var(--primary-15)] border-[var(--primary)] text-[var(--text-primary)]'
             : 'bg-transparent border-[var(--border)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
           }
         `}
@@ -25,7 +25,7 @@ export function AuthTabs({ mode, switchMode }: AuthTabsProps) {
         {mode === 'login' && (
           <motion.div
             layoutId="activeTab"
-            className="absolute inset-0 border-2 border-[var(--secondary)] pointer-events-none"
+            className="absolute inset-0 border border-[var(--secondary-30)] rounded-md pointer-events-none"
           />
         )}
       </button>
@@ -33,9 +33,9 @@ export function AuthTabs({ mode, switchMode }: AuthTabsProps) {
       <button
         onClick={() => switchMode('register')}
         className={`
-          flex-1 py-3 border-2 transition-all duration-200 relative
+          flex-1 py-3 border rounded-md transition-all duration-200 relative
           ${mode === 'register'
-            ? 'bg-[var(--primary)] border-[var(--primary)] text-[var(--text-primary)]'
+            ? 'bg-[var(--primary-15)] border-[var(--primary)] text-[var(--text-primary)]'
             : 'bg-transparent border-[var(--border)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
           }
         `}
@@ -45,7 +45,7 @@ export function AuthTabs({ mode, switchMode }: AuthTabsProps) {
         {mode === 'register' && (
           <motion.div
             layoutId="activeTab"
-            className="absolute inset-0 border-2 border-[var(--secondary)] pointer-events-none"
+            className="absolute inset-0 border border-[var(--secondary-30)] rounded-md pointer-events-none"
           />
         )}
       </button>

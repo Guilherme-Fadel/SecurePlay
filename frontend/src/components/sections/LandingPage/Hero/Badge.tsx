@@ -7,7 +7,7 @@ export function HeroBadge() {
       initial={{ opacity: 0, y: -20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
-      className="inline-flex items-center gap-2 bg-[var(--surface-alt)] border-4 border-[var(--accent)] px-6 py-3 mb-8"
+      className="inline-flex items-center gap-2 bg-[var(--surface-alt)] border border-[var(--accent-30)] rounded-md px-6 py-3 mb-8"
     >
       <Sparkles className="w-5 h-5 text-[var(--accent)]" />
       

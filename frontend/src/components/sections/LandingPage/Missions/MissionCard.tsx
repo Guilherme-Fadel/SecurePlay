@@ -11,21 +11,21 @@ export function MissionCard({ mission, index }: any) {
       viewport={{ once: true }}
       transition={{ delay: index * 0.15 }}
       whileHover={{ y: -8 }}
-      className="group relative bg-[var(--surface-alt)] border-4 border-[var(--primary)] p-8 overflow-hidden"
+      className="group relative bg-[var(--surface-alt)] border border-[var(--border)] rounded-lg p-8 overflow-hidden shadow-[0_4px_16px_rgba(0,0,0,0.25)]"
     >
       <div className={`absolute top-0 left-0 right-0 h-2 ${mission.color}`} />
 
-      <div className="absolute top-4 right-4 w-12 h-12 bg-[var(--background)] border-4 border-[var(--border-primary)] flex items-center justify-center">
+      <div className="absolute top-4 right-4 w-12 h-12 bg-[var(--background)] border border-[var(--border)] rounded-md flex items-center justify-center">
         <span className=" text-[var(--text-primary)]">
           {mission.id}
         </span>
       </div>
 
-      <div className={`w-16 h-16 border-4 border-[var(--border-primary)] mb-6 flex items-center justify-center relative ${mission.color}`}>
+      <div className={`w-16 h-16 border border-[var(--border)] rounded-md mb-6 flex items-center justify-center relative ${mission.color}`}>
         <Icon className="w-8 h-8 text-[var(--text-primary)]" />
 
         {mission.progress === 100 && (
-          <div className="absolute -top-2 -right-2 w-6 h-6 bg-[var(--accent)] border-2 border-[var(--border-primary)] flex items-center justify-center">
+          <div className="absolute -top-2 -right-2 w-6 h-6 bg-[var(--accent)] border border-[var(--border)] rounded-md flex items-center justify-center">
             <Star className="w-3 h-3 text-[var(--text-primary)] fill-white" />
           </div>
         )}
@@ -45,7 +45,7 @@ export function MissionCard({ mission, index }: any) {
         
       <ProgressBar value={mission.progress} color={mission.color} index={index} />
 
-      <div className="flex justify-between items-center pt-4 border-t-2 border-[var(--primary)]">
+      <div className="flex justify-between items-center pt-4 border-t border-[var(--border)]">
         <span className="text-[var(--text-primary)]">
             {mission.difficulty}
         </span>
@@ -55,7 +55,7 @@ export function MissionCard({ mission, index }: any) {
         </span>
       </div>
 
-      <div className="absolute inset-0 border-4 border-[var(--secondary)] opacity-0 group-hover:opacity-100 transition-opacity" />
+      <div className="absolute inset-0 border rounded-lg border-[var(--secondary-30)] opacity-0 group-hover:opacity-100 transition-opacity" />
     </motion.div>
   );
 }
@@ -73,7 +73,7 @@ function ProgressBar({ value, color, index }: any) {
         </span>
       </div>
 
-      <div className="h-4 bg-[var(--background)] border-2 border-[var(--border-primary)] overflow-hidden">
+      <div className="h-4 bg-[var(--background)] border border-[var(--border)] rounded-md overflow-hidden">
         <motion.div
           initial={{ width: 0 }}
           whileInView={{ width: `${value}%` }}

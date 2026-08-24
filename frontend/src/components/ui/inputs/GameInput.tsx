@@ -17,12 +17,12 @@ export const GameInput = forwardRef<HTMLInputElement, GameInputProps>(
     const inputType = isPassword && showPassword ? "text" : type;
 
     const baseWrapper =
-    "relative border-2 bg-[var(--surface-alt)] transition-all duration-200";
+    "relative border bg-[var(--surface-alt)] rounded-md transition-all duration-200";
 
     const focusStyle =
-    "border-[var(--secondary)] shadow-[0_0_12px_rgba(58,242,165,0.3)] translate-x-0.5 -translate-y-0.5";
+    "border-[var(--secondary)] shadow-[0_0_8px_rgba(var(--secondary-rgb),0.2)]";
 
-    const errorStyle = "border-[var(--accent)]";
+    const errorStyle = "border-[var(--danger)]";
 
     const normalStyle = "border-[var(--border)]";
 
@@ -110,9 +110,9 @@ function InputShadow({ isFocused }: { isFocused: boolean }) {
   return (
     <div
       className={`
-        absolute inset-0 border-2 border-[var(--background)] -z-10
+        absolute inset-0 rounded-md -z-10
         transition-all duration-200
-        ${isFocused ? "translate-x-1 translate-y-1" : "translate-x-0.5 translate-y-0.5"}
+        ${isFocused ? "shadow-[0_2px_10px_rgba(0,0,0,0.25)]" : "shadow-[0_1px_4px_rgba(0,0,0,0.15)]"}
       `}
     />
   );
@@ -121,8 +121,8 @@ function InputShadow({ isFocused }: { isFocused: boolean }) {
 function InputError({ message }: { message: string }) {
   return (
     <div className="flex items-start gap-2 mt-1">
-      <span className="text-[var(--accent)]  mt-0.5">⚠</span>
-      <p className="text-[var(--accent)] ">{message}</p>
+      <span className="text-[var(--danger)] mt-0.5">⚠</span>
+      <p className="text-[var(--danger)]">{message}</p>
     </div>
   );
 }

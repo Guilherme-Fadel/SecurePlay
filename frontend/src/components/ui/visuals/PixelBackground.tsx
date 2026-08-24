@@ -24,6 +24,7 @@ export function PixelBackground() {
 }
 
 function generateParticles(count: number) {
+  count = Math.round(count / 2);
   return Array.from({ length: count }, (_, i) => ({
     id: i,
     x: Math.random() * 100,
@@ -43,11 +44,11 @@ function Particles({ particles }: { particles: any[] }) {
           style={{
             left: `${p.x}%`,
             top: `${p.y}%`,
-            boxShadow: "0 0 4px var(--secondary)",
+            boxShadow: "0 0 3px rgba(var(--secondary-rgb), 0.4)",
           }}
           animate={{
             y: [-10, 10, -10],
-            opacity: [0.3, 0.8, 0.3],
+            opacity: [0.15, 0.4, 0.15],
           }}
           transition={{
             duration: p.duration,
@@ -64,13 +65,13 @@ function Particles({ particles }: { particles: any[] }) {
 function PixelGrid() {
   return (
     <div
-      className="absolute inset-0 opacity-10"
+      className="absolute inset-0 opacity-[0.035]"
       style={{
         backgroundImage: `
           linear-gradient(90deg, var(--secondary) 1px, transparent 1px),
           linear-gradient(var(--secondary) 1px, transparent 1px)
         `,
-        backgroundSize: "20px 20px",
+        backgroundSize: "28px 28px",
       }}
     />
   );
@@ -79,19 +80,17 @@ function PixelGrid() {
 
 function BackgroundGradient() {
   return (
-    <div className="absolute inset-0 bg-gradient-to-br from-[var(--background)] via-[var(--background)] to-[var(--primary)]/20" />
+    <div className="absolute inset-0 bg-gradient-to-br from-[var(--background)] via-[var(--background)] to-[var(--primary)]/8" />
   );
 }
 
 function PixelDecorations() {
   return (
-    <>
-      <PixelCross top="top-10" left="left-20" color="var(--accent)" />
-      <PixelCross top="top-32" right="right-40" color="var(--secondary)" />
+    <div className="opacity-40">
+      <PixelCross top="top-10" left="left-20" color="var(--secondary)" />
       <PixelCross bottom="bottom-20" left="left-1/4" color="var(--primary)" />
-      <PixelCross top="top-1/2" right="right-20" color="var(--accent)" />
-      <PixelCross bottom="bottom-32" right="right-1/3" color="var(--secondary)" />
-    </>
+      <PixelCross top="top-1/2" right="right-20" color="var(--secondary)" />
+    </div>
   );
 }
 
@@ -119,10 +118,10 @@ function PixelCross({
 function ScanLines() {
   return (
     <div
-      className="absolute inset-0 opacity-5 pointer-events-none"
+      className="absolute inset-0 opacity-[0.03] pointer-events-none"
       style={{
         backgroundImage:
-        "repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(var(--overlay-dark), 0.5) 2px, rgba(var(--overlay-dark), 0.5) 4px)",
+        "repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(0,0,0,0.5) 3px, rgba(0,0,0,0.5) 4px)",
       }}
     />
   );

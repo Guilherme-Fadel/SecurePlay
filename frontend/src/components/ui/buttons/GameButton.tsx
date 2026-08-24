@@ -20,7 +20,7 @@ export function GameButton({
   const primary = variant === "primary";
 
   const baseStyle =
-  "relative inline-flex items-center justify-center py-4 px-1 tracking-wide border-2 transition-all duration-200";
+  "relative inline-flex items-center justify-center py-4 px-1 tracking-wide border rounded-md transition-all duration-200";
 
   const disabledStyle =
   "disabled:opacity-50 disabled:cursor-not-allowed";
@@ -29,13 +29,13 @@ export function GameButton({
   "bg-[var(--primary)] border-[var(--primary)] text-[var(--text-primary)] hover:bg-[var(--primary-hover)]";
 
   const secondaryStyle =
-  "bg-[var(--surface-alt)] border-[var(--border)] text-[var(--text-primary)] hover:bg-[--border-light]";
+  "bg-[var(--surface-alt)] border-[var(--border)] text-[var(--text-primary)] hover:bg-[var(--border-light)]";
 
   const buttonStyle = `
     ${baseStyle}
     ${disabledStyle}
     ${primary ? primaryStyle : secondaryStyle}
-    ${!disabledState ? "active:translate-x-0.5 active:translate-y-0.5" : ""}
+    ${!disabledState ? "active:translate-y-0.5" : ""}
     ${className}
   `;
 
@@ -70,8 +70,8 @@ export function GameButton({
 
       <div
         className="
-          absolute inset-0 border-[var(--background)] -z-10
-          transition-all duration-200 translate-x-1 translate-y-1
+          absolute inset-0 rounded-md -z-10
+          transition-all duration-200 shadow-[0_3px_12px_rgba(0,0,0,0.25)]
       "
       />
 

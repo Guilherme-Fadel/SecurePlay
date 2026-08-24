@@ -7,7 +7,7 @@ export function Header() {
   const [open, setOpen] = useState(false);
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 bg-[var(--background)] border-b-4 border-[var(--primary)]">
+    <header className="fixed top-0 left-0 right-0 z-50 bg-[var(--background)] border-b border-[var(--primary-30)]">
       <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
         
         <Logo />

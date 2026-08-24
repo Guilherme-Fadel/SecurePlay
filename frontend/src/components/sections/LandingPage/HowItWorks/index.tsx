@@ -10,8 +10,8 @@ export function HowItWorksSection() {
     >
   
       <div className="absolute inset-0 opacity-5">
-        <div className="absolute top-20 left-10 w-32 h-32 border-8 border-[var(--primary)]" />
-        <div className="absolute bottom-20 right-10 w-40 h-40 border-8 border-[var(--secondary)]" />
+        <div className="absolute top-20 left-10 w-32 h-32 border border-[var(--primary)] rounded-lg" />
+        <div className="absolute bottom-20 right-10 w-40 h-40 border border-[var(--secondary)] rounded-lg" />
       </div>
 
 
@@ -21,7 +21,7 @@ export function HowItWorksSection() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
         >
-          <div className="inline-block bg-[var(--surface-alt)] border-4 border-[var(--secondary)] px-6 py-2 mb-6">
+          <div className="inline-block bg-[var(--surface-alt)] border border-[var(--secondary-30)] rounded-md px-6 py-2 mb-6">
             <span className="text-[var(--secondary)]">
               MAPA DO JOGO
             </span>

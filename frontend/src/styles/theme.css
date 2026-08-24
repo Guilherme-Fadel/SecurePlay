@@ -14,8 +14,8 @@ a:active {
 
 .bg-grid-pattern {
   background-image:
-    linear-gradient(0deg, transparent 24%, rgba(105,0,255,0.3) 25%, rgba(105,0,255,0.3) 26%, transparent 27%, transparent 74%, rgba(105,0,255,0.3) 75%, rgba(105,0,255,0.3) 76%, transparent 77%, transparent),
-    linear-gradient(90deg, transparent 24%, rgba(105,0,255,0.3) 25%, rgba(105,0,255,0.3) 26%, transparent 27%, transparent 74%, rgba(105,0,255,0.3) 75%, rgba(105,0,255,0.3) 76%, transparent 77%, transparent);
+    linear-gradient(0deg, transparent 24%, rgba(105,0,255,0.08) 25%, rgba(105,0,255,0.08) 26%, transparent 27%, transparent 74%, rgba(105,0,255,0.08) 75%, rgba(105,0,255,0.08) 76%, transparent 77%, transparent),
+    linear-gradient(90deg, transparent 24%, rgba(105,0,255,0.08) 25%, rgba(105,0,255,0.08) 26%, transparent 27%, transparent 74%, rgba(105,0,255,0.08) 75%, rgba(105,0,255,0.08) 76%, transparent 77%, transparent);
 
   background-size: 50px 50px;
 }
@@ -24,9 +24,9 @@ a:active {
   background-image: repeating-linear-gradient(
     0deg,
     transparent,
-    transparent 2px,
-    var(--primary) 2px,
-    var(--primary) 4px
+    transparent 3px,
+    rgba(var(--primary-rgb), 0.06) 3px,
+    rgba(var(--primary-rgb), 0.06) 4px
   );
 }
 
@@ -66,23 +66,24 @@ body,
   --accent-light: #e0f53f;
   --accent-dark: #a8bd05;
   --accent-hover: #c2d906;
+  --accent-text: #b8cf3a;
 
   --background-primary: #F2F2F2;
-  --background: #262626;
-  --background-2: #1a1a1a;
-  --background-rgb: 38, 38, 38;
+  --background: #2b2b2e;
+  --background-2: #242427;
+  --background-rgb: 43, 43, 46;
 
-  --surface: #333333;
-  --surface-alt: #3d3d3d;
+  --surface: #34343a;
+  --surface-alt: #3f3f47;
 
-  --text-primary: #F2F2F2;
-  --text-secondary: #a0a0a0;
+  --text-primary: #ECECEC;
+  --text-secondary: #9a9aa2;
 
   --text-inverse: #262626;
 
-  --border-primary: #F2F2F2;
-  --border: #3d3d3d;
-  --border-light: #4d4d4d;
+  --border-primary: #d8d8dc;
+  --border: #3a3a42;
+  --border-light: #4a4a54;
 
   --danger: #d4183d;
   --success: #D7F207;
@@ -92,10 +93,18 @@ body,
 
   --primary-30: rgba(var(--primary-rgb), 0.3);
   --primary-60: rgba(var(--primary-rgb), 0.6);
+  --primary-10: rgba(var(--primary-rgb), 0.1);
+  --primary-15: rgba(var(--primary-rgb), 0.15);
 
   --secondary-30: rgba(var(--secondary-rgb), 0.3);
   --secondary-60: rgba(var(--secondary-rgb), 0.6);
   --secondary-light-60: rgba(var(--secondary-light-rgb), 0.6);
+  --secondary-10: rgba(var(--secondary-rgb), 0.1);
+  --secondary-15: rgba(var(--secondary-rgb), 0.15);
+
+  --accent-10: rgba(var(--accent-rgb), 0.1);
+  --accent-15: rgba(var(--accent-rgb), 0.15);
+  --accent-30: rgba(var(--accent-rgb), 0.3);
 
   /* fontes */
 
@@ -103,15 +112,14 @@ body,
   --font-family-base: 'VT323', monospace;
   --font-family-inter: 'Inter', monospace;
 
-    /* size */
-  --font-xs: 16px;
-  --font-sm: 18px;
-  --font-base: 20px;
-  --font-lg: 24px;
-  --font-xl: 30px;
-  --font-2xl: 36px;
-  --font-3xl: 48px;
-  --font-4xl: 64px;
+  --font-xs: 13px;
+  --font-sm: 15px;
+  --font-base: 16px;
+  --font-lg: 20px;
+  --font-xl: 26px;
+  --font-2xl: 32px;
+  --font-3xl: 42px;
+  --font-4xl: 54px;
 
     /* type format */
   --line-tight: 1.2;
@@ -123,12 +131,12 @@ body,
   --tracking-wide: 1px;
 }
 
-/* Base global */
 body {
-  font-family: var(--font-family-base);
+  font-family: var(--font-family-inter);
   font-size: var(--font-base);
-  line-height: var(--line-normal);
-  letter-spacing: var(--tracking-wide);
+  line-height: var(--line-loose);
+  letter-spacing: var(--tracking-normal);
+  color: var(--text-primary);
 }
 
 /* text */
@@ -154,7 +162,9 @@ small {
   font-size: var(--font-sm);
 }
 
-/* headings */
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-family-base);
+}
 
 h1 {
   font-size: var(--font-4xl);
@@ -188,9 +198,9 @@ h6 {
 /* responsivo*/
 
 @media (min-width: 768px) {
-  h1 { font-size: 72px; }
-  h2 { font-size: 56px; }
-  h3 { font-size: 42px; }
+  h1 { font-size: 60px; }
+  h2 { font-size: 46px; }
+  h3 { font-size: 36px; }
 }
 
 /* utilitario */

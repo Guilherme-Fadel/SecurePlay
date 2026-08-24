@@ -9,8 +9,8 @@ export function CTATitle() {
       transition={{ duration: 0.6 }}
       className="text-center mb-12"
     >
-      <div className="inline-block bg-[var(--accent)] border-4 border-[var(--border-primary)] px-12 py-4 relative">
-        <span className="md: text-[var(--background)]">
+      <div className="inline-block bg-[var(--accent-15)] border border-[var(--accent-30)] rounded-md px-12 py-4 relative">
+        <span className="md: text-[var(--accent)]">
           FASE FINAL
         </span>
       </div>

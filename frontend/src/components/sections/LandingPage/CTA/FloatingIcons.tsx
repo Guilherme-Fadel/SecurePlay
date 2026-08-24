@@ -6,7 +6,7 @@ export function FloatingIcons() {
       {[...Array(15)].map((_, i) => (
         <motion.div
           key={i}
-          className="absolute w-6 h-6 bg-[var(--accent)] border-2 border-[var(--border-primary)]"
+          className="absolute w-6 h-6 bg-[var(--accent-30)] border border-[var(--border)] rounded-md"
           style={{
             left: `${Math.random() * 100}%`,
             top: `${Math.random() * 100}%`,

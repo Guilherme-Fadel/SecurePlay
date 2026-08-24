@@ -4,12 +4,12 @@ import { cn } from '@/lib/utils';
 
 type CardVariant = 'default' | 'primary' | 'secondary' | 'accent' | 'danger';
 
-const variantStyles: Record<CardVariant, { border: string; color: string }> = {
-  default:   { border: 'border-[var(--border)]',       color: 'var(--text-secondary)' },
-  primary:   { border: 'border-[var(--primary-30)]',   color: 'var(--primary)'        },
-  secondary: { border: 'border-[var(--secondary-30)]', color: 'var(--secondary)'      },
-  accent:    { border: 'border-[var(--accent-dark)]',  color: 'var(--accent)'         },
-  danger:    { border: 'border-[var(--danger)]',       color: 'var(--danger)'         },
+const variantStyles: Record<CardVariant, { border: string; color: string; iconBox: string }> = {
+  default:   { border: 'border-[var(--border)]',       color: 'var(--text-secondary)', iconBox: 'bg-[var(--surface-alt)] border-[var(--border)]'          },
+  primary:   { border: 'border-[var(--primary-30)]',   color: 'var(--primary)',        iconBox: 'bg-[var(--primary-15)] border-[var(--primary-30)]'      },
+  secondary: { border: 'border-[var(--secondary-30)]', color: 'var(--secondary)',      iconBox: 'bg-[var(--secondary-15)] border-[var(--secondary-30)]'  },
+  accent:    { border: 'border-[var(--accent-30)]',    color: 'var(--accent)',         iconBox: 'bg-[var(--accent-15)] border-[var(--accent-30)]'        },
+  danger:    { border: 'border-[var(--danger)]',       color: 'var(--danger)',         iconBox: 'bg-[var(--surface-alt)] border-[var(--danger)]'         },
 };
 
 interface InfoCardProps {
@@ -39,13 +39,13 @@ interface InfoCardHeaderProps {
 }
 
 function Header({ title, subtitle, icon: Icon, variant = 'default', action, className }: InfoCardHeaderProps) {
-  const { color } = variantStyles[variant];
+  const { color, iconBox } = variantStyles[variant];
 
   return (
     <div className={cn('flex items-start justify-between p-4 border-b border-[var(--border)] rounded-t-2xl', className)}>
       <div className="flex items-center gap-3">
         {Icon && (
-          <div className="w-9 h-9 flex items-center justify-center rounded-xl bg-[var(--surface-alt)]" style={{ color }}>
+          <div className={cn('w-10 h-10 flex items-center justify-center rounded-lg border', iconBox)} style={{ color }}>
             <Icon size={18} />
           </div>
         )}
@@ -109,19 +109,19 @@ interface InfoCardStatProps {
 }
 
 function Stat({ label, value, subtitle, icon: Icon, variant = 'default', className }: InfoCardStatProps) {
-  const { color } = variantStyles[variant];
+  const { color, iconBox } = variantStyles[variant];
 
   return (
     <div className={cn('flex items-start justify-between', className)}>
       <div>
         <p className="text-[var(--text-secondary)]">{label}</p>
-        <h4 className="text-[var(--text-primary)] leading-tight" style={{ color: variant !== 'default' ? color : undefined }}>
+        <h4 className="text-[var(--text-primary)] leading-tight">
           {value}
         </h4>
         {subtitle && <p className="text-[var(--text-secondary)] mt-0.5">{subtitle}</p>}
       </div>
       {Icon && (
-        <div className="w-9 h-9 flex items-center justify-center rounded-xl bg-[var(--surface-alt)] shrink-0" style={{ color }}>
+        <div className={cn('w-10 h-10 flex items-center justify-center rounded-lg border shrink-0', iconBox)} style={{ color }}>
           <Icon size={18} />
         </div>
       )}
@@ -144,10 +144,43 @@ function Footer({ children, className }: InfoCardFooterProps) {
 }
 
 
+interface InfoCardDotsProps {
+  total?: number;
+  active: number;
+  variant?: CardVariant;
+  className?: string;
+}
+
+const dotFill: Record<CardVariant, string> = {
+  default:   'bg-[var(--text-secondary)]',
+  primary:   'bg-[var(--primary)]',
+  secondary: 'bg-[var(--secondary)]',
+  accent:    'bg-[var(--accent)]',
+  danger:    'bg-[var(--danger)]',
+};
+
+function Dots({ total = 3, active, variant = 'primary', className }: InfoCardDotsProps) {
+  return (
+    <div className={cn('flex items-center justify-center gap-2', className)}>
+      {Array.from({ length: total }).map((_, i) => (
+        <div
+          key={i}
+          className={cn(
+            'w-2.5 h-2.5 rounded-sm border border-[var(--border)] transition-colors',
+            i < active ? dotFill[variant] : 'bg-transparent'
+          )}
+        />
+      ))}
+    </div>
+  );
+}
+
+
 export const InfoCard = Object.assign(InfoCardRoot, {
   Header,
   Section,
   Item,
   Stat,
   Footer,
+  Dots,
 });
