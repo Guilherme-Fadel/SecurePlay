@@ -22,7 +22,7 @@ export function Brand() {
         {['📱', '💼', '🎮'].map((emoji) => (
           <button
             key={emoji}
-            className="cursor-none w-10 h-10 bg-[var(--surface-alt)] border border-[var(--border)] rounded-md hover:border-[var(--secondary)] hover:bg-[var(--primary)] transition-all flex items-center justify-center"
+            className="cursor-pointer w-10 h-10 bg-[var(--surface-alt)] border border-[var(--border)] rounded-md hover:border-[var(--secondary)] hover:bg-[var(--primary)] transition-all flex items-center justify-center"
           >
             {emoji}
           </button>

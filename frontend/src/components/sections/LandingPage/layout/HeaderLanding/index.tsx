@@ -26,7 +26,7 @@ function MobileMenuButton({ onClick }: any) {
   return (
     <button
       onClick={onClick}
-      className="cursor-none md:hidden w-10 h-10 flex flex-col items-center justify-center gap-1.5"
+      className="cursor-pointer md:hidden w-10 h-10 flex flex-col items-center justify-center gap-1.5"
     >
       <div className="w-6 h-1 bg-[var(--background-primary)]"></div>
       <div className="w-6 h-1 bg-[var(--background-primary)]"></div>

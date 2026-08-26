@@ -17,21 +17,11 @@
   border-radius: 12px;
 }
 
-/* O tema global (theme.css) aplica "cursor: none !important" em * e a.
-   Aqui restauramos o cursor apenas dentro do protótipo, vencendo aquele
-   !important com igual especificidade + !important. */
-.wm-root,
-.wm-root *,
-.wm-root *::before,
-.wm-root *::after {
-  cursor: default !important;
-}
-
 .wm-root button,
 .wm-root .wm-hotspot,
 .wm-root .wm-node,
 .wm-root a {
-  cursor: pointer !important;
+  cursor: pointer;
 }
 
 /* HUD */

@@ -21,7 +21,7 @@ export function MobileMenu({ onClose }: any) {
           <button
             key={item.id}
             onClick={() => scrollToSection(item.id)}
-            className="cursor-none text-left text-[var(--text-primary)]"
+            className="cursor-pointer text-left text-[var(--text-primary)]"
           >
             {item.label}
           </button>

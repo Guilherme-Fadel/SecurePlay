@@ -9,7 +9,6 @@ import { FAQSection } from '@/components/sections/LandingPage/FAQ/index';
 import { Footer } from '@/components/sections/LandingPage/layout/FooterLanding/index';
 import { CTASection } from '@/components/sections/LandingPage/CTA/index';
 import { ScrollToTop } from '@/components/shared/ScrollToTop';
-import { PixelCursor } from '@/components/ui/visuals/PixelCursor';
 import { LandingBackground } from '@/components/ui/visuals/LandingBackground';
 import { LoadingScreen } from '@/components/shared/LoadingScreen';
 
@@ -19,9 +18,8 @@ export default function Landing() {
       <>
         <LoadingScreen ready />
 
-        <div className="relative min-h-screen cursor-none">
+        <div className="relative min-h-screen">
           <LandingBackground />
-          <PixelCursor />
           <div className="relative z-10">
           <Header />
 

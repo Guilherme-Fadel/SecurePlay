@@ -18,7 +18,7 @@ export function FAQItem({ faq, index, isOpen, onToggle }: any) {
 
         <button
           onClick={onToggle}
-          className="cursor-none w-full px-6 py-6 flex justify-between items-center gap-4 text-left hover:bg-[var(--primary)]/10"
+          className="cursor-pointer w-full px-6 py-6 flex justify-between items-center gap-4 text-left hover:bg-[var(--primary)]/10"
         >
           <div className="flex items-center gap-4">
             <div className="w-12 h-12 bg-[var(--primary-15)] border border-[var(--primary-30)] rounded-md flex items-center justify-center">

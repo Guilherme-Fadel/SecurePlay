@@ -26,7 +26,7 @@ export function HeroSection() {
         >
           <GameButton
             onClick={() => navigate('/start')}
-            className="cursor-none px-12 py-6  border border-[var(--border)] rounded-md
+            className="cursor-pointer px-12 py-6  border border-[var(--border)] rounded-md
                        shadow-[0_6px_20px_rgba(0,0,0,0.25)]
                        hover:shadow-[0_3px_12px_rgba(0,0,0,0.2)]
                         bg-[var(--secondary-dark)] text-[var(--background)]"

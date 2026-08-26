@@ -33,7 +33,7 @@ export function CTASection() {
 
             <GameButton
               onClick={() => navigate('/start')}
-              className="cursor-none mt-8  px-10 py-5 border border-[var(--border)] rounded-md
+              className="cursor-pointer mt-8  px-10 py-5 border border-[var(--border)] rounded-md
                          shadow-[0_6px_20px_rgba(0,0,0,0.25)]
                          hover:shadow-[0_3px_12px_rgba(0,0,0,0.2)]
                           bg-[var(--secondary)] text-[var(--background)]

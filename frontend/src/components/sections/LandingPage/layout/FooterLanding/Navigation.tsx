@@ -20,7 +20,7 @@ export function Navigation() {
           <li key={link.label}>
             <Link
               to={link.to}
-              className="cursor-none text-[var(--text-primary)]  hover:text-[var(--secondary)] transition-colors flex items-center gap-2"
+              className="cursor-pointer text-[var(--text-primary)]  hover:text-[var(--secondary)] transition-colors flex items-center gap-2"
             >
               <span className="w-2 h-2 bg-[var(--primary)] border border-[var(--border-primary)]" />
               {link.label}

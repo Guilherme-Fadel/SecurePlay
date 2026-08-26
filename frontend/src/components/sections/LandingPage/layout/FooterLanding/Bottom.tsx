@@ -21,7 +21,7 @@ export function Bottom() {
             <Link
               key={item.label}
               to={item.to}
-              className="cursor-none text-[var(--text-primary)]  hover:text-[var(--secondary)] transition-colors"
+              className="cursor-pointer text-[var(--text-primary)]  hover:text-[var(--secondary)] transition-colors"
             >
               {item.label}
             </Link>

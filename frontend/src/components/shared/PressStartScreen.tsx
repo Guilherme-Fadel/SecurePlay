@@ -33,7 +33,7 @@ export function PressStartScreen() {
         <motion.div
           initial={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 z-50 flex items-center justify-center cursor-none"
+          className="fixed inset-0 z-50 flex items-center justify-center"
         >
           <LandingBackground />
 
@@ -88,7 +88,7 @@ export function PressStartScreen() {
               onClick={handleStart}
               whileHover={{ scale: 1.03 }}
               whileTap={{ scale: 0.98 }}
-              className="inline-flex items-center justify-center px-8 py-3 rounded-md border border-[var(--secondary-30)] bg-[var(--secondary-15)] text-[var(--text-primary)] hover:border-[var(--secondary)] transition-colors tracking-wide cursor-none shadow-[0_3px_12px_rgba(0,0,0,0.25)]"
+              className="inline-flex items-center justify-center px-8 py-3 rounded-md border border-[var(--secondary-30)] bg-[var(--secondary-15)] text-[var(--text-primary)] hover:border-[var(--secondary)] transition-colors tracking-wide cursor-pointer shadow-[0_3px_12px_rgba(0,0,0,0.25)]"
             >
               <motion.span
                 animate={{ opacity: [1, 0.4, 1] }}
