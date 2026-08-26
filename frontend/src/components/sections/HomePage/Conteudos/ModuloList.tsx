@@ -26,7 +26,7 @@ export function ModuloList({ onSelectModulo }: ModuloListProps) {
   if (loading) {
     return (
       <div className="flex flex-col gap-6 p-6">
-        <InfoCard variant="primary">
+        <InfoCard variant="primary" raised>
           <InfoCard.Header title="Central de Operações" icon={Radio} variant="accent" />
           <InfoCard.Section>
             <p className="text-[var(--text-secondary)]">Carregando operações...</p>
@@ -39,7 +39,7 @@ export function ModuloList({ onSelectModulo }: ModuloListProps) {
 
   return (
     <div className="flex flex-col gap-6 p-6">
-      <InfoCard variant="primary">
+      <InfoCard variant="primary" raised>
         <InfoCard.Section className="flex items-start justify-between flex-wrap gap-4">
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 flex items-center justify-center rounded-xl bg-[var(--surface-alt)]">

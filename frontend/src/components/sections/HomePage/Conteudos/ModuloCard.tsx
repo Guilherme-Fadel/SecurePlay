@@ -29,7 +29,9 @@ export function ModuloCard({ modulo, onClick }: ModuloCardProps) {
     <div onClick={onClick} className="cursor-pointer group">
       <InfoCard
         variant={isCompleted ? 'accent' : 'primary'}
-        className="h-full flex flex-col transition-transform duration-200 group-hover:scale-[1.02] group-hover:shadow-lg"
+        raised
+        interactive
+        className="h-full flex flex-col"
       >
         <div className="relative h-36 bg-gradient-to-br from-[var(--surface-alt)] to-[var(--background)] rounded-t-2xl overflow-hidden flex items-center justify-center">
           {modulo.thumbnail ? (
@@ -52,9 +54,7 @@ export function ModuloCard({ modulo, onClick }: ModuloCardProps) {
           <div className={`absolute top-3 right-3 px-2 py-1 rounded-lg backdrop-blur-sm ${
             isCompleted ? 'bg-[var(--accent)]/20' : 'bg-black/60'
           }`}>
-            <span className={`text-[10px] font-[var(--font-family-inter)] font-semibold ${
-              isCompleted ? 'text-[var(--accent-text)]' : 'text-[var(--text-primary)]'
-            }`}>
+            <span className="text-[10px] font-[var(--font-family-inter)] font-semibold text-[var(--text-primary)]">
               {modulo.progress}%
             </span>
           </div>
@@ -79,7 +79,7 @@ export function ModuloCard({ modulo, onClick }: ModuloCardProps) {
                 {difficulty.label}
               </span>
             </div>
-            <span className="text-[var(--accent-text)] text-xs font-[var(--font-family-inter)] font-semibold">
+            <span className="text-[var(--text-primary)] text-xs font-[var(--font-family-inter)] font-semibold">
               {modulo.xp_total} XP
             </span>
           </div>
