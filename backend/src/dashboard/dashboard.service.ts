@@ -51,6 +51,47 @@ export class DashboardService {
     await this.redisService.set(key, String(current + points), ttl);
   }
 
+  async getRanking(usuario_id: number) {
+    const topEntries = await this.statsRepository
+      .createQueryBuilder('s')
+      .leftJoinAndSelect('s.usuario', 'u')
+      .orderBy('s.total_points', 'DESC')
+      .take(10)
+      .getMany();
+
+    const top = topEntries.map((entry, index) => ({
+      position: index + 1,
+      name: entry.usuario?.name ?? 'Usuário',
+      points: entry.total_points,
+      level: calcLevel(entry.total_points),
+    }));
+
+    const currentStats = await this.getOrCreateStats(usuario_id);
+
+    const higherCount = await this.statsRepository
+      .createQueryBuilder('s')
+      .where('s.total_points > :pts', { pts: currentStats.total_points })
+      .getCount();
+
+    const currentPosition = higherCount + 1;
+
+    const currentUsuario = await this.statsRepository
+      .createQueryBuilder('s')
+      .leftJoinAndSelect('s.usuario', 'u')
+      .where('s.usuario_id = :uid', { uid: usuario_id })
+      .getOne();
+
+    const currentUser = {
+      position: currentPosition,
+      name: currentUsuario?.usuario?.name ?? 'Você',
+      points: currentStats.total_points,
+      level: calcLevel(currentStats.total_points),
+      isCurrentUser: true,
+    };
+
+    return { top, currentUser };
+  }
+
   async getStats(usuario_id: number) {
     const stats = await this.getOrCreateStats(usuario_id);
 

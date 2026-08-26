@@ -10,10 +10,7 @@ import { ArcadeModule } from '../arcade/arcade.module';
 @Module({
   imports: [DatabaseModule, RedisModule, ChallengeModule, ArcadeModule],
   controllers: [DashboardController],
-  providers: [
-    ...usuarioStatsProviders,
-    DashboardService,
-  ],
+  providers: [...usuarioStatsProviders, DashboardService],
   exports: [DashboardService],
 })
 export class DashboardModule {}

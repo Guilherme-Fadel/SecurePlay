@@ -6,6 +6,11 @@ import { Throttle } from '@nestjs/throttler';
 export class DashboardController {
   constructor(private readonly dashboardService: DashboardService) {}
 
+  @Get('ranking')
+  async getRanking(@Request() req: any) {
+    return this.dashboardService.getRanking(req.user.userId);
+  }
+
   @Get('stats')
   async getStats(@Request() req: any) {
     return this.dashboardService.getStats(req.user.userId);
