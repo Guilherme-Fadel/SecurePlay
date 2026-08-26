@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { DatabaseModule } from '../database/database.molule';
 import { RedisModule } from '../redis/redis.module';
 import { AuthModule } from '../auth/auth.module';
+import { NotificationModule } from '../notification/notification.module';
 import { moduloProviders } from './modulo/modulo.providers';
 import { aulaProviders } from './aula/aula.providers';
 import { usuarioAulaProviders } from './usuario-aula/usuario-aula.providers';
@@ -16,7 +17,7 @@ import { S3Service } from './s3/s3.service';
 import { UploadController } from './s3/upload.controller';
 
 @Module({
-  imports: [DatabaseModule, RedisModule, AuthModule],
+  imports: [DatabaseModule, RedisModule, AuthModule, NotificationModule],
   controllers: [ModuloController, AulaController, AulaQuizController, UploadController],
   providers: [
     ...moduloProviders,

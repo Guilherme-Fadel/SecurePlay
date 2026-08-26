@@ -1,4 +1,9 @@
-import { Injectable, Inject, NotFoundException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  Inject,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { Repository } from 'typeorm';
 import { Aula } from './aula.entity';
 import { AulaQuiz } from '../aula-quiz/aula-quiz.entity';
@@ -11,6 +16,7 @@ import { S3Service } from '../s3/s3.service';
 import { ttlUntilEndOfDay } from '../../common/utils/date.utils';
 import { CreateAulaDto, UpdateAulaDto } from './dto/aula.dto';
 import { SubmitQuizDto } from '../aula-quiz/dto/aula-quiz.dto';
+import { NotificationService } from '../../notification/notification.service';
 
 @Injectable()
 export class AulaService {
@@ -33,6 +39,7 @@ export class AulaService {
     private redisService: RedisService,
     private eventEmitter: EventEmitter2,
     private s3Service: S3Service,
+    private notificationService: NotificationService,
   ) {}
 
   async findOne(id: number, usuario_id: number) {
@@ -62,8 +69,12 @@ export class AulaService {
       title: aula.title,
       description: aula.description,
       type: aula.type,
-      content_url: aula.content_url ? await this.resolveUrl(aula.content_url) : null,
-      pages: aula.pages ? await Promise.all(aula.pages.map((key) => this.resolveUrl(key))) : null,
+      content_url: aula.content_url
+        ? await this.resolveUrl(aula.content_url)
+        : null,
+      pages: aula.pages
+        ? await Promise.all(aula.pages.map((key) => this.resolveUrl(key)))
+        : null,
       duration: aula.duration,
       xp: aula.xp,
       order: aula.order,
@@ -86,13 +97,18 @@ export class AulaService {
       const url = await this.s3Service.generatePresignedGetUrl(value);
       return url;
     } catch (error) {
-      console.error(`[AulaService] Erro ao gerar presigned URL para key "${value}":`, error?.message);
+      console.error(
+        `[AulaService] Erro ao gerar presigned URL para key "${value}":`,
+        error?.message,
+      );
       return value;
     }
   }
 
   async create(dto: CreateAulaDto): Promise<Aula> {
-    const modulo = await this.moduloRepository.findOne({ where: { id: dto.modulo_id } });
+    const modulo = await this.moduloRepository.findOne({
+      where: { id: dto.modulo_id },
+    });
     if (!modulo) {
       throw new NotFoundException('Módulo não encontrado');
     }
@@ -123,7 +139,9 @@ export class AulaService {
   }
 
   async concluir(aulaId: number, usuario_id: number) {
-    const aula = await this.aulaRepository.findOne({ where: { id: aulaId, active: true } });
+    const aula = await this.aulaRepository.findOne({
+      where: { id: aulaId, active: true },
+    });
 
     if (!aula) {
       throw new NotFoundException('Aula não encontrada');
@@ -164,7 +182,9 @@ export class AulaService {
   }
 
   async submitQuiz(aulaId: number, usuario_id: number, dto: SubmitQuizDto) {
-    const aula = await this.aulaRepository.findOne({ where: { id: aulaId, active: true } });
+    const aula = await this.aulaRepository.findOne({
+      where: { id: aulaId, active: true },
+    });
 
     if (!aula) {
       throw new NotFoundException('Aula não encontrada');
@@ -199,7 +219,11 @@ export class AulaService {
       const question = questionMap.get(answer.questionId);
 
       if (!question) {
-        return { questionId: answer.questionId, correct: false, correctIndex: -1 };
+        return {
+          questionId: answer.questionId,
+          correct: false,
+          correctIndex: -1,
+        };
       }
 
       const isCorrect = answer.selectedIndex === question.correct_index;
@@ -238,7 +262,10 @@ export class AulaService {
     };
   }
 
-  private async verificarDesbloqueio(aula: Aula, usuario_id: number): Promise<void> {
+  private async verificarDesbloqueio(
+    aula: Aula,
+    usuario_id: number,
+  ): Promise<void> {
     if (aula.order === 0) return;
 
     const previousAula = await this.aulaRepository.findOne({
@@ -252,7 +279,9 @@ export class AulaService {
     });
 
     if (!previousCompleted) {
-      throw new BadRequestException('Aula anterior não foi concluída. Complete a aula anterior primeiro.');
+      throw new BadRequestException(
+        'Aula anterior não foi concluída. Complete a aula anterior primeiro.',
+      );
     }
   }
 
@@ -273,7 +302,10 @@ export class AulaService {
     await this.redisService.set(xpKey, String(newXp), ttl);
   }
 
-  private async verificarModuloConcluido(modulo_id: number, usuario_id: number): Promise<void> {
+  private async verificarModuloConcluido(
+    modulo_id: number,
+    usuario_id: number,
+  ): Promise<void> {
     const totalAulas = await this.aulaRepository.count({
       where: { modulo_id, active: true },
     });
@@ -287,18 +319,20 @@ export class AulaService {
       .getCount();
 
     if (completedAulas >= totalAulas && totalAulas > 0) {
-      const modulo = await this.moduloRepository.findOne({ where: { id: modulo_id } });
+      const modulo = await this.moduloRepository.findOne({
+        where: { id: modulo_id },
+      });
 
       if (modulo && modulo.xp_bonus > 0) {
         await this.creditarXp(usuario_id, modulo.xp_bonus);
       }
 
-      this.eventEmitter.emit('notification.created', {
+      await this.notificationService.insertNotification({
         usuario_id,
         title: 'Módulo Concluído!',
         message: `Parabéns! Você completou o módulo "${modulo?.title}" e ganhou ${modulo?.xp_bonus || 0} XP bônus!`,
         type: 'achievement',
-        created_at: new Date(),
+        readed: false,
       });
     }
   }

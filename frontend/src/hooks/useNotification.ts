@@ -36,6 +36,7 @@ export function useNotification() {
     }, [socket]);
 
     const markAsRead = useCallback(async (id: number) => {
+        if (!Number.isFinite(id)) return;
         await markNotificationAsRead(id);
         setNotification((prev) =>
             prev.map((n) => (n.id === id ? { ...n, readed: true } : n))

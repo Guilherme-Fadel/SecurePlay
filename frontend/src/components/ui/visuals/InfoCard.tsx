@@ -139,7 +139,7 @@ function Stat({ label, value, subtitle, icon: Icon, variant = 'default', classNa
   const { color, iconBox } = variantStyles[variant];
 
   return (
-    <div className={cn('flex items-start justify-between', className)}>
+    <div className={cn('flex items-center justify-between gap-3', className)}>
       <div>
         <p className="text-[var(--text-secondary)]">{label}</p>
         <h4 className="text-[var(--text-primary)] leading-tight">
