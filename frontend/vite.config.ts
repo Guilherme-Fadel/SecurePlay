@@ -2,9 +2,11 @@ import path from 'path'
 import { defineConfig } from 'vite'
 import tailwindcss from '@tailwindcss/vite'
 import react from '@vitejs/plugin-react'
+// PROTOTIPO: plugin de dev para gravar regioes dos biomas no mockData.ts.
+import { devSaveRegionPlugin } from './src/prototypes/worldmap/devSaveRegionPlugin'
 
 export default defineConfig({
-  plugins: [react(), tailwindcss()],
+  plugins: [react(), tailwindcss(), devSaveRegionPlugin()],
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),

@@ -4,3 +4,6 @@ node_modules
 ChatGPT Image 28_05_2026, 21_41_13.png
 Fantasy_cybersecurity_world_map_202605282209.mp4
 mockup-conteudos.html
+dist
+*.png
+*.mp4
