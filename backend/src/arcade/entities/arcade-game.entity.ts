@@ -9,6 +9,7 @@ export enum ArcadeGameType {
   QUIZ = 'quiz',
   PHISHING = 'phishing',
   DATA_CLASSIFY = 'data_classify',
+  CLIENT_ONLY = 'client_only',
 }
 
 @Entity()

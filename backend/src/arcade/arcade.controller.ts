@@ -1,14 +1,7 @@
-import {
-  Body,
-  Controller,
-  Get,
-  Param,
-  Post,
-  Request,
-} from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, Request } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
 import { ArcadeService } from './arcade.service';
-import { SubmitRunDto } from './dto/arcade.dto';
+import { StartRunParamsDto, SubmitRunDto } from './dto/arcade.dto';
 
 @Controller('arcade')
 export class ArcadeController {
@@ -26,8 +19,8 @@ export class ArcadeController {
 
   @Post('games/:slug/start')
   @Throttle({ short: { limit: 10, ttl: 60000 } })
-  start(@Param('slug') slug: string, @Request() req: any) {
-    return this.arcadeService.start(req.user.userId, slug);
+  start(@Param() params: StartRunParamsDto, @Request() req: any) {
+    return this.arcadeService.start(req.user.userId, params.slug);
   }
 
   @Post('runs/:runId/submit')

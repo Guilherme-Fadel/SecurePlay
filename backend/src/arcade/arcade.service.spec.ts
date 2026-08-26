@@ -132,6 +132,18 @@ describe('ArcadeService (ciclo start/submit e XP)', () => {
     );
   });
 
+  it('recusa start de jogo CLIENT_ONLY', async () => {
+    gameRepository.findOne.mockResolvedValue({
+      ...quizGame,
+      slug: 'termotech',
+      game_type: ArcadeGameType.CLIENT_ONLY,
+    });
+    await expect(service.start(1, 'termotech')).rejects.toThrow(
+      BadRequestException,
+    );
+    expect(tokenService.consume).not.toHaveBeenCalled();
+  });
+
   it('recusa start quando nao ha tokens (nao cria run)', async () => {
     tokenService.consume.mockResolvedValue({
       ok: false,

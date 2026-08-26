@@ -1,5 +1,8 @@
 import { PhishingHandler } from './phishing.handler';
-import { PhishingSample, PhishingKind } from '../entities/phishing-sample.entity';
+import {
+  PhishingSample,
+  PhishingKind,
+} from '../entities/phishing-sample.entity';
 
 class TestPhishingHandler extends PhishingHandler {
   public fixture: PhishingSample[] = [];
@@ -8,7 +11,11 @@ class TestPhishingHandler extends PhishingHandler {
   }
 }
 
-function sample(id: number, isPhishing: boolean, signals: string[]): PhishingSample {
+function sample(
+  id: number,
+  isPhishing: boolean,
+  signals: string[],
+): PhishingSample {
   return {
     id,
     kind: PhishingKind.EMAIL,
@@ -42,7 +49,9 @@ describe('PhishingHandler', () => {
     handler.fixture = [sample(1, true, ['url', 'urgency'])];
     const run = await handler.buildRun();
     const result = handler.correct(run.answerKey, {
-      phishingAnswers: [{ sampleId: 1, report: true, signals: ['url', 'urgency'] }],
+      phishingAnswers: [
+        { sampleId: 1, report: true, signals: ['url', 'urgency'] },
+      ],
     });
     expect(result.score).toBe(100);
   });

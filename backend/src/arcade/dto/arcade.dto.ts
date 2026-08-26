@@ -4,11 +4,23 @@ import {
   IsOptional,
   IsString,
   IsBoolean,
+  Matches,
+  MaxLength,
   Min,
   ValidateNested,
   ArrayMaxSize,
 } from 'class-validator';
 import { Type } from 'class-transformer';
+
+/** Parametro de slug para start de partida. Valida formato slug. */
+export class StartRunParamsDto {
+  @IsString()
+  @MaxLength(40)
+  @Matches(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, {
+    message: 'slug deve conter apenas letras minusculas, numeros e hifens.',
+  })
+  slug: string;
+}
 
 /**
  * Resposta de uma pergunta/quiz (uma escolha por questao).

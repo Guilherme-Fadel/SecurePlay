@@ -68,7 +68,7 @@ export class ArcadeService implements OnModuleInit {
         xp_base: 100,
         color: '#1a9fd8',
         color_dark: '#1478a3',
-        image: null,
+        image: '/challenges/quiz-relampago.svg',
         active: true,
       },
       {
@@ -81,7 +81,7 @@ export class ArcadeService implements OnModuleInit {
         xp_base: 120,
         color: '#e0555f',
         color_dark: '#b23b44',
-        image: null,
+        image: '/challenges/caca-phishing.svg',
         active: true,
       },
       {
@@ -94,17 +94,44 @@ export class ArcadeService implements OnModuleInit {
         xp_base: 110,
         color: '#2e9e6b',
         color_dark: '#237a52',
-        image: null,
+        image: '/challenges/classificacao-dados.svg',
+        active: true,
+      },
+      {
+        slug: 'termotech',
+        game_type: ArcadeGameType.CLIENT_ONLY,
+        title: 'Termo Tech',
+        description: 'Decifre a palavra de tecnologia do dia em 6 tentativas.',
+        tag: 'Puzzle diario',
+        xp_base: 120,
+        color: '#1a9fd8',
+        color_dark: '#1478a3',
+        image: '/challenges/termotech.png',
+        active: true,
+      },
+      {
+        slug: 'worldmap',
+        game_type: ArcadeGameType.CLIENT_ONLY,
+        title: 'Mapa de Treinamento',
+        description: 'Explore biomas e complete fases de seguranca pelo mundo.',
+        tag: 'Aventura',
+        xp_base: 500,
+        color: '#8e2de2',
+        color_dark: '#6a1fb0',
+        image: '/prototypes/worldmap/global-map.png',
         active: true,
       },
     ];
 
     for (const seed of seeds) {
-      const exists = await this.gameRepository.findOne({
+      const existing = await this.gameRepository.findOne({
         where: { slug: seed.slug },
       });
-      if (!exists) {
+      if (!existing) {
         await this.gameRepository.save(this.gameRepository.create(seed));
+      } else if (!existing.image && seed.image) {
+        existing.image = seed.image;
+        await this.gameRepository.save(existing);
       }
     }
 
@@ -266,6 +293,7 @@ export class ArcadeService implements OnModuleInit {
       color: g.color,
       colorDark: g.color_dark,
       image: g.image,
+      gameType: g.game_type,
     }));
   }
 
@@ -284,6 +312,10 @@ export class ArcadeService implements OnModuleInit {
     });
     if (!game) {
       throw new NotFoundException('Jogo nao encontrado ou indisponivel.');
+    }
+
+    if (game.game_type === ArcadeGameType.CLIENT_ONLY) {
+      throw new BadRequestException('Este jogo nao usa economia de tokens.');
     }
 
     const consumed = await this.tokenService.consume(usuario_id);

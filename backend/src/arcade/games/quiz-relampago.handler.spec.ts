@@ -51,7 +51,12 @@ describe('QuizRelampagoHandler', () => {
   });
 
   it('conta acertos parciais e trata nao respondida como erro', async () => {
-    handler.fixture = [makeQuestion(1, 1), makeQuestion(2, 2), makeQuestion(3, 3), makeQuestion(4, 0)];
+    handler.fixture = [
+      makeQuestion(1, 1),
+      makeQuestion(2, 2),
+      makeQuestion(3, 3),
+      makeQuestion(4, 0),
+    ];
     const run = await handler.buildRun();
     const result = handler.correct(run.answerKey, {
       quizAnswers: [

@@ -10,6 +10,7 @@ export interface ArcadeGameDto {
   color: string;
   colorDark: string;
   image: string | null;
+  gameType: 'quiz' | 'phishing' | 'data_classify' | 'client_only';
 }
 
 export interface TokenState {

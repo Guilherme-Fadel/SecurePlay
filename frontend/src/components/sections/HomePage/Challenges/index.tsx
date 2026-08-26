@@ -1,6 +1,6 @@
 import { lazy, Suspense, useState, useMemo } from 'react';
 import { ArrowLeft } from 'lucide-react';
-import { GAMES, type GameCardData } from './games';
+import { type GameCardData } from './games';
 import { GameCarousel } from './GameCarousel';
 import { TermoTech } from './games/TermoTech';
 import { QuizBlitz } from './games/QuizBlitz';
@@ -11,10 +11,6 @@ import { useArcadeGames, useTokens } from '@/hooks/useArcade';
 
 const WorldMapPage = lazy(() => import('@/prototypes/worldmap/WorldMapPage'));
 
-// Jogos locais (prototipo/estatico) que nao vem da API do arcade.
-// worldmap: prototipo isolado. termotech: jogo client-side sem economia de token.
-const LOCAL_GAMES: GameCardData[] = GAMES;
-
 // Secao Desafios: arcade de jogos (cartuchos) para ganhar XP extra.
 export function Challenges() {
   const [active, setActive] = useState<string | null>(null);
@@ -23,9 +19,9 @@ export function Challenges() {
   const { games: apiGames } = useArcadeGames();
   const { tokens, secondsLeft, reload, setFromServer } = useTokens();
 
-  // Mescla catalogo da API (jogos com economia de token) com os jogos locais.
+  // Catalogo unificado vindo da API (todos os jogos, incluindo client_only).
   const carouselGames = useMemo<GameCardData[]>(() => {
-    const fromApi: GameCardData[] = apiGames.map((g) => ({
+    return apiGames.map((g) => ({
       id: g.slug,
       title: g.title,
       description: g.description,
@@ -35,9 +31,8 @@ export function Challenges() {
       tag: g.tag,
       color: g.color,
       colorDark: g.colorDark,
+      gameType: g.gameType,
     }));
-    // API primeiro (jogos "oficiais"), depois os locais.
-    return [...fromApi, ...LOCAL_GAMES];
   }, [apiGames]);
 
   const handlePlay = (game: GameCardData) => setActive(game.id);

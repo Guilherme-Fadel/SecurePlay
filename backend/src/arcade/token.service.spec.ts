@@ -35,28 +35,40 @@ describe('TokenService', () => {
   });
 
   it('nao regenera antes de 30 min', async () => {
-    store.set('op-tokens:1', JSON.stringify({ balance: 2, lastRegenAt: service.current }));
+    store.set(
+      'op-tokens:1',
+      JSON.stringify({ balance: 2, lastRegenAt: service.current }),
+    );
     service.current += TOKEN_REGEN_MS - 1000; // quase 30 min
     const state = await service.getState(1);
     expect(state.balance).toBe(2);
   });
 
   it('regenera 1 token apos 1 intervalo', async () => {
-    store.set('op-tokens:1', JSON.stringify({ balance: 2, lastRegenAt: service.current }));
+    store.set(
+      'op-tokens:1',
+      JSON.stringify({ balance: 2, lastRegenAt: service.current }),
+    );
     service.current += TOKEN_REGEN_MS;
     const state = await service.getState(1);
     expect(state.balance).toBe(3);
   });
 
   it('regenera N tokens apos N intervalos', async () => {
-    store.set('op-tokens:1', JSON.stringify({ balance: 1, lastRegenAt: service.current }));
+    store.set(
+      'op-tokens:1',
+      JSON.stringify({ balance: 1, lastRegenAt: service.current }),
+    );
     service.current += TOKEN_REGEN_MS * 3;
     const state = await service.getState(1);
     expect(state.balance).toBe(4);
   });
 
   it('nao ultrapassa o teto mesmo com muito tempo decorrido', async () => {
-    store.set('op-tokens:1', JSON.stringify({ balance: 1, lastRegenAt: service.current }));
+    store.set(
+      'op-tokens:1',
+      JSON.stringify({ balance: 1, lastRegenAt: service.current }),
+    );
     service.current += TOKEN_REGEN_MS * 100;
     const state = await service.getState(1);
     expect(state.balance).toBe(TOKEN_CAP);
@@ -64,7 +76,13 @@ describe('TokenService', () => {
   });
 
   it('saldo no teto nao adianta o relogio de regen', async () => {
-    store.set('op-tokens:1', JSON.stringify({ balance: TOKEN_CAP, lastRegenAt: service.current - TOKEN_REGEN_MS * 5 }));
+    store.set(
+      'op-tokens:1',
+      JSON.stringify({
+        balance: TOKEN_CAP,
+        lastRegenAt: service.current - TOKEN_REGEN_MS * 5,
+      }),
+    );
     const state = await service.getState(1);
     expect(state.balance).toBe(TOKEN_CAP);
     const persisted = JSON.parse(store.get('op-tokens:1')!);
@@ -72,7 +90,10 @@ describe('TokenService', () => {
   });
 
   it('refillToCap recarrega ate o teto', async () => {
-    store.set('op-tokens:1', JSON.stringify({ balance: 0, lastRegenAt: service.current }));
+    store.set(
+      'op-tokens:1',
+      JSON.stringify({ balance: 0, lastRegenAt: service.current }),
+    );
     const state = await service.refillToCap(1);
     expect(state.balance).toBe(TOKEN_CAP);
   });
