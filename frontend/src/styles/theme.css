@@ -131,6 +131,49 @@ body,
   --tracking-wide: 1px;
 }
 
+[data-theme='light'] {
+  --background-primary: #ffffff;
+  --background: #f4f3f7;
+  --background-2: #e9e7f0;
+  --background-rgb: 244, 243, 247;
+
+  --surface: #ffffff;
+  --surface-alt: #efedf5;
+
+  --text-primary: #1c1a24;
+  --text-secondary: #5c5866;
+  --text-inverse: #f4f3f7;
+
+  --border-primary: #cbc6da;
+  --border: #dcd8e6;
+  --border-light: #cbc6da;
+
+  --overlay-dark: rgba(28, 26, 36, 0.4);
+  --overlay-light: rgba(28, 26, 36, 0.06);
+
+  --primary: #9a6bff;
+  --primary-rgb: 154, 107, 255;
+  --primary-light: #b493ff;
+  --primary-dark: #7a4fe0;
+  --primary-hover: #8a5cf5;
+
+  --secondary: #f28fce;
+  --secondary-rgb: 242, 143, 206;
+  --secondary-light: #f7b3de;
+  --secondary-light-rgb: 247, 179, 222;
+  --secondary-dark: #d96bb3;
+  --secondary-hover: #e57bc0;
+
+  --accent: #e6f28a;
+  --accent-rgb: 230, 242, 138;
+  --accent-light: #eef7b3;
+  --accent-dark: #b8cf3a;
+  --accent-hover: #d4e65c;
+  --accent-text: #7d8f1e;
+
+  --success: #8faa1e;
+}
+
 body {
   font-family: var(--font-family-inter);
   font-size: var(--font-base);

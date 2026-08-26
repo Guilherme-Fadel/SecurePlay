@@ -3,11 +3,11 @@ import { LoadingScreen } from '@/components/shared/LoadingScreen';
 import { HomeLoadingOverlay } from '@/components/shared/HomeLoadingOverlay';
 import { Header } from "@/components/shared/layout/header/index"
 import { Sidebar, SidebarItem } from '@/components/shared/Sidebar'
-import { PixelCursor } from "@/components/ui/visuals/PixelCursor"
 import { TrophyIcon, LayoutDashboard, Target, AwardIcon, BookOpenIcon, SettingsIcon, ArrowLeft } from "lucide-react"
 import { Dashboard, Awards, Challenges, Ranking, Conteudos, Settings, Perfil } from '@/components/sections/HomePage/index';
 import { useState, useCallback } from 'react';
 import { SectionContext } from '@/contexts/SectionContext';
+import { ThemeProvider } from '@/contexts/ThemeContext';
 import { useHomeLoading } from '@/hooks/useHomeLoading';
 
 export type Section = 'dashboard' | 'desafios' | 'ranking' | 'conquistas' | 'conteudos' | 'configuracoes' | 'perfil'
@@ -50,9 +50,9 @@ export default function Home() {
 
   return (
     <PageTransition>
-      <SectionContext.Provider value={{ activeSection, setActiveSection, navigateToSection, previousSection, goBack, setLoading, registerBootstrap }}>
+      <ThemeProvider>
+        <SectionContext.Provider value={{ activeSection, setActiveSection, navigateToSection, previousSection, goBack, setLoading, registerBootstrap }}>
         <LoadingScreen ready={bootstrapReady} />
-        <PixelCursor />
 
         <div className="flex h-screen overflow-hidden">
 
@@ -119,7 +119,8 @@ export default function Home() {
           </div>
 
         </div>
-      </SectionContext.Provider>
+        </SectionContext.Provider>
+      </ThemeProvider>
     </PageTransition>
   );
 }
