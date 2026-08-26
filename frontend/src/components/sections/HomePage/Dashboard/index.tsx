@@ -7,7 +7,7 @@ import { DailyChallenge } from './DailyChallenge';
 import { useEffect } from 'react';
 import { useSectionContext } from '@/contexts/SectionContext';
 import { DailyStreak } from './DailyStreak';
-import { ActivityHistory } from './ActivityHistory';
+import { RankingWidget } from './RankingWidget';
 
 
 export function Dashboard() {
@@ -26,44 +26,48 @@ export function Dashboard() {
 
   return (
     <PageTransition>
-      <div className="flex flex-col gap-4 lg:h-full lg:overflow-hidden">
+      <div className="flex flex-col gap-3 lg:h-full min-h-0 px-1 py-2">
 
-        <InfoCard variant="primary">
-          <InfoCard.Section className="flex items-center justify-between flex-wrap gap-4 py-3">
+        <InfoCard variant="primary" raised>
+          <div className="flex items-center justify-between flex-wrap gap-4 px-4 py-2">
             <div>
-              <h3 className="text-[var(--text-primary)] mb-1">
+              <h4 className="text-[var(--text-primary)] leading-tight">
                 Bem-vindo de volta, {user?.name ?? '—'}!
-              </h3>
-              <p className="text-[var(--text-secondary)]">
+              </h4>
+              <p className="text-[var(--text-secondary)] text-sm">
                 Continue sua jornada de segurança.{' '}
                 {stats && (
-                  <>Você ganhou <span className="text-[var(--secondary)]">+{stats.xpToday} XP</span> hoje!</>
+                  <>Você ganhou <span className="text-[var(--text-primary)] font-semibold">+{stats.xpToday} XP</span> hoje!</>
                 )}
               </p>
             </div>
             <div className="flex items-center gap-6 shrink-0">
               <div className="text-right">
-                <p className="text-[var(--text-secondary)]">Nível</p>
+                <p className="text-[var(--text-secondary)] text-xs">Nível</p>
                 <p className="text-[var(--text-primary)] font-semibold">{stats?.level ?? '—'}</p>
               </div>
               <div className="text-right">
-                <p className="text-[var(--text-secondary)]">XP restantes</p>
+                <p className="text-[var(--text-secondary)] text-xs">XP restantes</p>
                 <p className="text-[var(--text-primary)] font-semibold">
                   {stats ? `${stats.xpToNextLevel} XP` : '—'}
                 </p>
               </div>
             </div>
-          </InfoCard.Section>
+          </div>
         </InfoCard>
 
         <OverviewCards />
 
-        <div className="grid grid-cols-1 lg:grid-cols-[5.5fr_3fr] gap-4 lg:flex-1 lg:min-h-0">
-          <DailyChallenge />
-          <div className="flex flex-col gap-4 lg:min-h-0">
-            <DailyStreak />
-            <ActivityHistory />
+        <div className="grid grid-cols-1 lg:grid-cols-[5.5fr_3fr] gap-3 lg:flex-1 lg:min-h-0">
+          <div className="flex flex-col gap-3 lg:min-h-0">
+            <div className="flex flex-col shrink-0">
+              <DailyChallenge />
+            </div>
+            <div className="lg:flex-1 lg:min-h-0 flex flex-col">
+              <DailyStreak />
+            </div>
           </div>
+          <RankingWidget />
         </div>
 
       </div>

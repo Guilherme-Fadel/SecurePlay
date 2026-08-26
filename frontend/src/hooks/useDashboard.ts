@@ -6,6 +6,7 @@ import {
   WeeklyStreak,
   getWeeklyStreak,
   performCheckin,
+  getDashboardRanking,
 } from '@/services/dashboard';
 import { useCachedQuery } from './useCachedQuery';
 import { useState } from 'react';
@@ -71,3 +72,11 @@ export function useWeeklyStreak() {
 }
 
 
+
+export function useDashboardRanking() {
+  const { data, loading, error } = useCachedQuery(
+    'dashboardRanking',
+    getDashboardRanking,
+  );
+  return { ranking: data, loading, error };
+}

@@ -4,22 +4,49 @@ import { cn } from '@/lib/utils';
 
 type CardVariant = 'default' | 'primary' | 'secondary' | 'accent' | 'danger';
 
-const variantStyles: Record<CardVariant, { border: string; color: string; iconBox: string }> = {
-  default:   { border: 'border-[var(--border)]',       color: 'var(--text-secondary)', iconBox: 'bg-[var(--surface-alt)] border-[var(--border)]'          },
-  primary:   { border: 'border-[var(--primary-30)]',   color: 'var(--primary)',        iconBox: 'bg-[var(--primary-15)] border-[var(--primary-30)]'      },
-  secondary: { border: 'border-[var(--secondary-30)]', color: 'var(--secondary)',      iconBox: 'bg-[var(--secondary-15)] border-[var(--secondary-30)]'  },
-  accent:    { border: 'border-[var(--accent-30)]',    color: 'var(--accent)',         iconBox: 'bg-[var(--accent-15)] border-[var(--accent-30)]'        },
-  danger:    { border: 'border-[var(--danger)]',       color: 'var(--danger)',         iconBox: 'bg-[var(--surface-alt)] border-[var(--danger)]'         },
+const variantStyles: Record<
+  CardVariant,
+  { border: string; color: string; iconBox: string; shadow: string }
+> = {
+  default:   { border: 'border-[var(--border)]',       color: 'var(--text-secondary)', iconBox: 'bg-[var(--surface-alt)] border-[var(--border)]',         shadow: 'var(--border-light)'  },
+  primary:   { border: 'border-[var(--primary-30)]',   color: 'var(--primary)',        iconBox: 'bg-[var(--primary-15)] border-[var(--primary-30)]',     shadow: 'var(--primary-dark)'  },
+  secondary: { border: 'border-[var(--secondary-30)]', color: 'var(--secondary)',      iconBox: 'bg-[var(--secondary-15)] border-[var(--secondary-30)]', shadow: 'var(--secondary-dark)'},
+  accent:    { border: 'border-[var(--accent-30)]',    color: 'var(--accent)',         iconBox: 'bg-[var(--accent-15)] border-[var(--accent-30)]',       shadow: 'var(--accent-dark)'   },
+  danger:    { border: 'border-[var(--danger)]',       color: 'var(--danger)',         iconBox: 'bg-[var(--surface-alt)] border-[var(--danger)]',        shadow: '#7a0f22'              },
 };
 
 interface InfoCardProps {
   children: React.ReactNode;
   variant?: CardVariant;
   className?: string;
+  raised?: boolean;
+  interactive?: boolean;
 }
 
-function InfoCardRoot({ children, variant = 'default', className }: InfoCardProps) {
-  const { border } = variantStyles[variant];
+function InfoCardRoot({
+  children,
+  variant = 'default',
+  className,
+  raised,
+  interactive,
+}: InfoCardProps) {
+  const { border, shadow } = variantStyles[variant];
+
+  if (raised) {
+    return (
+      <div
+        className={cn(
+          'bg-[var(--surface)] border rounded-2xl transition-all duration-200',
+          interactive && 'hover:-translate-y-1',
+          border,
+          className,
+        )}
+        style={{ boxShadow: `0 6px 0 -1px ${shadow}, 0 12px 22px -12px #000a` }}
+      >
+        {children}
+      </div>
+    );
+  }
 
   return (
     <div className={cn('bg-[var(--surface)] border rounded-2xl transition-all duration-300', border, className)}>

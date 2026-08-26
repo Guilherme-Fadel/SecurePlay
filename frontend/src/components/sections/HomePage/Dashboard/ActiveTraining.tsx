@@ -16,7 +16,7 @@ export function ActiveTraining() {
   };
 
   return (
-    <InfoCard variant="primary" className="flex flex-col">
+    <InfoCard variant="primary" raised className="flex flex-col">
       <InfoCard.Header
         title="Conteúdos Pendentes"
         icon={BookOpenIcon}
@@ -57,7 +57,7 @@ export function ActiveTraining() {
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="text-xs text-[var(--secondary)] font-medium">
+                  <span className="text-xs text-[var(--text-secondary)] font-medium">
                     {modulo.xp_total} XP
                   </span>
                 </div>

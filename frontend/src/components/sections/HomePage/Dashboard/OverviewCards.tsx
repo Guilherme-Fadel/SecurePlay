@@ -16,7 +16,7 @@ export function OverviewCards() {
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
 
-      <InfoCard variant="primary">
+      <InfoCard variant="primary" raised>
         <InfoCard.Section>
           <InfoCard.Stat
             label="Pontuação"
@@ -28,7 +28,7 @@ export function OverviewCards() {
         </InfoCard.Section>
       </InfoCard>
 
-      <InfoCard>
+      <InfoCard variant="primary" raised>
         <InfoCard.Section>
           <InfoCard.Stat
             label="Nível"
@@ -40,7 +40,7 @@ export function OverviewCards() {
         </InfoCard.Section>
       </InfoCard>
 
-      <InfoCard>
+      <InfoCard variant="secondary" raised>
         <InfoCard.Section>
           <InfoCard.Stat
             label="Desafios Concluídos"
@@ -52,7 +52,7 @@ export function OverviewCards() {
         </InfoCard.Section>
       </InfoCard>
 
-      <InfoCard>
+      <InfoCard variant="accent" raised>
         <InfoCard.Section>
           <InfoCard.Stat
             label="Ranking"
