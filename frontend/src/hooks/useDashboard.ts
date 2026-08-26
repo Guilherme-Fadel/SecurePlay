@@ -10,6 +10,7 @@ import {
 } from '@/services/dashboard';
 import { useCachedQuery } from './useCachedQuery';
 import { useState } from 'react';
+import { toast } from 'sonner';
 import { setCache, invalidate } from '@/lib/queryCache';
 
 export function useDashboardStats() {
@@ -54,8 +55,14 @@ export function useWeeklyStreak() {
       setCache('weeklyStreak', updated);
 
       invalidate('dashboardStats');
+
+      // Check-in recarrega as fichas do arcade no backend; avisa o usuario.
+      toast.success('Fichas restauradas!', {
+        description: result.message,
+      });
     } catch {
       setCheckinMessage('Erro ao realizar check-in.');
+      toast.error('Erro ao realizar check-in.');
     } finally {
       setCheckinLoading(false);
     }

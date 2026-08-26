@@ -6,6 +6,7 @@ import { Sidebar, SidebarItem } from '@/components/shared/Sidebar'
 import { TrophyIcon, LayoutDashboard, Target, AwardIcon, BookOpenIcon, SettingsIcon, ArrowLeft } from "lucide-react"
 import { Dashboard, Awards, Challenges, Ranking, Conteudos, Settings, Perfil } from '@/components/sections/HomePage/index';
 import { useState, useCallback } from 'react';
+import { Toaster } from 'sonner';
 import { SectionContext } from '@/contexts/SectionContext';
 import { ThemeProvider } from '@/contexts/ThemeContext';
 import { useHomeLoading } from '@/hooks/useHomeLoading';
@@ -53,6 +54,7 @@ export default function Home() {
       <ThemeProvider>
         <SectionContext.Provider value={{ activeSection, setActiveSection, navigateToSection, previousSection, goBack, setLoading, registerBootstrap }}>
         <LoadingScreen ready={bootstrapReady} />
+        <Toaster position="top-right" richColors />
 
         <div className="flex h-screen overflow-hidden">
 
