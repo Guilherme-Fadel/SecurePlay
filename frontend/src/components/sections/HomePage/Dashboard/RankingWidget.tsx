@@ -46,7 +46,7 @@ export function RankingWidget() {
           ))}
         </div>
 
-        <div className="flex-1 min-h-0 overflow-y-auto rounded-lg border border-[var(--border)] bg-[var(--surface-alt)]/40 divide-y divide-[var(--border)]">
+        <div className="scrollbar-thin flex-1 min-h-0 overflow-y-auto rounded-lg border border-[var(--border)] bg-[var(--surface-alt)]/40 divide-y divide-[var(--border)]">
           {rest.map((entry) => (
             <RankRow key={entry.position} entry={entry} />
           ))}
