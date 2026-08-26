@@ -1,4 +1,9 @@
-import { Injectable, Inject, NotFoundException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  Inject,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { Repository } from 'typeorm';
 import { Challenge } from './challenge.entity';
 import { Question } from '../question/question.entity';
@@ -42,9 +47,7 @@ export class ChallengeService {
       query.andWhere('c.id NOT IN (:...completedIds)', { completedIds });
     }
 
-    const challenge = await query
-      .orderBy('RAND()')
-      .getOne();
+    const challenge = await query.orderBy('RAND()').getOne();
 
     if (challenge) {
       await this.setRedisDailyChallenge(usuario_id, challenge);
@@ -65,13 +68,18 @@ export class ChallengeService {
     });
   }
 
-  private async getRedisDailyChallenge(usuario_id: number): Promise<Challenge | null> {
+  private async getRedisDailyChallenge(
+    usuario_id: number,
+  ): Promise<Challenge | null> {
     const cacheKey = `daily-challenge:${usuario_id}`;
     const cached = await this.redisService.get(cacheKey);
     return cached ? (JSON.parse(cached) as Challenge) : null;
   }
 
-  private async setRedisDailyChallenge(usuario_id: number, challenge: Challenge): Promise<void> {
+  private async setRedisDailyChallenge(
+    usuario_id: number,
+    challenge: Challenge,
+  ): Promise<void> {
     const cacheKey = `daily-challenge:${usuario_id}`;
     const ttl = ttlUntilEndOfDay();
     await this.redisService.set(cacheKey, JSON.stringify(challenge), ttl);
@@ -87,7 +95,9 @@ export class ChallengeService {
     });
 
     const answeredIds = record?.answered_question_ids ?? [];
-    const answeredCount = record?.completed ? totalQuestions : answeredIds.length;
+    const answeredCount = record?.completed
+      ? totalQuestions
+      : answeredIds.length;
 
     return {
       completed: !!record?.completed,
@@ -144,7 +154,9 @@ export class ChallengeService {
     });
     record.progress =
       totalQuestions > 0
-        ? Math.round((record.answered_question_ids.length / totalQuestions) * 100)
+        ? Math.round(
+            (record.answered_question_ids.length / totalQuestions) * 100,
+          )
         : 0;
 
     await this.usuarioChallengeRepository.save(record);
@@ -180,6 +192,7 @@ export class ChallengeService {
         difficulty: challenge.difficulty,
         duration: challenge.duration,
         points: challenge.points,
+        image: challenge.image,
       },
       questions: questions.map((q) => ({
         id: q.id,
@@ -190,7 +203,11 @@ export class ChallengeService {
     };
   }
 
-  async submitChallenge(challengeId: number, usuario_id: number, dto: SubmitChallengeDto) {
+  async submitChallenge(
+    challengeId: number,
+    usuario_id: number,
+    dto: SubmitChallengeDto,
+  ) {
     const challenge = await this.challengeRepository.findOne({
       where: { id: challengeId, active: true },
     });
@@ -212,7 +229,9 @@ export class ChallengeService {
     });
 
     if (questions.length === 0) {
-      throw new NotFoundException('Nenhuma pergunta encontrada para este desafio');
+      throw new NotFoundException(
+        'Nenhuma pergunta encontrada para este desafio',
+      );
     }
 
     const questionMap = new Map(questions.map((q) => [q.id, q]));
@@ -222,7 +241,12 @@ export class ChallengeService {
       const question = questionMap.get(answer.questionId);
 
       if (!question) {
-        return { questionId: answer.questionId, correct: false, correctIndex: -1, explanation: null };
+        return {
+          questionId: answer.questionId,
+          correct: false,
+          correctIndex: -1,
+          explanation: null,
+        };
       }
 
       const isCorrect = answer.selectedIndex === question.correct_index;
@@ -240,11 +264,13 @@ export class ChallengeService {
     const score = Math.round((correctCount / totalQuestions) * 100);
     const pointsEarned = Math.round(challenge.points * (score / 100));
 
-    const usuarioChallenge = existing ?? this.usuarioChallengeRepository.create({
-      usuario_id,
-      challenge_id: challengeId,
-      answered_question_ids: [],
-    });
+    const usuarioChallenge =
+      existing ??
+      this.usuarioChallengeRepository.create({
+        usuario_id,
+        challenge_id: challengeId,
+        answered_question_ids: [],
+      });
     usuarioChallenge.progress = score;
     usuarioChallenge.completed = true;
     usuarioChallenge.completed_at = new Date();

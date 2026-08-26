@@ -24,6 +24,7 @@ export interface DashboardDailyChallenge {
   duration: number;
   points: number;
   active: boolean;
+  image?: string | null;
 }
 
 export async function getDashboardDailyChallenge(): Promise<DashboardDailyChallenge> {

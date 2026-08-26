@@ -1,9 +1,9 @@
 import { Entity, Column, PrimaryGeneratedColumn } from 'typeorm';
 
 export enum ChallengeDifficulty {
-  INICIANTE     = 'iniciante',
+  INICIANTE = 'iniciante',
   INTERMEDIARIO = 'intermediario',
-  AVANCADO      = 'avancado',
+  AVANCADO = 'avancado',
 }
 
 @Entity()
@@ -17,7 +17,11 @@ export class Challenge {
   @Column({ length: 500 })
   description: string;
 
-  @Column({ type: 'enum', enum: ChallengeDifficulty, default: ChallengeDifficulty.INICIANTE })
+  @Column({
+    type: 'enum',
+    enum: ChallengeDifficulty,
+    default: ChallengeDifficulty.INICIANTE,
+  })
   difficulty: ChallengeDifficulty;
 
   @Column()
@@ -28,4 +32,7 @@ export class Challenge {
 
   @Column({ default: true })
   active: boolean;
+
+  @Column({ type: 'varchar', length: 200, nullable: true })
+  image: string | null;
 }

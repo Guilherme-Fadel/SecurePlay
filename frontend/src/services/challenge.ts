@@ -15,6 +15,7 @@ export interface ChallengeQuestionsResponse {
     difficulty: string;
     duration: number;
     points: number;
+    image?: string | null;
   };
   questions: QuestionResponse[];
 }

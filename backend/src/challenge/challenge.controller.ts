@@ -1,4 +1,13 @@
-import { Body, Controller, Get, Param, ParseIntPipe, Patch, Post, Request } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  ParseIntPipe,
+  Patch,
+  Post,
+  Request,
+} from '@nestjs/common';
 import { ChallengeService } from './challenge.service';
 import { SubmitChallengeDto, SaveProgressDto } from './dto/challenge.dto';
 import { Throttle } from '@nestjs/throttler';
@@ -13,10 +22,7 @@ export class ChallengeController {
   }
 
   @Get(':id/status')
-  async getStatus(
-    @Param('id', ParseIntPipe) id: number,
-    @Request() req: any,
-  ) {
+  async getStatus(@Param('id', ParseIntPipe) id: number, @Request() req: any) {
     return this.challengeService.getStatus(id, req.user.userId);
   }
 
