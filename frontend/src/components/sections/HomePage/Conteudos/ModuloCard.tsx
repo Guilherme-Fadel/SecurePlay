@@ -44,17 +44,21 @@ export function ModuloCard({ modulo, onClick }: ModuloCardProps) {
             <TypeIcon size={40} className="text-[var(--primary)] opacity-60" />
           )}
 
-          <div className="absolute top-3 left-3 flex items-center gap-1.5 px-2 py-1 bg-black/60 backdrop-blur-sm rounded-lg">
-            <TypeIcon size={12} className="text-[var(--text-primary)]" />
-            <span className="text-[10px] text-[var(--text-primary)] font-[var(--font-family-inter)]">
+          <div className="absolute top-3 left-3 flex items-center gap-1.5 px-2 py-1 bg-[var(--primary-15)] border border-[var(--primary-30)] backdrop-blur-sm rounded-lg">
+            <TypeIcon size={12} className="text-[var(--primary)]" />
+            <span className="text-[10px] text-[var(--primary)] font-[var(--font-family-inter)]">
               {typeConfig[modulo.type].label}
             </span>
           </div>
 
-          <div className={`absolute top-3 right-3 px-2 py-1 rounded-lg backdrop-blur-sm ${
-            isCompleted ? 'bg-[var(--accent)]/20' : 'bg-black/60'
+          <div className={`absolute top-3 right-3 px-2 py-1 rounded-lg border backdrop-blur-sm ${
+            isCompleted
+              ? 'bg-[var(--accent-15)] border-[var(--accent-30)]'
+              : 'bg-[var(--primary-15)] border-[var(--primary-30)]'
           }`}>
-            <span className="text-[10px] font-[var(--font-family-inter)] font-semibold text-[var(--text-primary)]">
+            <span className={`text-[10px] font-[var(--font-family-inter)] font-semibold ${
+              isCompleted ? 'text-[var(--accent-text)]' : 'text-[var(--primary)]'
+            }`}>
               {modulo.progress}%
             </span>
           </div>
