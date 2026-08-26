@@ -3,8 +3,15 @@ import { Repository } from 'typeorm';
 import { UsuarioStats } from '../usuario-stats/usuario-stats.entity';
 import { ChallengeService } from '../challenge/challenge.service';
 import { RedisService } from '../redis/redis.service';
+import { TokenService } from '../arcade/token.service';
 import { calcLevel, calcXpToNextLevel } from '../common/utils/xp.utils';
-import { ttlUntilEndOfDay, ttlUntilEndOfWeek, getMondayOfWeek, getTodayWeekIndex, now } from '../common/utils/date.utils';
+import {
+  ttlUntilEndOfDay,
+  ttlUntilEndOfWeek,
+  getMondayOfWeek,
+  getTodayWeekIndex,
+  now,
+} from '../common/utils/date.utils';
 
 @Injectable()
 export class DashboardService {
@@ -14,6 +21,7 @@ export class DashboardService {
 
     private challengeService: ChallengeService,
     private redisService: RedisService,
+    private tokenService: TokenService,
   ) {}
 
   private async getOrCreateStats(usuario_id: number): Promise<UsuarioStats> {
@@ -33,7 +41,10 @@ export class DashboardService {
     return cached ? parseInt(cached, 10) : 0;
   }
 
-  private async incrementRedisXpToday(usuario_id: number, points: number): Promise<void> {
+  private async incrementRedisXpToday(
+    usuario_id: number,
+    points: number,
+  ): Promise<void> {
     const key = `xp-today:${usuario_id}`;
     const current = await this.getRedisXpToday(usuario_id);
     const ttl = ttlUntilEndOfDay();
@@ -43,8 +54,10 @@ export class DashboardService {
   async getStats(usuario_id: number) {
     const stats = await this.getOrCreateStats(usuario_id);
 
-    const completedChallenges = await this.challengeService.countCompleted(usuario_id);
-    const totalActiveChallenges = await this.challengeService.countTotalActive();
+    const completedChallenges =
+      await this.challengeService.countCompleted(usuario_id);
+    const totalActiveChallenges =
+      await this.challengeService.countTotalActive();
 
     const totalUsers = await this.statsRepository.count();
 
@@ -57,14 +70,14 @@ export class DashboardService {
     const xpToday = await this.getRedisXpToday(usuario_id);
 
     return {
-      totalPoints:        stats.total_points,
+      totalPoints: stats.total_points,
       completedChallenges,
       totalActiveChallenges,
       globalRanking,
       totalUsers,
       xpToday,
-      xpToNextLevel:      calcXpToNextLevel(stats.total_points),
-      level:              calcLevel(stats.total_points),
+      xpToNextLevel: calcXpToNextLevel(stats.total_points),
+      level: calcLevel(stats.total_points),
     };
   }
 
@@ -80,7 +93,9 @@ export class DashboardService {
   async getWeeklyStreak(usuario_id: number) {
     const key = `streak:${usuario_id}:${getMondayOfWeek()}`;
     const raw = await this.redisService.get(key);
-    const checkedDays: boolean[] = raw ? JSON.parse(raw) : [false, false, false, false, false, false, false];
+    const checkedDays: boolean[] = raw
+      ? JSON.parse(raw)
+      : [false, false, false, false, false, false, false];
 
     const todayIndex = getTodayWeekIndex();
     const stats = await this.getOrCreateStats(usuario_id);
@@ -93,17 +108,22 @@ export class DashboardService {
     };
   }
 
-  
   async performCheckin(usuario_id: number) {
     const key = `streak:${usuario_id}:${getMondayOfWeek()}`;
     const raw = await this.redisService.get(key);
-    let checkedDays: boolean[] = raw ? JSON.parse(raw) : [false, false, false, false, false, false, false];
+    const checkedDays: boolean[] = raw
+      ? JSON.parse(raw)
+      : [false, false, false, false, false, false, false];
 
     const todayIndex = getTodayWeekIndex();
 
     if (checkedDays[todayIndex]) {
       const stats = await this.getOrCreateStats(usuario_id);
-      return { message: 'Você já fez check-in hoje!', checkedDays, streak: stats.current_streak };
+      return {
+        message: 'Você já fez check-in hoje!',
+        checkedDays,
+        streak: stats.current_streak,
+      };
     }
 
     checkedDays[todayIndex] = true;
@@ -118,14 +138,15 @@ export class DashboardService {
     if (stats.last_checkin_date) {
       const lastDate = new Date(stats.last_checkin_date + 'T00:00:00');
       const todayDate = new Date(todayStr + 'T00:00:00');
-      const diffDays = Math.floor((todayDate.getTime() - lastDate.getTime()) / (1000 * 60 * 60 * 24));
+      const diffDays = Math.floor(
+        (todayDate.getTime() - lastDate.getTime()) / (1000 * 60 * 60 * 24),
+      );
 
       if (diffDays === 1) {
         stats.current_streak += 1;
       } else if (diffDays > 1) {
         stats.current_streak = 1;
       }
-      
     } else {
       stats.current_streak = 1;
     }
@@ -136,6 +157,9 @@ export class DashboardService {
     const streak = stats.current_streak;
     const bonusXp = streak * 5;
     await this.addPoints(usuario_id, bonusXp);
+
+    // Check-in diario recarrega os tokens de operacao ate o teto.
+    await this.tokenService.refillToCap(usuario_id);
 
     return {
       message: `Check-in realizado! +${bonusXp} XP (${streak === 1 ? 'dia consecutivo' : 'dias consecutivos'}!)`,

@@ -9,6 +9,7 @@ import { NotificationModule } from './notification/notification.module';
 import { DashboardModule } from './dashboard/dashboard.module';
 import { ChallengeModule } from './challenge/challenge.module';
 import { ConteudoModule } from './conteudo/conteudo.module';
+import { ArcadeModule } from './arcade/arcade.module';
 import { APP_GUARD } from '@nestjs/core';
 import { JwtAuthGuard } from './auth/auth.guard';
 import { RolesGuard } from './auth/roles.guard';
@@ -45,6 +46,7 @@ import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
     ChallengeModule,
     ConteudoModule,
     DashboardModule,
+    ArcadeModule,
     ConfigModule.forRoot({
       isGlobal: true,
     })
