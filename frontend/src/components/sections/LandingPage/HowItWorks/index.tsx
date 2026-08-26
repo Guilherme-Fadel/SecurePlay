@@ -6,7 +6,7 @@ export function HowItWorksSection() {
   return (
     <section
       id="como-funciona"
-      className="relative py-24 bg-gradient-to-b from-[var(--background)] via-[var(--surface)] to-[var(--background)] overflow-hidden"
+      className="relative py-24 overflow-hidden"
     >
   
       <div className="absolute inset-0 opacity-5">

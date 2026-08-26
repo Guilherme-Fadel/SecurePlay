@@ -4,8 +4,6 @@ import { ArrowRight, Sparkles } from 'lucide-react';
 
 import { GameButton } from '@/components/ui/buttons/GameButton';
 
-import { CTABackground } from './Background';
-import { FloatingIcons } from './FloatingIcons';
 import { CTATitle } from './Title';
 import { CTABenefits } from './Benefits';
 import { CTAStats } from './Stats';
@@ -14,10 +12,7 @@ export function CTASection() {
   const navigate = useNavigate();
 
   return (
-    <section className="relative py-32 bg-gradient-to-b from-[var(--background)] to-[var(--surface)] overflow-hidden">
-      
-      <CTABackground />
-      <FloatingIcons />
+    <section className="relative py-32 overflow-hidden">
 
       <div className="relative z-10 max-w-5xl mx-auto px-6">
 

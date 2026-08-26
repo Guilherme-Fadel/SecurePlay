@@ -10,6 +10,7 @@ import { Footer } from '@/components/sections/LandingPage/layout/FooterLanding/i
 import { CTASection } from '@/components/sections/LandingPage/CTA/index';
 import { ScrollToTop } from '@/components/shared/ScrollToTop';
 import { PixelCursor } from '@/components/ui/visuals/PixelCursor';
+import { LandingBackground } from '@/components/ui/visuals/LandingBackground';
 import { LoadingScreen } from '@/components/shared/LoadingScreen';
 
 export default function Landing() {
@@ -18,8 +19,10 @@ export default function Landing() {
       <>
         <LoadingScreen ready />
 
-        <div className="min-h-screen bg-[var(--background)] cursor-none">
+        <div className="relative min-h-screen cursor-none">
+          <LandingBackground />
           <PixelCursor />
+          <div className="relative z-10">
           <Header />
 
           <main>
@@ -34,6 +37,7 @@ export default function Landing() {
 
           <Footer />
           <ScrollToTop />
+          </div>
         </div>
       </>
     </PageTransition>

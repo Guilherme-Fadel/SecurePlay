@@ -2,7 +2,6 @@ import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { GameButton } from '@/components/ui/buttons/GameButton';
 
-import { HeroBackground } from './Background';
 import { HeroBadge } from './Badge';
 import { HeroTitle } from './Title';
 
@@ -12,10 +11,8 @@ export function HeroSection() {
   return (
     <section
       id="inicio"
-      className="relative min-h-screen flex items-center justify-center overflow-hidden bg-gradient-to-b from-[var(--background)] via-[var(--surface)] to-[var(--background)] pt-20"
+      className="relative min-h-screen flex items-center justify-center overflow-hidden pt-20"
     >
-      <HeroBackground />
-
       <div className="relative z-10 max-w-5xl mx-auto px-6 text-center">
         
         <HeroBadge />

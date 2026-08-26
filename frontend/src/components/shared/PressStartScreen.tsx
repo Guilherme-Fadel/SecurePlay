@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useNavigate } from 'react-router-dom';
+import { LandingBackground } from '@/components/ui/visuals/LandingBackground';
 
 export function PressStartScreen() {
   const [show, setShow] = useState(true);
@@ -32,9 +33,11 @@ export function PressStartScreen() {
         <motion.div
           initial={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 bg-[var(--background)] z-50 flex items-center justify-center cursor-none"
+          className="fixed inset-0 z-50 flex items-center justify-center cursor-none"
         >
-          <div className="text-center space-y-8">
+          <LandingBackground />
+
+          <div className="relative z-10 text-center space-y-8">
             <motion.div
               initial={{ scale: 0 }}
               animate={{ scale: 1 }}
@@ -105,28 +108,6 @@ export function PressStartScreen() {
             </motion.p>
           </div>
   
-          <div className="absolute inset-0 overflow-hidden pointer-events-none">
-            {Array.from({ length: 10 }).map((_, i) => (
-              <motion.div
-                key={i}
-                className="absolute w-1 h-1 bg-[var(--secondary)]"
-                style={{
-                  left: `${Math.random() * 100}%`,
-                  top: `${Math.random() * 100}%`,
-                  boxShadow: '0 0 3px rgba(var(--secondary-rgb), 0.4)',
-                }}
-                animate={{
-                  scale: [0, 1, 0],
-                  opacity: [0, 0.5, 0],
-                }}
-                transition={{
-                  duration: 2 + Math.random() * 2,
-                  repeat: Infinity,
-                  delay: Math.random() * 2,
-                }}
-              />
-            ))}
-          </div>
         </motion.div>
       </AnimatePresence>
     );

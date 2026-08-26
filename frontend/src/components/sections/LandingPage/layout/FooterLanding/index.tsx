@@ -6,7 +6,7 @@ import { Bottom } from './Bottom';
 export function Footer() {
   return (
     <footer id="contato" 
-        className="bg-[var(--background)] border-t border-[var(--primary-30)] py-16">
+        className="relative bg-transparent border-t border-[var(--primary-30)] py-16">
       <div className="max-w-7xl mx-auto px-6">
         
         <div className="grid md:grid-cols-4 gap-12 mb-12">

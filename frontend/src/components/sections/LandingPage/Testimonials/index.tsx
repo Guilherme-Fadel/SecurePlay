@@ -6,7 +6,7 @@ export function TestimonialsSection() {
   return (
     <section
       id="depoimentos"
-      className="relative py-24 bg-gradient-to-b from-[var(--surface)] to-[var(--background)] overflow-hidden"
+      className="relative py-24 overflow-hidden"
     >
       <div className="absolute inset-0 opacity-5">
         <div className="absolute top-10 left-10 w-24 h-24 border border-[var(--accent)] rounded-lg" />
