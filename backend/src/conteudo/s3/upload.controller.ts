@@ -32,8 +32,16 @@ export class UploadController {
   @Roles(Role.ADMIN)
   @Throttle({ short: { limit: 10, ttl: 60000 } })
   async getPresignedUrl(@Body() dto: PresignUploadDto) {
-    const key = this.s3Service.buildKey(dto.type, dto.moduloId, dto.aulaId, dto.pageOrder);
-    const url = await this.s3Service.generatePresignedUploadUrl(key, dto.contentType);
+    const key = this.s3Service.buildKey(
+      dto.type,
+      dto.moduloId,
+      dto.aulaId,
+      dto.pageOrder,
+    );
+    const url = await this.s3Service.generatePresignedUploadUrl(
+      key,
+      dto.contentType,
+    );
 
     return {
       uploadUrl: url,

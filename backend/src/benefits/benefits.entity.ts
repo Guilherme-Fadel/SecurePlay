@@ -11,19 +11,18 @@ export class Benefits {
   @Column({ length: 100 })
   description: string;
 
-  @Column({length: 50})
-  icon: string
+  @Column({ length: 50 })
+  icon: string;
 
   @Column({ length: 255 })
   color: string;
 
   @Column({ length: 100 })
-  textColor: string
+  textColor: string;
 
-  @Column({length: 100})
-  borderColor: string
+  @Column({ length: 100 })
+  borderColor: string;
 
-  @Column({default: true})
+  @Column({ default: true })
   glow: boolean;
-
 }

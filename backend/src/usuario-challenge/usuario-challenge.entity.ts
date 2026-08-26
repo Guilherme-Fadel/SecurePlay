@@ -1,4 +1,11 @@
-import { Entity, Column, PrimaryGeneratedColumn, ManyToOne, JoinColumn, CreateDateColumn } from 'typeorm';
+import {
+  Entity,
+  Column,
+  PrimaryGeneratedColumn,
+  ManyToOne,
+  JoinColumn,
+  CreateDateColumn,
+} from 'typeorm';
 import { Usuario } from '../usuario/usuario.entity';
 import { Challenge } from '../challenge/challenge.entity';
 
@@ -22,7 +29,7 @@ export class UsuarioChallenge {
   challenge_id: number;
 
   @Column({ default: 0 })
-  progress: number; 
+  progress: number;
 
   @Column({ default: false })
   completed: boolean;

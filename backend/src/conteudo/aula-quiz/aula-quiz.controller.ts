@@ -1,4 +1,12 @@
-import { Controller, Post, Patch, Delete, Body, Param, ParseIntPipe } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Patch,
+  Delete,
+  Body,
+  Param,
+  ParseIntPipe,
+} from '@nestjs/common';
 import { Inject } from '@nestjs/common';
 import { Repository } from 'typeorm';
 import { AulaQuiz } from './aula-quiz.entity';
@@ -22,7 +30,10 @@ export class AulaQuizController {
 
   @Patch(':id')
   @Roles(Role.ADMIN)
-  async update(@Param('id', ParseIntPipe) id: number, @Body() dto: Partial<CreateQuizDto>) {
+  async update(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: Partial<CreateQuizDto>,
+  ) {
     await this.aulaQuizRepository.update(id, dto);
     return this.aulaQuizRepository.findOne({ where: { id } });
   }

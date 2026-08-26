@@ -34,7 +34,9 @@ export class OwnershipGuard implements CanActivate {
     );
 
     if (!ownerField) {
-      throw new ForbiddenException('OwnerField decorator não configurado na rota');
+      throw new ForbiddenException(
+        'OwnerField decorator não configurado na rota',
+      );
     }
 
     const resourceUserId = request[ownerField.source]?.[ownerField.field];

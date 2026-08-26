@@ -1,50 +1,60 @@
-import { Injectable, Inject, NotFoundException, ForbiddenException } from "@nestjs/common";
-import { Repository } from "typeorm";
-import { Notification } from "./notification.entity";
-import { CreateNotificationDto } from "./dto/notification.dto";
-import { ResultadoDto } from "src/resultado.dto";
-import { EventEmitter2 } from "@nestjs/event-emitter";
-
+import {
+  Injectable,
+  Inject,
+  NotFoundException,
+  ForbiddenException,
+} from '@nestjs/common';
+import { Repository } from 'typeorm';
+import { Notification } from './notification.entity';
+import { CreateNotificationDto } from './dto/notification.dto';
+import { ResultadoDto } from 'src/resultado.dto';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 
 @Injectable()
 export class NotificationService {
-
   constructor(
-  @Inject('NOTIFICATION_REPOSITORY')
-  private notificationRepository: Repository<Notification>,
-  private eventEmitter: EventEmitter2,
-  ) { }
+    @Inject('NOTIFICATION_REPOSITORY')
+    private notificationRepository: Repository<Notification>,
+    private eventEmitter: EventEmitter2,
+  ) {}
 
   async insertNotification(data: CreateNotificationDto): Promise<ResultadoDto> {
+    const notification = await this.notificationRepository.save(data);
 
-   const notification = await this.notificationRepository.save(data);
-
-   this.eventEmitter.emit('notification.created', {
-     id: notification.id,
-     usuario_id: notification.usuario_id,
-     title: notification.title,
-     message: notification.message,
-     type: notification.type,
-     created_at: notification.created_at,
-   });
-
-   return ({
-        sucesso: true,
-        mensagem: 'Inclusão de registro realizada com sucesso'
-   });
-  }
-
-  async markAllAsRead(usuario_id: number): Promise<ResultadoDto> {
-    await this.notificationRepository.update({ usuario_id, readed: false }, { readed: true });
+    this.eventEmitter.emit('notification.created', {
+      id: notification.id,
+      usuario_id: notification.usuario_id,
+      title: notification.title,
+      message: notification.message,
+      type: notification.type,
+      created_at: notification.created_at,
+    });
 
     return {
       sucesso: true,
-      mensagem: 'Todas as notificações marcadas como lidas'
+      mensagem: 'Inclusão de registro realizada com sucesso',
     };
   }
 
-  async markAsRead(id: number, requestingUserId: number): Promise<ResultadoDto> {
-    const notification = await this.notificationRepository.findOne({ where: { id } });
+  async markAllAsRead(usuario_id: number): Promise<ResultadoDto> {
+    await this.notificationRepository.update(
+      { usuario_id, readed: false },
+      { readed: true },
+    );
+
+    return {
+      sucesso: true,
+      mensagem: 'Todas as notificações marcadas como lidas',
+    };
+  }
+
+  async markAsRead(
+    id: number,
+    requestingUserId: number,
+  ): Promise<ResultadoDto> {
+    const notification = await this.notificationRepository.findOne({
+      where: { id },
+    });
 
     if (!notification) {
       throw new NotFoundException('Notificação não encontrada');
@@ -58,12 +68,17 @@ export class NotificationService {
 
     return {
       sucesso: true,
-      mensagem: 'Notificação marcada como lida'
+      mensagem: 'Notificação marcada como lida',
     };
   }
 
-  async deleteNotification(id: number, requestingUserId: number): Promise<ResultadoDto> {
-    const notification = await this.notificationRepository.findOne({ where: { id } });
+  async deleteNotification(
+    id: number,
+    requestingUserId: number,
+  ): Promise<ResultadoDto> {
+    const notification = await this.notificationRepository.findOne({
+      where: { id },
+    });
 
     if (!notification) {
       throw new NotFoundException('Notificação não encontrada');
@@ -75,54 +90,49 @@ export class NotificationService {
 
     await this.notificationRepository.delete(id);
 
-    return ({
-        sucesso: true,
-        mensagem: 'Exclusão de registro realizada com sucesso'
-   });
-
+    return {
+      sucesso: true,
+      mensagem: 'Exclusão de registro realizada com sucesso',
+    };
   }
 
-  async getNotification(usuario_id?: number): Promise<CreateNotificationDto[]>{
+  async getNotification(usuario_id?: number): Promise<CreateNotificationDto[]> {
+    if (usuario_id) {
+      const result = await this.getNotificationByUserId(usuario_id);
 
-    if (usuario_id){        
-        const result = await this.getNotificationByUserId(usuario_id)
-
-        if (!result) {
+      if (!result) {
         throw new NotFoundException('Usuário não possui notificações');
       }
 
       return result.map((item) => ({
-          id: item.id,
-          usuario_id: item.usuario_id,
-          title: item.title,
-          message: item.message,
-          type: item.type,
-          readed: item.readed,
-          created_at: item.created_at
-      }))
-    
-    }
-
-    const data = await this.notificationRepository.find()
-
-    return data.map((item) => ({
         id: item.id,
         usuario_id: item.usuario_id,
         title: item.title,
         message: item.message,
         type: item.type,
         readed: item.readed,
-        created_at: item.created_at
-    }))
+        created_at: item.created_at,
+      }));
+    }
 
+    const data = await this.notificationRepository.find();
+
+    return data.map((item) => ({
+      id: item.id,
+      usuario_id: item.usuario_id,
+      title: item.title,
+      message: item.message,
+      type: item.type,
+      readed: item.readed,
+      created_at: item.created_at,
+    }));
   }
 
   async getNotificationByUserId(usuario_id: number): Promise<Notification[]> {
     const result = await this.notificationRepository.find({
       where: { usuario_id },
-      order: { created_at: 'DESC' }
-    })
-    return result ?? undefined
+      order: { created_at: 'DESC' },
+    });
+    return result ?? undefined;
   }
-
 }

@@ -1,4 +1,13 @@
-import { IsString, IsEnum, IsInt, IsBoolean, IsOptional, IsArray, MaxLength, Min } from 'class-validator';
+import {
+  IsString,
+  IsEnum,
+  IsInt,
+  IsBoolean,
+  IsOptional,
+  IsArray,
+  MaxLength,
+  Min,
+} from 'class-validator';
 import { AulaType } from '../aula.entity';
 
 export class CreateAulaDto {

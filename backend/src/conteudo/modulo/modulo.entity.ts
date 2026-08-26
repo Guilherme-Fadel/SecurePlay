@@ -1,4 +1,9 @@
-import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn } from 'typeorm';
+import {
+  Entity,
+  Column,
+  PrimaryGeneratedColumn,
+  CreateDateColumn,
+} from 'typeorm';
 
 export enum ModuloType {
   VIDEO = 'video',
@@ -32,7 +37,11 @@ export class Modulo {
   @Column({ length: 100 })
   category: string;
 
-  @Column({ type: 'enum', enum: ModuloDifficulty, default: ModuloDifficulty.INICIANTE })
+  @Column({
+    type: 'enum',
+    enum: ModuloDifficulty,
+    default: ModuloDifficulty.INICIANTE,
+  })
   difficulty: ModuloDifficulty;
 
   @Column({ default: 0 })

@@ -5,5 +5,7 @@ export interface OwnerFieldOptions {
   source: 'body' | 'params' | 'query';
 }
 
-export const OwnerField = (field: string, source: OwnerFieldOptions['source'] = 'params') =>
-  SetMetadata('ownerField', { field, source });
+export const OwnerField = (
+  field: string,
+  source: OwnerFieldOptions['source'] = 'params',
+) => SetMetadata('ownerField', { field, source });

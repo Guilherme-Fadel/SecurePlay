@@ -1,4 +1,14 @@
-import { Controller, Get, Post, Patch, Delete, Body, Param, ParseIntPipe, Request } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Patch,
+  Delete,
+  Body,
+  Param,
+  ParseIntPipe,
+  Request,
+} from '@nestjs/common';
 import { ModuloService } from './modulo.service';
 import { CreateModuloDto, UpdateModuloDto } from './dto/modulo.dto';
 import { Roles } from '../../auth/roles.decorator';
@@ -26,7 +36,10 @@ export class ModuloController {
 
   @Patch(':id')
   @Roles(Role.ADMIN)
-  async update(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateModuloDto) {
+  async update(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: UpdateModuloDto,
+  ) {
     return this.moduloService.update(id, dto);
   }
 

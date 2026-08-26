@@ -18,7 +18,12 @@ import { UploadController } from './s3/upload.controller';
 
 @Module({
   imports: [DatabaseModule, RedisModule, AuthModule, NotificationModule],
-  controllers: [ModuloController, AulaController, AulaQuizController, UploadController],
+  controllers: [
+    ModuloController,
+    AulaController,
+    AulaQuizController,
+    UploadController,
+  ],
   providers: [
     ...moduloProviders,
     ...aulaProviders,

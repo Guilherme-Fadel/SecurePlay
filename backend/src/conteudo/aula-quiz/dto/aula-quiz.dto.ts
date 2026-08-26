@@ -1,4 +1,12 @@
-import { IsString, IsInt, IsArray, IsOptional, MaxLength, Min, ValidateNested } from 'class-validator';
+import {
+  IsString,
+  IsInt,
+  IsArray,
+  IsOptional,
+  MaxLength,
+  Min,
+  ValidateNested,
+} from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class CreateQuizDto {

@@ -18,7 +18,9 @@ async function bootstrap() {
 
   app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
 
-  const allowedOrigins = (process.env.CORS_ORIGIN || 'http://localhost:5173').split(',');
+  const allowedOrigins = (
+    process.env.CORS_ORIGIN || 'http://localhost:5173'
+  ).split(',');
 
   app.enableCors({
     origin: allowedOrigins,

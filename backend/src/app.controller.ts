@@ -9,7 +9,7 @@ export class AppController {
 
   @Get()
   health() {
-    return {message: 'Server is Running'};
+    return { message: 'Server is Running' };
   }
 
   @UseGuards(JwtAuthGuard)
@@ -20,5 +20,4 @@ export class AppController {
       user: (req as any).user,
     };
   }
-
 }

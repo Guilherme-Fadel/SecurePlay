@@ -1,4 +1,12 @@
-import { IsString, IsEnum, IsInt, IsBoolean, IsOptional, MaxLength, Min } from 'class-validator';
+import {
+  IsString,
+  IsEnum,
+  IsInt,
+  IsBoolean,
+  IsOptional,
+  MaxLength,
+  Min,
+} from 'class-validator';
 import { ModuloType, ModuloDifficulty } from '../modulo.entity';
 
 export class CreateModuloDto {

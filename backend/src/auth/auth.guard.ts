@@ -1,4 +1,8 @@
-import { ExecutionContext, Injectable, UnauthorizedException } from '@nestjs/common';
+import {
+  ExecutionContext,
+  Injectable,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { AuthGuard } from '@nestjs/passport';
 import { RedisService } from '../redis/redis.service';
@@ -7,7 +11,6 @@ import { extractTokenFromHeader } from '../common/utils/token.utils';
 
 @Injectable()
 export class JwtAuthGuard extends AuthGuard('jwt') {
-
   constructor(
     private redisService: RedisService,
     private reflector: Reflector,
@@ -32,7 +35,8 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
 
     await (super.canActivate(context) as Promise<boolean>);
 
-    const token = cookieToken || extractTokenFromHeader(request.headers['authorization']);
+    const token =
+      cookieToken || extractTokenFromHeader(request.headers['authorization']);
 
     if (!token) {
       throw new UnauthorizedException('Token não encontrado');

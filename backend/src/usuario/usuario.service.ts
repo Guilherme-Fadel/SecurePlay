@@ -7,35 +7,34 @@ import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class UsuarioService {
-
   constructor(
     @Inject('USUARIO_REPOSITORY')
     private usuarioRepository: Repository<Usuario>,
   ) {}
 
-  async getUsuarioDados(id: number){
+  async getUsuarioDados(id: number) {
     const usuario = await this.getUsuarioById(id);
 
     if (!usuario) {
-    throw new NotFoundException('Usuário não encontrado');
+      throw new NotFoundException('Usuário não encontrado');
     }
 
     return {
       userId: usuario.id,
       name: usuario.name,
       email: usuario.email,
-      level: usuario.level
+      level: usuario.level,
     };
   }
 
   async getUsuarioByEmail(email: string): Promise<Usuario | undefined> {
-      const usuario = await this.usuarioRepository.findOne({ where: { email } });
-      return usuario ?? undefined;
-    }
+    const usuario = await this.usuarioRepository.findOne({ where: { email } });
+    return usuario ?? undefined;
+  }
 
-  async getUsuarioById(id: number): Promise<Usuario | undefined>{
-    const usuario = await this.usuarioRepository.findOne({ where: { id } })
-    return usuario ?? undefined
+  async getUsuarioById(id: number): Promise<Usuario | undefined> {
+    const usuario = await this.usuarioRepository.findOne({ where: { id } });
+    return usuario ?? undefined;
   }
 
   async insertUsuario(data: UsuarioCadastrarDto): Promise<ResultadoDto> {

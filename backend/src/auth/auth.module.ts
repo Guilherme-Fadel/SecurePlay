@@ -15,21 +15,16 @@ import { RedisModule } from 'src/redis/redis.module';
     UsuarioModule,
     PassportModule.register({ defaultStrategy: 'jwt' }),
     JwtModule.registerAsync({
-    inject: [ConfigService],
-    useFactory: (config: ConfigService) => ({
-      global: true,
-      secret: config.get<string>('JWT_SECRET'),
-      signOptions: { expiresIn: '2h' },
+      inject: [ConfigService],
+      useFactory: (config: ConfigService) => ({
+        global: true,
+        secret: config.get<string>('JWT_SECRET'),
+        signOptions: { expiresIn: '2h' },
+      }),
     }),
-  }),
   ],
-  providers: [
-    AuthService,
-    JwtStrategy,
-    JwtAuthGuard,
-  ],
+  providers: [AuthService, JwtStrategy, JwtAuthGuard],
   controllers: [AuthController],
   exports: [AuthService, JwtAuthGuard],
 })
-
 export class AuthModule {}

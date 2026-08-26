@@ -1,4 +1,14 @@
-import { Controller, Get, Post, Patch, Delete, Body, Param, ParseIntPipe, Request } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Patch,
+  Delete,
+  Body,
+  Param,
+  ParseIntPipe,
+  Request,
+} from '@nestjs/common';
 import { AulaService } from './aula.service';
 import { CreateAulaDto, UpdateAulaDto } from './dto/aula.dto';
 import { SubmitQuizDto } from '../aula-quiz/dto/aula-quiz.dto';
@@ -23,7 +33,10 @@ export class AulaController {
 
   @Patch(':id')
   @Roles(Role.ADMIN)
-  async update(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateAulaDto) {
+  async update(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: UpdateAulaDto,
+  ) {
     return this.aulaService.update(id, dto);
   }
 

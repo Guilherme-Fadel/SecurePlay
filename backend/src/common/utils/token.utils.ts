@@ -1,5 +1,6 @@
-
-export function extractTokenFromHeader(authHeader: string | undefined): string | null {
+export function extractTokenFromHeader(
+  authHeader: string | undefined,
+): string | null {
   if (!authHeader) return null;
   const [type, token] = authHeader.split(' ');
   return type === 'Bearer' && token ? token : null;

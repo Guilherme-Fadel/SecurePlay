@@ -17,7 +17,8 @@ export class AuthService {
   ) {}
 
   get cookieOptions() {
-    const isProduction = this.configService.get<string>('NODE_ENV') === 'production';
+    const isProduction =
+      this.configService.get<string>('NODE_ENV') === 'production';
     return {
       httpOnly: true,
       secure: isProduction,
@@ -64,7 +65,7 @@ export class AuthService {
       return { message: 'Logout realizado com sucesso' };
     }
 
-    const decoded = this.jwtService.decode(token) as { exp: number };
+    const decoded = this.jwtService.decode(token);
     const ttl = calcTokenTtl(decoded.exp);
 
     if (ttl > 0) {

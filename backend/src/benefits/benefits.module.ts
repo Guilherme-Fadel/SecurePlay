@@ -8,11 +8,7 @@ import { AuthModule } from 'src/auth/auth.module';
 @Module({
   imports: [DatabaseModule, AuthModule],
   controllers: [BenefitsController],
-  providers: [
-    ...benefitsProviders,
-    BenefitsService,
-  ],
+  providers: [...benefitsProviders, BenefitsService],
   exports: [BenefitsService],
 })
-
 export class BenefitsModule {}

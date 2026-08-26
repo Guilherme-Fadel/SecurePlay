@@ -15,8 +15,8 @@ export class Usuario {
   @Column({ length: 255 })
   password: string;
 
-  @Column({default: 1})
-  level: number
+  @Column({ default: 1 })
+  level: number;
 
   @Column({ type: 'varchar', length: 20, default: 'user' })
   role: Role;

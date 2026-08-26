@@ -38,7 +38,8 @@ export class ModuloService {
           .andWhere('ua.completed = :completed', { completed: true })
           .getCount();
 
-        const progress = totalAulas > 0 ? Math.round((completedAulas / totalAulas) * 100) : 0;
+        const progress =
+          totalAulas > 0 ? Math.round((completedAulas / totalAulas) * 100) : 0;
 
         return {
           ...modulo,
@@ -75,7 +76,8 @@ export class ModuloService {
 
     const aulasWithStatus = aulas.map((aula, index) => {
       const isCompleted = completedAulaIds.includes(aula.id);
-      const previousCompleted = index === 0 || completedAulaIds.includes(aulas[index - 1].id);
+      const previousCompleted =
+        index === 0 || completedAulaIds.includes(aulas[index - 1].id);
       const isUnlocked = index === 0 || previousCompleted;
 
       return {
@@ -92,8 +94,11 @@ export class ModuloService {
     });
 
     const totalAulas = aulas.length;
-    const completedCount = aulasWithStatus.filter((a) => a.status === 'completed').length;
-    const progress = totalAulas > 0 ? Math.round((completedCount / totalAulas) * 100) : 0;
+    const completedCount = aulasWithStatus.filter(
+      (a) => a.status === 'completed',
+    ).length;
+    const progress =
+      totalAulas > 0 ? Math.round((completedCount / totalAulas) * 100) : 0;
 
     return {
       ...modulo,

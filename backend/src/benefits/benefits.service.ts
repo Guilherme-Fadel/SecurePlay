@@ -1,4 +1,9 @@
-import { Injectable, Inject, NotFoundException, ConflictException } from '@nestjs/common';
+import {
+  Injectable,
+  Inject,
+  NotFoundException,
+  ConflictException,
+} from '@nestjs/common';
 import { Repository } from 'typeorm';
 import { Benefits } from './benefits.entity';
 import { CreateBenefitsDto } from './dto/benefits.dto';
@@ -6,46 +11,40 @@ import { ResultadoDto } from 'src/resultado.dto';
 
 @Injectable()
 export class BenefitsService {
-
   constructor(
     @Inject('BENEFITS_REPOSITORY')
     private benefitsRepository: Repository<Benefits>,
   ) {}
 
-  async insertBenefits(data: CreateBenefitsDto): Promise<ResultadoDto>{
+  async insertBenefits(data: CreateBenefitsDto): Promise<ResultadoDto> {
+    const benefitsExistente = await this.getBenefitsByTitle(data.title);
 
-    const benefitsExistente = await this.getBenefitsByTitle(data.title)
-
-    if (benefitsExistente){
+    if (benefitsExistente) {
       throw new ConflictException('Já existe um beneficio com o mesmo Titulo');
     }
 
-    await this.benefitsRepository.save(data)
+    await this.benefitsRepository.save(data);
 
-    return ({
+    return {
       sucesso: true,
-      mensagem: 'Inclusão de registro realizada com sucesso'
-    });
+      mensagem: 'Inclusão de registro realizada com sucesso',
+    };
   }
 
-  async deleteBenefits(id: number): Promise<ResultadoDto>{
+  async deleteBenefits(id: number): Promise<ResultadoDto> {
+    const result = await this.benefitsRepository.delete(id);
 
-    const result = await this.benefitsRepository.delete(id)
-
-    if (result.affected === 0 ){
+    if (result.affected === 0) {
       throw new NotFoundException('Benefício não encontrado');
     }
 
-    return ({
+    return {
       sucesso: true,
-      mensagem: 'Exclusão de registro realizada com sucesso'
-    });
+      mensagem: 'Exclusão de registro realizada com sucesso',
+    };
   }
-  
 
-  async getBenefits(id?: number){
-
-
+  async getBenefits(id?: number) {
     if (id) {
       const item = await this.getBenefitsById(id);
 
@@ -61,7 +60,7 @@ export class BenefitsService {
         color: item.color,
         textColor: item.textColor,
         borderColor: item.borderColor,
-        glow: item.glow
+        glow: item.glow,
       };
     }
 
@@ -75,21 +74,19 @@ export class BenefitsService {
       color: item.color,
       textColor: item.textColor,
       borderColor: item.borderColor,
-      glow: item.glow
-    }))
-
+      glow: item.glow,
+    }));
   }
 
-
-  async getBenefitsById(id: number): Promise<Benefits | undefined>{
-    const benefits = await this.benefitsRepository.findOne({ where: { id } })
-    return benefits ?? undefined
+  async getBenefitsById(id: number): Promise<Benefits | undefined> {
+    const benefits = await this.benefitsRepository.findOne({ where: { id } });
+    return benefits ?? undefined;
   }
 
-  async getBenefitsByTitle(title: string): Promise<Benefits | undefined>{
-    const benefits = await this.benefitsRepository.findOne({ where: { title } })
-    return benefits ?? undefined
+  async getBenefitsByTitle(title: string): Promise<Benefits | undefined> {
+    const benefits = await this.benefitsRepository.findOne({
+      where: { title },
+    });
+    return benefits ?? undefined;
   }
 }
-
-

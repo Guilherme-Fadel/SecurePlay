@@ -25,13 +25,17 @@ export class AppGateway implements OnGatewayConnection, OnGatewayDisconnect {
     const userId = Number(client.handshake.query.userId);
 
     if (!userId || isNaN(userId)) {
-      this.logger.warn(`Conexão rejeitada - userId inválido: ${client.handshake.query.userId}`);
+      this.logger.warn(
+        `Conexão rejeitada - userId inválido: ${client.handshake.query.userId}`,
+      );
       client.disconnect();
       return;
     }
 
     client.join(`user_${userId}`);
-    this.logger.log(`Usuário ${userId} conectado (socket: ${client.id}, room: user_${userId})`);
+    this.logger.log(
+      `Usuário ${userId} conectado (socket: ${client.id}, room: user_${userId})`,
+    );
   }
 
   handleDisconnect(client: Socket) {
@@ -50,6 +54,8 @@ export class AppGateway implements OnGatewayConnection, OnGatewayDisconnect {
     const room = `user_${payload.usuario_id}`;
 
     this.server.to(room).emit('new-notification', payload);
-    this.logger.log(`Notificação enviada para room ${room} (usuário ${payload.usuario_id})`);
+    this.logger.log(
+      `Notificação enviada para room ${room} (usuário ${payload.usuario_id})`,
+    );
   }
 }

@@ -9,12 +9,7 @@ import { AuthModule } from 'src/auth/auth.module';
 @Module({
   imports: [DatabaseModule, AuthModule],
   controllers: [NotificationController],
-  providers: [
-    ...notificationProviders,
-    NotificationService,
-    OwnershipGuard,
-  ],
+  providers: [...notificationProviders, NotificationService, OwnershipGuard],
   exports: [NotificationService],
 })
-
 export class NotificationModule {}
