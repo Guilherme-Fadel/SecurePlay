@@ -13,7 +13,17 @@ export class UsuarioService {
   ) {}
 
   async getUsuarioDados(id: number) {
-    const usuario = await this.getUsuarioById(id);
+    let usuario: Usuario | null = null;
+
+    try {
+      usuario = await this.usuarioRepository.findOne({
+        where: { id },
+        relations: ['empresa'],
+      });
+    } catch {
+      // Fallback se a relação empresa ainda não existe no banco
+      usuario = await this.usuarioRepository.findOne({ where: { id } });
+    }
 
     if (!usuario) {
       throw new NotFoundException('Usuário não encontrado');
@@ -24,6 +34,11 @@ export class UsuarioService {
       name: usuario.name,
       email: usuario.email,
       level: usuario.level,
+      role: usuario.role,
+      empresa_id: usuario.empresa_id ?? null,
+      empresa_paleta: usuario.empresa?.paleta || null,
+      empresa_logo: usuario.empresa?.logo_url || null,
+      empresa_nome: usuario.empresa?.nome || null,
     };
   }
 

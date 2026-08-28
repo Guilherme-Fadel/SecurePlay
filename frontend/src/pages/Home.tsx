@@ -3,17 +3,23 @@ import { LoadingScreen } from '@/components/shared/LoadingScreen';
 import { HomeLoadingOverlay } from '@/components/shared/HomeLoadingOverlay';
 import { Header } from "@/components/shared/layout/header/index"
 import { Sidebar, SidebarItem } from '@/components/shared/Sidebar'
-import { TrophyIcon, LayoutDashboard, Target, AwardIcon, BookOpenIcon, SettingsIcon, ArrowLeft } from "lucide-react"
+import { TrophyIcon, LayoutDashboard, Target, AwardIcon, BookOpenIcon, SettingsIcon, ArrowLeft, ShieldIcon } from "lucide-react"
 import { Dashboard, Awards, Challenges, Ranking, Conteudos, Settings, Perfil } from '@/components/sections/HomePage/index';
 import { useState, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Toaster } from 'sonner';
 import { SectionContext } from '@/contexts/SectionContext';
 import { ThemeProvider } from '@/contexts/ThemeContext';
 import { useHomeLoading } from '@/hooks/useHomeLoading';
+import { useEmpresaTema } from '@/hooks/useEmpresaTema';
+import { useCurrentUser } from '@/hooks/useCurrentUser';
 
 export type Section = 'dashboard' | 'desafios' | 'ranking' | 'conquistas' | 'conteudos' | 'configuracoes' | 'perfil'
 
-export default function Home() {
+/** Componente interno que roda DENTRO do ThemeProvider, permitindo useTheme */
+function HomeContent() {
+  const navigate = useNavigate();
+  const { user } = useCurrentUser();
   
   const sections: Record<Section, React.ReactNode> = {
       dashboard:     <Dashboard />,
@@ -24,6 +30,8 @@ export default function Home() {
       configuracoes: <Settings />,
       perfil:        <Perfil />
     }
+
+  useEmpresaTema();
 
   const [activeSection, setActiveSectionState] = useState<Section>('dashboard')
   const [previousSection, setPreviousSection] = useState<Section | null>(null)
@@ -50,8 +58,7 @@ export default function Home() {
 
 
   return (
-    <PageTransition>
-      <ThemeProvider>
+    <>
         <SectionContext.Provider value={{ activeSection, setActiveSection, navigateToSection, previousSection, goBack, setLoading, registerBootstrap }}>
         <LoadingScreen ready={bootstrapReady} />
         <Toaster position="top-right" richColors />
@@ -101,6 +108,17 @@ export default function Home() {
               active={activeSection === 'configuracoes'}
               onSelect={setActiveSection}
             />
+            {user?.role === 'admin' && (
+              <li
+                onClick={() => navigate('/admin')}
+                className="relative flex items-center py-2 px-3 my-1 rounded-md cursor-pointer transition-colors hover:bg-[var(--background)] text-[var(--text-primary)]"
+              >
+                <ShieldIcon />
+                <span className="overflow-hidden transition-all text-xl w-52 ml-4">
+                  Administrador
+                </span>
+              </li>
+            )}
           </Sidebar>
 
           <div className="flex flex-col flex-1 min-w-0 min-h-0">
@@ -122,6 +140,15 @@ export default function Home() {
 
         </div>
         </SectionContext.Provider>
+    </>
+  );
+}
+
+export default function Home() {
+  return (
+    <PageTransition>
+      <ThemeProvider>
+        <HomeContent />
       </ThemeProvider>
     </PageTransition>
   );
