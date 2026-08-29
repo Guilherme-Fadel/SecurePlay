@@ -18,6 +18,7 @@ import { RedisModule } from './redis/redis.module';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { AppGateway } from './gateway/app.gateway';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
+import { AchievementsModule } from './achievements/achievements.module';
 
 @Module({
   imports: [
@@ -50,6 +51,7 @@ import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
     ArcadeModule,
     SeedModule,
     AdminModule,
+    AchievementsModule,
     ConfigModule.forRoot({
       isGlobal: true,
     }),

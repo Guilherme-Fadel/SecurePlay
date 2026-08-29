@@ -23,6 +23,7 @@ import { QuizRelampagoHandler } from './games/quiz-relampago.handler';
 import { PhishingHandler } from './games/phishing.handler';
 import { DataClassifyHandler } from './games/data-classify.handler';
 import { SubmitRunDto } from './dto/arcade.dto';
+import { UsuarioArcadeStats } from './entities/usuario-arcade-stats.entity';
 const RUN_TTL_SECONDS = 30 * 60;
 const XP_FLOOR = 10;
 interface StoredRun {
@@ -47,6 +48,8 @@ export class ArcadeService implements OnModuleInit {
     private readonly phishingRepository: Repository<PhishingSample>,
     @Inject('DATA_ITEM_REPOSITORY')
     private readonly dataItemRepository: Repository<DataItem>,
+    @Inject('USUARIO_ARCADE_STATS_REPOSITORY')
+    private readonly usuarioArcadeStatsRepository: Repository<UsuarioArcadeStats>,
   ) {}
   async onModuleInit() {
     const seeds: Partial<ArcadeGame>[] = [
@@ -347,6 +350,23 @@ export class ArcadeService implements OnModuleInit {
       xpEarned = Math.max(XP_FLOOR, xpEarned);
     }
     await this.xpService.creditXp(usuario_id, xpEarned);
+    let activity = await this.usuarioArcadeStatsRepository.findOne({
+      where: { usuario_id, game_slug: stored.slug },
+    });
+    if (!activity) {
+      activity = this.usuarioArcadeStatsRepository.create({
+        usuario_id,
+        game_slug: stored.slug,
+        total_plays: 0,
+        perfect_runs: 0,
+        best_score: 0,
+      });
+    }
+    activity.total_plays += 1;
+    if (correction.score === 100) activity.perfect_runs += 1;
+    activity.best_score = Math.max(activity.best_score, correction.score);
+    activity.last_played_at = new Date();
+    await this.usuarioArcadeStatsRepository.save(activity);
     await this.redisService.del(key);
     return {
       score: correction.score,

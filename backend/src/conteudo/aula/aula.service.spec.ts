@@ -26,6 +26,7 @@ describe('AulaService (progresso parcial)', () => {
       {} as never,
       {} as never,
       {} as never,
+      {} as never,
     );
   });
 

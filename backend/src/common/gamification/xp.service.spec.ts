@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { XpService } from './xp.service';
 import { RedisService } from '../../redis/redis.service';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 
 describe('XpService', () => {
   let service: XpService;
@@ -10,6 +11,7 @@ describe('XpService', () => {
     save: jest.Mock;
   };
   let redisService: { incrBy: jest.Mock };
+  let eventEmitter: { emitAsync: jest.Mock };
 
   beforeEach(async () => {
     statsRepository = {
@@ -18,12 +20,14 @@ describe('XpService', () => {
       save: jest.fn(),
     };
     redisService = { incrBy: jest.fn() };
+    eventEmitter = { emitAsync: jest.fn().mockResolvedValue([]) };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         XpService,
         { provide: 'USUARIO_STATS_REPOSITORY', useValue: statsRepository },
         { provide: RedisService, useValue: redisService },
+        { provide: EventEmitter2, useValue: eventEmitter },
       ],
     }).compile();
 

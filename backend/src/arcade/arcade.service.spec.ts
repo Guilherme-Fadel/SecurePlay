@@ -34,6 +34,11 @@ describe('ArcadeService (ciclo start/submit e XP)', () => {
   };
   let dataHandler: { buildRun: jest.Mock; correct: jest.Mock };
   let dataRepository: { count: jest.Mock; create: jest.Mock; save: jest.Mock };
+  let arcadeStatsRepository: {
+    findOne: jest.Mock;
+    create: jest.Mock;
+    save: jest.Mock;
+  };
 
   const quizGame = {
     slug: 'quiz-relampago',
@@ -110,6 +115,11 @@ describe('ArcadeService (ciclo start/submit e XP)', () => {
       create: jest.fn((x: unknown) => x),
       save: jest.fn(),
     };
+    arcadeStatsRepository = {
+      findOne: jest.fn().mockResolvedValue(null),
+      create: jest.fn((value: unknown) => value),
+      save: jest.fn((value: unknown) => Promise.resolve(value)),
+    };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -123,6 +133,10 @@ describe('ArcadeService (ciclo start/submit e XP)', () => {
         { provide: DataClassifyHandler, useValue: dataHandler },
         { provide: 'PHISHING_SAMPLE_REPOSITORY', useValue: phishingRepository },
         { provide: 'DATA_ITEM_REPOSITORY', useValue: dataRepository },
+        {
+          provide: 'USUARIO_ARCADE_STATS_REPOSITORY',
+          useValue: arcadeStatsRepository,
+        },
       ],
     }).compile();
 

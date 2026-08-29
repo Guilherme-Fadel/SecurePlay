@@ -12,12 +12,17 @@ import { Sparkles, Zap } from 'lucide-react';
 import { Achievements } from './Achievements';
 import { AppSectionHeader } from '@/components/ui/visuals/AppSectionHeader';
 import { AppButton } from '@/components/ui/buttons/AppButton';
+import { useAchievementShop } from '@/hooks/useAchievements';
+import { cn } from '@/lib/utils';
 
 
 export function Dashboard() {
   const { user, loading: userLoading } = useCurrentUser();
   const { stats, loading: statsLoading } = useDashboardStats();
   const { setLoading, registerBootstrap, navigateToSection } = useSectionContext();
+  const { data: cosmeticShop } = useAchievementShop();
+  const equippedFrame = cosmeticShop?.equipped.find((item) => item.type === 'frame')?.visualValue ?? '';
+  const equippedBackground = cosmeticShop?.equipped.find((item) => item.type === 'background')?.visualValue ?? '';
 
   useEffect(() => {
     registerBootstrap('dashboard');
@@ -36,10 +41,10 @@ export function Dashboard() {
     <PageTransition>
       <div className="dashboard-real flex flex-col gap-3 lg:h-full min-h-0 px-1 py-2">
 
-        <InfoCard variant="primary" raised className="dashboard-welcome">
+        <InfoCard variant="primary" raised className={cn('dashboard-welcome cosmetic-background-host', equippedBackground)}>
           <div className="dashboard-welcome-content">
             <div className="dashboard-welcome-left">
-              <div className="dashboard-welcome-avatar" aria-hidden="true">
+              <div className={cn('dashboard-welcome-avatar cosmetic-avatar', equippedFrame)} aria-hidden="true">
                 {user?.name?.charAt(0).toUpperCase() ?? '?'}
                 <i />
               </div>

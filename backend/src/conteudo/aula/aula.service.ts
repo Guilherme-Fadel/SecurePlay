@@ -20,6 +20,7 @@ import {
 } from './dto/aula.dto';
 import { SubmitQuizDto } from '../aula-quiz/dto/aula-quiz.dto';
 import { NotificationService } from '../../notification/notification.service';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 
 @Injectable()
 export class AulaService {
@@ -42,6 +43,7 @@ export class AulaService {
     private redisService: RedisService,
     private s3Service: S3Service,
     private notificationService: NotificationService,
+    private eventEmitter: EventEmitter2,
   ) {}
 
   async findOne(id: number, usuario_id: number) {
@@ -244,6 +246,7 @@ export class AulaService {
     await this.creditarXp(usuario_id, aula.xp);
 
     await this.verificarModuloConcluido(aula.modulo_id, usuario_id);
+    await this.eventEmitter.emitAsync('progress.changed', { usuarioId: usuario_id });
 
     return {
       sucesso: true,
@@ -337,6 +340,7 @@ export class AulaService {
     }
 
     await this.verificarModuloConcluido(aula.modulo_id, usuario_id);
+    await this.eventEmitter.emitAsync('progress.changed', { usuarioId: usuario_id });
 
     return {
       score,

@@ -12,6 +12,7 @@ import { UsuarioStats } from '../usuario-stats/usuario-stats.entity';
 import { RedisService } from '../redis/redis.service';
 import { ttlUntilEndOfDay } from '../common/utils/date.utils';
 import { SubmitChallengeDto } from './dto/challenge.dto';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 
 @Injectable()
 export class ChallengeService {
@@ -29,6 +30,7 @@ export class ChallengeService {
     private statsRepository: Repository<UsuarioStats>,
 
     private redisService: RedisService,
+    private eventEmitter: EventEmitter2,
   ) {}
 
   async getDailyChallenge(usuario_id: number): Promise<Challenge | null> {
@@ -291,6 +293,8 @@ export class ChallengeService {
       const ttl = ttlUntilEndOfDay();
       await this.redisService.set(xpKey, String(newXp), ttl);
     }
+
+    await this.eventEmitter.emitAsync('progress.changed', { usuarioId: usuario_id });
 
     return {
       score,

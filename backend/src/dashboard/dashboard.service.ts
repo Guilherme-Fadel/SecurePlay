@@ -12,6 +12,7 @@ import {
   getTodayWeekIndex,
   now,
 } from '../common/utils/date.utils';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 @Injectable()
 export class DashboardService {
   constructor(
@@ -20,6 +21,7 @@ export class DashboardService {
     private challengeService: ChallengeService,
     private redisService: RedisService,
     private tokenService: TokenService,
+    private eventEmitter: EventEmitter2,
   ) {}
   private async getOrCreateStats(usuario_id: number): Promise<UsuarioStats> {
     let stats = await this.statsRepository.findOne({ where: { usuario_id } });
@@ -186,6 +188,7 @@ export class DashboardService {
     stats.total_points += points;
     await this.statsRepository.save(stats);
     await this.incrementRedisXpToday(usuario_id, points);
+    await this.eventEmitter.emitAsync('progress.changed', { usuarioId: usuario_id });
   }
   async getWeeklyStreak(usuario_id: number) {
     const key = `streak:${usuario_id}:${getMondayOfWeek()}`;

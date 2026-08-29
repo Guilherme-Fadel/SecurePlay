@@ -6,6 +6,7 @@ import { logoutUser } from '@/services/login/logout';
 import { useNavigate } from 'react-router-dom';
 import { useSectionContext } from '@/contexts/SectionContext';
 import { useTheme } from '@/contexts/ThemeContext';
+import { useAchievementShop } from '@/hooks/useAchievements';
 
 interface UserMenuProps {
   open: boolean;
@@ -19,6 +20,9 @@ export function UserMenu({ open, onToggle, onClose }: UserMenuProps) {
   const navigate = useNavigate();
   const { setActiveSection } = useSectionContext();
   const { theme, toggleTheme } = useTheme();
+  const { data: cosmeticShop } = useAchievementShop();
+  const equippedFrame = cosmeticShop?.equipped.find((item) => item.type === 'frame')?.visualValue ?? '';
+  const equippedBackground = cosmeticShop?.equipped.find((item) => item.type === 'background')?.visualValue ?? '';
 
   const handleLogout = async () => {
     onClose();
@@ -34,12 +38,12 @@ export function UserMenu({ open, onToggle, onClose }: UserMenuProps) {
     <div className="relative">
       <button
         onClick={onToggle}
-        className="flex items-center gap-3 px-3 py-2 hover:bg-[var(--background)] rounded-md transition-colors"
+        className={cn('secure-user-menu-trigger cosmetic-background-host flex items-center gap-3 px-3 py-2 hover:bg-[var(--background)] rounded-md transition-colors', equippedBackground)}
       >
         <img
           src={`https://ui-avatars.com/api/?name=${encodeURIComponent(user?.name ?? '')}&background=c7d2fe&color=3730a3&bold=true`}
           alt="User avatar"
-          className="w-9 h-9 rounded-md flex-shrink-0"
+          className={cn('cosmetic-avatar w-9 h-9 rounded-md flex-shrink-0', equippedFrame)}
         />
 
         <div className="text-left hidden md:block">
