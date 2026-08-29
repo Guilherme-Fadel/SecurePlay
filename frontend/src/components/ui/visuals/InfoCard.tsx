@@ -8,11 +8,11 @@ const variantStyles: Record<
   CardVariant,
   { border: string; color: string; iconBox: string; shadow: string }
 > = {
-  default:   { border: 'border-[var(--border)]',       color: 'var(--text-secondary)', iconBox: 'bg-[var(--surface-alt)] border-[var(--border)]',         shadow: 'var(--border-light)'  },
-  primary:   { border: 'border-[var(--primary-30)]',   color: 'var(--primary)',        iconBox: 'bg-[var(--primary-15)] border-[var(--primary-30)]',     shadow: 'var(--primary-dark)'  },
-  secondary: { border: 'border-[var(--secondary-30)]', color: 'var(--secondary)',      iconBox: 'bg-[var(--secondary-15)] border-[var(--secondary-30)]', shadow: 'var(--secondary-dark)'},
-  accent:    { border: 'border-[var(--accent-30)]',    color: 'var(--accent)',         iconBox: 'bg-[var(--accent-15)] border-[var(--accent-30)]',       shadow: 'var(--accent-dark)'   },
-  danger:    { border: 'border-[var(--danger)]',       color: 'var(--danger)',         iconBox: 'bg-[var(--surface-alt)] border-[var(--danger)]',        shadow: '#7a0f22'              },
+  default:   { border: 'border-[var(--border)]', color: 'var(--text-secondary)', iconBox: 'bg-[var(--surface-alt)] border-[var(--border)]', shadow: 'transparent' },
+  primary:   { border: 'border-[var(--border)]', color: 'var(--primary)', iconBox: 'bg-[var(--primary-15)] border-[var(--primary-30)]', shadow: 'transparent' },
+  secondary: { border: 'border-[var(--border)]', color: 'var(--secondary)', iconBox: 'bg-[var(--secondary-15)] border-[var(--secondary-30)]', shadow: 'transparent' },
+  accent:    { border: 'border-[var(--border)]', color: 'var(--accent)', iconBox: 'bg-[var(--accent-15)] border-[var(--accent-30)]', shadow: 'transparent' },
+  danger:    { border: 'border-[var(--border)]', color: 'var(--danger)', iconBox: 'bg-[var(--surface-alt)] border-[var(--danger)]', shadow: 'transparent' },
 };
 
 interface InfoCardProps {
@@ -36,12 +36,12 @@ function InfoCardRoot({
     return (
       <div
         className={cn(
-          'bg-[var(--surface)] border rounded-2xl transition-all duration-200',
+          'sp-card sp-card-raised bg-[var(--surface)] border rounded-2xl transition-all duration-200',
           interactive && 'hover:-translate-y-1',
           border,
           className,
         )}
-        style={{ boxShadow: `0 6px 0 -1px ${shadow}, 0 12px 22px -12px #000a` }}
+        style={{ '--sp-accent': shadow } as React.CSSProperties}
       >
         {children}
       </div>
@@ -49,7 +49,7 @@ function InfoCardRoot({
   }
 
   return (
-    <div className={cn('bg-[var(--surface)] border rounded-2xl transition-all duration-300', border, className)}>
+    <div className={cn('sp-card bg-[var(--surface)] border rounded-2xl transition-all duration-300', border, className)}>
       {children}
     </div>
   );
@@ -69,7 +69,7 @@ function Header({ title, subtitle, icon: Icon, variant = 'default', action, clas
   const { color, iconBox } = variantStyles[variant];
 
   return (
-    <div className={cn('flex items-start justify-between p-4 border-b border-[var(--border)] rounded-t-2xl', className)}>
+    <div className={cn('sp-card-header flex items-start justify-between p-4 border-b border-[var(--border)] rounded-t-2xl', className)}>
       <div className="flex items-center gap-3">
         {Icon && (
           <div className={cn('w-10 h-10 flex items-center justify-center rounded-lg border', iconBox)} style={{ color }}>
@@ -164,7 +164,7 @@ interface InfoCardFooterProps {
 
 function Footer({ children, className }: InfoCardFooterProps) {
   return (
-    <div className={cn('px-4 py-3 border-t border-[var(--border)] rounded-b-2xl flex items-center justify-between', className)}>
+    <div className={cn('sp-card-footer px-4 py-3 border-t border-[var(--border)] rounded-b-2xl flex items-center justify-between', className)}>
       {children}
     </div>
   );

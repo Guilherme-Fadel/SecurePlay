@@ -23,10 +23,8 @@ import { QuizRelampagoHandler } from './games/quiz-relampago.handler';
 import { PhishingHandler } from './games/phishing.handler';
 import { DataClassifyHandler } from './games/data-classify.handler';
 import { SubmitRunDto } from './dto/arcade.dto';
-
-const RUN_TTL_SECONDS = 30 * 60; // partida em aberto expira em 30 min
-const XP_FLOOR = 10; // piso de XP por conclusao (exceto xpBase 0)
-
+const RUN_TTL_SECONDS = 30 * 60;
+const XP_FLOOR = 10;
 interface StoredRun {
   usuario_id: number;
   slug: string;
@@ -34,29 +32,22 @@ interface StoredRun {
   xp_base: number;
   answerKey: unknown;
 }
-
 @Injectable()
 export class ArcadeService implements OnModuleInit {
   constructor(
     @Inject('ARCADE_GAME_REPOSITORY')
     private readonly gameRepository: Repository<ArcadeGame>,
-
     private readonly redisService: RedisService,
     private readonly xpService: XpService,
     private readonly tokenService: TokenService,
     private readonly quizHandler: QuizRelampagoHandler,
     private readonly phishingHandler: PhishingHandler,
     private readonly dataClassifyHandler: DataClassifyHandler,
-
     @Inject('PHISHING_SAMPLE_REPOSITORY')
     private readonly phishingRepository: Repository<PhishingSample>,
-
     @Inject('DATA_ITEM_REPOSITORY')
     private readonly dataItemRepository: Repository<DataItem>,
   ) {}
-
-  // Seed de desenvolvimento: garante que os jogos do catalogo existam.
-  // Idempotente (so cria o que falta). Substituir por seed/migration formal em producao.
   async onModuleInit() {
     const seeds: Partial<ArcadeGame>[] = [
       {
@@ -122,7 +113,6 @@ export class ArcadeService implements OnModuleInit {
         active: true,
       },
     ];
-
     for (const seed of seeds) {
       const existing = await this.gameRepository.findOne({
         where: { slug: seed.slug },
@@ -134,16 +124,12 @@ export class ArcadeService implements OnModuleInit {
         await this.gameRepository.save(existing);
       }
     }
-
     await this.seedPhishingSamples();
     await this.seedDataItems();
   }
-
-  // Itens de exemplo para a Classificacao de Dados (dev). So insere se a tabela estiver vazia.
   private async seedDataItems() {
     const count = await this.dataItemRepository.count();
     if (count > 0) return;
-
     const items: Partial<DataItem>[] = [
       {
         label: 'Comunicado publicado no site institucional',
@@ -187,17 +173,13 @@ export class ArcadeService implements OnModuleInit {
         explanation: 'Uso interno da equipe; sem exposicao externa.',
       },
     ];
-
     await this.dataItemRepository.save(
       items.map((i) => this.dataItemRepository.create(i)),
     );
   }
-
-  // Amostras de exemplo para o Caca ao Phishing (dev). So insere se a tabela estiver vazia.
   private async seedPhishingSamples() {
     const count = await this.phishingRepository.count();
     if (count > 0) return;
-
     const samples: Partial<PhishingSample>[] = [
       {
         kind: PhishingKind.EMAIL,
@@ -260,13 +242,10 @@ export class ArcadeService implements OnModuleInit {
           'Notificacao informativa de um dominio oficial, sem pedir clique nem dados. Comportamento legitimo.',
       },
     ];
-
     await this.phishingRepository.save(
       samples.map((s) => this.phishingRepository.create(s)),
     );
   }
-
-  // Resolve o handler do tipo de jogo. Tipos ainda nao implementados lancam erro claro.
   private handlerFor(type: ArcadeGameType): GameHandler {
     switch (type) {
       case ArcadeGameType.QUIZ:
@@ -279,8 +258,6 @@ export class ArcadeService implements OnModuleInit {
         throw new BadRequestException('Jogo ainda nao disponivel.');
     }
   }
-
-  /** Catalogo de jogos ativos, sem qualquer gabarito. */
   async listGames() {
     const games = await this.gameRepository.find({ where: { active: true } });
     return games.map((g) => ({
@@ -296,16 +273,12 @@ export class ArcadeService implements OnModuleInit {
       gameType: g.game_type,
     }));
   }
-
   getTokens(usuario_id: number) {
     return this.tokenService.getState(usuario_id);
   }
-
   private runKey(usuario_id: number, runId: string): string {
     return `arcade-run:${usuario_id}:${runId}`;
   }
-
-  /** Inicia a partida: valida jogo, consome 1 token, monta a run e grava no Redis. */
   async start(usuario_id: number, slug: string) {
     const game = await this.gameRepository.findOne({
       where: { slug, active: true },
@@ -313,22 +286,18 @@ export class ArcadeService implements OnModuleInit {
     if (!game) {
       throw new NotFoundException('Jogo nao encontrado ou indisponivel.');
     }
-
     if (game.game_type === ArcadeGameType.CLIENT_ONLY) {
       throw new BadRequestException('Este jogo nao usa economia de tokens.');
     }
-
-    const consumed = await this.tokenService.consume(usuario_id);
-    if (!consumed.ok) {
-      const secs = consumed.state.nextRegenInSeconds;
+    const tokens = await this.tokenService.getState(usuario_id);
+    if (tokens.balance <= 0) {
+      const secs = tokens.nextRegenInSeconds;
       throw new ForbiddenException(
         `Sem tentativas no momento. Proxima em ${Math.ceil(secs / 60)} min.`,
       );
     }
-
     const handler = this.handlerFor(game.game_type);
     const run = await handler.buildRun();
-
     const runId = randomUUID();
     const stored: StoredRun = {
       usuario_id,
@@ -342,31 +311,30 @@ export class ArcadeService implements OnModuleInit {
       JSON.stringify(stored),
       RUN_TTL_SECONDS,
     );
-
     return {
       runId,
       game: { slug: game.slug, title: game.title, gameType: game.game_type },
       payload: run.payload,
-      tokens: consumed.state,
+      tokens,
     };
   }
-
-  /** Finaliza a partida: corrige, calcula XP com multiplicador diario e credita. */
   async submit(usuario_id: number, runId: string, dto: SubmitRunDto) {
     const key = this.runKey(usuario_id, runId);
     const raw = await this.redisService.get(key);
     if (!raw) {
-      // run inexistente/expirada/ja submetida -> idempotente, nao credita.
       throw new BadRequestException('Partida invalida ou ja finalizada.');
     }
     const stored = JSON.parse(raw) as StoredRun;
-
+    const consumed = await this.tokenService.consume(usuario_id);
+    if (!consumed.ok) {
+      const secs = consumed.state.nextRegenInSeconds;
+      throw new ForbiddenException(
+        `Sem tentativas no momento. Proxima em ${Math.ceil(secs / 60)} min.`,
+      );
+    }
     const handler = this.handlerFor(stored.game_type);
     const correction = handler.correct(stored.answerKey, dto);
-
     const xpBase = Math.round(stored.xp_base * (correction.score / 100));
-
-    // multiplicador diario por jogo: 1a=1.0, 2a=0.5, 3a+=0.25
     const playsKey = `arcade-plays:${usuario_id}:${stored.slug}:${this.today()}`;
     const plays = await this.redisService.incrBy(
       playsKey,
@@ -374,17 +342,12 @@ export class ArcadeService implements OnModuleInit {
       ttlUntilEndOfDay(),
     );
     const multiplier = plays <= 1 ? 1 : plays === 2 ? 0.5 : 0.25;
-
     let xpEarned = Math.round(xpBase * multiplier);
     if (xpBase > 0) {
       xpEarned = Math.max(XP_FLOOR, xpEarned);
     }
-
     await this.xpService.creditXp(usuario_id, xpEarned);
-
-    // consome a run (idempotencia: um segundo submit cai no 400 acima).
     await this.redisService.del(key);
-
     return {
       score: correction.score,
       xpBase,
@@ -392,9 +355,9 @@ export class ArcadeService implements OnModuleInit {
       xpEarned,
       playsToday: plays,
       feedback: correction.feedback,
+      tokens: consumed.state,
     };
   }
-
   private today(): string {
     const d = new Date();
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;

@@ -71,7 +71,10 @@ export class AdminService {
     }
 
     const key = `empresas/${usuario.empresa.id}/logo`;
-    const uploadUrl = await this.s3Service.generatePresignedUploadUrl(key, contentType);
+    const uploadUrl = await this.s3Service.generatePresignedUploadUrl(
+      key,
+      contentType,
+    );
 
     return { uploadUrl, key };
   }

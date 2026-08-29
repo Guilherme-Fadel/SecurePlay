@@ -7,22 +7,16 @@
       <meta name="viewport" content="width=device-width, initial-scale=1.0" />
       <title>SecurePlay</title>
       <script>
-        // Anti-flash de tema: aplica data-theme antes do React montar, evitando
-        // piscada de tema claro na Home. So atua na rota /home, pois o tema claro
-        // vale apenas na Home; Landing e Login sao sempre escuros. O ThemeProvider
-        // (montado na Home) assume o controle depois e remove o atributo ao sair.
-        // Chave deve casar com THEME_STORAGE_KEY em contexts/ThemeContext.tsx.
-        (function () {
-          try {
-            if (
-              window.location.pathname === '/home' &&
-              localStorage.getItem('secureplay-theme') === 'light'
-            ) {
-              document.documentElement.setAttribute('data-theme', 'light');
-            }
-          } catch (e) {}
-        })();
-      </script>
+(function () {
+    try {
+        if (window.location.pathname === '/home' &&
+            localStorage.getItem('secureplay-theme') === 'light') {
+            document.documentElement.setAttribute('data-theme', 'light');
+        }
+    }
+    catch (e) { }
+})();
+</script>
     </head>
 
     <body>
@@ -30,4 +24,3 @@
       <script type="module" src="/src/main.tsx"></script>
     </body>
   </html>
-  

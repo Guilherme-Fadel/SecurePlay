@@ -14,8 +14,8 @@ export function Header() {
   };
 
   return (
-    <header className="sticky top-0 z-40 h-16 bg-[var(--surface)] border-b-2 border-[var(--border)]">
-      <div className="h-full px-4 md:px-6 flex items-center justify-between">
+    <header className="secure-header sticky top-0 z-40 h-16 bg-[var(--surface)] border-b-2 border-[var(--border)]">
+      <div className="secure-header-inner h-full px-4 md:px-6 flex items-center justify-between">
 
         <div className="flex-1 max-w-md hidden sm:block">
           <SearchBar />

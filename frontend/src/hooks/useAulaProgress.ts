@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { concluirAula, submitQuiz, QuizAnswer, QuizResult, ConcluirResult } from '@/services/conteudo';
+import { concluirAula, submitQuiz, updateAulaProgress, QuizAnswer, QuizResult, ConcluirResult, UpdateAulaProgress } from '@/services/conteudo';
 import { invalidate } from '@/lib/queryCache';
 
 export function useAulaProgress() {
@@ -42,5 +42,15 @@ export function useAulaProgress() {
     }
   }, []);
 
-  return { concluir, enviarQuiz, loading, error };
+  const salvarProgresso = useCallback(async (aulaId: number, progress: UpdateAulaProgress) => {
+    try {
+      const result = await updateAulaProgress(aulaId, progress);
+      invalidate('conteudoModulos');
+      return result;
+    } catch {
+      return null;
+    }
+  }, []);
+
+  return { concluir, enviarQuiz, salvarProgresso, loading, error };
 }

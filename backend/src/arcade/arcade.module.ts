@@ -23,7 +23,6 @@ import { DataClassifyHandler } from './games/data-classify.handler';
     DataClassifyHandler,
     ArcadeService,
   ],
-  // TokenService exportado para o DashboardModule recarregar tokens no check-in.
   exports: [TokenService],
 })
 export class ArcadeModule {}

@@ -1,5 +1,7 @@
 import { PageTransition } from "./PageTransition"
 import { Construction } from "lucide-react"
+import { InfoCard } from '@/components/ui/visuals/InfoCard';
+import { AppSectionHeader } from '@/components/ui/visuals/AppSectionHeader';
 
 interface UnderDevelopmentProps {
   section: string
@@ -8,16 +10,15 @@ interface UnderDevelopmentProps {
 export function UnderDevelopment({ section }: UnderDevelopmentProps) {
   return (
     <PageTransition>
-      <div className="flex flex-col items-center justify-center h-[60vh] gap-4 text-center">
-        <Construction
-          className="animate-pulse"
-          size={56}
-          color="var(--text-secondary)"
-        />
-        <h3 style={{ color: "var(--text-primary)" }}>{section}</h3>
-        <p style={{ color: "var(--text-secondary)" }}>
-          Esta seção está em desenvolvimento
-        </p>
+      <div className="app-page flex flex-col gap-5">
+        <AppSectionHeader title={section} subtitle="Esta área está sendo preparada para você." />
+        <InfoCard className="app-empty-card">
+          <div className="app-empty-state">
+            <div className="app-empty-icon"><Construction size={28} /></div>
+            <h3>Novidades em breve</h3>
+            <p>Estamos finalizando esta experiência seguindo o novo padrão visual da plataforma.</p>
+          </div>
+        </InfoCard>
       </div>
     </PageTransition>
   )

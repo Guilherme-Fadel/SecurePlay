@@ -1,7 +1,7 @@
 import { Modulo } from '@/services/conteudo';
 import { ProgressBar } from './ProgressBar';
 import { InfoCard } from '@/components/ui/visuals/InfoCard';
-import { Video, BookOpen, Library, Star, Layers } from 'lucide-react';
+import { ArrowRight, BookOpen, Check, Library, Play, Star, Video } from 'lucide-react';
 
 interface ModuloCardProps {
   modulo: Modulo;
@@ -26,77 +26,61 @@ export function ModuloCard({ modulo, onClick }: ModuloCardProps) {
   const difficulty = difficultyConfig[modulo.difficulty];
 
   return (
-    <div onClick={onClick} className="cursor-pointer group">
+    <button onClick={onClick} className="learning-module-card-wrap group">
       <InfoCard
         variant={isCompleted ? 'accent' : 'primary'}
         raised
         interactive
-        className="h-full flex flex-col"
+        className="app-module-card learning-module-card"
       >
-        <div className="relative h-36 bg-gradient-to-br from-[var(--surface-alt)] to-[var(--background)] rounded-t-2xl overflow-hidden flex items-center justify-center">
+        <div className="app-module-cover learning-module-cover">
           {modulo.thumbnail ? (
             <img
               src={modulo.thumbnail}
               alt={modulo.title}
-              className="absolute inset-0 w-full h-full object-cover opacity-70"
+              className="learning-module-image"
             />
           ) : (
-            <TypeIcon size={40} className="text-[var(--primary)] opacity-60" />
+            <div className="learning-module-placeholder"><TypeIcon size={34} /></div>
           )}
 
-          <div className="absolute top-3 left-3 flex items-center gap-1.5 px-2 py-1 bg-[var(--primary-15)] border border-[var(--primary-30)] backdrop-blur-sm rounded-lg">
+          <div className="learning-module-type">
             <TypeIcon size={12} className="text-[var(--primary)]" />
-            <span className="text-[10px] text-[var(--primary)] font-[var(--font-family-inter)]">
-              {typeConfig[modulo.type].label}
-            </span>
+            <span>{typeConfig[modulo.type].label}</span>
           </div>
 
-          <div className={`absolute top-3 right-3 px-2 py-1 rounded-lg border backdrop-blur-sm ${
-            isCompleted
-              ? 'bg-[var(--accent-15)] border-[var(--accent-30)]'
-              : 'bg-[var(--primary-15)] border-[var(--primary-30)]'
-          }`}>
-            <span className={`text-[10px] font-[var(--font-family-inter)] font-semibold ${
-              isCompleted ? 'text-[var(--accent-text)]' : 'text-[var(--primary)]'
-            }`}>
-              {modulo.progress}%
-            </span>
+          <div className={`learning-module-state ${isCompleted ? 'is-complete' : ''}`}>
+            {isCompleted ? <Check size={12} /> : <span>{modulo.progress}%</span>}
           </div>
         </div>
 
-        <InfoCard.Section className="flex-1 flex flex-col gap-3">
-          <div>
-            <h5 className="text-[var(--text-primary)] leading-tight mb-1">{modulo.title}</h5>
-            <p className="text-[var(--text-secondary)] text-xs font-[var(--font-family-inter)] line-clamp-2">
-              {modulo.description}
-            </p>
+        <InfoCard.Section className="learning-module-body">
+          <div className="learning-module-heading">
+            <div>
+              <span>{modulo.category}</span>
+              <h3>{modulo.title}</h3>
+            </div>
+            <ArrowRight size={17} />
           </div>
+
+          <p>{modulo.description}</p>
 
           <ProgressBar progress={modulo.progress} />
 
-          <div className="flex items-center justify-between mt-auto">
-            <div className="flex items-center gap-1">
+          <div className="learning-module-footer">
+            <div className="learning-module-difficulty">
               {Array.from({ length: difficulty.stars }).map((_, i) => (
-                <Star key={i} size={10} className="text-[var(--accent)] fill-[var(--accent)]" />
+                <Star key={i} size={10} />
               ))}
-              <span className="text-[var(--text-secondary)] ml-1 text-[10px] font-[var(--font-family-inter)]">
-                {difficulty.label}
-              </span>
+              <span>{difficulty.label}</span>
             </div>
-            <span className="text-[var(--text-primary)] text-xs font-[var(--font-family-inter)] font-semibold">
-              {modulo.xp_total} XP
-            </span>
-          </div>
-
-          <div className="flex items-center justify-between text-[10px] text-[var(--text-secondary)] font-[var(--font-family-inter)]">
-            <span>{modulo.category}</span>
-            <div className="flex items-center gap-1">
-              <Layers size={10} />
-              <span>{modulo.completedAulas}/{modulo.totalAulas} fases</span>
+            <div>
+              <span><Play size={10} /> {modulo.completedAulas}/{modulo.totalAulas} fases</span>
+              <strong>{modulo.xp_total} XP</strong>
             </div>
           </div>
         </InfoCard.Section>
       </InfoCard>
-    </div>
+    </button>
   );
 }

@@ -1,7 +1,7 @@
 @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
 
-/* Prototype-scoped foundation. The resets below prevent the app's pixel-art
-   typography rules from leaking into this SaaS dashboard. */
+
+
 .dbv2-root,
 .dbv2-root *,
 .dbv2-root *::before,
@@ -38,7 +38,7 @@
   letter-spacing: 0;
 }
 
-/* Sidebar */
+
 .dbv2-sidebar {
   position: relative;
   z-index: 2;
@@ -131,7 +131,7 @@
   flex: 0 0 auto;
 }
 
-/* Main shell and header */
+
 .dbv2-main {
   display: flex;
   min-width: 0;
@@ -205,7 +205,7 @@
   padding: 28px 32px 40px;
 }
 
-/* Shared card language */
+
 .dbv2-welcome,
 .dbv2-card,
 .dbv2-challenge {
@@ -215,7 +215,7 @@
   box-shadow: 0 2px 4px rgba(15, 23, 42, 0.03), 0 8px 24px rgba(15, 23, 42, 0.05);
 }
 
-/* Welcome card */
+
 .dbv2-welcome {
   position: relative;
   display: flex;
@@ -438,7 +438,7 @@
   color: #e49a00;
 }
 
-/* Dashboard columns */
+
 .dbv2-grid {
   display: grid;
   align-items: stretch;
@@ -556,7 +556,7 @@
   font-weight: 700;
 }
 
-/* Skill tree */
+
 .dbv2-skill-tree {
   position: relative;
   display: flex;
@@ -619,7 +619,7 @@
   color: #94a3b8;
 }
 
-/* Daily challenge */
+
 .dbv2-challenge {
   display: flex;
   height: 100%;
@@ -763,7 +763,7 @@
   outline-offset: 2px;
 }
 
-/* Leaderboard */
+
 .dbv2-leaderboard {
   display: flex;
   min-height: 112px;
@@ -861,7 +861,7 @@
   color: #b45309;
 }
 
-/* Achievements */
+
 .dbv2-achievements {
   display: flex;
   flex-direction: column;
@@ -917,7 +917,7 @@
   font-size: 12px;
 }
 
-/* Responsive behavior keeps the requested three-column desktop composition. */
+
 @media (max-width: 1180px) {
   .dbv2-welcome {
     align-items: flex-start;

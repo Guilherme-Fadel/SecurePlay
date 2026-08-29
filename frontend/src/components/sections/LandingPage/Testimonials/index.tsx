@@ -35,10 +35,10 @@ export function TestimonialsSection() {
         </motion.div>
       </div>
 
-   
+
       <div className="max-w-6xl mx-auto px-6 grid grid-cols-1 md:grid-cols-3 gap-8 relative z-10">
-        {testimonials.map((t, i) => (
-          <TestimonialCard key={t.id} testimonial={t} index={i} />
+        {testimonials.map((t) => (
+          <TestimonialCard key={t.id} testimonial={t} />
         ))}
       </div>
 

@@ -14,11 +14,21 @@ interface UserMenuProps {
 }
 
 export function UserMenu({ open, onToggle, onClose }: UserMenuProps) {
-  const { user, loading } = useCurrentUser();
+  const { user, loading, clearSession } = useCurrentUser();
   const { stats } = useDashboardStats();
   const navigate = useNavigate();
   const { setActiveSection } = useSectionContext();
   const { theme, toggleTheme } = useTheme();
+
+  const handleLogout = async () => {
+    onClose();
+    try {
+      await logoutUser();
+    } finally {
+      clearSession();
+      navigate('/login', { replace: true });
+    }
+  };
 
   return (
     <div className="relative">
@@ -56,12 +66,12 @@ export function UserMenu({ open, onToggle, onClose }: UserMenuProps) {
 
           <div className="absolute right-0 top-14 w-48 bg-[var(--surface)] border-2 border-[var(--border)] rounded-lg shadow-xl z-50">
             <div className="p-2">
-              <button 
+              <button
               onClick={() => { setActiveSection('perfil'); onClose(); }}
               className="w-full text-left px-3 py-2 hover:bg-[var(--background)] rounded-md transition-colors text-[var(--text-primary)]">
                 Meu Perfil
               </button>
-              <button 
+              <button
               onClick={() => { setActiveSection('configuracoes'); onClose(); }}
               className="w-full text-left px-3 py-2 hover:bg-[var(--background)] rounded-md transition-colors text-[var(--text-primary)]">
                 Configurações
@@ -102,8 +112,8 @@ export function UserMenu({ open, onToggle, onClose }: UserMenuProps) {
               </div>
 
               <div className="border-t border-[var(--border)] my-2" />
-              <button 
-              onClick={() => { logoutUser(); navigate('/login'); }}
+              <button
+              onClick={handleLogout}
               className="w-full text-left px-3 py-2 hover:bg-[var(--background)] rounded-md transition-colors text-[var(--danger)]">
                 Sair
               </button>

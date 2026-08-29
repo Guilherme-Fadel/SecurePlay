@@ -1,58 +1,41 @@
 import { useState } from 'react';
 import type { Biome, Position } from '../types';
-
 interface RegionEditPanelProps {
-  biomes: Biome[];
-  editingBiomeId: string | null;
-  draftPoints: Position[];
-  onPickBiome: (biomeId: string) => void;
-  onUndo: () => void;
-  onClear: () => void;
-  onSave: () => Promise<boolean> | void;
+    biomes: Biome[];
+    editingBiomeId: string | null;
+    draftPoints: Position[];
+    onPickBiome: (biomeId: string) => void;
+    onUndo: () => void;
+    onClear: () => void;
+    onSave: () => Promise<boolean> | void;
 }
-
-// Painel para desenhar as regioes (poligonos) dos biomas no mapa global.
-// Fluxo: escolher o bioma -> clicar nos cantos sobre o mapa -> Salvar -> Copiar.
-export function RegionEditPanel({
-  biomes,
-  editingBiomeId,
-  draftPoints,
-  onPickBiome,
-  onUndo,
-  onClear,
-  onSave,
-}: RegionEditPanelProps) {
-  const [copied, setCopied] = useState(false);
-  const [saveState, setSaveState] = useState<'idle' | 'saving' | 'saved' | 'error'>(
-    'idle',
-  );
-
-  const handleSave = async () => {
-    setSaveState('saving');
-    const ok = await onSave();
-    setSaveState(ok ? 'saved' : 'error');
-    setTimeout(() => setSaveState('idle'), 2000);
-  };
-
-  const snippet = editingBiomeId
-    ? `region: [\n${draftPoints
-        .map((p) => `  { x: ${p.x}, y: ${p.y} },`)
-        .join('\n')}\n],`
-    : '';
-
-  const handleCopy = async () => {
-    if (!snippet) return;
-    try {
-      await navigator.clipboard.writeText(snippet);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 1500);
-    } catch {
-      setCopied(false);
-    }
-  };
-
-  return (
-    <div className="wm-edit-panel wm-region-panel">
+export function RegionEditPanel({ biomes, editingBiomeId, draftPoints, onPickBiome, onUndo, onClear, onSave, }: RegionEditPanelProps) {
+    const [copied, setCopied] = useState(false);
+    const [saveState, setSaveState] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
+    const handleSave = async () => {
+        setSaveState('saving');
+        const ok = await onSave();
+        setSaveState(ok ? 'saved' : 'error');
+        setTimeout(() => setSaveState('idle'), 2000);
+    };
+    const snippet = editingBiomeId
+        ? `region: [\n${draftPoints
+            .map((p) => `  { x: ${p.x}, y: ${p.y} },`)
+            .join('\n')}\n],`
+        : '';
+    const handleCopy = async () => {
+        if (!snippet)
+            return;
+        try {
+            await navigator.clipboard.writeText(snippet);
+            setCopied(true);
+            setTimeout(() => setCopied(false), 1500);
+        }
+        catch {
+            setCopied(false);
+        }
+    };
+    return (<div className="wm-edit-panel wm-region-panel">
       <div className="wm-edit-panel-head">
         <strong>Regioes dos biomas</strong>
       </div>
@@ -63,26 +46,16 @@ export function RegionEditPanel({
       </p>
 
       <div className="wm-region-biomes">
-        {biomes.map((b) => (
-          <button
-            key={b.id}
-            className={`wm-region-pick ${
-              editingBiomeId === b.id ? 'active' : ''
-            }`}
-            style={{
-              borderColor: b.accent,
-              background: editingBiomeId === b.id ? `${b.accent}33` : undefined,
-            }}
-            onClick={() => onPickBiome(b.id)}
-          >
+        {biomes.map((b) => (<button key={b.id} className={`wm-region-pick ${editingBiomeId === b.id ? 'active' : ''}`} style={{
+                borderColor: b.accent,
+                background: editingBiomeId === b.id ? `${b.accent}33` : undefined,
+            }} onClick={() => onPickBiome(b.id)}>
             {b.name}
             {b.region && b.region.length >= 3 ? ' (ok)' : ''}
-          </button>
-        ))}
+          </button>))}
       </div>
 
-      {editingBiomeId && (
-        <>
+      {editingBiomeId && (<>
           <div className="wm-region-actions">
             <span>{draftPoints.length} pontos</span>
             <button onClick={onUndo} disabled={!draftPoints.length}>
@@ -91,18 +64,14 @@ export function RegionEditPanel({
             <button onClick={onClear} disabled={!draftPoints.length}>
               Limpar
             </button>
-            <button
-              className="wm-region-save"
-              onClick={handleSave}
-              disabled={draftPoints.length < 3 || saveState === 'saving'}
-            >
+            <button className="wm-region-save" onClick={handleSave} disabled={draftPoints.length < 3 || saveState === 'saving'}>
               {saveState === 'saving'
                 ? 'Salvando...'
                 : saveState === 'saved'
-                  ? 'Salvo no codigo!'
-                  : saveState === 'error'
-                    ? 'Erro ao salvar'
-                    : 'Salvar'}
+                    ? 'Salvo no codigo!'
+                    : saveState === 'error'
+                        ? 'Erro ao salvar'
+                        : 'Salvar'}
             </button>
           </div>
 
@@ -113,8 +82,6 @@ export function RegionEditPanel({
             </button>
           </div>
           <pre className="wm-edit-code">{snippet}</pre>
-        </>
-      )}
-    </div>
-  );
+        </>)}
+    </div>);
 }

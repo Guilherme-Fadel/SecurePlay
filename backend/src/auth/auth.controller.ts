@@ -32,10 +32,14 @@ export class AuthController {
     const result = await this.authService.signIn(dto);
 
     res.setCookie('token', result.token, this.authService.cookieOptions);
+    res.header('Cache-Control', 'private, no-store');
+
+    const user = await this.usuarioService.getUsuarioDados(result.userId);
 
     return {
       message: result.message,
       nome: result.nome,
+      user,
     };
   }
 
@@ -53,8 +57,9 @@ export class AuthController {
     return result;
   }
 
-  @Get('token')
-  async me(@Request() req: any) {
+  @Get(['me', 'token'])
+  async me(@Request() req: any, @Response({ passthrough: true }) res: any) {
+    res.header('Cache-Control', 'private, no-store');
     return this.usuarioService.getUsuarioDados(req.user.userId);
   }
 }

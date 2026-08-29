@@ -72,7 +72,12 @@ describe('ArcadeService (ciclo start/submit e XP)', () => {
           nextRegenAt: null,
         },
       }),
-      getState: jest.fn(),
+      getState: jest.fn().mockResolvedValue({
+        balance: 5,
+        cap: 5,
+        nextRegenInSeconds: 0,
+        nextRegenAt: null,
+      }),
     };
     quizHandler = {
       buildRun: jest.fn().mockResolvedValue({
@@ -95,7 +100,6 @@ describe('ArcadeService (ciclo start/submit e XP)', () => {
       }),
       correct: jest.fn().mockReturnValue({ score: 100, feedback: {} }),
     };
-    // count > 0 evita o seed inserir dados no onModuleInit durante o teste.
     phishingRepository = {
       count: jest.fn().mockResolvedValue(1),
       create: jest.fn((x: unknown) => x),
@@ -145,25 +149,53 @@ describe('ArcadeService (ciclo start/submit e XP)', () => {
   });
 
   it('recusa start quando nao ha tokens (nao cria run)', async () => {
-    tokenService.consume.mockResolvedValue({
-      ok: false,
-      state: { balance: 0, cap: 5, nextRegenInSeconds: 600, nextRegenAt: 1 },
+    tokenService.getState.mockResolvedValue({
+      balance: 0,
+      cap: 5,
+      nextRegenInSeconds: 600,
+      nextRegenAt: 1,
     });
     await expect(service.start(1, 'quiz-relampago')).rejects.toThrow(
       ForbiddenException,
     );
+    expect(tokenService.consume).not.toHaveBeenCalled();
     expect(quizHandler.buildRun).not.toHaveBeenCalled();
   });
 
-  it('start consome token e grava a run', async () => {
+  it('start preserva a ficha e grava a run', async () => {
     const res = await service.start(1, 'quiz-relampago');
-    expect(tokenService.consume).toHaveBeenCalledWith(1);
+    expect(tokenService.getState).toHaveBeenCalledWith(1);
+    expect(tokenService.consume).not.toHaveBeenCalled();
     expect(res.runId).toBeDefined();
     expect(store.has(`arcade-run:1:${res.runId}`)).toBe(true);
   });
 
+  it('submit consome uma ficha mesmo quando a pontuacao e zero', async () => {
+    quizHandler.correct.mockReturnValue({ score: 0, feedback: {} });
+    redis.incrBy.mockResolvedValue(1);
+    const start = await service.start(1, 'quiz-relampago');
+    const res = await service.submit(1, start.runId, { quizAnswers: [] });
+    expect(tokenService.consume).toHaveBeenCalledTimes(1);
+    expect(tokenService.consume).toHaveBeenCalledWith(1);
+    expect(res.tokens.balance).toBe(4);
+  });
+
+  it('submit sem ficha nao corrige, nao credita XP e preserva a run', async () => {
+    tokenService.consume.mockResolvedValue({
+      ok: false,
+      state: { balance: 0, cap: 5, nextRegenInSeconds: 600, nextRegenAt: 1 },
+    });
+    const start = await service.start(1, 'quiz-relampago');
+    await expect(
+      service.submit(1, start.runId, { quizAnswers: [] }),
+    ).rejects.toThrow(ForbiddenException);
+    expect(quizHandler.correct).not.toHaveBeenCalled();
+    expect(xpService.creditXp).not.toHaveBeenCalled();
+    expect(store.has(`arcade-run:1:${start.runId}`)).toBe(true);
+  });
+
   it('1a conclusao do dia credita 100% do XP base', async () => {
-    redis.incrBy.mockResolvedValue(1); // 1a jogada
+    redis.incrBy.mockResolvedValue(1);
     const start = await service.start(1, 'quiz-relampago');
     const res = await service.submit(1, start.runId, { quizAnswers: [] });
     expect(res.multiplier).toBe(1);
@@ -184,13 +216,12 @@ describe('ArcadeService (ciclo start/submit e XP)', () => {
     const start = await service.start(1, 'quiz-relampago');
     const res = await service.submit(1, start.runId, { quizAnswers: [] });
     expect(res.multiplier).toBe(0.25);
-    // 100 * 0.25 = 25, acima do piso
     expect(res.xpEarned).toBe(25);
   });
 
   it('aplica piso de 10 quando o calculado fica abaixo', async () => {
-    quizHandler.correct.mockReturnValue({ score: 20, feedback: {} }); // xpBase = 20
-    redis.incrBy.mockResolvedValue(3); // 0.25 -> 5, piso eleva para 10
+    quizHandler.correct.mockReturnValue({ score: 20, feedback: {} });
+    redis.incrBy.mockResolvedValue(3);
     const start = await service.start(1, 'quiz-relampago');
     const res = await service.submit(1, start.runId, { quizAnswers: [] });
     expect(res.xpBase).toBe(20);

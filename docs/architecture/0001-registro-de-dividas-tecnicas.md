@@ -32,11 +32,11 @@ Registrar as dividas abaixo. Codigo novo NAO deve replica-las. Correcao ocorre q
 
 6) Nome de arquivo com typo: backend/src/database/database.molule.ts (deveria ser database.module.ts). Todos os imports repetem o typo.
 
-7) Stack de UI duplicada no frontend: MUI + Emotion coexistindo com Tailwind v4 + Radix. Padrao oficial e Tailwind + Radix. Direcao: nao usar MUI em codigo novo; planejar remocao.
+7) Resolvido: dependencias de UI antigas sem uso (MUI, Emotion e componentes Radix nao importados) foram removidas. O frontend permanece em Tailwind e componentes compartilhados proprios.
 
-8) typeorm e @nestjs/typeorm em dependencies do frontend (indevido). Direcao: remover do frontend.
+8) Resolvido: typeorm e @nestjs/typeorm foram removidos das dependencias do frontend.
 
-9) frontend/src/server.js e um servidor Fastify orfao (mesma porta do backend). Direcao: confirmar e remover se nao usado.
+9) Resolvido: frontend/src/server.js foi confirmado como orfao e removido.
 
 10) aula-quiz: controller acessa repositorio direto e faz CRUD sem service; nao tem module proprio. question e usuario-aula tambem nao tem module/service proprios. Direcao: nao propagar; padronizar quando tocar nesses dominios.
 

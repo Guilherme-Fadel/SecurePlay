@@ -20,20 +20,12 @@ export function DailyStreak() {
   const checkedToday = streak?.checkedToday ?? false;
 
   return (
-    <InfoCard variant="primary" raised className="flex flex-col h-full">
-      <div className="flex items-center gap-2 px-3 py-1.5 border-b border-[var(--border)]">
-        <div className="w-8 h-8 flex items-center justify-center rounded-lg border bg-[var(--accent-15)] border-[var(--accent-30)] shrink-0 text-[var(--accent)]">
-          <Flame size={16} />
-        </div>
-        <div className="flex flex-1 items-center justify-between gap-2">
-          <span className="text-[var(--text-primary)] text-base leading-tight font-[var(--font-family-base)]">Sequência Semanal</span>
-          <span className="text-[var(--text-secondary)] text-base leading-tight font-[var(--font-family-base)] shrink-0">
-            {streakCount} {streakCount === 1 ? 'dia' : 'dias'}
-          </span>
-        </div>
-      </div>
-
+    <InfoCard variant="primary" raised className="dashboard-streak-card flex flex-col h-full">
       <div className="flex flex-1 flex-col justify-center gap-2 px-4 py-2.5">
+        <div className="dashboard-streak-summary">
+          <span>Sequência atual</span>
+          <strong>{streakCount} {streakCount === 1 ? 'dia' : 'dias'}</strong>
+        </div>
         <div className="flex items-center justify-between w-full gap-1">
           {DAYS.map((day, index) => {
             const isChecked = checkedDays[index];
@@ -67,10 +59,10 @@ export function DailyStreak() {
         <button
           onClick={doCheckin}
           disabled={checkedToday || checkinLoading}
-          className={`w-full inline-flex items-center justify-center h-10 px-4 rounded-md border text-[13px] font-semibold transition-all active:scale-[0.98] ${
+          className={`app-button app-button--primary app-button--md dashboard-primary-button w-full ${
             checkedToday
-              ? 'bg-[var(--surface-alt)] border-[var(--border)] text-[var(--text-secondary)] cursor-not-allowed'
-              : 'bg-[var(--primary)] border-[var(--primary)] text-[var(--text-primary)] hover:bg-[var(--primary-hover)] shadow-[0_3px_12px_rgba(0,0,0,0.25)]'
+              ? 'is-completed'
+              : ''
           }`}
         >
           {checkinLoading

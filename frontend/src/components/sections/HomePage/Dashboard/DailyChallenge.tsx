@@ -1,4 +1,4 @@
-import { Target, Clock, Trophy, Play, Crosshair } from 'lucide-react';
+import { Play } from 'lucide-react';
 import { InfoCard } from '@/components/ui/visuals/InfoCard';
 import { useDailyChallenge } from '@/hooks/useDashboard';
 import { Modal } from '@/components/ui/modal';
@@ -9,9 +9,9 @@ import { getChallengeStatus, getChallengeQuestions, QuestionResponse } from '@/s
 import { getCached, setCache } from '@/lib/queryCache';
 
 const difficultyMeta = {
-  iniciante:     { label: 'INICIANTE',     world: '01', dots: 1, variant: 'accent' as const },
-  intermediario: { label: 'INTERMEDIÁRIO', world: '02', dots: 2, variant: 'primary' as const },
-  avancado:      { label: 'AVANÇADO',      world: '03', dots: 3, variant: 'secondary' as const },
+  iniciante: 'Iniciante',
+  intermediario: 'Intermediário',
+  avancado: 'Avançado',
 };
 
 export function DailyChallenge() {
@@ -106,43 +106,39 @@ export function DailyChallenge() {
     );
   }
 
-  const meta = difficultyMeta[challenge.difficulty];
+  const difficultyLabel = difficultyMeta[challenge.difficulty];
 
   const totalObjectives = questions.length;
   const doneObjectives = completed ? totalObjectives : Math.min(answeredCount, totalObjectives);
   const progressPercent = totalObjectives > 0 ? Math.round((doneObjectives / totalObjectives) * 100) : (completed ? 100 : 0);
 
   return (
-    <InfoCard variant="primary" raised className="flex flex-col h-full min-h-0">
-
-      <div className="flex items-center justify-between gap-3 px-3 py-1.5 border-b border-[var(--border)] shrink-0">
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 flex items-center justify-center rounded-lg border bg-[var(--primary-15)] border-[var(--primary-30)] shrink-0 text-[var(--primary)]">
-            <Crosshair size={16} />
-          </div>
-          <div>
-            <span className="text-[var(--text-primary)] text-base leading-tight font-[var(--font-family-base)]">DESAFIO DO DIA</span>
-          </div>
+    <InfoCard variant="primary" raised className="dashboard-daily-card flex flex-col h-full min-h-0">
+      <div className="dashboard-daily-body flex-1 min-h-0 flex flex-col gap-2 p-2.5 overflow-hidden">
+        <div className="dashboard-daily-summary shrink-0">
+          <h3>{challenge.title}</h3>
         </div>
-      </div>
 
-      <div className="flex-1 min-h-0 flex flex-col gap-2 p-2.5 overflow-hidden">
+        <div className="dashboard-daily-meta">
+          <div><span>Dificuldade</span><strong>{difficultyLabel}</strong></div>
+          <div><span>Tempo estimado</span><strong>{challenge.duration} min</strong></div>
+          <div><span>Recompensa</span><strong>{challenge.points} XP</strong></div>
+        </div>
 
-        <div className="relative rounded-lg border border-[var(--primary-30)] bg-[var(--primary-10)] p-3 shrink-0">
-          <div className="absolute top-0 left-0 h-full w-1 rounded-l-lg bg-[var(--primary)]" />
-          <span className="text-[var(--text-primary)] text-sm leading-tight font-[var(--font-family-base)] block truncate">{challenge.title}</span>
-          <p className="text-[var(--text-secondary)] text-xs mt-0.5 line-clamp-2">{challenge.description}</p>
+        <div className="dashboard-challenge-briefing">
+          <span>Briefing da missão</span>
+          <p>{challenge.description}</p>
         </div>
 
         {totalObjectives > 0 && (
-          <div className="flex flex-col gap-1 shrink-0 mt-auto">
+          <div className="dashboard-daily-progress-wrap flex flex-col gap-1 shrink-0">
             <div className="flex items-center justify-between text-[10px] tracking-widest text-[var(--text-secondary)]">
               <span>PROGRESSO</span>
               <span className="text-[var(--text-primary)] font-semibold">{doneObjectives}/{totalObjectives}</span>
             </div>
-            <div className="h-2 rounded-full bg-[var(--surface-alt)] border border-[var(--border)] overflow-hidden">
+            <div className="dashboard-daily-progress h-2 rounded-full bg-[var(--surface-alt)] border border-[var(--border)] overflow-hidden">
               <motion.div
-                className="h-full rounded-full bg-gradient-to-r from-[var(--primary)] to-[var(--secondary)]"
+                className="h-full rounded-full bg-[var(--primary)]"
                 initial={{ width: 0 }}
                 animate={{ width: `${progressPercent}%` }}
                 transition={{ duration: 0.7, ease: 'easeOut' }}
@@ -151,19 +147,6 @@ export function DailyChallenge() {
           </div>
         )}
 
-        <div className="grid grid-cols-3 gap-2 shrink-0">
-          <div className="flex items-center justify-center gap-1.5 rounded-lg border border-[var(--border)] bg-[var(--surface-alt)] py-1.5">
-            <Clock size={13} className="text-[var(--primary)]" />
-            <span className="text-[var(--text-primary)] font-semibold text-sm">{challenge.duration}m</span>
-          </div>
-          <div className="flex items-center justify-center gap-1.5 rounded-lg border border-[var(--accent-30)] bg-[var(--accent-10)] py-1.5">
-            <Trophy size={13} className="text-[var(--accent)]" />
-            <span className="text-[var(--text-primary)] font-semibold text-sm">+{challenge.points}</span>
-          </div>
-          <div className="flex items-center justify-center gap-1.5 rounded-lg border border-[var(--border)] bg-[var(--surface-alt)] py-1.5">
-            <InfoCard.Dots total={3} active={meta.dots} variant={meta.variant} />
-          </div>
-        </div>
       </div>
 
       <InfoCard.Footer className="flex justify-center">
@@ -172,10 +155,10 @@ export function DailyChallenge() {
           disabled={!canStart}
           whileHover={canStart ? { scale: 1.01 } : undefined}
           whileTap={canStart ? { scale: 0.98 } : undefined}
-          className={`w-full inline-flex items-center justify-center gap-2 h-10 px-4 rounded-md border text-sm font-semibold transition-all active:scale-[0.98] ${
+          className={`app-button app-button--primary app-button--md dashboard-primary-button w-full ${
             completed
-              ? 'bg-[var(--surface-alt)] border-[var(--border)] text-[var(--text-secondary)] cursor-not-allowed opacity-60'
-              : 'bg-[var(--primary)] border-[var(--primary)] text-[var(--text-primary)] hover:bg-[var(--primary-hover)] shadow-[0_0_18px_rgba(var(--primary-rgb),0.35)]'
+              ? 'is-completed'
+              : ''
           }`}
         >
           {!completed && <Play size={13} className="fill-current" />}

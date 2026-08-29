@@ -3,31 +3,24 @@ import { Repository } from 'typeorm';
 import { PhishingSample } from '../entities/phishing-sample.entity';
 import { GameHandler, GameRun, GameCorrection } from './game-handler';
 import { SubmitRunDto } from '../dto/arcade.dto';
-
-const SAMPLE_COUNT = 5; // amostras por partida
-
+const SAMPLE_COUNT = 5;
 interface PhishingAnswerKey {
-  // sampleId -> gabarito
   samples: Record<
     number,
-    { isPhishing: boolean; signals: string[]; explanation: string }
+    {
+      isPhishing: boolean;
+      signals: string[];
+      explanation: string;
+    }
   >;
   order: number[];
 }
-
-/**
- * Caca ao Phishing: apresenta amostras (email/site/mensagem) e o jogador decide
- * confiar/denunciar e marca sinais suspeitos. Correcao 100% server-side; o gabarito
- * (is_phishing/signals) nunca vai no payload.
- */
 @Injectable()
 export class PhishingHandler implements GameHandler {
   constructor(
     @Inject('PHISHING_SAMPLE_REPOSITORY')
     private readonly sampleRepository: Repository<PhishingSample>,
   ) {}
-
-  // isolado para teste deterministico.
   protected async pickSamples(count: number): Promise<PhishingSample[]> {
     return this.sampleRepository
       .createQueryBuilder('s')
@@ -36,10 +29,8 @@ export class PhishingHandler implements GameHandler {
       .limit(count)
       .getMany();
   }
-
   async buildRun(): Promise<GameRun> {
     const samples = await this.pickSamples(SAMPLE_COUNT);
-
     const key: PhishingAnswerKey = { samples: {}, order: [] };
     for (const s of samples) {
       key.samples[s.id] = {
@@ -49,35 +40,27 @@ export class PhishingHandler implements GameHandler {
       };
       key.order.push(s.id);
     }
-
     const payload = {
       samples: samples.map((s) => ({
         id: s.id,
         kind: s.kind,
-        content: s.content, // conteudo exibido, sem gabarito
+        content: s.content,
       })),
     };
-
     return { payload, answerKey: key };
   }
-
   correct(answerKey: unknown, dto: SubmitRunDto): GameCorrection {
     const key = answerKey as PhishingAnswerKey;
     const answers = dto.phishingAnswers ?? [];
     const byId = new Map(answers.map((a) => [a.sampleId, a]));
-
     const total = key.order.length;
-    let points = 0; // ate 2 por amostra: 1 pela decisao, 1 pelos sinais
+    let points = 0;
     const maxPoints = total * 2;
-
     const items = key.order.map((sid) => {
       const gab = key.samples[sid];
       const ans = byId.get(sid);
-
       const decisionRight = !!ans && ans.report === gab.isPhishing;
       if (decisionRight) points += 1;
-
-      // sinais: compara conjunto marcado com o gabarito (so pontua se for golpe).
       let signalsRight = false;
       if (gab.isPhishing && gab.signals.length > 0) {
         const marked = new Set(ans?.signals ?? []);
@@ -86,11 +69,9 @@ export class PhishingHandler implements GameHandler {
         const noExtra = [...marked].every((s) => expected.has(s));
         signalsRight = allFound && noExtra;
       } else {
-        // amostra legitima: acerta os "sinais" se nao marcou nenhum.
         signalsRight = (ans?.signals?.length ?? 0) === 0;
       }
       if (signalsRight) points += 1;
-
       return {
         sampleId: sid,
         isPhishing: gab.isPhishing,
@@ -100,7 +81,6 @@ export class PhishingHandler implements GameHandler {
         explanation: gab.explanation,
       };
     });
-
     const score = maxPoints > 0 ? Math.round((points / maxPoints) * 100) : 0;
     return { score, feedback: { total, points, maxPoints, items } };
   }

@@ -38,6 +38,23 @@ export class ModuloService {
           .andWhere('ua.completed = :completed', { completed: true })
           .getCount();
 
+        const startedRows = await this.usuarioAulaRepository
+          .createQueryBuilder('ua')
+          .innerJoin('ua.aula', 'aula')
+          .where('aula.modulo_id = :moduloId', { moduloId: modulo.id })
+          .andWhere('ua.usuario_id = :usuarioId', { usuarioId: usuario_id })
+          .getMany();
+
+        const lastAccessedAt = startedRows.reduce<Date | null>(
+          (latest, row) => {
+            if (!row.last_accessed_at) return latest;
+            return !latest || row.last_accessed_at > latest
+              ? row.last_accessed_at
+              : latest;
+          },
+          null,
+        );
+
         const progress =
           totalAulas > 0 ? Math.round((completedAulas / totalAulas) * 100) : 0;
 
@@ -46,6 +63,8 @@ export class ModuloService {
           totalAulas,
           completedAulas,
           progress,
+          hasStarted: startedRows.length > 0,
+          lastAccessedAt,
         };
       }),
     );
@@ -67,18 +86,22 @@ export class ModuloService {
       order: { order: 'ASC' },
     });
 
-    const completedAulaIds = await this.usuarioAulaRepository
-      .find({
-        where: { usuario_id, completed: true },
-        select: ['aula_id'],
-      })
-      .then((rows) => rows.map((r) => r.aula_id));
+    const userProgress = await this.usuarioAulaRepository.find({
+      where: { usuario_id },
+    });
+    const progressByAula = new Map(
+      userProgress.map((row) => [row.aula_id, row]),
+    );
+    const completedAulaIds = userProgress
+      .filter((row) => row.completed)
+      .map((row) => row.aula_id);
 
     const aulasWithStatus = aulas.map((aula, index) => {
       const isCompleted = completedAulaIds.includes(aula.id);
       const previousCompleted =
         index === 0 || completedAulaIds.includes(aulas[index - 1].id);
       const isUnlocked = index === 0 || previousCompleted;
+      const progress = progressByAula.get(aula.id);
 
       return {
         id: aula.id,
@@ -89,7 +112,12 @@ export class ModuloService {
         xp: aula.xp,
         order: aula.order,
         section_name: aula.section_name,
+        page_count: aula.pages?.length ?? 0,
         status: isCompleted ? 'completed' : isUnlocked ? 'unlocked' : 'locked',
+        progress_percent: progress?.progress_percent ?? 0,
+        last_video_second: progress?.last_video_second ?? 0,
+        last_page: progress?.last_page ?? 0,
+        last_accessed_at: progress?.last_accessed_at ?? null,
       };
     });
 

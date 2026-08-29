@@ -1,7 +1,7 @@
 import { InfoCard } from "@/components/ui/visuals/InfoCard";
 import { useConteudos } from "@/hooks/useConteudos";
 import { useSectionContext } from "@/contexts/SectionContext";
-import { BookOpenIcon, PlayCircle, CircleDot } from "lucide-react";
+import { PlayCircle, CircleDot } from "lucide-react";
 
 export function ActiveTraining() {
   const { allModulos, loading } = useConteudos();
@@ -16,13 +16,8 @@ export function ActiveTraining() {
   };
 
   return (
-    <InfoCard variant="primary" raised className="flex flex-col">
-      <InfoCard.Header
-        title="Conteúdos Pendentes"
-        icon={BookOpenIcon}
-        variant="primary"
-      />
-      <div className="flex flex-col divide-y divide-[var(--border)]">
+    <InfoCard variant="primary" raised className="dashboard-training-card flex flex-col h-full min-h-0 overflow-hidden">
+      <div className="dashboard-training-list flex flex-col divide-y divide-[var(--border)]">
         {loading ? (
           <InfoCard.Section>
             <p className="text-[var(--text-secondary)]">Carregando...</p>
@@ -41,22 +36,25 @@ export function ActiveTraining() {
               <div
                 key={modulo.id}
                 onClick={handleClick}
-                className="flex items-center justify-between px-4 py-3 hover:bg-[var(--primary-hover)] transition-colors rounded-lg cursor-pointer"
+                className="dashboard-training-item flex items-center justify-between px-4 py-3 transition-colors cursor-pointer"
               >
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 flex items-center justify-center rounded-lg bg-[var(--surface-alt)] shrink-0">
+                <div className="dashboard-training-main flex min-w-0 items-center gap-3">
+                  <div className="dashboard-training-icon w-8 h-8 flex items-center justify-center rounded-lg bg-[var(--surface-alt)] shrink-0">
                     <Icon size={15} color={iconColor} />
                   </div>
-                  <div>
-                    <p className="text-[var(--text-primary)] leading-tight">{modulo.title}</p>
+                  <div className="dashboard-training-copy min-w-0">
+                    <p className="text-[var(--text-primary)] leading-tight truncate">{modulo.title}</p>
                     <p className="text-[var(--text-secondary)] text-xs mt-0.5">
                       {isInProgress
                         ? `${modulo.completedAulas}/${modulo.totalAulas} aulas · ${modulo.progress}%`
                         : `${modulo.totalAulas} aulas · Não iniciado`}
                     </p>
+                    <div className="dashboard-training-progress" aria-label={`${modulo.progress}% concluído`}>
+                      <span style={{ width: `${modulo.progress}%` }} />
+                    </div>
                   </div>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="dashboard-training-xp flex items-center gap-2">
                   <span className="text-xs text-[var(--text-secondary)] font-medium">
                     {modulo.xp_total} XP
                   </span>

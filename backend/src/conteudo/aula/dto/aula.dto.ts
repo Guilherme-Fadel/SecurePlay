@@ -7,6 +7,7 @@ import {
   IsArray,
   MaxLength,
   Min,
+  Max,
 } from 'class-validator';
 import { AulaType } from '../aula.entity';
 
@@ -108,4 +109,22 @@ export class UpdateAulaDto {
   @IsOptional()
   @IsBoolean()
   active?: boolean;
+}
+
+export class UpdateAulaProgressDto {
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  @Max(100)
+  progress_percent?: number;
+
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  last_video_second?: number;
+
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  last_page?: number;
 }

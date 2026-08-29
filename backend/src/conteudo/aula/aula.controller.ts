@@ -10,7 +10,11 @@ import {
   Request,
 } from '@nestjs/common';
 import { AulaService } from './aula.service';
-import { CreateAulaDto, UpdateAulaDto } from './dto/aula.dto';
+import {
+  CreateAulaDto,
+  UpdateAulaDto,
+  UpdateAulaProgressDto,
+} from './dto/aula.dto';
 import { SubmitQuizDto } from '../aula-quiz/dto/aula-quiz.dto';
 import { Roles } from '../../auth/roles.decorator';
 import { Role } from '../../auth/roles.enum';
@@ -50,6 +54,16 @@ export class AulaController {
   @Throttle({ short: { limit: 5, ttl: 60000 } })
   async concluir(@Param('id', ParseIntPipe) id: number, @Request() req: any) {
     return this.aulaService.concluir(id, req.user.userId);
+  }
+
+  @Patch(':id/progress')
+  @Throttle({ short: { limit: 30, ttl: 60000 } })
+  async updateProgress(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: UpdateAulaProgressDto,
+    @Request() req: any,
+  ) {
+    return this.aulaService.updateProgress(id, req.user.userId, dto);
   }
 
   @Post(':id/quiz')

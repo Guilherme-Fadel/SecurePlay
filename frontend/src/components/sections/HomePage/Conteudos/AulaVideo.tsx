@@ -1,131 +1,136 @@
-import { useState, useEffect } from 'react';
-import { ArrowLeft, CheckCircle, Sparkles } from 'lucide-react';
-import { InfoCard } from '@/components/ui/visuals/InfoCard';
+import { useEffect, useRef, useState } from 'react';
+import { CheckCircle2, Clock3, PlayCircle, Sparkles, Video } from 'lucide-react';
+import { AppButton } from '@/components/ui/buttons/AppButton';
 import { useAula } from '@/hooks/useAula';
 import { useAulaProgress } from '@/hooks/useAulaProgress';
 import { useModulo } from '@/hooks/useModulo';
-import { AulaListItem } from './AulaListItem';
+import { LearningShell } from './LearningShell';
+import { LessonNavigator } from './LessonNavigator';
 
 interface AulaVideoProps {
   aulaId: number;
   moduloId: number;
   onBack: () => void;
+  onSelectAula: (aulaId: number) => void;
   onTypeResolved?: (type: 'video' | 'quadrinho') => void;
 }
 
-export function AulaVideo({ aulaId, moduloId, onBack, onTypeResolved }: AulaVideoProps) {
+export function AulaVideo({ aulaId, moduloId, onBack, onSelectAula, onTypeResolved }: AulaVideoProps) {
   const { aula, setAula, loading } = useAula(aulaId);
-  const [xpGanho, setXpGanho] = useState<number | null>(null);
-  const { concluir, loading: concluding } = useAulaProgress();
   const { modulo } = useModulo(moduloId);
+  const { concluir, salvarProgresso, loading: concluding } = useAulaProgress();
+  const [xpGanho, setXpGanho] = useState<number | null>(null);
+  const [videoProgress, setVideoProgress] = useState(0);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const lastPersistedSecond = useRef(0);
 
   useEffect(() => {
-    if (aula && onTypeResolved && aula.type === 'quadrinho') {
+    if (!aula) return;
+    if (onTypeResolved && aula.type === 'quadrinho') {
       onTypeResolved('quadrinho');
+      return;
     }
-  }, [aula, onTypeResolved]);
+    setVideoProgress(aula.completed ? 100 : Math.max(1, aula.progress.percent));
+    lastPersistedSecond.current = aula.progress.lastVideoSecond;
+    void salvarProgresso(aula.id, {
+      progress_percent: aula.completed ? 100 : Math.max(1, aula.progress.percent),
+      last_video_second: aula.progress.lastVideoSecond,
+    });
+  }, [aula?.id, onTypeResolved, salvarProgresso]);
+
+  const persistVideoPosition = (force = false) => {
+    const player = videoRef.current;
+    if (!player || !aula || aula.completed || !Number.isFinite(player.duration)) return;
+    const second = Math.max(0, Math.floor(player.currentTime));
+    if (!force && Math.abs(second - lastPersistedSecond.current) < 10) return;
+    const percent = Math.min(99, Math.max(1, Math.round((second / player.duration) * 100)));
+    lastPersistedSecond.current = second;
+    setVideoProgress(percent);
+    void salvarProgresso(aula.id, { progress_percent: percent, last_video_second: second });
+  };
+
+  const handleLoadedMetadata = () => {
+    const player = videoRef.current;
+    if (!player || !aula || aula.completed) return;
+    if (aula.progress.lastVideoSecond > 0 && aula.progress.lastVideoSecond < player.duration) {
+      player.currentTime = aula.progress.lastVideoSecond;
+    }
+  };
 
   const handleConcluir = async () => {
     const result = await concluir(aulaId);
     if (result) {
       setXpGanho(result.xp_ganho);
-      setAula((prev) => prev ? { ...prev, completed: true } : prev);
+      setVideoProgress(100);
+      setAula((previous) => previous ? { ...previous, completed: true, progress: { ...previous.progress, percent: 100 } } : previous);
     }
   };
 
   if (loading || !aula) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <p className="text-[var(--text-secondary)]">Carregando aula...</p>
-      </div>
-    );
+    return <div className="learning-content-loading">Preparando ambiente de aula...</div>;
   }
 
   return (
-    <div className="flex flex-col gap-6 p-6">
-      <button onClick={onBack} className="flex items-center gap-2 text-[var(--text-secondary)] hover:text-[var(--accent-text)] transition-colors w-fit">
-        <ArrowLeft size={16} />
-        <span>Voltar ao módulo</span>
-      </button>
-
-      <div className="flex flex-col lg:flex-row gap-6">
-        <div className="flex-1 flex flex-col gap-4">
-          <InfoCard className="overflow-hidden">
-            <div className="relative aspect-video bg-black rounded-t-2xl overflow-hidden">
-              {aula.content_url ? (
-                <video controls className="w-full h-full" src={aula.content_url}>
-                  Seu navegador não suporta vídeo.
-                </video>
-              ) : (
-                <div className="w-full h-full flex items-center justify-center">
-                  <p className="text-[var(--text-secondary)]">Vídeo não disponível</p>
-                </div>
-              )}
-            </div>
-
-            <InfoCard.Section>
-              <h3 className="text-[var(--text-primary)] mb-2">{aula.title}</h3>
-              {aula.description && (
-                <p className="text-[var(--text-secondary)] font-[var(--font-family-inter)] text-sm leading-relaxed">
-                  {aula.description}
-                </p>
-              )}
-              <div className="flex items-center gap-4 mt-3 text-xs font-[var(--font-family-inter)]">
-                <span className="text-[var(--text-secondary)]">{aula.duration} min</span>
-                <span className="text-[var(--accent-text)] font-semibold">{aula.xp} XP</span>
-              </div>
-            </InfoCard.Section>
-          </InfoCard>
-
-          {!aula.completed && !xpGanho && (
-            <button
-              onClick={handleConcluir}
-              disabled={concluding}
-              className="w-full py-3 rounded-xl bg-[var(--primary)] text-[var(--text-primary)] font-semibold hover:bg-[var(--primary-hover)] transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+    <LearningShell
+      eyebrow={modulo?.title ?? 'Treinamento em andamento'}
+      title={aula.title}
+      description={aula.description}
+      icon={Video}
+      onBack={onBack}
+      progress={videoProgress}
+      progressLabel={aula.completed ? 'Aula concluída' : `${videoProgress}% assistido`}
+      meta={[
+        { label: 'Duração', value: `${aula.duration} min` },
+        { label: 'Recompensa', value: `${aula.xp} XP` },
+        { label: 'Formato', value: 'Vídeo' },
+      ]}
+      aside={<LessonNavigator modulo={modulo} activeAulaId={aulaId} onSelectAula={onSelectAula} />}
+      footer={
+        <>
+          <div className="learning-lesson-footer-status">
+            {aula.completed
+              ? <><CheckCircle2 size={17} /><div><span>Status da fase</span><strong>Concluída</strong></div></>
+              : <><PlayCircle size={17} /><div><span>Status da fase</span><strong>Em treinamento</strong></div></>}
+          </div>
+          {!aula.completed && (
+            <AppButton icon={<CheckCircle2 size={16} />} onClick={handleConcluir} disabled={concluding}>
+              {concluding ? 'Registrando...' : 'Concluir aula'}
+            </AppButton>
+          )}
+        </>
+      }
+    >
+      <div className="video-learning-stage">
+        <div className="video-learning-player">
+          {aula.content_url ? (
+            <video
+              ref={videoRef}
+              controls
+              src={aula.content_url}
+              onLoadedMetadata={handleLoadedMetadata}
+              onTimeUpdate={() => persistVideoPosition()}
+              onPause={() => persistVideoPosition(true)}
             >
-              <CheckCircle size={18} />
-              {concluding ? 'Concluindo...' : 'Concluir Aula'}
-            </button>
-          )}
-
-          {xpGanho && (
-            <InfoCard variant="accent">
-              <InfoCard.Section className="text-center py-3 flex items-center justify-center gap-2">
-                <Sparkles size={18} className="text-[var(--accent)]" />
-                <span className="text-[var(--accent-text)] font-semibold">+{xpGanho} XP</span>
-              </InfoCard.Section>
-            </InfoCard>
-          )}
-
-          {aula.completed && !xpGanho && (
-            <InfoCard variant="accent" className="opacity-70">
-              <InfoCard.Section className="text-center py-3 flex items-center justify-center gap-2">
-                <CheckCircle size={16} className="text-[var(--accent)]" />
-                <span className="text-[var(--accent-text)]">Aula concluída</span>
-              </InfoCard.Section>
-            </InfoCard>
+              Seu navegador não suporta vídeo.
+            </video>
+          ) : (
+            <div className="video-learning-empty"><PlayCircle size={42} /><strong>Vídeo indisponível</strong><span>O material ainda não foi publicado.</span></div>
           )}
         </div>
 
-        <div className="lg:w-80 flex flex-col gap-2">
-          <InfoCard>
-            <InfoCard.Header title="Fases do Módulo" variant="primary" />
-            <div className="flex flex-col gap-2 p-3 max-h-[300px] lg:max-h-[500px] overflow-y-auto">
-              {modulo?.aulas.map((a) => (
-                <AulaListItem
-                  key={a.id}
-                  aula={a}
-                  onClick={() => {
-                    if (a.id !== aulaId) {
-                      window.location.reload();
-                    }
-                  }}
-                />
-              ))}
-            </div>
-          </InfoCard>
+        <div className="video-learning-briefing">
+          <div><span>BRIEFING DA FASE</span><h2>O que você vai aprender</h2></div>
+          <p>{aula.description || 'Assista ao treinamento e conclua a fase para liberar o próximo conteúdo.'}</p>
+          <div className="video-learning-facts">
+            <span><Clock3 size={14} /> {aula.duration} minutos</span>
+            <span><Sparkles size={14} /> {aula.xp} XP ao concluir</span>
+          </div>
         </div>
+
+        {xpGanho !== null && (
+          <div className="learning-xp-reveal"><Sparkles size={18} /><div><span>Fase concluída</span><strong>+{xpGanho} XP adicionados</strong></div></div>
+        )}
       </div>
-    </div>
+    </LearningShell>
   );
 }

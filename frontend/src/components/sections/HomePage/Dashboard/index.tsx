@@ -2,18 +2,22 @@ import { PageTransition } from '@/components/shared/PageTransition';
 import { InfoCard } from '@/components/ui/visuals/InfoCard';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { useDashboardStats } from '@/hooks/useDashboard';
-import { OverviewCards } from '@/components/sections/HomePage/Dashboard/OverviewCards';
+import { ActiveTraining } from '@/components/sections/HomePage/Dashboard/ActiveTraining';
 import { DailyChallenge } from './DailyChallenge';
 import { useEffect } from 'react';
 import { useSectionContext } from '@/contexts/SectionContext';
 import { DailyStreak } from './DailyStreak';
 import { RankingWidget } from './RankingWidget';
+import { Sparkles, Zap } from 'lucide-react';
+import { Achievements } from './Achievements';
+import { AppSectionHeader } from '@/components/ui/visuals/AppSectionHeader';
+import { AppButton } from '@/components/ui/buttons/AppButton';
 
 
 export function Dashboard() {
   const { user, loading: userLoading } = useCurrentUser();
   const { stats, loading: statsLoading } = useDashboardStats();
-  const { setLoading, registerBootstrap } = useSectionContext();
+  const { setLoading, registerBootstrap, navigateToSection } = useSectionContext();
 
   useEffect(() => {
     registerBootstrap('dashboard');
@@ -24,50 +28,100 @@ export function Dashboard() {
     return () => setLoading('dashboard', false);
   }, [userLoading, statsLoading, setLoading]);
 
+  const totalPoints = stats?.totalPoints ?? 0;
+  const xpMax = totalPoints + (stats?.xpToNextLevel ?? 0);
+  const xpPercent = xpMax > 0 ? Math.round((totalPoints / xpMax) * 100) : 0;
+
   return (
     <PageTransition>
-      <div className="flex flex-col gap-3 lg:h-full min-h-0 px-1 py-2">
+      <div className="dashboard-real flex flex-col gap-3 lg:h-full min-h-0 px-1 py-2">
 
-        <InfoCard variant="primary" raised>
-          <div className="flex items-center justify-between flex-wrap gap-4 px-4 py-2">
-            <div>
-              <h4 className="text-[var(--text-primary)] leading-tight">
-                Bem-vindo de volta, {user?.name ?? '—'}!
-              </h4>
-              <p className="text-[var(--text-secondary)] text-sm">
-                Continue sua jornada de segurança.{' '}
-                {stats && (
-                  <>Você ganhou <span className="text-[var(--text-primary)] font-semibold">+{stats.xpToday} XP</span> hoje!</>
-                )}
-              </p>
-            </div>
-            <div className="flex items-center gap-6 shrink-0">
-              <div className="text-right">
-                <p className="text-[var(--text-secondary)] text-xs">Nível</p>
-                <p className="text-[var(--text-primary)] font-semibold">{stats?.level ?? '—'}</p>
+        <InfoCard variant="primary" raised className="dashboard-welcome">
+          <div className="dashboard-welcome-content">
+            <div className="dashboard-welcome-left">
+              <div className="dashboard-welcome-avatar" aria-hidden="true">
+                {user?.name?.charAt(0).toUpperCase() ?? '?'}
+                <i />
               </div>
-              <div className="text-right">
-                <p className="text-[var(--text-secondary)] text-xs">XP restantes</p>
-                <p className="text-[var(--text-primary)] font-semibold">
-                  {stats ? `${stats.xpToNextLevel} XP` : '—'}
-                </p>
+              <div className="dashboard-welcome-info">
+                <h2>Bem-vindo de volta, {user?.name?.split(' ')[0] ?? '—'}!</h2>
+                <p>Continue sua jornada de segurança e evolua no ranking.</p>
+
+                <div className="dashboard-welcome-metrics">
+                  <div>
+                    <span>Rank</span>
+                    <strong>#{stats?.globalRanking ?? '—'}</strong>
+                  </div>
+                  <div>
+                    <span>Nível</span>
+                    <strong>{stats?.level ?? '—'}</strong>
+                  </div>
+                  <div className="dashboard-welcome-xp">
+                    <span>XP</span>
+                    <strong>{stats ? totalPoints.toLocaleString('pt-BR') : '—'} <small>/ {xpMax.toLocaleString('pt-BR')}</small></strong>
+                    <div className="dashboard-welcome-progress" aria-label={`${xpPercent}% do progresso de XP`}>
+                      <i style={{ width: `${xpPercent}%` }} />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="dashboard-welcome-badges">
+              <div className="dashboard-level-badge">
+                <Zap size={15} />
+                <span>Nível</span>
+                <strong>{stats?.level ?? '—'}</strong>
+              </div>
+              <div className="dashboard-today-badge">
+                <Sparkles size={15} />
+                <span>Hoje</span>
+                <strong>+{stats?.xpToday ?? 0} XP</strong>
               </div>
             </div>
           </div>
         </InfoCard>
 
-        <OverviewCards />
+        <div className="dashboard-main-grid lg:flex-1 lg:min-h-0">
+          <div className="dashboard-left-column">
+            <section className="dashboard-panel dashboard-training-panel">
+              <AppSectionHeader
+                title="Conteúdos pendentes"
+                action={<AppButton variant="ghost" size="sm" onClick={() => navigateToSection('conteudos')}>Ver todos</AppButton>}
+              />
+              <ActiveTraining />
+            </section>
 
-        <div className="grid grid-cols-1 lg:grid-cols-[5.5fr_3fr] gap-3 lg:flex-1 lg:min-h-0">
-          <div className="flex flex-col gap-3 lg:min-h-0">
-            <div className="flex flex-col shrink-0">
-              <DailyChallenge />
-            </div>
-            <div className="lg:flex-1 lg:min-h-0 flex flex-col">
-              <DailyStreak />
-            </div>
+            <section className="dashboard-panel dashboard-achievements-panel">
+              <AppSectionHeader
+                title="Conquistas recentes"
+                action={<AppButton variant="ghost" size="sm" onClick={() => navigateToSection('conquistas')}>Ver todas</AppButton>}
+              />
+              <Achievements />
+            </section>
           </div>
-          <RankingWidget />
+
+          <div className="dashboard-center-column">
+            <section className="dashboard-panel dashboard-daily-panel">
+              <AppSectionHeader title="Desafio do dia" />
+              <DailyChallenge />
+            </section>
+          </div>
+
+          <div className="dashboard-right-column">
+            <section className="dashboard-panel dashboard-ranking-panel">
+              <AppSectionHeader
+                title="Ranking"
+                action={<AppButton variant="ghost" size="sm" onClick={() => navigateToSection('ranking')}>Ver ranking</AppButton>}
+              />
+              <RankingWidget />
+            </section>
+
+            <section className="dashboard-panel dashboard-streak-panel">
+              <AppSectionHeader title="Sequência semanal" />
+              <DailyStreak />
+            </section>
+          </div>
         </div>
 
       </div>

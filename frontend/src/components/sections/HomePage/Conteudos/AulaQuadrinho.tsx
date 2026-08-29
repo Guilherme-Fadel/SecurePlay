@@ -1,133 +1,182 @@
-import { useState } from 'react';
-import { ArrowLeft, ChevronLeft, ChevronRight, Info, CheckCircle } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import { AnimatePresence, motion } from 'motion/react';
+import { BookOpen, CheckCircle2, ChevronLeft, ChevronRight, FileQuestion, Info, Sparkles } from 'lucide-react';
+import { AppButton } from '@/components/ui/buttons/AppButton';
 import { useAula } from '@/hooks/useAula';
+import { useAulaProgress } from '@/hooks/useAulaProgress';
+import { useModulo } from '@/hooks/useModulo';
 import { usePageNavigation } from '@/hooks/usePageNavigation';
 import { AulaQuiz } from './AulaQuiz';
+import { LearningShell } from './LearningShell';
+import { LessonNavigator } from './LessonNavigator';
 
 interface AulaQuadrinhoProps {
   aulaId: number;
   moduloId: number;
   onBack: () => void;
+  onSelectAula: (aulaId: number) => void;
 }
 
-export function AulaQuadrinho({ aulaId, onBack }: AulaQuadrinhoProps) {
+const COMIC_PLACEHOLDER_PAGES = [
+  '/content/comic-placeholders/phishing-awareness-01.png',
+  '/content/comic-placeholders/phishing-awareness-02.png',
+  '/content/comic-placeholders/phishing-awareness-03.png',
+];
+
+const pageVariants = {
+  enter: (direction: number) => ({
+    opacity: 0.35,
+    rotateY: direction > 0 ? -72 : 72,
+    x: direction > 0 ? 34 : -34,
+    scale: 0.985,
+  }),
+  center: { opacity: 1, rotateY: 0, x: 0, scale: 1 },
+  exit: (direction: number) => ({
+    opacity: 0.25,
+    rotateY: direction > 0 ? 72 : -72,
+    x: direction > 0 ? -28 : 28,
+    scale: 0.985,
+  }),
+};
+
+export function AulaQuadrinho({ aulaId, moduloId, onBack, onSelectAula }: AulaQuadrinhoProps) {
   const { aula, loading } = useAula(aulaId);
+  const { modulo } = useModulo(moduloId);
+  const { concluir, salvarProgresso, loading: concluding } = useAulaProgress();
   const [showQuiz, setShowQuiz] = useState(false);
   const [showBriefing, setShowBriefing] = useState(false);
+  const [xpGanho, setXpGanho] = useState<number | null>(null);
+  const restored = useRef(false);
 
-  const pages = aula?.pages || [];
+  const aulaPages = aula?.pages?.filter(Boolean) ?? [];
+  const usingPlaceholders = aulaPages.length === 0;
+  const pages = usingPlaceholders ? COMIC_PLACEHOLDER_PAGES : aulaPages;
   const hasQuiz = (aula?.quiz?.length ?? 0) > 0;
   const quizAlreadyAnswered = aula?.completed ?? false;
-
-  const { currentPage, isLastPage, goNext, goPrev, goTo, handleTouchStart, handleTouchEnd } =
+  const { currentPage, direction, isLastPage, goNext, goPrev, goTo, handleTouchStart, handleTouchEnd } =
     usePageNavigation({
       totalPages: pages.length,
       onLastPage: hasQuiz && !quizAlreadyAnswered ? () => setShowQuiz(true) : undefined,
     });
 
+  useEffect(() => {
+    if (!aula || restored.current) return;
+    restored.current = true;
+    goTo(Math.min(aula.progress.lastPage, Math.max(0, pages.length - 1)));
+  }, [aula?.id, pages.length, goTo]);
+
+  useEffect(() => {
+    if (!aula || !restored.current || showQuiz) return;
+    const timer = window.setTimeout(() => {
+      const percent = aula.completed || !pages.length
+        ? aula.completed ? 100 : 0
+        : Math.min(99, Math.round(((currentPage + 1) / pages.length) * 100));
+      void salvarProgresso(aula.id, { progress_percent: percent, last_page: currentPage });
+    }, 450);
+    return () => window.clearTimeout(timer);
+  }, [aula?.id, aula?.completed, currentPage, pages.length, salvarProgresso, showQuiz]);
+
+  const handleCompleteWithoutQuiz = async () => {
+    const result = await concluir(aulaId);
+    if (result) setXpGanho(result.xp_ganho);
+  };
+
   if (loading || !aula) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <p className="text-[var(--text-secondary)]">Carregando quadrinho...</p>
-      </div>
-    );
+    return <div className="learning-content-loading">Preparando o leitor...</div>;
   }
 
-  if (showQuiz) {
-    return <AulaQuiz aula={aula} onBack={() => setShowQuiz(false)} onComplete={onBack} />;
-  }
+  const readerProgress = aula.completed ? 100 : pages.length ? Math.round(((currentPage + 1) / pages.length) * 100) : 0;
 
   return (
-    <div className="relative flex flex-col h-[calc(100vh-120px)]">
-      <div
-        className="flex-1 min-h-0 bg-[var(--background)] rounded-2xl overflow-hidden flex items-center justify-center relative"
-        onTouchStart={handleTouchStart}
-        onTouchEnd={handleTouchEnd}
-      >
-        {pages[currentPage] && (
-          <img
-            src={pages[currentPage]}
-            alt={`Página ${currentPage + 1}`}
-            className="w-full h-full object-contain"
-            loading="lazy"
-          />
-        )}
-
-        <div className="absolute top-0 left-0 right-0 flex items-center justify-between p-3 bg-gradient-to-b from-black/60 to-transparent">
-          <button
-            onClick={onBack}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-black/50 backdrop-blur-sm text-[var(--text-primary)] hover:bg-black/70 transition-colors text-sm"
-          >
-            <ArrowLeft size={14} />
-            Voltar
-          </button>
-
-          {aula.description && (
-            <button
-              onClick={() => setShowBriefing(!showBriefing)}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-black/50 backdrop-blur-sm text-[var(--accent-text)] hover:bg-black/70 transition-colors text-sm"
-            >
-              <Info size={14} />
-              Briefing
-            </button>
-          )}
-        </div>
-
-        {showBriefing && aula.description && (
-          <div className="absolute top-14 left-3 right-3 p-3 rounded-xl bg-black/80 backdrop-blur-sm border border-[var(--border)]">
-            <p className="text-[var(--accent-text)] text-xs font-semibold mb-1">Briefing</p>
-            <p className="text-[var(--text-primary)] font-[var(--font-family-inter)] text-xs leading-relaxed">
-              {aula.description}
-            </p>
+    <LearningShell
+      eyebrow={modulo?.title ?? 'Leitura guiada'}
+      title={showQuiz ? `Avaliação · ${aula.title}` : aula.title}
+      description={showQuiz ? 'Responda às perguntas para concluir esta fase.' : aula.description}
+      icon={showQuiz ? FileQuestion : BookOpen}
+      onBack={onBack}
+      progress={showQuiz ? 100 : readerProgress}
+      progressLabel={showQuiz ? 'Leitura concluída · avaliação em andamento' : `Página ${Math.min(currentPage + 1, pages.length || 1)} de ${pages.length}`}
+      meta={[
+        { label: 'Páginas', value: pages.length },
+        { label: 'Recompensa', value: `${aula.xp} XP` },
+        { label: 'Formato', value: showQuiz ? 'Quiz' : 'Quadrinho' },
+      ]}
+      aside={showQuiz ? undefined : <LessonNavigator modulo={modulo} activeAulaId={aulaId} onSelectAula={onSelectAula} />}
+      footer={!showQuiz ? (
+        <>
+          <div className="learning-lesson-footer-status">
+            <BookOpen size={17} /><div><span>Progresso de leitura</span><strong>{readerProgress}%</strong></div>
           </div>
-        )}
+          {isLastPage && hasQuiz && !quizAlreadyAnswered && (
+            <AppButton icon={<FileQuestion size={16} />} onClick={() => setShowQuiz(true)}>Iniciar avaliação</AppButton>
+          )}
+          {isLastPage && !hasQuiz && !aula.completed && xpGanho === null && (
+            <AppButton icon={<CheckCircle2 size={16} />} onClick={handleCompleteWithoutQuiz} disabled={concluding}>Concluir leitura</AppButton>
+          )}
+          {(aula.completed || xpGanho !== null) && <div className="learning-reader-complete"><CheckCircle2 size={15} /> Leitura concluída</div>}
+        </>
+      ) : undefined}
+    >
+      {showQuiz ? (
+        <AulaQuiz aula={aula} onBack={() => setShowQuiz(false)} onComplete={onBack} />
+      ) : (
+        <div className="comic-learning-stage">
+          <div className="comic-reader-toolbar">
+            <div><BookOpen size={16} /><span>LEITOR IMERSIVO</span></div>
+            {usingPlaceholders && <span className="comic-reader-demo-label">CONTEÚDO DEMONSTRATIVO</span>}
+            {aula.description && (
+              <button onClick={() => setShowBriefing((visible) => !visible)} className={showBriefing ? 'is-active' : ''}><Info size={14} /> Briefing</button>
+            )}
+          </div>
 
-        <button
-          onClick={goPrev}
-          disabled={currentPage === 0}
-          className="absolute left-2 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center text-white hover:bg-black/60 disabled:opacity-0 transition-all"
-        >
-          <ChevronLeft size={20} />
-        </button>
+          {showBriefing && aula.description && (
+            <div className="comic-reader-briefing"><strong>Contexto da missão</strong><p>{aula.description}</p></div>
+          )}
 
-        <button
-          onClick={goNext}
-          className="absolute right-2 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center text-white hover:bg-black/60 transition-all"
-        >
-          <ChevronRight size={20} />
-        </button>
+          <div className="comic-book" onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
+            <div className="comic-book-spine" />
+            <AnimatePresence initial={false} custom={direction} mode="popLayout">
+              <motion.div
+                key={currentPage}
+                className={`comic-page-sheet ${direction > 0 ? 'turn-forward' : 'turn-backward'}`}
+                custom={direction}
+                variants={pageVariants}
+                initial="enter"
+                animate="center"
+                exit="exit"
+                transition={{ duration: 0.52, ease: [0.22, 0.72, 0.2, 1] }}
+              >
+                {pages[currentPage]
+                  ? <img
+                      src={pages[currentPage]}
+                      alt={`Página ${currentPage + 1}`}
+                      draggable={false}
+                      onError={(event) => {
+                        const fallback = COMIC_PLACEHOLDER_PAGES[currentPage % COMIC_PLACEHOLDER_PAGES.length];
+                        if (!event.currentTarget.src.endsWith(fallback)) {
+                          event.currentTarget.src = fallback;
+                        }
+                      }}
+                    />
+                  : <div className="comic-page-empty"><BookOpen size={38} /><strong>Página indisponível</strong></div>}
+              </motion.div>
+            </AnimatePresence>
 
-        <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex items-center gap-2 px-3 py-1.5 rounded-full bg-black/50 backdrop-blur-sm">
-          <span className="text-[var(--text-primary)] text-xs font-[var(--font-family-inter)]">
-            {currentPage + 1}/{pages.length}
-          </span>
-        </div>
-      </div>
+            <button className="comic-page-control is-prev" onClick={goPrev} disabled={currentPage === 0} aria-label="Página anterior"><ChevronLeft size={21} /></button>
+            <button className="comic-page-control is-next" onClick={goNext} aria-label={isLastPage && hasQuiz ? 'Ir para avaliação' : 'Próxima página'}><ChevronRight size={21} /></button>
+          </div>
 
-      <div className="flex items-center gap-1.5 justify-center py-2 flex-shrink-0">
-        {pages.map((_, i) => (
-          <button
-            key={i}
-            onClick={() => goTo(i)}
-            className={`w-2 h-2 rounded-full transition-all duration-200 ${
-              i === currentPage
-                ? 'bg-[var(--primary)] scale-125'
-                : i < currentPage
-                  ? 'bg-[var(--accent)]'
-                  : 'bg-[var(--surface-alt)]'
-            }`}
-          />
-        ))}
-      </div>
+          <div className="comic-reader-navigation">
+            <span>{String(currentPage + 1).padStart(2, '0')}</span>
+            <div>
+              {pages.map((_, index) => <button key={index} onClick={() => goTo(index)} className={`${index === currentPage ? 'is-active' : ''} ${index < currentPage ? 'is-read' : ''}`} aria-label={`Ir para página ${index + 1}`} />)}
+            </div>
+            <span>{String(pages.length).padStart(2, '0')}</span>
+          </div>
 
-      {isLastPage && hasQuiz && quizAlreadyAnswered && (
-        <div className="flex items-center justify-center gap-2 py-3 px-4 mx-3 mb-2 rounded-xl bg-[var(--accent)]/10 border border-[var(--accent)]/30">
-          <CheckCircle size={16} className="text-[var(--accent)]" />
-          <span className="text-[var(--accent-text)] text-sm font-medium">
-            Quiz já respondido
-          </span>
+          {xpGanho !== null && <div className="learning-xp-reveal"><Sparkles size={18} /><div><span>Leitura concluída</span><strong>+{xpGanho} XP adicionados</strong></div></div>}
         </div>
       )}
-    </div>
+    </LearningShell>
   );
 }

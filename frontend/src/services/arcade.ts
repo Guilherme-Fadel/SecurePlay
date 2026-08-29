@@ -40,6 +40,7 @@ export interface SubmitRunResponse {
   xpEarned: number;
   playsToday: number;
   feedback: unknown;
+  tokens: TokenState;
 }
 
 export interface QuizAnswer {

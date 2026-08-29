@@ -2,40 +2,34 @@ import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { useDashboardStats, useDailyChallenge, useWeeklyStreak, useDashboardRanking } from '@/hooks/useDashboard';
 import { ArrowRight, Check, Flame, KeyRound, LockKeyhole, ShieldCheck, Sparkles, Trophy, Zap } from 'lucide-react';
 import './styles.css';
-
 export default function DashboardV2Page() {
-  const { user } = useCurrentUser();
-  const { stats, loading: statsLoading } = useDashboardStats();
-  const { challenge } = useDailyChallenge();
-  const { streak } = useWeeklyStreak();
-  const { ranking } = useDashboardRanking();
+    const { user } = useCurrentUser();
+    const { stats, loading: statsLoading } = useDashboardStats();
+    const { challenge } = useDailyChallenge();
+    const { streak } = useWeeklyStreak();
+    const { ranking } = useDashboardRanking();
+    if (statsLoading) {
+        return <div className="dbv2-loading">Carregando...</div>;
+    }
+    const totalPoints = stats?.totalPoints ?? 0;
+    const level = stats?.level ?? 1;
+    const xpToNext = stats?.xpToNextLevel ?? 1000;
+    const xpMax = totalPoints + xpToNext;
+    const xpPercent = Math.round((totalPoints / xpMax) * 100);
+    const rank = stats?.globalRanking ?? 0;
+    const streakCount = streak?.streak ?? 0;
+    const completedChallenges = stats?.completedChallenges ?? 0;
+    const totalChallenges = stats?.totalActiveChallenges ?? 1;
+    const completionPercent = Math.round((completedChallenges / totalChallenges) * 100);
+    const top3 = ranking?.top?.slice(0, 3) ?? [];
+    const difficulty = challenge?.difficulty ?? 'iniciante';
+    const diffLabel: Record<string, string> = { iniciante: 'Easy', intermediario: 'Medium', avancado: 'Hard' };
+    return (<div className="dbv2-root">
 
-  if (statsLoading) {
-    return <div className="dbv2-loading">Carregando...</div>;
-  }
-
-  const totalPoints = stats?.totalPoints ?? 0;
-  const level = stats?.level ?? 1;
-  const xpToNext = stats?.xpToNextLevel ?? 1000;
-  const xpMax = totalPoints + xpToNext;
-  const xpPercent = Math.round((totalPoints / xpMax) * 100);
-  const rank = stats?.globalRanking ?? 0;
-  const streakCount = streak?.streak ?? 0;
-  const completedChallenges = stats?.completedChallenges ?? 0;
-  const totalChallenges = stats?.totalActiveChallenges ?? 1;
-  const completionPercent = Math.round((completedChallenges / totalChallenges) * 100);
-
-  const top3 = ranking?.top?.slice(0, 3) ?? [];
-  const difficulty = challenge?.difficulty ?? 'iniciante';
-  const diffLabel: Record<string, string> = { iniciante: 'Easy', intermediario: 'Medium', avancado: 'Hard' };
-
-  return (
-    <div className="dbv2-root">
-      {/* Sidebar */}
       <aside className="dbv2-sidebar">
         <div className="dbv2-logo">
           <div className="dbv2-logo-icon" aria-hidden="true">
-            <ShieldCheck size={22} strokeWidth={2.2} />
+            <ShieldCheck size={22} strokeWidth={2.2}/>
           </div>
           <div className="dbv2-logo-text">
             <span className="dbv2-logo-title">SecurePlay</span>
@@ -70,9 +64,9 @@ export default function DashboardV2Page() {
         </nav>
       </aside>
 
-      {/* Main area */}
+
       <div className="dbv2-main">
-        {/* Header */}
+
         <header className="dbv2-header">
           <h1 className="dbv2-page-title">Dashboard</h1>
           <div className="dbv2-header-right">
@@ -81,14 +75,14 @@ export default function DashboardV2Page() {
           </div>
         </header>
 
-        {/* Content */}
+
         <main className="dbv2-content">
-          {/* Welcome Card */}
+
           <div className="dbv2-welcome">
             <div className="dbv2-welcome-left">
               <div className="dbv2-avatar-large">
                 <span>{user?.name?.charAt(0) ?? '?'}</span>
-                <i className="dbv2-avatar-status" aria-hidden="true" />
+                <i className="dbv2-avatar-status" aria-hidden="true"/>
               </div>
               <div className="dbv2-welcome-info">
                 <h2>Welcome back, {user?.name?.split(' ')[0] ?? 'Agent'}!</h2>
@@ -110,7 +104,7 @@ export default function DashboardV2Page() {
                       <span className="dbv2-xp-max">{xpMax.toLocaleString('pt-BR')}</span>
                     </div>
                     <div className="dbv2-xp-bar">
-                      <div className="dbv2-xp-fill" style={{ width: `${xpPercent}%` }} />
+                      <div className="dbv2-xp-fill" style={{ width: `${xpPercent}%` }}/>
                     </div>
                   </div>
                 </div>
@@ -118,30 +112,30 @@ export default function DashboardV2Page() {
             </div>
             <div className="dbv2-welcome-right">
               <div className="dbv2-level-pill">
-                <Zap size={15} aria-hidden="true" />
+                <Zap size={15} aria-hidden="true"/>
                 <span className="dbv2-level-label">Level</span>
                 <span className="dbv2-level-num">{level}</span>
               </div>
               <div className="dbv2-streak-pill">
-                <Flame className="dbv2-streak-icon" size={17} aria-hidden="true" />
+                <Flame className="dbv2-streak-icon" size={17} aria-hidden="true"/>
                 <span>Streak: <strong>{streakCount}</strong> Days</span>
               </div>
             </div>
           </div>
 
-          {/* Grid */}
+
           <div className="dbv2-grid">
-            {/* Left column */}
+
             <div className="dbv2-col">
               <div className="dbv2-card">
                 <div className="dbv2-card-top">
                   <span className="dbv2-card-label">Current Module</span>
-                  <div className="dbv2-badge-check" aria-hidden="true"><Check size={14} strokeWidth={3} /></div>
+                  <div className="dbv2-badge-check" aria-hidden="true"><Check size={14} strokeWidth={3}/></div>
                 </div>
                 <h3 className="dbv2-card-title">Intro to Cryptography</h3>
                 <p className="dbv2-card-sub">{completionPercent}% Complete</p>
                 <div className="dbv2-progress">
-                  <div className="dbv2-progress-fill" style={{ width: `${completionPercent}%` }} />
+                  <div className="dbv2-progress-fill" style={{ width: `${completionPercent}%` }}/>
                 </div>
                 <span className="dbv2-progress-tag">{completionPercent}% Complete</span>
               </div>
@@ -155,25 +149,23 @@ export default function DashboardV2Page() {
                 <p className="dbv2-card-sub">Unlocked {completedChallenges} nodes</p>
                 <div className="dbv2-skill-tree">
                   {Array.from({ length: 6 }).map((_, i) => {
-                    const state = i < completedChallenges ? 'completed' : i === completedChallenges ? 'current' : 'locked';
-                    return (
-                      <div key={i} className={`dbv2-skill-step ${state}`}>
+            const state = i < completedChallenges ? 'completed' : i === completedChallenges ? 'current' : 'locked';
+            return (<div key={i} className={`dbv2-skill-step ${state}`}>
                         <div className="dbv2-skill-node" aria-label={`Node ${i + 1}: ${state}`}>
-                          {state === 'completed' ? <Check size={13} strokeWidth={3} /> : state === 'locked' ? <LockKeyhole size={12} /> : <span>{i + 1}</span>}
+                          {state === 'completed' ? <Check size={13} strokeWidth={3}/> : state === 'locked' ? <LockKeyhole size={12}/> : <span>{i + 1}</span>}
                         </div>
-                      </div>
-                    );
-                  })}
+                      </div>);
+        })}
                 </div>
               </div>
             </div>
 
-            {/* Center column */}
+
             <div className="dbv2-col">
               <div className="dbv2-challenge">
                 <div className="dbv2-challenge-header">
                   <span className="dbv2-challenge-htitle">DAILY CHALLENGE</span>
-                  <div className="dbv2-challenge-accent-dot" aria-hidden="true"><Sparkles size={15} /></div>
+                  <div className="dbv2-challenge-accent-dot" aria-hidden="true"><Sparkles size={15}/></div>
                 </div>
                 <div className="dbv2-challenge-body">
                   <p className="dbv2-challenge-label">Challenge:</p>
@@ -197,23 +189,22 @@ export default function DashboardV2Page() {
                   </div>
                   <button className="dbv2-challenge-btn">
                     Submit Solution
-                    <ArrowRight size={17} aria-hidden="true" />
+                    <ArrowRight size={17} aria-hidden="true"/>
                   </button>
                 </div>
               </div>
             </div>
 
-            {/* Right column */}
+
             <div className="dbv2-col">
               <div className="dbv2-card">
                 <div className="dbv2-card-heading">
                   <span className="dbv2-card-label">Leaderboard</span>
-                  <Trophy size={17} aria-hidden="true" />
+                  <Trophy size={17} aria-hidden="true"/>
                 </div>
                 <p className="dbv2-card-sub" style={{ marginTop: 4, marginBottom: 16 }}>Top 3 students</p>
                 <div className="dbv2-leaderboard">
-                  {top3.map((entry, i) => (
-                    <div key={entry.position} className="dbv2-lb-item">
+                  {top3.map((entry, i) => (<div key={entry.position} className="dbv2-lb-item">
                       <div className={`dbv2-lb-avatar medal-${i}`}>
                         {entry.name.charAt(0)}
                         <span className="dbv2-lb-xp">XP</span>
@@ -222,26 +213,25 @@ export default function DashboardV2Page() {
                       <span className={`dbv2-lb-medal medal-${i}`}>
                         {i === 0 ? 'Gold' : i === 1 ? 'Silver' : 'Bronze'}
                       </span>
-                    </div>
-                  ))}
+                    </div>))}
                 </div>
               </div>
 
               <div className="dbv2-card">
                 <div className="dbv2-card-heading">
                   <span className="dbv2-card-label">Recent Achievements</span>
-                  <Sparkles size={17} aria-hidden="true" />
+                  <Sparkles size={17} aria-hidden="true"/>
                 </div>
                 <div className="dbv2-achievements">
                   <div className="dbv2-ach-item">
-                    <div className="dbv2-ach-icon yellow"><ShieldCheck size={23} strokeWidth={2.2} aria-hidden="true" /></div>
+                    <div className="dbv2-ach-icon yellow"><ShieldCheck size={23} strokeWidth={2.2} aria-hidden="true"/></div>
                     <div>
                       <strong>Phishing Hunter</strong>
                       <p>Unlocked recently</p>
                     </div>
                   </div>
                   <div className="dbv2-ach-item">
-                    <div className="dbv2-ach-icon cyan"><KeyRound size={23} strokeWidth={2.2} aria-hidden="true" /></div>
+                    <div className="dbv2-ach-icon cyan"><KeyRound size={23} strokeWidth={2.2} aria-hidden="true"/></div>
                     <div>
                       <strong>Codebreaker</strong>
                       <p>Especialista em cifras</p>
@@ -253,6 +243,5 @@ export default function DashboardV2Page() {
           </div>
         </main>
       </div>
-    </div>
-  );
+    </div>);
 }

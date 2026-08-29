@@ -1,5 +1,5 @@
 import { Section } from "@/pages/Home"
-import { Menu, ChevronLeft } from "lucide-react"
+import { Menu, ChevronLeft, ShieldCheck } from "lucide-react"
 import {createContext, useContext, useState, ReactNode} from "react"
 
 interface SidebarContextProps {
@@ -28,30 +28,33 @@ export function Sidebar({ children }: SidebarProps) {
 
 
   return (
-    <aside className={`sticky top-0 h-screen flex-shrink-0 overflow-visible transition-all duration-300 z-50 ${expanded ? "w-65" : "w-18"}`}>
-      <nav className="h-full flex flex-col border-r shadow-sm bg-[var(--surface)] overflow-visible">
-        <div className="p-4 pb-2 flex justify-between items-center">
-          
+    <aside className={`secure-sidebar sticky top-0 h-screen flex-shrink-0 overflow-visible transition-all duration-300 z-50 ${expanded ? "is-expanded w-65" : "is-collapsed w-18"}`}>
+      <nav className="secure-sidebar-nav h-full flex flex-col border-r shadow-sm bg-[var(--surface)] overflow-visible">
+        <div className="secure-sidebar-brand p-4 pb-2 flex justify-between items-center">
+
             {expanded && (
-                
-                <>  
-                    <span className="text-[var(--text-primary)] text-2xl">
-                        Secure Play
-                    </span>
-                </>
+
+                <div className="secure-sidebar-logo">
+                  <span className="secure-sidebar-logo-icon" aria-hidden="true"><ShieldCheck size={21} /></span>
+                  <span className="secure-sidebar-logo-copy">
+                    <strong>SecurePlay</strong>
+                    <small>Academy</small>
+                  </span>
+                </div>
             )}
 
 
           <button
             onClick={() => setExpanded((curr) => !curr)}
-            className="p-1.5 rounded-lg bg-[var(--secondary)] hover:bg-[var(--secondary-hover)] hover:shadow-[0_0_12px_var(--secondary-light-60))] transition hover:shadow-[0_0_12px_var(--secondary-light-60))] transition cursor-pointer"
+            className="secure-sidebar-toggle p-1.5 rounded-lg transition cursor-pointer"
+            aria-label={expanded ? 'Recolher menu lateral' : 'Expandir menu lateral'}
           >
             {expanded ? <ChevronLeft /> : <Menu />}
           </button>
         </div>
 
         <SidebarContext.Provider value={{ expanded }}>
-          <ul className="flex-1 px-3 overflow-visible">{children}</ul>
+          <ul className="secure-sidebar-list flex-1 px-3 overflow-visible">{children}</ul>
         </SidebarContext.Provider>
 
       </nav>
@@ -85,19 +88,19 @@ export function SidebarItem({
     onClick={() => onSelect(id)}
     onMouseEnter={() => setHovered(true)}
     onMouseLeave={() => setHovered(false)}
-    className={`
+    className={`secure-sidebar-item
       relative flex items-center py-2 px-3 my-1
       rounded-md cursor-pointer
       transition-colors
       hover:bg-[var(--background)] text-[var(--text-primary)]
 
-      ${active ? "bg-sidebar-accent text-[var(--text-primary)]" : ""}
+      ${active ? "is-active bg-sidebar-accent text-[var(--text-primary)]" : ""}
     `}
 >
       {icon}
 
       <span
-        className={`overflow-hidden transition-all text-xl ${
+        className={`secure-sidebar-item-label overflow-hidden transition-all text-xl ${
           expanded ? "w-52 ml-4 " : "w-0"
         }`}
       >

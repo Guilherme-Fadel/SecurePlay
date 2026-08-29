@@ -6,6 +6,9 @@ interface CacheEntry<T> {
 
 const cache = new Map<string, CacheEntry<unknown>>();
 const listeners = new Map<string, Set<() => void>>();
+const inFlight = new Map<string, Promise<unknown>>();
+const keyGenerations = new Map<string, number>();
+let cacheGeneration = 0;
 
 const DEFAULT_STALE_TIME = 60_000;
 
@@ -26,15 +29,44 @@ export function setCache<T>(key: string, data: T): void {
   notifyListeners(key);
 }
 
+export function fetchCached<T>(key: string, fetcher: () => Promise<T>): Promise<T> {
+  const pending = inFlight.get(key) as Promise<T> | undefined;
+  if (pending) return pending;
+
+  const requestCacheGeneration = cacheGeneration;
+  const requestKeyGeneration = keyGenerations.get(key) ?? 0;
+  const request = fetcher()
+    .then((data) => {
+      if (
+        requestCacheGeneration === cacheGeneration
+        && requestKeyGeneration === (keyGenerations.get(key) ?? 0)
+      ) {
+        setCache(key, data);
+      }
+      return data;
+    })
+    .finally(() => {
+      if (inFlight.get(key) === request) {
+        inFlight.delete(key);
+      }
+    });
+
+  inFlight.set(key, request);
+  return request;
+}
+
 export function invalidate(key: string): void {
   cache.delete(key);
+  inFlight.delete(key);
+  keyGenerations.set(key, (keyGenerations.get(key) ?? 0) + 1);
   notifyListeners(key);
 }
 
-export function invalidateAll(): void {
-  const keys = [...cache.keys()];
+export function clearQueryCache(): void {
+  cacheGeneration += 1;
   cache.clear();
-  keys.forEach(notifyListeners);
+  inFlight.clear();
+  keyGenerations.clear();
 }
 
 export function subscribe(key: string, callback: () => void): () => void {

@@ -1,23 +1,19 @@
-import { useState, useEffect } from 'react';
+import { useEffect } from 'react';
 import { Navigate } from 'react-router-dom';
-import { validateToken } from '@/services/auth/validateToken';
-
-type Status = 'checking' | 'valid' | 'invalid';
+import { useCurrentUser } from '@/hooks/useCurrentUser';
 
 export function PrivateRoute({ children }: { children: React.ReactNode }) {
-  const [status, setStatus] = useState<Status>('checking');
+  const { status, ensureSession } = useCurrentUser();
 
   useEffect(() => {
-    validateToken().then((valid) => {
-      setStatus(valid ? 'valid' : 'invalid');
-    });
-  }, []);
+    void ensureSession();
+  }, [ensureSession]);
 
-  if (status === 'checking') {
+  if (status === 'idle' || status === 'loading') {
     return null;
   }
 
-  if (status === 'invalid') {
+  if (status === 'unauthenticated') {
     localStorage.removeItem('nome');
     return <Navigate to="/login" replace />;
   }
@@ -26,19 +22,17 @@ export function PrivateRoute({ children }: { children: React.ReactNode }) {
 }
 
 export function PublicRoute({ children }: { children: React.ReactNode }) {
-  const [status, setStatus] = useState<Status>('checking');
+  const { status, ensureSession } = useCurrentUser();
 
   useEffect(() => {
-    validateToken().then((valid) => {
-      setStatus(valid ? 'valid' : 'invalid');
-    });
-  }, []);
+    void ensureSession();
+  }, [ensureSession]);
 
-  if (status === 'checking') {
+  if (status === 'idle' || status === 'loading') {
     return null;
   }
 
-  if (status === 'valid') {
+  if (status === 'authenticated') {
     return <Navigate to="/home" replace />;
   }
 

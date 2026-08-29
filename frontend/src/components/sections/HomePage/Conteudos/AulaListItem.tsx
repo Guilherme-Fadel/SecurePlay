@@ -1,9 +1,11 @@
 import { AulaResumo } from '@/services/conteudo';
-import { Video, BookOpen, Check, Play, Lock } from 'lucide-react';
+import { ArrowRight, BookOpen, Check, Clock3, Lock, Play, Video } from 'lucide-react';
 
 interface AulaListItemProps {
   aula: AulaResumo;
   onClick: () => void;
+  index?: number;
+  active?: boolean;
 }
 
 const statusConfig = {
@@ -12,42 +14,35 @@ const statusConfig = {
   locked: { Icon: Lock, color: 'text-[var(--text-secondary)]', bg: 'bg-[var(--surface-alt)]', border: 'border-[var(--border)]' },
 };
 
-export function AulaListItem({ aula, onClick }: AulaListItemProps) {
+export function AulaListItem({ aula, onClick, index = 0, active = false }: AulaListItemProps) {
   const config = statusConfig[aula.status];
   const isLocked = aula.status === 'locked';
   const TypeIcon = aula.type === 'video' ? Video : BookOpen;
 
   return (
-    <div
+    <button
       onClick={isLocked ? undefined : onClick}
-      className={`flex items-center gap-3 p-3 rounded-xl border transition-all duration-200 ${config.border} ${
-        isLocked
-          ? 'opacity-50 cursor-not-allowed'
-          : 'cursor-pointer hover:bg-[var(--surface-alt)] hover:scale-[1.01]'
-      }`}
+      disabled={isLocked}
+      className={`learning-lesson-row ${config.border} ${isLocked ? 'is-locked' : ''} ${active ? 'is-active' : ''}`}
     >
-      <div className={`w-9 h-9 rounded-xl ${config.bg} flex items-center justify-center flex-shrink-0`}>
+      <div className="learning-lesson-index">{String(index + 1).padStart(2, '0')}</div>
+      <div className={`learning-lesson-status ${config.bg}`}>
         <config.Icon size={16} className={config.color} />
       </div>
 
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2">
-          <TypeIcon size={12} className="text-[var(--text-secondary)] flex-shrink-0" />
-          <h5 className={`truncate leading-tight ${isLocked ? 'text-[var(--text-secondary)]' : 'text-[var(--text-primary)]'}`}>
-            {aula.title}
-          </h5>
-        </div>
+      <div className="learning-lesson-copy">
+        <div><TypeIcon size={12} /><span>{aula.type === 'video' ? 'Vídeo' : 'Quadrinho'}</span></div>
+        <h3>{aula.title}</h3>
         {aula.description && (
-          <p className="text-[10px] text-[var(--text-secondary)] font-[var(--font-family-inter)] truncate mt-0.5">
-            {aula.description}
-          </p>
+          <p>{aula.description}</p>
         )}
       </div>
 
-      <div className="flex items-center gap-2 text-[10px] text-[var(--text-secondary)] font-[var(--font-family-inter)] flex-shrink-0">
-        <span>{aula.duration}{aula.type === 'video' ? ' min' : ' pág'}</span>
-        <span className="text-[var(--accent-text)]">{aula.xp} XP</span>
+      <div className="learning-lesson-meta">
+        <span><Clock3 size={11} /> {aula.type === 'video' ? `${aula.duration} min` : `${aula.page_count ?? aula.duration} pág`}</span>
+        <strong>{aula.xp} XP</strong>
+        {!isLocked && <ArrowRight size={15} />}
       </div>
-    </div>
+    </button>
   );
 }

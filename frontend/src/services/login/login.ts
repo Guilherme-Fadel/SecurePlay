@@ -1,9 +1,11 @@
 import { api } from '@/services/api';
+import type { CurrentUser } from '@/services/me';
 
 export interface LoginResult {
   sucesso: boolean;
   mensagem: string;
   nome?: string;
+  user?: CurrentUser;
 }
 
 export async function loginService(
@@ -22,6 +24,7 @@ export async function loginService(
       sucesso: true,
       mensagem: response.data.message ?? 'Login realizado',
       nome: response.data.nome,
+      user: response.data.user,
     };
 
   } catch (error: any) {

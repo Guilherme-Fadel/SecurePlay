@@ -55,6 +55,7 @@ export class AuthService {
 
     return {
       token,
+      userId: user.id,
       nome: user.name,
       message: 'Login realizado com sucesso',
     };

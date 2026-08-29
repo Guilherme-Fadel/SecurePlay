@@ -8,7 +8,7 @@ export function SearchBar() {
       </span>
       <input
         type="text"
-        placeholder="Buscar desafios, conquistas..."
+        placeholder="Buscar jogos, conquistas..."
         className="
           w-full pl-10 pr-4 py-2
           bg-[var(--background)] border-2 border-[var(--border)]

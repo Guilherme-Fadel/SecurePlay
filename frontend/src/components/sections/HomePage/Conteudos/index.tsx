@@ -31,20 +31,22 @@ export function Conteudos() {
       )}
       {view.type === 'aula' && (
         <AulaView
+          key={view.aulaId}
           aulaId={view.aulaId}
           moduloId={view.moduloId}
           onBack={() => goToModulo(view.moduloId)}
+          onSelectAula={(aulaId) => goToAula(aulaId, view.moduloId)}
         />
       )}
     </PageTransition>
   );
 }
 
-function AulaView({ aulaId, moduloId, onBack }: { aulaId: number; moduloId: number; onBack: () => void }) {
+function AulaView({ aulaId, moduloId, onBack, onSelectAula }: { aulaId: number; moduloId: number; onBack: () => void; onSelectAula: (aulaId: number) => void }) {
   const [aulaType, setAulaType] = useState<'video' | 'quadrinho' | null>(null);
 
   if (aulaType === 'quadrinho') {
-    return <AulaQuadrinho aulaId={aulaId} moduloId={moduloId} onBack={onBack} />;
+    return <AulaQuadrinho aulaId={aulaId} moduloId={moduloId} onBack={onBack} onSelectAula={onSelectAula} />;
   }
 
   return (
@@ -53,6 +55,7 @@ function AulaView({ aulaId, moduloId, onBack }: { aulaId: number; moduloId: numb
       moduloId={moduloId}
       onBack={onBack}
       onTypeResolved={setAulaType}
+      onSelectAula={onSelectAula}
     />
   );
 }

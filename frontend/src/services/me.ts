@@ -21,6 +21,6 @@ export interface CurrentUser {
 }
 
 export async function getMe(): Promise<CurrentUser> {
-  const response = await api.get('/auth/token');
+  const response = await api.get('/auth/me');
   return response.data;
 }

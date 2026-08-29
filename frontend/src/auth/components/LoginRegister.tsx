@@ -8,6 +8,7 @@ import { toast } from 'sonner';
 import { useLoginRegister } from '@/hooks/useLoginRegister';
 import { loginService } from '@/services/login/login.ts';
 import { registerService } from '@/services/register/register';
+import { useCurrentUser } from '@/hooks/useCurrentUser';
 
 import { AuthTabs } from './AuthTabs';
 import { LoginForm } from './LoginForm';
@@ -15,6 +16,7 @@ import { RegisterForm } from './RegisterForm';
 
 export function LoginRegister() {
   const { mode, switchMode, loading, login, register, errors } = useLoginRegister();
+  const { setSession, refreshSession } = useCurrentUser();
   const navigate = useNavigate();
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -31,6 +33,12 @@ export function LoginRegister() {
       }
 
       localStorage.setItem('nome', result.nome!);
+
+      if (result.user) {
+        setSession(result.user);
+      } else {
+        await refreshSession();
+      }
 
       toast.success(result.mensagem);
 
@@ -70,6 +78,12 @@ export function LoginRegister() {
       }
 
       localStorage.setItem('nome', resultLogin.nome!);
+
+      if (resultLogin.user) {
+        setSession(resultLogin.user);
+      } else {
+        await refreshSession();
+      }
 
       toast.success(result.mensagem);
       navigate('/home');

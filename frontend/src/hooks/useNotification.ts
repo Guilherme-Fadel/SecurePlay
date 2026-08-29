@@ -1,25 +1,30 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Notification, getNotification, markNotificationAsRead } from '@/services/notification';
-import { getMe } from '@/services/me';
 import { useSocket } from '@/hooks/useSocket';
+import { useCurrentUser } from '@/hooks/useCurrentUser';
 
 export function useNotification() {
     const [notification, setNotification] = useState<Notification[]>([]);
     const [loading, setLoading] = useState(true);
-    const [userId, setUserId] = useState<number | null>(null);
+    const { user, loading: userLoading } = useCurrentUser();
+    const userId = user?.userId ?? null;
 
     const socket = useSocket(userId);
 
     useEffect(() => {
-        getMe()
-            .then((user) => {
-                setUserId(user.userId);
-                return getNotification(user.userId);
-            })
+        if (userLoading) return;
+        if (!userId) {
+            setNotification([]);
+            setLoading(false);
+            return;
+        }
+
+        setLoading(true);
+        getNotification(userId)
             .then(setNotification)
             .catch(() => setNotification([]))
             .finally(() => setLoading(false));
-    }, []);
+    }, [userId, userLoading]);
 
     useEffect(() => {
         if (!socket) return;

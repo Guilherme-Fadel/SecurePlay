@@ -14,6 +14,8 @@ export interface Modulo {
   totalAulas: number;
   completedAulas: number;
   progress: number;
+  hasStarted: boolean;
+  lastAccessedAt: string | null;
 }
 
 export interface AulaResumo {
@@ -26,6 +28,11 @@ export interface AulaResumo {
   order: number;
   section_name: string | null;
   status: 'completed' | 'unlocked' | 'locked';
+  page_count: number;
+  progress_percent: number;
+  last_video_second: number;
+  last_page: number;
+  last_accessed_at: string | null;
 }
 
 export interface ModuloDetalhes extends Modulo {
@@ -52,7 +59,22 @@ export interface AulaDetalhes {
   order: number;
   section_name: string | null;
   completed: boolean;
+  progress: AulaProgress;
   quiz: QuizQuestion[];
+}
+
+export interface AulaProgress {
+  percent: number;
+  lastVideoSecond: number;
+  lastPage: number;
+  startedAt: string | null;
+  lastAccessedAt: string | null;
+}
+
+export interface UpdateAulaProgress {
+  progress_percent?: number;
+  last_video_second?: number;
+  last_page?: number;
 }
 
 export interface QuizAnswer {
@@ -91,6 +113,9 @@ export const getAula = (id: number) =>
 
 export const concluirAula = (id: number) =>
   api.post<ConcluirResult>(`/conteudo/aulas/${id}/concluir`).then((r) => r.data);
+
+export const updateAulaProgress = (id: number, progress: UpdateAulaProgress) =>
+  api.patch<AulaProgress>(`/conteudo/aulas/${id}/progress`, progress).then((r) => r.data);
 
 export const submitQuiz = (id: number, answers: QuizAnswer[]) =>
   api.post<QuizResult>(`/conteudo/aulas/${id}/quiz`, { answers }).then((r) => r.data);

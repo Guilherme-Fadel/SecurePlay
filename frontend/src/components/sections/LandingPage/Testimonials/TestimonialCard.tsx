@@ -3,10 +3,9 @@ import { Star } from 'lucide-react';
 
 interface Props {
   testimonial: any;
-  index: number;
 }
 
-export function TestimonialCard({ testimonial, index }: Props) {
+export function TestimonialCard({ testimonial }: Props) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 40 }}
@@ -16,7 +15,7 @@ export function TestimonialCard({ testimonial, index }: Props) {
       whileHover={{ y: -6 }}
       className="group relative bg-[var(--surface-alt)] border border-[var(--border)] rounded-lg p-6 shadow-[0_4px_16px_rgba(0,0,0,0.25)]"
     >
-  
+
       <div className="absolute top-0 left-0 right-0 h-2 bg-[var(--secondary)] rounded-t-lg" />
 
 

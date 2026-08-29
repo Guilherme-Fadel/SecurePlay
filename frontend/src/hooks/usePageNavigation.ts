@@ -7,6 +7,7 @@ interface UsePageNavigationOptions {
 
 export function usePageNavigation({ totalPages, onLastPage }: UsePageNavigationOptions) {
   const [currentPage, setCurrentPage] = useState(0);
+  const [direction, setDirection] = useState<1 | -1>(1);
   const [touchStart, setTouchStart] = useState<number | null>(null);
 
   const isLastPage = currentPage >= totalPages - 1;
@@ -15,16 +16,22 @@ export function usePageNavigation({ totalPages, onLastPage }: UsePageNavigationO
     if (isLastPage) {
       onLastPage?.();
     } else {
+      setDirection(1);
       setCurrentPage((p) => Math.min(p + 1, totalPages - 1));
     }
   }, [isLastPage, totalPages, onLastPage]);
 
   const goPrev = useCallback(() => {
+    setDirection(-1);
     setCurrentPage((p) => Math.max(p - 1, 0));
   }, []);
 
   const goTo = useCallback((page: number) => {
-    setCurrentPage(Math.max(0, Math.min(page, totalPages - 1)));
+    const nextPage = Math.max(0, Math.min(page, totalPages - 1));
+    setCurrentPage((current) => {
+      if (nextPage !== current) setDirection(nextPage > current ? 1 : -1);
+      return nextPage;
+    });
   }, [totalPages]);
 
   useEffect(() => {
@@ -52,6 +59,7 @@ export function usePageNavigation({ totalPages, onLastPage }: UsePageNavigationO
 
   return {
     currentPage,
+    direction,
     isLastPage,
     goNext,
     goPrev,

@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { getCached, setCache, isStale, subscribe } from '@/lib/queryCache';
+import { fetchCached, getCached, isStale, subscribe } from '@/lib/queryCache';
 
 interface UseCachedQueryOptions {
   staleTime?: number;
@@ -27,9 +27,8 @@ export function useCachedQuery<T>(
   const [error, setError] = useState<string | null>(null);
 
   const refetch = useCallback(() => {
-    fetcherRef.current()
+    fetchCached(key, fetcherRef.current)
       .then(result => {
-        setCache(key, result);
         setData(result);
       })
       .catch(() => {});
@@ -47,9 +46,8 @@ export function useCachedQuery<T>(
     if (currentCache) {
       setData(currentCache);
       setLoading(false);
-      fetcherRef.current()
+      fetchCached(key, fetcherRef.current)
         .then(result => {
-          setCache(key, result);
           setData(result);
         })
         .catch(() => {});
@@ -57,9 +55,8 @@ export function useCachedQuery<T>(
     }
 
     setLoading(true);
-    fetcherRef.current()
+    fetchCached(key, fetcherRef.current)
       .then(result => {
-        setCache(key, result);
         setData(result);
       })
       .catch(() => setError('Erro ao carregar dados'))

@@ -62,7 +62,7 @@ export function Modal({
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
             transition={{ duration: 0.2, ease: 'easeOut' }}
-            className={`relative z-10 w-full ${maxWidth} ${maxHeight} ${Height} ${Width} mx-4 bg-[var(--surface)] border-2 border-[var(--border)] rounded-xl shadow-2xl`}
+            className={`app-modal relative z-10 w-full ${maxWidth} ${maxHeight} ${Height} ${Width} mx-4 bg-[var(--surface)] border-2 border-[var(--border)] rounded-xl shadow-2xl`}
           >
             {title && (
               <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--border)]">

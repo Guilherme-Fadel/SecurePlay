@@ -1,4 +1,4 @@
-/* Estilos isolados do protótipo do mapa de treinamento. Prefixo wm- para evitar colisao. */
+
 
 .wm-root {
   position: fixed;
@@ -11,7 +11,7 @@
   overflow: hidden;
 }
 
-/* modo embutido: preenche o container pai em vez da tela toda */
+
 .wm-root-embedded {
   position: absolute;
   border-radius: 12px;
@@ -24,7 +24,7 @@
   cursor: pointer;
 }
 
-/* HUD */
+
 .wm-header {
   display: flex;
   align-items: center;
@@ -77,7 +77,7 @@
   transition: width 0.4s ease;
 }
 
-/* Palco onde as telas (global/bioma) sao trocadas */
+
 .wm-stage {
   position: relative;
   flex: 1;
@@ -89,7 +89,7 @@
   inset: 0;
 }
 
-/* Fundo ambiente: preenche as faixas laterais com o proprio video borrado. */
+
 .wm-global-ambient {
   position: absolute;
   inset: 0;
@@ -97,13 +97,13 @@
   height: 100%;
   object-fit: cover;
   filter: blur(28px) brightness(0.5) saturate(1.1);
-  transform: scale(1.12); /* evita bordas transparentes do blur */
+  transform: scale(1.12);
   pointer-events: none;
   z-index: 0;
 }
 
-/* Mapa global: o wrap tem a MESMA proporcao da arte e fica centralizado.
-   Assim os hotspots em % batem exatamente com o video em qualquer tela. */
+
+
 .wm-global-wrap {
   z-index: 1;
   position: absolute;
@@ -111,12 +111,12 @@
   left: 50%;
   transform: translate(-50%, -50%);
   aspect-ratio: 1664 / 1248;
-  /* ocupa o maximo possivel mantendo a proporcao (4:3 do video) */
+
   width: min(100%, calc(100vh * 1664 / 1248));
   height: auto;
   max-height: 100%;
   border-radius: 22px;
-  /* halo externo + separacao do fundo ambiente borrado */
+
   box-shadow:
     0 0 0 3px rgba(255, 217, 77, 0.35),
     0 0 40px 6px rgba(0, 0, 0, 0.6),
@@ -132,7 +132,7 @@
   user-select: none;
   background: #0a1830;
   border-radius: 22px;
-  /* funde as bordas do video no fundo (evita corte "duro") */
+
   -webkit-mask-image: radial-gradient(
     120% 120% at 50% 50%,
     #000 78%,
@@ -145,14 +145,14 @@
   );
 }
 
-/* Moldura estilo console/quadro retro sobre o mapa. Puramente decorativa. */
+
 .wm-global-frame {
   position: absolute;
   inset: 0;
   border-radius: 22px;
   pointer-events: none;
   z-index: 15;
-  /* borda dupla + brilho interno */
+
   border: 6px solid rgba(20, 31, 56, 0.9);
   box-shadow:
     inset 0 0 0 2px rgba(255, 217, 77, 0.55),
@@ -160,7 +160,7 @@
     inset 0 0 120px 30px rgba(7, 11, 20, 0.35);
 }
 
-/* cantos decorativos da moldura (estilo pixel/retro) */
+
 .wm-global-frame::before,
 .wm-global-frame::after {
   content: '';
@@ -186,7 +186,7 @@
   border-bottom-right-radius: 12px;
 }
 
-/* Arte do bioma dentro do wrap (mesmo tratamento do video global). */
+
 .wm-biome-bg {
   position: absolute;
   inset: 0;
@@ -195,7 +195,7 @@
   mask-image: radial-gradient(120% 120% at 50% 50%, #000 78%, transparent 100%);
 }
 
-/* Fundo ambiente do bioma: mesma arte borrada cobrindo a tela toda. */
+
 .wm-biome-ambient {
   position: absolute;
   inset: 0;
@@ -205,9 +205,9 @@
   z-index: 0;
 }
 
-/* Wrap do bioma: mesma moldura do global, mas em proporcao widescreen
-   (nao ha video com proporcao fixa ainda). Ao receber a arte real do bioma,
-   ajustar o aspect-ratio para casar com a imagem. */
+
+
+
 .wm-biome-wrap {
   aspect-ratio: 16 / 10;
   width: min(96%, calc((100vh - 80px) * 16 / 10));
@@ -228,7 +228,7 @@
   pointer-events: none;
 }
 
-/* Hotspots de bioma (mapa global). Ficam sobre a arte, entao sao discretos. */
+
 .wm-hotspot {
   position: absolute;
   transform: translate(-50%, -50%);
@@ -275,11 +275,11 @@
 
 .wm-hotspot-editing:active { cursor: grabbing !important; }
 
-/* Nodes de fase */
+
 .wm-node {
   position: absolute;
-  /* Centralizamos por margin negativa (metade do tamanho), NAO por transform.
-     O transform fica reservado para o Framer Motion (drag/scale). */
+
+
   width: 54px;
   height: 54px;
   margin-left: -27px;
@@ -335,7 +335,7 @@
   pointer-events: none;
 }
 
-/* Modo edicao (drag das fases) */
+
 .wm-node-editing .wm-node-face {
   border-style: dashed;
   border-color: #ffd94d;
@@ -359,7 +359,7 @@
   pointer-events: none;
 }
 
-/* Botao toggle do modo edicao */
+
 .wm-edit-toggle {
   position: absolute;
   top: 64px;
@@ -381,7 +381,7 @@
   border-color: #ffd94d;
 }
 
-/* Painel de posicoes */
+
 .wm-edit-panel {
   position: absolute;
   bottom: 16px;
@@ -438,7 +438,7 @@
   white-space: pre;
 }
 
-/* Titulo do bioma e botao voltar */
+
 .wm-biome-title {
   position: absolute;
   top: 16px;
@@ -485,7 +485,7 @@
   box-shadow: 0 2px 0 #b8930b;
 }
 
-/* Modal */
+
 .wm-modal-overlay {
   position: absolute;
   inset: 0;
@@ -611,7 +611,7 @@
   box-shadow: 0 2px 0 #b8930b;
 }
 
-/* Responsividade */
+
 @media (max-width: 900px) {
   .wm-progress-bar { width: 140px; }
   .wm-logo { font-size: 18px; }
@@ -620,7 +620,7 @@
   .wm-node { width: 46px; height: 46px; margin-left: -23px; margin-top: -23px; }
 }
 
-/* --- Regioes clicaveis (WAR-style) --- */
+
 .wm-regions {
   position: absolute;
   inset: 0;
@@ -630,7 +630,7 @@
   border-radius: 22px;
 }
 
-/* Fora do modo edicao, o SVG so intercepta o mouse nos poligonos. */
+
 .wm-regions {
   pointer-events: none;
 }
@@ -642,7 +642,7 @@
   transition: fill 0.18s ease, stroke 0.18s ease;
 }
 
-/* No modo edicao, o SVG inteiro captura cliques para adicionar vertices. */
+
 .wm-regions-edit {
   pointer-events: auto;
   cursor: crosshair;
@@ -667,13 +667,13 @@
   stroke-width: 0.2;
 }
 
-/* Pin que virou apenas rotulo (bioma com regiao definida): nao captura clique. */
+
 .wm-hotspot-label {
   pointer-events: none;
   opacity: 0.92;
 }
 
-/* --- Painel de edicao de regiao --- */
+
 .wm-region-panel {
   width: 320px;
 }
