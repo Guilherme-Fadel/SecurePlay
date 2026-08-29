@@ -1,38 +1,36 @@
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-
-import { motion, AnimatePresence } from 'motion/react';
-import { PixelMascot } from '@/components/ui/visuals/PixelMascot';
-import { SecurityLevelIndicator } from '@/components/ui/feedback/SecurityLevelIndicator';
+import { motion } from 'motion/react';
+import { ArrowRight, Eye, EyeOff, KeyRound, LockKeyhole, Mail, ShieldCheck } from 'lucide-react';
 import { toast } from 'sonner';
 
-import { useLoginRegister } from '@/hooks/useLoginRegister';
-import { loginService } from '@/services/login/login.ts';
-import { registerService } from '@/services/register/register';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
+import { loginService } from '@/services/login/login';
 
-import { AuthTabs } from './AuthTabs';
-import { LoginForm } from './LoginForm';
-import { RegisterForm } from './RegisterForm';
+import './login-register.css';
 
 export function LoginRegister() {
-  const { mode, switchMode, loading, login, register, errors } = useLoginRegister();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const { setSession, refreshSession } = useCurrentUser();
   const navigate = useNavigate();
 
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    loading.start();
+  const handleLogin = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setIsLoading(true);
 
     try {
-      const result = await loginService(login.email, login.password);
+      const result = await loginService(email, password);
 
       if (!result.sucesso) {
         toast.error(result.mensagem);
-        login.resetPassword();
+        setPassword('');
         return;
       }
 
-      localStorage.setItem('nome', result.nome!);
+      localStorage.setItem('nome', result.nome ?? '');
 
       if (result.user) {
         setSession(result.user);
@@ -41,126 +39,121 @@ export function LoginRegister() {
       }
 
       toast.success(result.mensagem);
-
       navigate('/home');
-
-      login.reset();
     } finally {
-      loading.stop();
-    }
-  };
-
-  const handleRegister = async (e: React.FormEvent) => {
-    e.preventDefault();
-    loading.start();
-
-    try {
-      const result = await registerService(
-        register.name,
-        register.email,
-        register.password,
-        register.confirmPassword,
-        register.acceptTerms
-      );
-
-      if (!result.sucesso) {
-        toast.error(result.mensagem);
-        return;
-      }
-
-      const resultLogin = await loginService(register.email, register.password);
-
-      if (!resultLogin.sucesso) {
-        toast.error(resultLogin.mensagem);
-        register.reset();
-        switchMode('login');
-        return;
-      }
-
-      localStorage.setItem('nome', resultLogin.nome!);
-
-      if (resultLogin.user) {
-        setSession(resultLogin.user);
-      } else {
-        await refreshSession();
-      }
-
-      toast.success(result.mensagem);
-      navigate('/home');
-      register.reset();
-    } finally {
-      loading.stop();
+      setIsLoading(false);
     }
   };
 
   return (
-    <div className="w-full max-w-md">
+    <div className="login-shell">
+      <motion.aside
+        className="login-showcase"
+        initial={{ opacity: 0, x: -24 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ duration: 0.55, ease: 'easeOut' }}
+      >
+        <div className="login-brand">
+          <span className="login-brand-mark" aria-hidden="true"><ShieldCheck size={24} /></span>
+          <span>secure<span>play</span></span>
+        </div>
 
-      <motion.div
-        className="text-center mb-8"
-        initial={{ opacity: 0, y: -20 }}
+        <div className="login-showcase-copy">
+          <span className="login-eyebrow"><span /> Plataforma de conscientização</span>
+          <h1>Segurança que<br /><em>evolui</em> com você.</h1>
+          <p>Aprenda, pratique e fortaleça a cultura de segurança da sua empresa em uma experiência feita para o dia a dia.</p>
+        </div>
+
+        <div className="login-security-note">
+          <span className="login-security-icon"><LockKeyhole size={18} /></span>
+          <div>
+            <strong>Ambiente protegido</strong>
+            <p>Seu acesso é monitorado e protegido.</p>
+          </div>
+        </div>
+      </motion.aside>
+
+      <motion.main
+        className="login-panel"
+        initial={{ opacity: 0, y: 18 }}
         animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.45, delay: 0.1, ease: 'easeOut' }}
       >
-        <div className="flex justify-center mb-4">
-          <PixelMascot className="w-24 h-24" />
+        <div className="login-mobile-brand">
+          <span className="login-brand-mark" aria-hidden="true"><ShieldCheck size={22} /></span>
+          <span>secure<span>play</span></span>
         </div>
 
-        <h1 className="text-[var(--secondary)] mb-2 tracking-wide">
-          SISTEMA DE SEGURANÇA
-        </h1>
-        <p className="text-[var(--text-primary)]  opacity-80">
-          Governança & Proteção de Dados
-        </p>
-      </motion.div>
+        <section className="login-card" aria-labelledby="login-title">
+          <div className="login-card-icon" aria-hidden="true"><KeyRound size={23} /></div>
+          <div className="login-heading">
+            <h2 id="login-title">Boas-vindas</h2>
+            <p>Entre com suas credenciais para continuar.</p>
+          </div>
 
-      <motion.div
-        className="relative"
-        initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ delay: 0.2 }}
-      >
-        <SecurityLevelIndicator />
+          <form onSubmit={handleLogin} className="login-form">
+            <label className="login-field">
+              <span>E-mail corporativo</span>
+              <div>
+                <Mail size={18} aria-hidden="true" />
+                <input
+                  type="email"
+                  placeholder="voce@empresa.com"
+                  autoComplete="email"
+                  value={email}
+                  onChange={(event) => setEmail(event.target.value)}
+                  required
+                />
+              </div>
+            </label>
 
-        <div className="relative bg-[var(--surface-alt)] border border-[var(--secondary-30)] rounded-lg p-8">
-          <div className="absolute top-0 left-0 w-1.5 h-1.5 bg-[var(--secondary-60)]" />
-          <div className="absolute top-0 right-0 w-1.5 h-1.5 bg-[var(--secondary-60)]" />
-          <div className="absolute bottom-0 left-0 w-1.5 h-1.5 bg-[var(--secondary-60)]" />
-          <div className="absolute bottom-0 right-0 w-1.5 h-1.5 bg-[var(--secondary-60)]" />
+            <label className="login-field">
+              <span>Senha</span>
+              <div>
+                <LockKeyhole size={18} aria-hidden="true" />
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  placeholder="Digite sua senha"
+                  autoComplete="current-password"
+                  value={password}
+                  onChange={(event) => setPassword(event.target.value)}
+                  required
+                />
+                <button
+                  type="button"
+                  className="login-password-toggle"
+                  onClick={() => setShowPassword((current) => !current)}
+                  aria-label={showPassword ? 'Ocultar senha' : 'Mostrar senha'}
+                >
+                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
+              </div>
+            </label>
 
-          <AuthTabs mode={mode} switchMode={switchMode} />
+            <div className="login-actions">
+              <button
+                type="button"
+                className="login-forgot-password"
+                onClick={() => toast.info('Fale com o administrador da sua empresa para redefinir a senha.')}
+              >
+                Esqueci minha senha
+              </button>
+            </div>
 
-          <AnimatePresence mode="wait">
-            {mode === 'login' ? (
-              <LoginForm
-                login={login}
-                loading={loading}
-                errors={errors}
-                onSubmit={handleLogin}
-              />
-            ) : (
-              <RegisterForm
-                register={register}
-                loading={loading}
-                errors={errors}
-                onSubmit={handleRegister}
-              />
-            )}
-          </AnimatePresence>
-        </div>
+            <button type="submit" className="login-submit" disabled={isLoading}>
+              {isLoading ? 'Entrando...' : 'Entrar na plataforma'}
+              {!isLoading && <ArrowRight size={18} aria-hidden="true" />}
+            </button>
+          </form>
 
-        <div className="absolute inset-0 rounded-lg -z-10 shadow-[0_8px_30px_rgba(0,0,0,0.35)]" />
-      </motion.div>
+          <div className="login-help">
+            <span>Não possui acesso?</span>
+            <p>Peça um convite ao administrador da sua empresa.</p>
+          </div>
+        </section>
 
-      <motion.div
-        className="text-center mt-6"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.4 }}
-      >
-        <p className="text-[var(--text-secondary)]">
-          Segurança descomplicada • Proteção gamificada
-        </p>
-      </motion.div>
+        <p className="login-footer"><ShieldCheck size={14} aria-hidden="true" /> Acesso exclusivo para usuários autorizados</p>
+      </motion.main>
     </div>
   );
 }
