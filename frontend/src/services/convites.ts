@@ -24,23 +24,32 @@ export interface ConvitePublico {
   expires_at: string;
 }
 
-export async function listarUsuarios(): Promise<UsuarioEmpresa[]> {
-  const response = await api.get('/admin/empresa/usuarios');
+function empresaPath(empresaId?: number) {
+  return empresaId
+    ? `/platform/admin/empresas/${empresaId}`
+    : '/admin/empresa';
+}
+
+export async function listarUsuarios(empresaId?: number): Promise<UsuarioEmpresa[]> {
+  const response = await api.get(`${empresaPath(empresaId)}/usuarios`);
   return response.data;
 }
 
-export async function listarConvites(): Promise<Convite[]> {
-  const response = await api.get('/admin/empresa/convites');
+export async function listarConvites(empresaId?: number): Promise<Convite[]> {
+  const response = await api.get(`${empresaPath(empresaId)}/convites`);
   return response.data;
 }
 
-export async function criarConvite(data: { email?: string; validade_dias: number; max_uses: number }) {
-  const response = await api.post('/admin/empresa/convites', data);
+export async function criarConvite(
+  data: { email?: string; validade_dias: number; max_uses: number },
+  empresaId?: number,
+) {
+  const response = await api.post(`${empresaPath(empresaId)}/convites`, data);
   return response.data as { convite: Convite; token: string };
 }
 
-export async function revogarConvite(id: number): Promise<Convite> {
-  const response = await api.post(`/admin/empresa/convites/${id}/revogar`);
+export async function revogarConvite(id: number, empresaId?: number): Promise<Convite> {
+  const response = await api.post(`${empresaPath(empresaId)}/convites/${id}/revogar`);
   return response.data;
 }
 

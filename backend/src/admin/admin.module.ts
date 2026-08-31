@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { AdminController } from './admin.controller';
+import { PlatformAdminController } from './platform-admin.controller';
 import { AdminService } from './admin.service';
 import { ConvitesController } from './convites.controller';
 import { ConvitesService } from './convites.service';
@@ -11,7 +12,7 @@ import { S3Service } from '../conteudo/s3/s3.service';
 
 @Module({
   imports: [DatabaseModule],
-  controllers: [AdminController, ConvitesController],
+  controllers: [AdminController, ConvitesController, PlatformAdminController],
   providers: [
     ...empresaProviders,
     ...usuarioProviders,

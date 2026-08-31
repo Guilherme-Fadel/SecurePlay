@@ -9,7 +9,12 @@ function formatDate(value: string) {
   return new Intl.DateTimeFormat('pt-BR', { dateStyle: 'medium' }).format(new Date(value));
 }
 
-export function UserManagementTab() {
+interface UserManagementTabProps {
+  empresaId?: number;
+  empresaNome?: string;
+}
+
+export function UserManagementTab({ empresaId, empresaNome }: UserManagementTabProps) {
   const [usuarios, setUsuarios] = useState<UsuarioEmpresa[]>([]);
   const [convites, setConvites] = useState<Convite[]>([]);
   const [email, setEmail] = useState('');
@@ -22,7 +27,10 @@ export function UserManagementTab() {
 
   const carregar = async () => {
     try {
-      const [nextUsuarios, nextConvites] = await Promise.all([listarUsuarios(), listarConvites()]);
+      const [nextUsuarios, nextConvites] = await Promise.all([
+        listarUsuarios(empresaId),
+        listarConvites(empresaId),
+      ]);
       setUsuarios(nextUsuarios);
       setConvites(nextConvites);
     } catch {
@@ -30,13 +38,16 @@ export function UserManagementTab() {
     }
   };
 
-  useEffect(() => { void carregar(); }, []);
+  useEffect(() => { void carregar(); }, [empresaId]);
 
   const criar = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setCreating(true);
     try {
-      const result = await criarConvite({ email: email.trim() || undefined, validade_dias: validade, max_uses: maxUses });
+      const result = await criarConvite(
+        { email: email.trim() || undefined, validade_dias: validade, max_uses: maxUses },
+        empresaId,
+      );
       const link = `${window.location.origin}/cadastro/${result.token}`;
       setLinkGerado(link);
       setConvites((current) => [result.convite, ...current]);
@@ -50,7 +61,7 @@ export function UserManagementTab() {
   const revogar = async (id: number) => {
     setRevoking(id);
     try {
-      const updated = await revogarConvite(id);
+      const updated = await revogarConvite(id, empresaId);
       setConvites((current) => current.map((convite) => convite.id === id ? updated : convite));
       setFeedback('Convite revogado. O link não pode mais ser utilizado.');
     } catch { setFeedback('Não foi possível revogar o convite.'); }
@@ -66,7 +77,7 @@ export function UserManagementTab() {
 
   return <div className="admin-users-content">
     <div className="admin-users-heading">
-      <div><span className="admin-page-eyebrow">Acessos da empresa</span><h1>Usuários e convites</h1><p>Crie acessos seguros e acompanhe quem já entrou na plataforma.</p></div>
+      <div><span className="admin-page-eyebrow">Acessos {empresaNome ? `· ${empresaNome}` : 'da empresa'}</span><h1>Usuários e convites</h1><p>Crie acessos seguros e acompanhe quem já entrou na plataforma.</p></div>
       <div className="admin-users-stat"><UsersRound size={18} /><span><strong>{usuarios.length}</strong> usuários</span><i /><span><strong>{ativos}</strong> convites ativos</span></div>
     </div>
 

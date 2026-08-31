@@ -30,8 +30,12 @@ export class ConvitesService {
 
   async listarUsuarios(userId: number) {
     const empresa = await this.getEmpresaDoAdministrador(userId);
+    return this.listarUsuariosDaEmpresa(empresa.id);
+  }
+
+  async listarUsuariosDaEmpresa(empresaId: number) {
     const usuarios = await this.usuarioRepository.find({
-      where: { empresa_id: empresa.id },
+      where: { empresa_id: empresaId },
       order: { name: 'ASC' },
     });
 
@@ -46,6 +50,15 @@ export class ConvitesService {
 
   async criar(userId: number, dto: CreateConviteDto) {
     const empresa = await this.getEmpresaDoAdministrador(userId);
+    return this.criarParaEmpresa(empresa.id, userId, dto);
+  }
+
+  async criarParaEmpresa(
+    empresaId: number,
+    userId: number,
+    dto: CreateConviteDto,
+  ) {
+    await this.getEmpresa(empresaId);
     const email = dto.email?.trim().toLowerCase() || null;
 
     if (email && (await this.usuarioRepository.findOne({ where: { email } }))) {
@@ -60,7 +73,7 @@ export class ConvitesService {
     const convite = this.conviteRepository.create({
       token_hash: this.hashToken(token),
       email,
-      empresa_id: empresa.id,
+      empresa_id: empresaId,
       criado_por_id: userId,
       expires_at: expiresAt,
       max_uses: dto.max_uses ?? 1,
@@ -75,8 +88,12 @@ export class ConvitesService {
 
   async listar(userId: number) {
     const empresa = await this.getEmpresaDoAdministrador(userId);
+    return this.listarDaEmpresa(empresa.id);
+  }
+
+  async listarDaEmpresa(empresaId: number) {
     const convites = await this.conviteRepository.find({
-      where: { empresa_id: empresa.id },
+      where: { empresa_id: empresaId },
       order: { created_at: 'DESC' },
     });
     return convites.map((convite) => this.toResumo(convite));
@@ -84,8 +101,12 @@ export class ConvitesService {
 
   async revogar(userId: number, conviteId: number) {
     const empresa = await this.getEmpresaDoAdministrador(userId);
+    return this.revogarDaEmpresa(empresa.id, conviteId);
+  }
+
+  async revogarDaEmpresa(empresaId: number, conviteId: number) {
     const convite = await this.conviteRepository.findOne({
-      where: { id: conviteId, empresa_id: empresa.id },
+      where: { id: conviteId, empresa_id: empresaId },
     });
     if (!convite) throw new NotFoundException('Convite não encontrado');
 
@@ -150,7 +171,11 @@ export class ConvitesService {
       throw new NotFoundException('Empresa não encontrada para este administrador');
     }
 
-    const empresa = await this.empresaRepository.findOne({ where: { id: usuario.empresa_id } });
+    return this.getEmpresa(usuario.empresa_id);
+  }
+
+  private async getEmpresa(empresaId: number) {
+    const empresa = await this.empresaRepository.findOne({ where: { id: empresaId } });
     if (!empresa) throw new NotFoundException('Empresa não encontrada');
     return empresa;
   }

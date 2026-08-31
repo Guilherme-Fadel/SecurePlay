@@ -1,15 +1,17 @@
-import { useEffect, useState } from 'react';
+import { lazy, Suspense, useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import {
   BellRing, Check, ChevronRight, Clock3, Globe2, KeyRound, Laptop, LockKeyhole,
-  Monitor, Moon, Palette, RotateCcw, Save, Settings2, ShieldCheck, Sparkles, Sun, Volume2,
+  LayoutTemplate, Monitor, Moon, Palette, RotateCcw, Save, Settings2, ShieldCheck, Sparkles, Sun, UsersRound, Volume2,
 } from 'lucide-react';
 import { AppButton } from '@/components/ui/buttons/AppButton';
 import { InfoCard } from '@/components/ui/visuals/InfoCard';
 import { cn } from '@/lib/utils';
 import { useTheme, type Theme } from '@/contexts/ThemeContext';
+import { useCurrentUser } from '@/hooks/useCurrentUser';
+const CompanyAdminSettings = lazy(() => import('@/pages/Admin'));
 
-type SettingsSection = 'experiencia' | 'notificacoes' | 'seguranca';
+type SettingsSection = 'experiencia' | 'notificacoes' | 'seguranca' | 'usuarios_empresa' | 'layout_empresa';
 
 interface UserPreferences {
   emailNotifications: boolean;
@@ -30,6 +32,10 @@ const settingSections: Array<{ id: SettingsSection; label: string; description: 
   { id: 'experiencia', label: 'Experiência', description: 'Tema e interface', icon: Palette },
   { id: 'notificacoes', label: 'Notificações', description: 'Alertas e lembretes', icon: BellRing },
   { id: 'seguranca', label: 'Segurança', description: 'Acesso e privacidade', icon: ShieldCheck },
+];
+const companyAdminSections: Array<{ id: SettingsSection; label: string; description: string; icon: typeof Palette }> = [
+  { id: 'usuarios_empresa', label: 'Usuários da empresa', description: 'Convites e acessos', icon: UsersRound },
+  { id: 'layout_empresa', label: 'Layout da empresa', description: 'Marca e paleta', icon: LayoutTemplate },
 ];
 
 function readPreferences(): UserPreferences {
@@ -56,6 +62,7 @@ function ToggleRow({ title, description, checked, onChange, icon: Icon }: Toggle
 
 export function Settings() {
   const { theme, setTheme } = useTheme();
+  const { user } = useCurrentUser();
   const [activeSection, setActiveSection] = useState<SettingsSection>('experiencia');
   const [preferences, setPreferences] = useState<UserPreferences>(readPreferences);
   const [saved, setSaved] = useState(false);
@@ -80,6 +87,9 @@ export function Settings() {
     window.localStorage.removeItem(STORAGE_KEY);
     setSaved(false);
   };
+  const visibleSections = user?.role === 'admin'
+    ? [...settingSections, ...companyAdminSections]
+    : settingSections;
 
   return <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.28 }} className="settings-page app-page">
     <header className="settings-page-heading">
@@ -97,7 +107,7 @@ export function Settings() {
     <div className="settings-workspace">
       <aside className="settings-navigation" aria-label="Categorias de configurações">
         <span className="settings-navigation-label">Configurações do usuário</span>
-        {settingSections.map(({ id, label, description, icon: Icon }) => <button key={id} type="button" onClick={() => setActiveSection(id)} className={cn('settings-navigation-item', activeSection === id && 'is-active')} aria-current={activeSection === id ? 'page' : undefined}>
+        {visibleSections.map(({ id, label, description, icon: Icon }) => <button key={id} type="button" onClick={() => setActiveSection(id)} className={cn('settings-navigation-item', activeSection === id && 'is-active')} aria-current={activeSection === id ? 'page' : undefined}>
           <span className="settings-navigation-icon"><Icon size={17} /></span>
           <span><strong>{label}</strong><small>{description}</small></span><ChevronRight size={16} className="settings-navigation-arrow" />
         </button>)}
@@ -152,6 +162,10 @@ export function Settings() {
             <InfoCard.Footer><span className="settings-card-footnote">Para alterações de senha ou acesso, fale com o administrador da sua empresa.</span></InfoCard.Footer>
           </InfoCard>
         </div>}
+
+        {activeSection === 'usuarios_empresa' && user?.role === 'admin' && <Suspense fallback={null}><CompanyAdminSettings initialTab="usuarios" lockedTab /></Suspense>}
+
+        {activeSection === 'layout_empresa' && user?.role === 'admin' && <Suspense fallback={null}><CompanyAdminSettings initialTab="layout" lockedTab /></Suspense>}
       </section>
     </div>
   </motion.div>;

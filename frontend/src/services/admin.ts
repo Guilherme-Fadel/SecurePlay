@@ -7,17 +7,38 @@ export interface TemaEmpresa {
   paleta: EmpresaPaleta | null;
 }
 
-export async function getTema(): Promise<TemaEmpresa> {
-  const response = await api.get('/admin/empresa/tema');
+export interface EmpresaAdministravel extends TemaEmpresa {
+  id: number;
+}
+
+function empresaPath(empresaId?: number) {
+  return empresaId
+    ? `/platform/admin/empresas/${empresaId}`
+    : '/admin/empresa';
+}
+
+export async function listarEmpresas(): Promise<EmpresaAdministravel[]> {
+  const response = await api.get('/platform/admin/empresas');
   return response.data;
 }
 
-export async function updateTema(data: { paleta?: EmpresaPaleta; logo_url?: string }): Promise<TemaEmpresa> {
-  const response = await api.put('/admin/empresa/tema', data);
+export async function getTema(empresaId?: number): Promise<TemaEmpresa> {
+  const response = await api.get(`${empresaPath(empresaId)}/tema`);
   return response.data;
 }
 
-export async function presignLogo(contentType: string): Promise<{ uploadUrl: string; key: string }> {
-  const response = await api.post('/admin/empresa/logo/presign', { contentType });
+export async function updateTema(
+  data: { paleta?: EmpresaPaleta; logo_url?: string },
+  empresaId?: number,
+): Promise<TemaEmpresa> {
+  const response = await api.put(`${empresaPath(empresaId)}/tema`, data);
+  return response.data;
+}
+
+export async function presignLogo(
+  contentType: string,
+  empresaId?: number,
+): Promise<{ uploadUrl: string; key: string }> {
+  const response = await api.post(`${empresaPath(empresaId)}/logo/presign`, { contentType });
   return response.data;
 }

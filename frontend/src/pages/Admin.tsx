@@ -1,7 +1,13 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
-import { getTema, updateTema, presignLogo } from '@/services/admin';
+import {
+  getTema,
+  updateTema,
+  presignLogo,
+  listarEmpresas,
+  type EmpresaAdministravel,
+} from '@/services/admin';
 import { EmpresaPaleta } from '@/services/me';
 import { DEFAULT_PALETTES } from '@/lib/defaultPalettes';
 import { cn } from '@/lib/utils';
@@ -96,7 +102,17 @@ function derivePalette(primaryHex: string): EmpresaPaleta {
         text_secondary: isDark ? '#94a3b8' : '#475569',
     };
 }
-export default function Admin() {
+interface AdminProps {
+  platformMode?: boolean;
+  initialTab?: 'usuarios' | 'layout';
+  lockedTab?: boolean;
+}
+
+export default function Admin({
+  platformMode = false,
+  initialTab = 'usuarios',
+  lockedTab = false,
+}: AdminProps) {
     const { user, loading: userLoading, setSession } = useCurrentUser();
     const { setActiveSection } = useSectionContext();
     const [paleta, setPaleta] = useState<EmpresaPaleta>(DEFAULT_PALETTES[0].paleta);
@@ -106,9 +122,31 @@ export default function Admin() {
     const [saving, setSaving] = useState(false);
     const [message, setMessage] = useState<string | null>(null);
     const [uploading, setUploading] = useState(false);
-    const [activeTab, setActiveTab] = useState<'usuarios' | 'layout'>('usuarios');
+    const [activeTab, setActiveTab] = useState<'usuarios' | 'layout'>(initialTab);
+    const [empresas, setEmpresas] = useState<EmpresaAdministravel[]>([]);
+    const [empresaSelecionadaId, setEmpresaSelecionadaId] = useState<number | null>(null);
+    const empresaSelecionada = empresas.find((empresa) => empresa.id === empresaSelecionadaId) ?? null;
+    const empresaAlvoId = platformMode ? empresaSelecionadaId ?? undefined : undefined;
+
     useEffect(() => {
-        getTema()
+        setActiveTab(initialTab);
+    }, [initialTab]);
+
+    useEffect(() => {
+        if (!platformMode)
+            return;
+        listarEmpresas()
+            .then((data) => {
+            setEmpresas(data);
+            setEmpresaSelecionadaId((current) => current ?? data[0]?.id ?? null);
+        })
+            .catch(() => setMessage('Erro ao carregar as empresas.'));
+    }, [platformMode]);
+
+    useEffect(() => {
+        if (platformMode && !empresaSelecionadaId)
+            return;
+        getTema(empresaAlvoId)
             .then((data) => {
             setEmpresaNome(data.nome);
             if (data.paleta)
@@ -120,7 +158,7 @@ export default function Admin() {
         })
             .catch(() => {
         });
-    }, []);
+    }, [empresaAlvoId, empresaSelecionadaId, platformMode]);
     const handleColorChange = (field: keyof EmpresaPaleta, value: string) => {
         setPaleta((prev) => ({ ...prev, [field]: value }));
     };
@@ -153,7 +191,7 @@ export default function Admin() {
         }
         setUploading(true);
         try {
-            const { uploadUrl, key } = await presignLogo(file.type);
+            const { uploadUrl, key } = await presignLogo(file.type, empresaAlvoId);
             await fetch(uploadUrl, {
                 method: 'PUT',
                 body: file,
@@ -174,8 +212,8 @@ export default function Admin() {
     const handleSave = async () => {
         setSaving(true);
         try {
-            const updatedTema = await updateTema({ paleta, logo_url: logoUrl || undefined });
-            if (user) {
+            const updatedTema = await updateTema({ paleta, logo_url: logoUrl || undefined }, empresaAlvoId);
+            if (user && !platformMode) {
                 setSession({
                     ...user,
                     empresa_paleta: updatedTema.paleta,
@@ -195,32 +233,40 @@ export default function Admin() {
     };
     if (userLoading)
         return null;
-    if (!user || user.role !== 'admin')
+    if (!user || (platformMode ? user.role !== 'platform_admin' : user.role !== 'admin'))
         return null;
     return (<div className="admin-page-shell admin-page-embedded" style={buildBrandVars(paleta) as React.CSSProperties}>
-        <div className="admin-embedded-return">
+        {platformMode && !lockedTab && <div className="admin-embedded-return">
           <AppButton variant="ghost" size="sm" icon={<ArrowLeft size={15}/>} onClick={() => setActiveSection('dashboard')}>
             Voltar ao painel
           </AppButton>
-        </div>
+        </div>}
 
-        <section className="admin-workspace">
-          <aside className="admin-tabs" aria-label="Seções administrativas">
-            <span className="admin-tabs-label">Administração</span>
+        {platformMode && <div className="admin-platform-context">
+          <span>Empresa administrada</span>
+          <select value={empresaSelecionadaId ?? ''} onChange={(event) => setEmpresaSelecionadaId(Number(event.target.value))} aria-label="Selecionar empresa">
+            <option value="" disabled>Selecione uma empresa</option>
+            {empresas.map((empresa) => <option key={empresa.id} value={empresa.id}>{empresa.nome}</option>)}
+          </select>
+        </div>}
+
+        {platformMode && !empresaSelecionada ? <div className="admin-feedback is-error" role="status">Selecione uma empresa para administrar usuários, convites e layout.</div> : <section className={cn('admin-workspace', lockedTab && 'is-single-column')}>
+          {!lockedTab && <aside className="admin-tabs" aria-label="Seções administrativas">
+            <span className="admin-tabs-label">{platformMode ? 'Administração global' : 'Configurações da empresa'}</span>
             <button type="button" onClick={() => setActiveTab('usuarios')} className={cn('admin-tab', activeTab === 'usuarios' && 'is-active')}>
               <UsersRound size={17}/><span>Usuários</span>
             </button>
             <button type="button" onClick={() => setActiveTab('layout')} className={cn('admin-tab', activeTab === 'layout' && 'is-active')}>
               <LayoutTemplate size={17}/><span>Layout</span>
             </button>
-          </aside>
+          </aside>}
 
           <section className="admin-workspace-content">
-            {activeTab === 'usuarios' ? <UserManagementTab/> : <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }} className="app-page admin-page-content">
+            {activeTab === 'usuarios' ? <UserManagementTab empresaId={empresaAlvoId} empresaNome={platformMode ? empresaSelecionada?.nome : undefined}/> : <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }} className="app-page admin-page-content">
             <div className="admin-page-heading">
               <div>
                 <span className="admin-page-eyebrow">Identidade visual</span>
-                <h1>Personalização da empresa</h1>
+                  <h1>{platformMode ? 'Layout da empresa selecionada' : 'Personalização da empresa'}</h1>
                 <p>
                   Ajuste a marca e as cores usadas na experiência de {empresaNome || 'sua empresa'}.
                 </p>
@@ -391,6 +437,6 @@ export default function Admin() {
             </div>
             </motion.div>}
           </section>
-        </section>
+        </section>}
       </div>);
 }

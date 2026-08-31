@@ -28,7 +28,7 @@ function HomeContent() {
         conteudos: <Conteudos />,
         configuracoes: <Settings />,
         perfil: <Perfil />,
-        admin: <Suspense fallback={null}><Admin /></Suspense>,
+        admin: <Suspense fallback={null}><Admin platformMode /></Suspense>,
     };
     useEmpresaTema();
     const [activeSection, setActiveSectionState] = useState<Section>(() => {
@@ -67,7 +67,7 @@ function HomeContent() {
             <SidebarItem id="ranking" icon={<TrophyIcon />} text="Ranking" active={activeSection === 'ranking'} onSelect={setActiveSection}/>
             <SidebarItem id="conquistas" icon={<AwardIcon />} text="Conquistas" active={activeSection === 'conquistas'} onSelect={setActiveSection}/>
             <SidebarItem id="configuracoes" icon={<SettingsIcon />} text="Configurações" active={activeSection === 'configuracoes'} onSelect={setActiveSection}/>
-            {user?.role === 'admin' && <SidebarItem id="admin" icon={<ShieldIcon />} text="Administrador" active={activeSection === 'admin'} onSelect={setActiveSection}/>} 
+            {user?.role === 'platform_admin' && <SidebarItem id="admin" icon={<ShieldIcon />} text="Administrador" active={activeSection === 'admin'} onSelect={setActiveSection}/>}
           </Sidebar>
 
           <div className="flex flex-col flex-1 min-w-0 min-h-0">
