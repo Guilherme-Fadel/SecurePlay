@@ -1,5 +1,10 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Notification, getNotification, markNotificationAsRead } from '@/services/notification';
+import {
+    Notification,
+    getNotification,
+    markAllNotificationsAsRead,
+    markNotificationAsRead,
+} from '@/services/notification';
 import { useSocket } from '@/hooks/useSocket';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 
@@ -48,7 +53,14 @@ export function useNotification() {
         );
     }, []);
 
-    const hasUnread = notification.some((n) => !n.readed);
+    const markAllAsRead = useCallback(async () => {
+        if (!userId) return;
+        await markAllNotificationsAsRead(userId);
+        setNotification((prev) => prev.map((item) => ({ ...item, readed: true })));
+    }, [userId]);
 
-    return { notification, loading, hasUnread, markAsRead };
+    const hasUnread = notification.some((n) => !n.readed);
+    const unreadCount = notification.filter((n) => !n.readed).length;
+
+    return { notification, loading, hasUnread, unreadCount, markAsRead, markAllAsRead };
 }

@@ -1,4 +1,4 @@
-import { Bell } from 'lucide-react';
+import { Bell, BellRing, CheckCheck, Info, ShieldAlert, Sparkles } from 'lucide-react';
 import { useNotification } from '@/hooks/useNotification';
 import { timeAgo } from '@/services/notification';
 
@@ -9,19 +9,50 @@ interface NotificationsMenuProps {
 }
 
 export function NotificationsMenu({ open, onToggle, onClose }: NotificationsMenuProps) {
-  const { notification, loading, hasUnread, markAsRead } = useNotification();
+  const {
+    notification,
+    loading,
+    hasUnread,
+    unreadCount,
+    markAsRead,
+    markAllAsRead,
+  } = useNotification();
 
-  if (loading) return null;
+  const handleMarkAllAsRead = async () => {
+    try {
+      await markAllAsRead();
+    } catch {
+      // A próxima atualização da lista preserva o estado correto caso a requisição falhe.
+    }
+  };
+
+  const getNotificationIcon = (type: string) => {
+    const normalizedType = type.toLowerCase();
+
+    if (normalizedType.includes('alert') || normalizedType.includes('seguran')) {
+      return ShieldAlert;
+    }
+
+    if (normalizedType.includes('conquista') || normalizedType.includes('reward')) {
+      return Sparkles;
+    }
+
+    return Info;
+  };
 
   return (
-    <div className="relative">
+    <div className="notifications-menu">
       <button
         onClick={onToggle}
-        className="relative p-2 hover:bg-[var(--background)] rounded-md transition-colors text-[var(--text-primary)]"
+        className="notification-trigger"
+        aria-label="Abrir notificações"
+        aria-expanded={open}
       >
         <Bell size={20} />
         {hasUnread && (
-          <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full shadow-[0_0_6px_rgba(239,68,68,0.8)]" />
+          <span className="notification-unread-badge" aria-label={`${unreadCount} notificações não lidas`}>
+            {unreadCount > 9 ? '9+' : unreadCount}
+          </span>
         )}
       </button>
 
@@ -29,39 +60,61 @@ export function NotificationsMenu({ open, onToggle, onClose }: NotificationsMenu
         <>
           <div className="fixed inset-0 z-40" onClick={onClose} />
 
-          <div className="absolute right-0 top-12 w-80 bg-[var(--surface)] border-2 border-[var(--border)] rounded-lg shadow-xl z-50">
-            <div className="p-4 border-b-2 border-[var(--border)]">
-              <h3 className="text-[var(--text-primary)]">Notificações</h3>
+          <section className="notification-popover" aria-label="Notificações">
+            <div className="notification-popover-header">
+              <div className="notification-popover-title">
+                <span className="notification-heading-icon"><BellRing size={17} /></span>
+                <div>
+                  <h3>Notificações</h3>
+                  <p>{hasUnread ? `${unreadCount} não lida${unreadCount > 1 ? 's' : ''}` : 'Tudo em dia'}</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                className="notification-read-all"
+                onClick={handleMarkAllAsRead}
+                disabled={!hasUnread}
+              >
+                <CheckCheck size={15} />
+                Ler todas
+              </button>
             </div>
 
-            <div className="max-h-96 overflow-y-auto">
-              {notification.length === 0 && (
-                <p className="p-4 text-[var(--text-secondary)] text-sm text-center">Nenhuma notificação</p>
+            <div className="notification-list" aria-live="polite">
+              {loading && (
+                <div className="notification-loading">Atualizando notificações...</div>
               )}
-              {notification.map((item) => (
-                <div
-                  key={item.id}
-                  onClick={() => { if (!item.readed) markAsRead(item.id); }}
-                  className={`p-4 border-b border-[var(--border)] transition-colors hover:bg-[var(--background)] ${!item.readed ? 'cursor-pointer border-l-2 border-l-red-500' : 'cursor-default'}`}
-                >
-                  <div className="flex items-center justify-between gap-2">
-                    <p className={`text-[var(--font-xs)] ${!item.readed ? 'text-[var(--text-primary)] font-semibold' : 'text-[var(--text-secondary)]'}`}>
-                      {item.title}
-                    </p>
-                    {!item.readed && (
-                      <span className="w-2 h-2 min-w-[8px] bg-red-500 rounded-full" />
-                    )}
-                  </div>
-                  <p className="text-[var(--text-secondary)] text-[var(--font-xs)] mt-1 font-[var(--font-family-inter)]">
-                    {item.message}
-                  </p>
-                  <p className="text-[var(--text-secondary)] text-[var(--font-xs)] mt-1 font-[var(--font-family-inter)]">
-                    {timeAgo(item.created_at)}
-                  </p>
+              {!loading && notification.length === 0 && (
+                <div className="notification-empty">
+                  <span><Bell size={20} /></span>
+                  <strong>Nenhuma notificação por aqui</strong>
+                  <p>Quando houver novidades, elas aparecerão neste espaço.</p>
                 </div>
-              ))}
+              )}
+              {!loading && notification.map((item) => {
+                const Icon = getNotificationIcon(item.type);
+
+                return (
+                <button
+                  type="button"
+                  key={item.id}
+                  onClick={() => { if (!item.readed) void markAsRead(item.id); }}
+                  className={`notification-item ${!item.readed ? 'is-unread' : ''}`}
+                >
+                  <span className="notification-item-icon"><Icon size={16} /></span>
+                  <span className="notification-item-content">
+                    <span className="notification-item-title-row">
+                      <strong>{item.title}</strong>
+                      {!item.readed && <span className="notification-item-status">Nova</span>}
+                    </span>
+                    <span className="notification-item-message">{item.message}</span>
+                    <span className="notification-item-time">{timeAgo(item.created_at)}</span>
+                  </span>
+                </button>
+                );
+              })}
             </div>
-          </div>
+          </section>
         </>
       )}
     </div>

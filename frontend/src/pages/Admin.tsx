@@ -1,18 +1,19 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { getTema, updateTema, presignLogo } from '@/services/admin';
 import { EmpresaPaleta } from '@/services/me';
 import { DEFAULT_PALETTES } from '@/lib/defaultPalettes';
 import { cn } from '@/lib/utils';
-import { ThemeProvider } from '@/contexts/ThemeContext';
+import { useSectionContext } from '@/contexts/SectionContext';
 import { buildBrandVars } from '@/hooks/useEmpresaTema';
 import { AppButton } from '@/components/ui/buttons/AppButton';
 import { InfoCard } from '@/components/ui/visuals/InfoCard';
 import { AppSectionHeader } from '@/components/ui/visuals/AppSectionHeader';
-import { AlertCircle, ArrowLeft, Building2, CheckCircle2, Eye, Palette, RotateCcw, Save, ShieldCheck, SlidersHorizontal, Upload, WandSparkles, } from 'lucide-react';
+import { UserManagementTab } from '@/components/admin/UserManagementTab';
+import { AlertCircle, ArrowLeft, Building2, CheckCircle2, Eye, LayoutTemplate, Palette, RotateCcw, Save, ShieldCheck, SlidersHorizontal, Upload, UsersRound, WandSparkles, } from 'lucide-react';
 import '@/styles/app-ui.css';
+import './admin-users.css';
 function hexToHsl(hex: string): [
     number,
     number,
@@ -97,7 +98,7 @@ function derivePalette(primaryHex: string): EmpresaPaleta {
 }
 export default function Admin() {
     const { user, loading: userLoading, setSession } = useCurrentUser();
-    const navigate = useNavigate();
+    const { setActiveSection } = useSectionContext();
     const [paleta, setPaleta] = useState<EmpresaPaleta>(DEFAULT_PALETTES[0].paleta);
     const [logoUrl, setLogoUrl] = useState<string | null>(null);
     const [logoPreview, setLogoPreview] = useState<string | null>(null);
@@ -105,11 +106,7 @@ export default function Admin() {
     const [saving, setSaving] = useState(false);
     const [message, setMessage] = useState<string | null>(null);
     const [uploading, setUploading] = useState(false);
-    useEffect(() => {
-        if (!userLoading && user && user.role !== 'admin') {
-            navigate('/home');
-        }
-    }, [user, userLoading, navigate]);
+    const [activeTab, setActiveTab] = useState<'usuarios' | 'layout'>('usuarios');
     useEffect(() => {
         getTema()
             .then((data) => {
@@ -200,29 +197,26 @@ export default function Admin() {
         return null;
     if (!user || user.role !== 'admin')
         return null;
-    return (<ThemeProvider>
-      <div className="secure-home admin-page-shell" style={buildBrandVars(paleta) as React.CSSProperties}>
-        <header className="admin-topbar">
-          <div className="admin-topbar-brand">
-            <div className="admin-topbar-logo"><ShieldCheck size={21}/></div>
-            <div>
-              <strong>SecurePlay</strong>
-              <span>Área administrativa</span>
-            </div>
-          </div>
-          <div className="admin-topbar-actions">
-            <div className="admin-user-chip">
-              <span>{user.name?.charAt(0).toUpperCase()}</span>
-              <div><strong>{user.name}</strong><small>Administrador</small></div>
-            </div>
-            <AppButton variant="ghost" size="sm" icon={<ArrowLeft size={15}/>} onClick={() => navigate('/home')}>
-              Voltar ao painel
-            </AppButton>
-          </div>
-        </header>
+    return (<div className="admin-page-shell admin-page-embedded" style={buildBrandVars(paleta) as React.CSSProperties}>
+        <div className="admin-embedded-return">
+          <AppButton variant="ghost" size="sm" icon={<ArrowLeft size={15}/>} onClick={() => setActiveSection('dashboard')}>
+            Voltar ao painel
+          </AppButton>
+        </div>
 
-        <main className="admin-page-main">
-          <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }} className="app-page admin-page-content">
+        <section className="admin-workspace">
+          <aside className="admin-tabs" aria-label="Seções administrativas">
+            <span className="admin-tabs-label">Administração</span>
+            <button type="button" onClick={() => setActiveTab('usuarios')} className={cn('admin-tab', activeTab === 'usuarios' && 'is-active')}>
+              <UsersRound size={17}/><span>Usuários</span>
+            </button>
+            <button type="button" onClick={() => setActiveTab('layout')} className={cn('admin-tab', activeTab === 'layout' && 'is-active')}>
+              <LayoutTemplate size={17}/><span>Layout</span>
+            </button>
+          </aside>
+
+          <section className="admin-workspace-content">
+            {activeTab === 'usuarios' ? <UserManagementTab/> : <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }} className="app-page admin-page-content">
             <div className="admin-page-heading">
               <div>
                 <span className="admin-page-eyebrow">Identidade visual</span>
@@ -395,8 +389,8 @@ export default function Admin() {
                 </div>
               </aside>
             </div>
-          </motion.div>
-        </main>
-      </div>
-    </ThemeProvider>);
+            </motion.div>}
+          </section>
+        </section>
+      </div>);
 }

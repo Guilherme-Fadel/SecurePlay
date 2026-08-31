@@ -2,6 +2,7 @@ import {
   Body,
   Controller,
   Get,
+  Patch,
   Post,
   HttpCode,
   HttpStatus,
@@ -13,6 +14,7 @@ import { LoginDto } from 'src/usuario/dto/login.dto';
 import { UsuarioService } from 'src/usuario/usuario.service';
 import { Public } from './public.decorator';
 import { Throttle } from '@nestjs/throttler';
+import { ChangePasswordDto } from './dto/change-password.dto';
 
 @Controller('auth')
 export class AuthController {
@@ -61,5 +63,12 @@ export class AuthController {
   async me(@Request() req: any, @Response({ passthrough: true }) res: any) {
     res.header('Cache-Control', 'private, no-store');
     return this.usuarioService.getUsuarioDados(req.user.userId);
+  }
+
+  @Patch('password')
+  @HttpCode(HttpStatus.OK)
+  @Throttle({ short: { limit: 5, ttl: 60000 } })
+  async changePassword(@Request() req: any, @Body() dto: ChangePasswordDto) {
+    return this.usuarioService.changePassword(req.user.userId, dto);
   }
 }

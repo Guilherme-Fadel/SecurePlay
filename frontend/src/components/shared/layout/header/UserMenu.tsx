@@ -39,6 +39,9 @@ export function UserMenu({ open, onToggle, onClose }: UserMenuProps) {
       <button
         onClick={onToggle}
         className={cn('secure-user-menu-trigger cosmetic-background-host flex items-center gap-3 px-3 py-2 hover:bg-[var(--background)] rounded-md transition-colors', equippedBackground)}
+        aria-haspopup="menu"
+        aria-expanded={open}
+        aria-label="Abrir opções do perfil"
       >
         <img
           src={`https://ui-avatars.com/api/?name=${encodeURIComponent(user?.name ?? '')}&background=c7d2fe&color=3730a3&bold=true`}
@@ -68,25 +71,29 @@ export function UserMenu({ open, onToggle, onClose }: UserMenuProps) {
         <>
           <div className="fixed inset-0 z-40" onClick={onClose} />
 
-          <div className="absolute right-0 top-14 w-48 bg-[var(--surface)] border-2 border-[var(--border)] rounded-lg shadow-xl z-50">
-            <div className="p-2">
+          <div className="secure-user-dropdown absolute right-0 top-14 z-50" role="menu" aria-label="Opções da conta">
+            <div className="secure-user-dropdown-content">
               <button
-              onClick={() => { setActiveSection('perfil'); onClose(); }}
-              className="w-full text-left px-3 py-2 hover:bg-[var(--background)] rounded-md transition-colors text-[var(--text-primary)]">
+                type="button"
+                role="menuitem"
+                onClick={() => { setActiveSection('perfil'); onClose(); }}
+                className="secure-user-dropdown-item"
+              >
                 Meu Perfil
               </button>
               <button
-              onClick={() => { setActiveSection('configuracoes'); onClose(); }}
-              className="w-full text-left px-3 py-2 hover:bg-[var(--background)] rounded-md transition-colors text-[var(--text-primary)]">
+                type="button"
+                role="menuitem"
+                onClick={() => { setActiveSection('configuracoes'); onClose(); }}
+                className="secure-user-dropdown-item"
+              >
                 Configurações
               </button>
 
-              <div className="border-t border-[var(--border)] my-2" />
+              <div className="secure-user-dropdown-divider" />
 
-              <div className="px-3 py-2 flex items-center justify-between gap-2">
-                <span className="text-[var(--text-secondary)] text-[var(--font-xs)]">
-                  Tema
-                </span>
+              <div className="secure-user-dropdown-theme">
+                <span>Tema</span>
                 <button
                   type="button"
                   role="switch"
@@ -94,16 +101,16 @@ export function UserMenu({ open, onToggle, onClose }: UserMenuProps) {
                   aria-label={theme === 'dark' ? 'Ativar tema claro' : 'Ativar tema escuro'}
                   onClick={toggleTheme}
                   className={cn(
-                    'relative inline-flex h-7 w-14 items-center rounded-full border-2 transition-colors',
+                    'secure-user-theme-switch',
                     theme === 'light'
-                      ? 'bg-[var(--accent-30)] border-[var(--accent-dark)]'
-                      : 'bg-[var(--background)] border-[var(--border)]'
+                      ? 'is-light'
+                      : 'is-dark'
                   )}
                 >
                   <span
                     className={cn(
-                      'inline-flex h-5 w-5 items-center justify-center rounded-full bg-[var(--surface)] shadow transition-transform',
-                      theme === 'light' ? 'translate-x-7' : 'translate-x-1'
+                      'secure-user-theme-switch-thumb',
+                      theme === 'light' ? 'is-light' : 'is-dark'
                     )}
                   >
                     {theme === 'light' ? (
@@ -115,10 +122,13 @@ export function UserMenu({ open, onToggle, onClose }: UserMenuProps) {
                 </button>
               </div>
 
-              <div className="border-t border-[var(--border)] my-2" />
+              <div className="secure-user-dropdown-divider" />
               <button
-              onClick={handleLogout}
-              className="w-full text-left px-3 py-2 hover:bg-[var(--background)] rounded-md transition-colors text-[var(--danger)]">
+                type="button"
+                role="menuitem"
+                onClick={handleLogout}
+                className="secure-user-dropdown-item is-danger"
+              >
                 Sair
               </button>
             </div>

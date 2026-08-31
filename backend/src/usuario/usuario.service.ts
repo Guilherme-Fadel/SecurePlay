@@ -1,9 +1,10 @@
-import { Injectable, Inject, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, Inject, NotFoundException } from '@nestjs/common';
 import { Repository } from 'typeorm';
 import { Usuario } from './usuario.entity';
 import { UsuarioCadastrarDto } from './dto/usuario.cadastrar.dto';
 import { ResultadoDto } from 'src/resultado.dto';
 import * as bcrypt from 'bcrypt';
+import { ChangePasswordDto } from '../auth/dto/change-password.dto';
 @Injectable()
 export class UsuarioService {
   constructor(
@@ -42,6 +43,26 @@ export class UsuarioService {
   async getUsuarioById(id: number): Promise<Usuario | undefined> {
     const usuario = await this.usuarioRepository.findOne({ where: { id } });
     return usuario ?? undefined;
+  }
+  async changePassword(userId: number, data: ChangePasswordDto) {
+    if (data.currentPassword === data.newPassword) {
+      throw new BadRequestException('A nova senha deve ser diferente da senha atual');
+    }
+
+    const usuario = await this.getUsuarioById(userId);
+    if (!usuario) {
+      throw new NotFoundException('Usuário não encontrado');
+    }
+
+    const senhaAtualValida = await bcrypt.compare(data.currentPassword, usuario.password);
+    if (!senhaAtualValida) {
+      throw new BadRequestException('Senha atual inválida');
+    }
+
+    usuario.password = await bcrypt.hash(data.newPassword, 10);
+    await this.usuarioRepository.save(usuario);
+
+    return { message: 'Senha alterada com sucesso' };
   }
   async insertUsuario(data: UsuarioCadastrarDto): Promise<ResultadoDto> {
     const usuarioExistente = await this.getUsuarioByEmail(data.email);

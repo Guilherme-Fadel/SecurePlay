@@ -1,5 +1,358 @@
-import { UnderDevelopment } from "@/components/shared/UnderDevelopment"
+import { useState } from 'react';
+import {
+  BadgeCheck,
+  Building2,
+  Check,
+  Copy,
+  Eye,
+  EyeOff,
+  KeyRound,
+  Mail,
+  Medal,
+  Settings2,
+  ShieldCheck,
+  Sparkles,
+  Target,
+  Trophy,
+  UserRound,
+  Zap,
+} from 'lucide-react';
+import { toast } from 'sonner';
+import { PageTransition } from '@/components/shared/PageTransition';
+import { AppButton } from '@/components/ui/buttons/AppButton';
+import { InfoCard } from '@/components/ui/visuals/InfoCard';
+import { Modal } from '@/components/ui/modal';
+import { useCurrentUser } from '@/hooks/useCurrentUser';
+import { useDashboardStats } from '@/hooks/useDashboard';
+import { useSectionContext } from '@/contexts/SectionContext';
+import { changePassword } from '@/services/profile';
+
+function initials(name?: string) {
+  const parts = name?.trim().split(/\s+/).filter(Boolean) ?? [];
+  return parts.slice(0, 2).map((part) => part.charAt(0).toUpperCase()).join('') || 'SP';
+}
+
+function roleLabel(role?: string) {
+  if (role === 'admin') return 'Administrador';
+  return 'Participante';
+}
+
+function formatNumber(value: number) {
+  return value.toLocaleString('pt-BR');
+}
 
 export function Perfil() {
-  return <UnderDevelopment section="Perfil" />
+  const { user, loading: userLoading } = useCurrentUser();
+  const { stats, loading: statsLoading } = useDashboardStats();
+  const { navigateToSection } = useSectionContext();
+  const [emailCopied, setEmailCopied] = useState(false);
+  const [passwordModalOpen, setPasswordModalOpen] = useState(false);
+  const [passwords, setPasswords] = useState({ currentPassword: '', newPassword: '', confirmPassword: '' });
+  const [showPasswords, setShowPasswords] = useState({ current: false, next: false, confirmation: false });
+  const [passwordError, setPasswordError] = useState<string | null>(null);
+  const [passwordSaving, setPasswordSaving] = useState(false);
+
+  const points = stats?.totalPoints ?? 0;
+  const xpToNextLevel = stats?.xpToNextLevel ?? 0;
+  const xpCeiling = points + xpToNextLevel;
+  const xpProgress = stats && xpCeiling > 0 ? Math.min(100, Math.round((points / xpCeiling) * 100)) : 0;
+  const displayName = user?.name || (userLoading ? 'Carregando perfil...' : 'Participante SecurePlay');
+  const firstName = displayName.split(/\s+/)[0] || 'você';
+  const companyName = user?.empresa_nome || 'Comunidade SecurePlay';
+  const displayLevel = stats?.level ?? user?.level;
+
+  const handleCopyEmail = async () => {
+    if (!user?.email) return;
+
+    try {
+      if (!navigator.clipboard) throw new Error('Clipboard indisponível');
+      await navigator.clipboard.writeText(user.email);
+      setEmailCopied(true);
+      toast.success('E-mail copiado para a área de transferência.');
+      window.setTimeout(() => setEmailCopied(false), 2200);
+    } catch {
+      toast.error('Não foi possível copiar o e-mail neste navegador.');
+    }
+  };
+
+  const closePasswordModal = (force = false) => {
+    if (passwordSaving && !force) return;
+    setPasswordModalOpen(false);
+    setPasswords({ currentPassword: '', newPassword: '', confirmPassword: '' });
+    setPasswordError(null);
+  };
+
+  const handlePasswordChange = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setPasswordError(null);
+
+    if (!passwords.currentPassword || !passwords.newPassword || !passwords.confirmPassword) {
+      setPasswordError('Preencha todos os campos para continuar.');
+      return;
+    }
+    if (passwords.newPassword.length < 6) {
+      setPasswordError('A nova senha deve ter ao menos 6 caracteres.');
+      return;
+    }
+    if (passwords.newPassword !== passwords.confirmPassword) {
+      setPasswordError('A confirmação não corresponde à nova senha.');
+      return;
+    }
+    if (passwords.currentPassword === passwords.newPassword) {
+      setPasswordError('Escolha uma nova senha diferente da atual.');
+      return;
+    }
+
+    setPasswordSaving(true);
+    try {
+      await changePassword({
+        currentPassword: passwords.currentPassword,
+        newPassword: passwords.newPassword,
+      });
+      toast.success('Senha alterada com sucesso.');
+      closePasswordModal(true);
+    } catch (error: unknown) {
+      const response = error as { response?: { data?: { message?: string | string[] } } };
+      const message = response.response?.data?.message;
+      setPasswordError(Array.isArray(message) ? message[0] : message || 'Não foi possível alterar a senha. Tente novamente.');
+    } finally {
+      setPasswordSaving(false);
+    }
+  };
+
+  return (
+    <PageTransition>
+      <div className="profile-page app-page">
+        <header className="profile-page-heading">
+          <div>
+            <span className="profile-eyebrow"><UserRound size={13} /> Conta</span>
+            <h1>Meu Perfil</h1>
+            <p>Veja sua identidade, progresso e informações de acesso na plataforma.</p>
+          </div>
+          <AppButton
+            size="sm"
+            variant="ghost"
+            icon={<Settings2 size={15} />}
+            onClick={() => navigateToSection('configuracoes')}
+          >
+            Configurações
+          </AppButton>
+        </header>
+
+        <InfoCard raised className="profile-hero">
+          <div className="profile-hero-accent" aria-hidden="true" />
+          <div className="profile-hero-main">
+            <div className="profile-avatar" aria-hidden="true">{initials(user?.name)}</div>
+            <div className="profile-identity">
+              <div className="profile-identity-heading">
+                <h2>{displayName}</h2>
+                <span className="profile-role-chip"><ShieldCheck size={13} /> {roleLabel(user?.role)}</span>
+              </div>
+              <div className="profile-identity-meta">
+                <span><Building2 size={14} /> {companyName}</span>
+                <span><BadgeCheck size={14} /> Conta ativa</span>
+              </div>
+              <div className="profile-email-line">
+                <Mail size={14} />
+                <span>{user?.email ?? (userLoading ? 'Sincronizando e-mail...' : 'E-mail não informado')}</span>
+                {user?.email && (
+                  <button
+                    type="button"
+                    className="profile-copy-email"
+                    onClick={handleCopyEmail}
+                    aria-label={emailCopied ? 'E-mail copiado' : 'Copiar e-mail'}
+                    title={emailCopied ? 'E-mail copiado' : 'Copiar e-mail'}
+                  >
+                    {emailCopied ? <Check size={14} /> : <Copy size={14} />}
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+
+          <div className="profile-level-summary">
+            <span>Seu nível</span>
+            <strong>{displayLevel ?? '—'}</strong>
+            <small>{statsLoading ? 'Atualizando evolução' : `${formatNumber(points)} XP acumulados`}</small>
+          </div>
+        </InfoCard>
+
+        <div className="profile-layout">
+          <div className="profile-main-column">
+            <InfoCard raised className="profile-progress-card">
+              <InfoCard.Header
+                title="Sua evolução"
+                subtitle="Seu avanço é atualizado conforme você participa da plataforma."
+                icon={Zap}
+                variant="primary"
+              />
+              <InfoCard.Section>
+                <div className="profile-progress-headline">
+                  <div>
+                    <span>Progresso para o próximo nível</span>
+                    <strong>{stats ? `${formatNumber(points)} XP` : 'Aguardando dados de evolução'}</strong>
+                  </div>
+                  <b>{stats ? `${xpProgress}%` : '—'}</b>
+                </div>
+                <div className="profile-xp-track" aria-label={stats ? `${xpProgress}% do nível atual` : 'Progresso de nível indisponível'}>
+                  <i style={{ width: `${xpProgress}%` }} />
+                </div>
+                <div className="profile-progress-footnote">
+                  <span>{stats ? `${formatNumber(xpToNextLevel)} XP para avançar` : 'Complete atividades para começar sua evolução.'}</span>
+                  {displayLevel !== undefined && <span>Nível {displayLevel}</span>}
+                </div>
+              </InfoCard.Section>
+              <InfoCard.Footer>
+                <span className="profile-card-footnote">Conquistas e itens cosméticos acompanham seu perfil.</span>
+                <AppButton size="sm" variant="soft" icon={<Sparkles size={14} />} onClick={() => navigateToSection('conquistas')}>
+                  Ver conquistas
+                </AppButton>
+              </InfoCard.Footer>
+            </InfoCard>
+
+            <InfoCard raised className="profile-account-card">
+              <InfoCard.Header
+                title="Informações da conta"
+                subtitle="Dados vinculados ao seu acesso atual."
+                icon={ShieldCheck}
+                variant="secondary"
+              />
+              <InfoCard.Section className="profile-account-list">
+                <ProfileDetail icon={Mail} label="E-mail de acesso" value={user?.email ?? 'Não informado'} />
+                <ProfileDetail icon={Building2} label="Organização" value={companyName} />
+                <ProfileDetail icon={UserRound} label="Tipo de conta" value={roleLabel(user?.role)} />
+              </InfoCard.Section>
+              <InfoCard.Footer>
+                <span className="profile-card-footnote">Mantenha sua senha única e não a compartilhe com outras pessoas.</span>
+                <AppButton size="sm" variant="soft" icon={<KeyRound size={14} />} onClick={() => setPasswordModalOpen(true)}>
+                  Alterar senha
+                </AppButton>
+              </InfoCard.Footer>
+            </InfoCard>
+          </div>
+
+          <aside className="profile-side-column">
+            <InfoCard raised className="profile-stats-card">
+              <div className="profile-stats-heading">
+                <div><Trophy size={16} /><span>Resumo da jornada</span></div>
+                <small>{statsLoading ? 'Sincronizando' : 'Atualizado agora'}</small>
+              </div>
+              <div className="profile-stats-grid">
+                <ProfileStat icon={Zap} label="XP total" value={stats ? formatNumber(points) : '—'} variant="primary" />
+                <ProfileStat icon={Trophy} label="Ranking" value={stats ? `#${stats.globalRanking}` : '—'} variant="accent" />
+                <ProfileStat icon={Medal} label="Desafios" value={stats ? `${stats.completedChallenges}/${stats.totalActiveChallenges}` : '—'} variant="secondary" />
+              </div>
+            </InfoCard>
+
+            <InfoCard raised className="profile-next-card">
+              <div className="profile-next-icon"><Target size={19} /></div>
+              <div>
+                <span>Próximo passo</span>
+                <h3>{stats && xpToNextLevel > 0 ? `Faltam ${formatNumber(xpToNextLevel)} XP para o próximo nível.` : `Continue avançando, ${firstName}.`}</h3>
+                <p>Complete conteúdos e desafios para fortalecer sua jornada de segurança.</p>
+              </div>
+              <AppButton size="sm" icon={<Zap size={14} />} onClick={() => navigateToSection('conteudos')}>
+                Ver conteúdos
+              </AppButton>
+            </InfoCard>
+
+            <div className="profile-protection-note">
+              <ShieldCheck size={16} />
+              <span>Seu perfil está protegido pela sessão segura do Security Play.</span>
+            </div>
+          </aside>
+        </div>
+
+        <Modal open={passwordModalOpen} onClose={closePasswordModal} title="Alterar senha" maxWidth="max-w-md">
+          <form className="profile-password-form" onSubmit={handlePasswordChange}>
+            <p className="profile-password-intro">Para sua proteção, confirme a senha atual antes de escolher uma nova.</p>
+            <PasswordField
+              id="current-password"
+              label="Senha atual"
+              value={passwords.currentPassword}
+              visible={showPasswords.current}
+              autoComplete="current-password"
+              onVisibilityToggle={() => setShowPasswords((current) => ({ ...current, current: !current.current }))}
+              onChange={(value) => setPasswords((current) => ({ ...current, currentPassword: value }))}
+            />
+            <PasswordField
+              id="new-password"
+              label="Nova senha"
+              hint="Use ao menos 6 caracteres."
+              value={passwords.newPassword}
+              visible={showPasswords.next}
+              autoComplete="new-password"
+              onVisibilityToggle={() => setShowPasswords((current) => ({ ...current, next: !current.next }))}
+              onChange={(value) => setPasswords((current) => ({ ...current, newPassword: value }))}
+            />
+            <PasswordField
+              id="confirm-password"
+              label="Confirmar nova senha"
+              value={passwords.confirmPassword}
+              visible={showPasswords.confirmation}
+              autoComplete="new-password"
+              onVisibilityToggle={() => setShowPasswords((current) => ({ ...current, confirmation: !current.confirmation }))}
+              onChange={(value) => setPasswords((current) => ({ ...current, confirmPassword: value }))}
+            />
+            {passwordError && <p className="profile-password-error" role="alert">{passwordError}</p>}
+            <div className="profile-password-actions">
+              <AppButton type="button" variant="ghost" onClick={closePasswordModal} disabled={passwordSaving}>Cancelar</AppButton>
+              <AppButton type="submit" icon={<KeyRound size={15} />} disabled={passwordSaving}>{passwordSaving ? 'Alterando...' : 'Salvar nova senha'}</AppButton>
+            </div>
+          </form>
+        </Modal>
+      </div>
+    </PageTransition>
+  );
+}
+
+function PasswordField({
+  id, label, hint, value, visible, autoComplete, onChange, onVisibilityToggle,
+}: {
+  id: string;
+  label: string;
+  hint?: string;
+  value: string;
+  visible: boolean;
+  autoComplete: string;
+  onChange: (value: string) => void;
+  onVisibilityToggle: () => void;
+}) {
+  return <label className="profile-password-field" htmlFor={id}>
+    <span>{label}</span>
+    <div>
+      <input id={id} type={visible ? 'text' : 'password'} value={value} autoComplete={autoComplete} onChange={(event) => onChange(event.target.value)} />
+      <button type="button" onClick={onVisibilityToggle} aria-label={visible ? `Ocultar ${label.toLowerCase()}` : `Mostrar ${label.toLowerCase()}`}>{visible ? <EyeOff size={16} /> : <Eye size={16} />}</button>
+    </div>
+    {hint && <small>{hint}</small>}
+  </label>;
+}
+
+function ProfileDetail({ icon: Icon, label, value }: {
+  icon: typeof Mail;
+  label: string;
+  value: string;
+}) {
+  return (
+    <div className="profile-account-row">
+      <span className="profile-account-icon"><Icon size={16} /></span>
+      <span>{label}</span>
+      <strong title={value}>{value}</strong>
+    </div>
+  );
+}
+
+function ProfileStat({ icon: Icon, label, value, variant }: {
+  icon: typeof Zap;
+  label: string;
+  value: string;
+  variant: 'primary' | 'secondary' | 'accent';
+}) {
+  return (
+    <div className={`profile-stat profile-stat-${variant}`}>
+      <Icon size={16} />
+      <span>{label}</span>
+      <strong>{value}</strong>
+    </div>
+  );
 }

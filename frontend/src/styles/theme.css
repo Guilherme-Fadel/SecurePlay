@@ -102,6 +102,8 @@ body,
 
   --font-family-base: 'VT323', monospace;
   --font-family-inter: 'Inter', monospace;
+  --font-family-ui: 'Plus Jakarta Sans', 'Inter', sans-serif;
+  --font-family-mono: 'JetBrains Mono', monospace;
 
   --font-xs: 13px;
   --font-sm: 15px;

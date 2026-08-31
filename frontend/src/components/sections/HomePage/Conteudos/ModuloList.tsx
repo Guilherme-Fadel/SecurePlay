@@ -79,25 +79,6 @@ export function ModuloList({ onSelectModulo }: ModuloListProps) {
         </div>
       </section>
 
-      <section className="learning-path-section">
-        <div className="learning-section-heading">
-          <div><span>JORNADA ATUAL</span><h2>Sua trilha de formação</h2></div>
-          <p>Os módulos são liberados conforme você avança.</p>
-        </div>
-        <div className="learning-path-track scrollbar-thin">
-          {allModulos.map((modulo, index) => {
-            const complete = modulo.progress === 100;
-            const current = modulo.id === continueModule?.id;
-            return (
-              <button key={modulo.id} onClick={() => onSelectModulo(modulo.id)} className={`${complete ? 'is-complete' : ''} ${current ? 'is-current' : ''}`}>
-                <i>{complete ? <CheckCircle2 size={17} /> : index + 1}</i>
-                <div><span>{modulo.category}</span><strong>{modulo.title}</strong><small>{modulo.progress}% concluído</small></div>
-              </button>
-            );
-          })}
-        </div>
-      </section>
-
       <section className="learning-library-section">
         <div className="learning-section-heading">
           <div><span>BIBLIOTECA</span><h2>Explore os treinamentos</h2></div>

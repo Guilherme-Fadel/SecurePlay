@@ -5,8 +5,8 @@ import { Header } from "@/components/shared/layout/header/index";
 import { Sidebar, SidebarItem } from '@/components/shared/Sidebar';
 import { TrophyIcon, LayoutDashboard, Gamepad2, AwardIcon, BookOpenIcon, SettingsIcon, ArrowLeft, ShieldIcon } from "lucide-react";
 import { Dashboard, Awards, Challenges, Ranking, Conteudos, Settings, Perfil } from '@/components/sections/HomePage/index';
-import { useState, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { lazy, Suspense, useState, useCallback } from 'react';
+import { useLocation } from 'react-router-dom';
 import { Toaster } from 'sonner';
 import { SectionContext } from '@/contexts/SectionContext';
 import { ThemeProvider } from '@/contexts/ThemeContext';
@@ -15,9 +15,10 @@ import { useEmpresaTema } from '@/hooks/useEmpresaTema';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import '@/styles/app-ui.css';
 import { AppButton } from '@/components/ui/buttons/AppButton';
-export type Section = 'dashboard' | 'desafios' | 'ranking' | 'conquistas' | 'conteudos' | 'configuracoes' | 'perfil';
+const Admin = lazy(() => import('@/pages/Admin'));
+export type Section = 'dashboard' | 'desafios' | 'ranking' | 'conquistas' | 'conteudos' | 'configuracoes' | 'perfil' | 'admin';
 function HomeContent() {
-    const navigate = useNavigate();
+    const location = useLocation();
     const { user } = useCurrentUser();
     const sections: Record<Section, React.ReactNode> = {
         dashboard: <Dashboard />,
@@ -26,10 +27,14 @@ function HomeContent() {
         conquistas: <Awards />,
         conteudos: <Conteudos />,
         configuracoes: <Settings />,
-        perfil: <Perfil />
+        perfil: <Perfil />,
+        admin: <Suspense fallback={null}><Admin /></Suspense>,
     };
     useEmpresaTema();
-    const [activeSection, setActiveSectionState] = useState<Section>('dashboard');
+    const [activeSection, setActiveSectionState] = useState<Section>(() => {
+        const routeState = location.state as { initialSection?: Section } | null;
+        return routeState?.initialSection === 'admin' ? 'admin' : 'dashboard';
+    });
     const [previousSection, setPreviousSection] = useState<Section | null>(null);
     const { isLoading, setLoading, bootstrapReady, registerBootstrap } = useHomeLoading();
     const setActiveSection = useCallback((section: Section) => {
@@ -62,12 +67,7 @@ function HomeContent() {
             <SidebarItem id="ranking" icon={<TrophyIcon />} text="Ranking" active={activeSection === 'ranking'} onSelect={setActiveSection}/>
             <SidebarItem id="conquistas" icon={<AwardIcon />} text="Conquistas" active={activeSection === 'conquistas'} onSelect={setActiveSection}/>
             <SidebarItem id="configuracoes" icon={<SettingsIcon />} text="Configurações" active={activeSection === 'configuracoes'} onSelect={setActiveSection}/>
-            {user?.role === 'admin' && (<li onClick={() => navigate('/admin')} className="secure-sidebar-admin relative flex items-center py-2 px-3 my-1 rounded-md cursor-pointer transition-colors hover:bg-[var(--background)] text-[var(--text-primary)]">
-                <ShieldIcon />
-                <span className="overflow-hidden transition-all text-xl w-52 ml-4">
-                  Administrador
-                </span>
-              </li>)}
+            {user?.role === 'admin' && <SidebarItem id="admin" icon={<ShieldIcon />} text="Administrador" active={activeSection === 'admin'} onSelect={setActiveSection}/>} 
           </Sidebar>
 
           <div className="flex flex-col flex-1 min-w-0 min-h-0">

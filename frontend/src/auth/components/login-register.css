@@ -54,7 +54,7 @@
   align-items: center;
   gap: 10px;
   color: #f8fafc;
-  font-family: 'Plus Jakarta Sans', 'Inter', sans-serif;
+  font-family: var(--font-family-ui);
   font-size: 22px;
   font-weight: 800;
   letter-spacing: -0.05em;
@@ -92,7 +92,7 @@
   align-items: center;
   gap: 8px;
   color: #a5f3fc;
-  font-family: 'Plus Jakarta Sans', 'Inter', sans-serif;
+  font-family: var(--font-family-ui);
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.07em;
@@ -108,7 +108,7 @@
 .login-showcase h1 {
   margin: 17px 0;
   color: #fff;
-  font-family: 'Plus Jakarta Sans', 'Inter', sans-serif;
+  font-family: var(--font-family-ui);
   font-size: clamp(38px, 4vw, 55px);
   font-weight: 800;
   letter-spacing: -0.055em;
@@ -125,7 +125,7 @@
   max-width: 370px;
   margin: 0;
   color: #b7c5da;
-  font-family: 'Plus Jakarta Sans', 'Inter', sans-serif;
+  font-family: var(--font-family-ui);
   font-size: 14px;
   line-height: 1.65;
 }
@@ -153,7 +153,7 @@
 .login-security-note strong,
 .login-security-note p {
   display: block;
-  font-family: 'Plus Jakarta Sans', 'Inter', sans-serif;
+  font-family: var(--font-family-ui);
 }
 
 .login-security-note strong { color: #f1f5f9; font-size: 12px; }
@@ -186,7 +186,7 @@
 .login-heading h2 {
   margin: 0;
   color: #15233d;
-  font-family: 'Plus Jakarta Sans', 'Inter', sans-serif;
+  font-family: var(--font-family-ui);
   font-size: 30px;
   font-weight: 800;
   letter-spacing: -0.045em;
@@ -196,7 +196,7 @@
 .login-heading p {
   margin: 8px 0 29px;
   color: #64748b;
-  font-family: 'Plus Jakarta Sans', 'Inter', sans-serif;
+  font-family: var(--font-family-ui);
   font-size: 13px;
 }
 
@@ -205,7 +205,7 @@
 
 .login-field > span {
   color: #334155;
-  font-family: 'Plus Jakarta Sans', 'Inter', sans-serif;
+  font-family: var(--font-family-ui);
   font-size: 12px;
   font-weight: 700;
 }
@@ -236,7 +236,7 @@
   outline: 0;
   background: transparent;
   color: #1e293b;
-  font-family: 'Plus Jakarta Sans', 'Inter', sans-serif;
+  font-family: var(--font-family-ui);
   font-size: 13px;
 }
 
@@ -295,7 +295,7 @@
 .login-help { margin-top: 27px; padding: 16px 17px; border-radius: 11px; background: #f8fafc; }
 
 .login-help span,
-.login-help p { display: block; font-family: 'Plus Jakarta Sans', 'Inter', sans-serif; font-size: 11px; }
+.login-help p { display: block; font-family: var(--font-family-ui); font-size: 11px; }
 
 .login-help span { color: #475569; font-weight: 800; }
 .login-help p { margin: 3px 0 0; color: #64748b; line-height: 1.45; }
@@ -306,7 +306,7 @@
   gap: 6px;
   margin: 34px 0 0;
   color: #94a3b8;
-  font-family: 'Plus Jakarta Sans', 'Inter', sans-serif;
+  font-family: var(--font-family-ui);
   font-size: 10px;
 }
 
