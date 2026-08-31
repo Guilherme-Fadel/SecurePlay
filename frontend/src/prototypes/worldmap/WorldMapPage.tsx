@@ -13,6 +13,7 @@ interface WorldMapPageProps {
     embedded?: boolean;
 }
 export default function WorldMapPage({ embedded = false }: WorldMapPageProps) {
+    const editorEnabled = import.meta.env.DEV && import.meta.env.VITE_ENABLE_WORLDMAP_EDITOR === 'true';
     const [biomes, setBiomes] = useState<Biome[]>(MOCK_BIOMES);
     const [selectedBiomeId, setSelectedBiomeId] = useState<string | null>(null);
     const [selectedLevel, setSelectedLevel] = useState<Level | null>(null);
@@ -60,22 +61,7 @@ export default function WorldMapPage({ embedded = false }: WorldMapPageProps) {
         if (!editingBiomeId)
             return false;
         setBiomes((prev) => prev.map((b) => b.id === editingBiomeId ? { ...b, region: [...draftPoints] } : b));
-        try {
-            const res = await fetch('/__save-region', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ biomeId: editingBiomeId, points: draftPoints }),
-            });
-            if (!res.ok) {
-                console.warn('[WorldMap] Falha ao gravar regiao no arquivo:', await res.text());
-                return false;
-            }
-            return true;
-        }
-        catch (err) {
-            console.warn('[WorldMap] Endpoint de gravacao indisponivel:', err);
-            return false;
-        }
+        return true;
     };
     const toggleEdit = () => {
         setEditMode((v) => {
@@ -96,15 +82,15 @@ export default function WorldMapPage({ embedded = false }: WorldMapPageProps) {
           {selectedBiome ? (<BiomeView key={selectedBiome.id} biome={selectedBiome} onSelectLevel={setSelectedLevel} onBack={() => setSelectedBiomeId(null)} editMode={editMode} onReposition={handleReposition}/>) : (<WorldMap key="global" biomes={biomes} onSelectBiome={(b) => setSelectedBiomeId(b.id)} editMode={editMode} onRepositionBiome={handleRepositionBiome} editingBiomeId={editingBiomeId} draftPoints={draftPoints} onAddRegionPoint={addRegionPoint}/>)}
         </AnimatePresence>
 
-        <button className={`wm-edit-toggle ${editMode ? 'active' : ''}`} onClick={toggleEdit}>
+        {editorEnabled && <button className={`wm-edit-toggle ${editMode ? 'active' : ''}`} onClick={toggleEdit}>
           {editMode ? 'Editando: ON' : 'Editar'}
-        </button>
+        </button>}
 
 
-        {editMode && isGlobal && (<RegionEditPanel biomes={biomes} editingBiomeId={editingBiomeId} draftPoints={draftPoints} onPickBiome={startEditingRegion} onUndo={undoRegionPoint} onClear={clearRegion} onSave={saveRegion}/>)}
+        {editorEnabled && editMode && isGlobal && (<RegionEditPanel biomes={biomes} editingBiomeId={editingBiomeId} draftPoints={draftPoints} onPickBiome={startEditingRegion} onUndo={undoRegionPoint} onClear={clearRegion} onSave={saveRegion}/>)}
 
 
-        {editMode && !isGlobal && (<EditPanel biome={selectedBiome} biomes={biomes}/>)}
+        {editorEnabled && editMode && !isGlobal && (<EditPanel biome={selectedBiome} biomes={biomes}/>)}
 
         {!editMode && (<LevelModal level={selectedLevel} onClose={() => setSelectedLevel(null)} onStart={handleStart}/>)}
       </div>

@@ -19,14 +19,17 @@ function extractFromCookieOrHeader(req: Request): string | null {
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
   constructor() {
-    if (!process.env.JWT_SECRET) {
-      throw new Error('JWT_SECRET não definido nas variáveis de ambiente');
+    const secret = process.env.JWT_SECRET?.trim();
+    if (!secret || secret.length < 32) {
+      throw new Error(
+        'JWT_SECRET deve estar definido e ter ao menos 32 caracteres',
+      );
     }
 
     super({
       jwtFromRequest: extractFromCookieOrHeader,
       ignoreExpiration: false,
-      secretOrKey: process.env.JWT_SECRET,
+      secretOrKey: secret,
     });
   }
 

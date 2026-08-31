@@ -29,13 +29,13 @@ export class ModuloController {
   }
 
   @Post()
-  @Roles(Role.ADMIN)
+  @Roles(Role.PLATFORM_ADMIN)
   async create(@Body() dto: CreateModuloDto) {
     return this.moduloService.create(dto);
   }
 
   @Patch(':id')
-  @Roles(Role.ADMIN)
+  @Roles(Role.PLATFORM_ADMIN)
   async update(
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: UpdateModuloDto,
@@ -44,7 +44,7 @@ export class ModuloController {
   }
 
   @Delete(':id')
-  @Roles(Role.ADMIN)
+  @Roles(Role.PLATFORM_ADMIN)
   async delete(@Param('id', ParseIntPipe) id: number) {
     return this.moduloService.delete(id);
   }

@@ -9,6 +9,8 @@ import { Notification } from './notification.entity';
 import { CreateNotificationDto } from './dto/notification.dto';
 import { ResultadoDto } from 'src/resultado.dto';
 import { EventEmitter2 } from '@nestjs/event-emitter';
+import { UsuarioService } from '../usuario/usuario.service';
+import { Role } from '../auth/roles.enum';
 
 @Injectable()
 export class NotificationService {
@@ -16,7 +18,16 @@ export class NotificationService {
     @Inject('NOTIFICATION_REPOSITORY')
     private notificationRepository: Repository<Notification>,
     private eventEmitter: EventEmitter2,
+    private readonly usuarioService: UsuarioService,
   ) {}
+
+  async createForActor(
+    data: CreateNotificationDto,
+    requestingUserId: number,
+  ): Promise<ResultadoDto> {
+    await this.ensureCanAccessUser(requestingUserId, data.usuario_id);
+    return this.insertNotification(data);
+  }
 
   async insertNotification(data: CreateNotificationDto): Promise<ResultadoDto> {
     const notification = await this.notificationRepository.save(data);
@@ -46,6 +57,14 @@ export class NotificationService {
       sucesso: true,
       mensagem: 'Todas as notificações marcadas como lidas',
     };
+  }
+
+  async markAllAsReadForActor(
+    usuario_id: number,
+    requestingUserId: number,
+  ): Promise<ResultadoDto> {
+    await this.ensureCanAccessUser(requestingUserId, usuario_id);
+    return this.markAllAsRead(usuario_id);
   }
 
   async markAsRead(
@@ -128,11 +147,48 @@ export class NotificationService {
     }));
   }
 
+  async getNotificationForActor(
+    usuario_id: number,
+    requestingUserId: number,
+  ): Promise<CreateNotificationDto[]> {
+    await this.ensureCanAccessUser(requestingUserId, usuario_id);
+    return this.getNotification(usuario_id);
+  }
+
   async getNotificationByUserId(usuario_id: number): Promise<Notification[]> {
     const result = await this.notificationRepository.find({
       where: { usuario_id },
       order: { created_at: 'DESC' },
     });
     return result ?? undefined;
+  }
+
+  private async ensureCanAccessUser(
+    requestingUserId: number,
+    targetUserId: number,
+  ): Promise<void> {
+    if (requestingUserId === targetUserId) return;
+
+    const [requestingUser, targetUser] = await Promise.all([
+      this.usuarioService.getUsuarioById(requestingUserId),
+      this.usuarioService.getUsuarioById(targetUserId),
+    ]);
+
+    if (!requestingUser) {
+      throw new ForbiddenException('Solicitante não encontrado');
+    }
+    if (!targetUser) {
+      throw new NotFoundException('Usuário não encontrado');
+    }
+    if (requestingUser.role === Role.PLATFORM_ADMIN) return;
+
+    const sameCompany =
+      requestingUser.role === Role.ADMIN &&
+      !!requestingUser.empresa_id &&
+      requestingUser.empresa_id === targetUser.empresa_id;
+
+    if (!sameCompany) {
+      throw new ForbiddenException('Acesso negado para este usuário');
+    }
   }
 }

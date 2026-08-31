@@ -30,13 +30,13 @@ export class AulaController {
   }
 
   @Post()
-  @Roles(Role.ADMIN)
+  @Roles(Role.PLATFORM_ADMIN)
   async create(@Body() dto: CreateAulaDto) {
     return this.aulaService.create(dto);
   }
 
   @Patch(':id')
-  @Roles(Role.ADMIN)
+  @Roles(Role.PLATFORM_ADMIN)
   async update(
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: UpdateAulaDto,
@@ -45,7 +45,7 @@ export class AulaController {
   }
 
   @Delete(':id')
-  @Roles(Role.ADMIN)
+  @Roles(Role.PLATFORM_ADMIN)
   async delete(@Param('id', ParseIntPipe) id: number) {
     return this.aulaService.delete(id);
   }

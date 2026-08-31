@@ -33,6 +33,7 @@ function initials(name?: string) {
 }
 
 function roleLabel(role?: string) {
+  if (role === 'platform_admin') return 'Administrador da plataforma';
   if (role === 'admin') return 'Administrador';
   return 'Participante';
 }

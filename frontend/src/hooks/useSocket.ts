@@ -10,7 +10,7 @@ export function useSocket(userId: number | null): Socket | null {
     if (!userId) return;
 
     const newSocket = io(SOCKET_URL, {
-      query: { userId: String(userId) },
+      withCredentials: true,
       transports: ['polling', 'websocket'],
       reconnection: true,
       reconnectionAttempts: 10,

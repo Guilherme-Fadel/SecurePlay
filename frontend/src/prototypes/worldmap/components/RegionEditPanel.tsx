@@ -42,7 +42,7 @@ export function RegionEditPanel({ biomes, editingBiomeId, draftPoints, onPickBio
 
       <p className="wm-edit-hint">
         1) Escolha o bioma. 2) Segure o mouse e contorne o bioma (ou clique
-        ponto a ponto). 3) Salvar e copiar para o mockData.ts.
+        ponto a ponto). 3) Aplicar na prévia e copiar o snippet para revisão manual.
       </p>
 
       <div className="wm-region-biomes">
@@ -68,7 +68,7 @@ export function RegionEditPanel({ biomes, editingBiomeId, draftPoints, onPickBio
               {saveState === 'saving'
                 ? 'Salvando...'
                 : saveState === 'saved'
-                    ? 'Salvo no codigo!'
+                    ? 'Aplicado na prévia!'
                     : saveState === 'error'
                         ? 'Erro ao salvar'
                         : 'Salvar'}

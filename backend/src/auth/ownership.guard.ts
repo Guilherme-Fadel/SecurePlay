@@ -20,7 +20,7 @@ export class OwnershipGuard implements CanActivate {
       throw new ForbiddenException('Acesso negado');
     }
 
-    if (user.role === Role.ADMIN) {
+    if (user.role === Role.PLATFORM_ADMIN) {
       return true;
     }
 

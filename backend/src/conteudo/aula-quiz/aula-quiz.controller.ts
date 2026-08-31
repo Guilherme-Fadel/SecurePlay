@@ -22,14 +22,14 @@ export class AulaQuizController {
   ) {}
 
   @Post()
-  @Roles(Role.ADMIN)
+  @Roles(Role.PLATFORM_ADMIN)
   async create(@Body() dto: CreateQuizDto) {
     const quiz = this.aulaQuizRepository.create(dto);
     return this.aulaQuizRepository.save(quiz);
   }
 
   @Patch(':id')
-  @Roles(Role.ADMIN)
+  @Roles(Role.PLATFORM_ADMIN)
   async update(
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: Partial<CreateQuizDto>,
@@ -39,7 +39,7 @@ export class AulaQuizController {
   }
 
   @Delete(':id')
-  @Roles(Role.ADMIN)
+  @Roles(Role.PLATFORM_ADMIN)
   async delete(@Param('id', ParseIntPipe) id: number) {
     await this.aulaQuizRepository.delete(id);
     return { sucesso: true, mensagem: 'Pergunta removida' };

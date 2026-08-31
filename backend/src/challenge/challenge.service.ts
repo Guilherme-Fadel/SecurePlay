@@ -88,6 +88,8 @@ export class ChallengeService {
   }
 
   async getStatus(challengeId: number, usuario_id: number) {
+    await this.ensureDailyChallenge(challengeId, usuario_id);
+
     const record = await this.usuarioChallengeRepository.findOne({
       where: { usuario_id, challenge_id: challengeId },
     });
@@ -116,6 +118,8 @@ export class ChallengeService {
     questionId: number,
     selectedIndex: number,
   ) {
+    await this.ensureDailyChallenge(challengeId, usuario_id);
+
     const question = await this.questionRepository.findOne({
       where: { id: questionId, challenge_id: challengeId },
     });
@@ -172,7 +176,9 @@ export class ChallengeService {
     };
   }
 
-  async getQuestions(challengeId: number) {
+  async getQuestions(challengeId: number, usuario_id: number) {
+    await this.ensureDailyChallenge(challengeId, usuario_id);
+
     const challenge = await this.challengeRepository.findOne({
       where: { id: challengeId, active: true },
     });
@@ -210,6 +216,8 @@ export class ChallengeService {
     usuario_id: number,
     dto: SubmitChallengeDto,
   ) {
+    await this.ensureDailyChallenge(challengeId, usuario_id);
+
     const challenge = await this.challengeRepository.findOne({
       where: { id: challengeId, active: true },
     });
@@ -304,5 +312,18 @@ export class ChallengeService {
       completed: true,
       corrections,
     };
+  }
+
+  private async ensureDailyChallenge(
+    challengeId: number,
+    usuario_id: number,
+  ): Promise<void> {
+    const dailyChallenge = await this.getDailyChallenge(usuario_id);
+
+    if (!dailyChallenge || dailyChallenge.id !== challengeId) {
+      throw new BadRequestException(
+        'Este não é o desafio diário selecionado para o usuário',
+      );
+    }
   }
 }

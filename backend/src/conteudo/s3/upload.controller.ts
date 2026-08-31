@@ -29,7 +29,7 @@ export class UploadController {
   constructor(private readonly s3Service: S3Service) {}
 
   @Post('presign')
-  @Roles(Role.ADMIN)
+  @Roles(Role.PLATFORM_ADMIN)
   @Throttle({ short: { limit: 10, ttl: 60000 } })
   async getPresignedUrl(@Body() dto: PresignUploadDto) {
     const key = this.s3Service.buildKey(

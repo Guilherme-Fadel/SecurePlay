@@ -19,7 +19,7 @@ export class BenefitsController {
   constructor(private readonly benefitsService: BenefitsService) {}
 
   @Post('criar')
-  @Roles(Role.ADMIN)
+  @Roles(Role.PLATFORM_ADMIN)
   async criarBenefits(@Body() data: CreateBenefitsDto): Promise<ResultadoDto> {
     return this.benefitsService.insertBenefits(data);
   }
@@ -33,7 +33,7 @@ export class BenefitsController {
   }
 
   @Delete('deletar/:id')
-  @Roles(Role.ADMIN)
+  @Roles(Role.PLATFORM_ADMIN)
   async deletarBenefits(@Param('id') id: number): Promise<ResultadoDto> {
     return this.benefitsService.deleteBenefits(id);
   }

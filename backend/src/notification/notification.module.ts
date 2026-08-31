@@ -3,13 +3,13 @@ import { DatabaseModule } from '../database/database.molule';
 import { notificationProviders } from './notification.providers';
 import { NotificationService } from './notification.service';
 import { NotificationController } from './notification.controller';
-import { OwnershipGuard } from 'src/auth/ownership.guard';
 import { AuthModule } from 'src/auth/auth.module';
+import { UsuarioModule } from 'src/usuario/usuario.module';
 
 @Module({
-  imports: [DatabaseModule, AuthModule],
+  imports: [DatabaseModule, AuthModule, UsuarioModule],
   controllers: [NotificationController],
-  providers: [...notificationProviders, NotificationService, OwnershipGuard],
+  providers: [...notificationProviders, NotificationService],
   exports: [NotificationService],
 })
 export class NotificationModule {}

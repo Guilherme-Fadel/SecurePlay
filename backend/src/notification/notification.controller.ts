@@ -3,7 +3,6 @@ import {
   Get,
   Post,
   Body,
-  UseGuards,
   Query,
   Delete,
   Param,
@@ -12,8 +11,6 @@ import {
   ForbiddenException,
 } from '@nestjs/common';
 import { ResultadoDto } from 'src/resultado.dto';
-import { OwnershipGuard } from 'src/auth/ownership.guard';
-import { OwnerField } from 'src/auth/owner-field.decorator';
 import { NotificationService } from './notification.service';
 import { CreateNotificationDto } from './dto/notification.dto';
 import { Roles } from 'src/auth/roles.decorator';
@@ -24,20 +21,18 @@ export class NotificationController {
   constructor(private readonly notificationService: NotificationService) {}
 
   @Post('criar')
-  @UseGuards(OwnershipGuard)
-  @Roles(Role.ADMIN)
-  @OwnerField('usuario_id', 'body')
+  @Roles(Role.ADMIN, Role.PLATFORM_ADMIN)
   async criarNotification(
     @Body() data: CreateNotificationDto,
+    @Request() req: any,
   ): Promise<ResultadoDto> {
-    return this.notificationService.insertNotification(data);
+    return this.notificationService.createForActor(data, req.user.userId);
   }
 
   @Get('buscar')
-  @UseGuards(OwnershipGuard)
-  @OwnerField('id', 'query')
   async buscarNotification(
     @Query('id') id: string,
+    @Request() req: any,
   ): Promise<CreateNotificationDto[]> {
     const usuarioId = Number(id);
 
@@ -45,7 +40,10 @@ export class NotificationController {
       throw new ForbiddenException('ID do usuário é obrigatório');
     }
 
-    return this.notificationService.getNotification(usuarioId);
+    return this.notificationService.getNotificationForActor(
+      usuarioId,
+      req.user.userId,
+    );
   }
 
   @Delete('deletar/:id')
@@ -68,11 +66,13 @@ export class NotificationController {
   }
 
   @Patch('ler-todas/:usuario_id')
-  @UseGuards(OwnershipGuard)
-  @OwnerField('usuario_id', 'params')
   async lerTodasNotification(
     @Param('usuario_id') usuario_id: string,
+    @Request() req: any,
   ): Promise<ResultadoDto> {
-    return this.notificationService.markAllAsRead(Number(usuario_id));
+    return this.notificationService.markAllAsReadForActor(
+      Number(usuario_id),
+      req.user.userId,
+    );
   }
 }

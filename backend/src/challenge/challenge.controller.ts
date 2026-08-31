@@ -27,8 +27,8 @@ export class ChallengeController {
   }
 
   @Get(':id/questions')
-  async getQuestions(@Param('id', ParseIntPipe) id: number) {
-    return this.challengeService.getQuestions(id);
+  async getQuestions(@Param('id', ParseIntPipe) id: number, @Request() req: any) {
+    return this.challengeService.getQuestions(id, req.user.userId);
   }
 
   @Patch(':id/progress')

@@ -55,6 +55,8 @@ export class AulaService {
       throw new NotFoundException('Aula não encontrada');
     }
 
+    await this.verificarDesbloqueio(aula, usuario_id);
+
     const userProgress = await this.usuarioAulaRepository.findOne({
       where: { usuario_id, aula_id: id },
     });

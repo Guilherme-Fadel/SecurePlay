@@ -9,7 +9,6 @@ import { DashboardModule } from './dashboard/dashboard.module';
 import { ChallengeModule } from './challenge/challenge.module';
 import { ConteudoModule } from './conteudo/conteudo.module';
 import { ArcadeModule } from './arcade/arcade.module';
-import { SeedModule } from './seed/seed.module';
 import { AdminModule } from './admin/admin.module';
 import { APP_GUARD } from '@nestjs/core';
 import { JwtAuthGuard } from './auth/auth.guard';
@@ -49,7 +48,6 @@ import { AchievementsModule } from './achievements/achievements.module';
     ConteudoModule,
     DashboardModule,
     ArcadeModule,
-    SeedModule,
     AdminModule,
     AchievementsModule,
     ConfigModule.forRoot({

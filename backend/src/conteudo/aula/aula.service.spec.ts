@@ -1,4 +1,5 @@
 import { AulaService } from './aula.service';
+import { BadRequestException } from '@nestjs/common';
 
 describe('AulaService (progresso parcial)', () => {
   let service: AulaService;
@@ -74,5 +75,16 @@ describe('AulaService (progresso parcial)', () => {
 
     expect(result.percent).toBe(70);
     expect(result.lastVideoSecond).toBe(120);
+  });
+
+  it('nega o conteúdo de uma aula bloqueada antes de assinar URLs ou expor o quiz', async () => {
+    aulaRepository.findOne
+      .mockResolvedValueOnce({ id: 7, modulo_id: 2, order: 2, active: true })
+      .mockResolvedValueOnce({ id: 6, modulo_id: 2, order: 1, active: true });
+    usuarioAulaRepository.findOne.mockResolvedValue(null);
+
+    await expect(service.findOne(7, 3)).rejects.toBeInstanceOf(
+      BadRequestException,
+    );
   });
 });
