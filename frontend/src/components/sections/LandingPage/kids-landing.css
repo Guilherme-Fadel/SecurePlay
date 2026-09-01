@@ -368,7 +368,7 @@
 
 .kids-faq-item button {
   display: flex;
-  width: var(--kids-layout);
+  width: 100%;
   align-items: center;
   justify-content: space-between;
   gap: 16px;
@@ -513,7 +513,7 @@
   .kids-brand { font-size: 21px; }
   .kids-nav,
   .kids-header > .kids-login { display: none; }
-  .kids-menu { display: grid; width: 38px; height: 38px; place-items: center; color: var(--kids-purple); }
+  .kids-menu { display: grid; width: 44px; height: 44px; place-items: center; color: var(--kids-purple); }
   .kids-mobile-nav {
     position: absolute;
     top: 65px;
@@ -525,7 +525,7 @@
     background: #fffaf2;
     box-shadow: 0 16px 35px rgba(42, 33, 88, 0.15);
   }
-  .kids-mobile-nav button { display: block; width: 100%; padding: 13px; color: var(--kids-ink); text-align: left; }
+  .kids-mobile-nav button { display: block; width: 100%; min-height: 44px; padding: 13px; color: var(--kids-ink); text-align: left; }
   .kids-hero { grid-template-columns: 1fr; min-height: 0; gap: 42px; padding: 52px 0 74px; text-align: center; }
   .kids-hero-copy { display: flex; align-items: center; flex-direction: column; }
   .kids-hero h1 { font-size: clamp(41px, 12vw, 54px); }

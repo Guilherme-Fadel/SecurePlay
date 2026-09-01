@@ -1,13 +1,18 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { AnimatePresence, motion } from 'motion/react';
 import { ArrowRight, ChevronDown, Menu, X } from 'lucide-react';
-import heroAcademiaMissoes from '@/assets/kids/hero-academia-missoes-pixel.png';
-import escolhaAventura from '@/assets/kids/escolha-aventura-pixel.png';
-import aprendaPratique from '@/assets/kids/aprenda-pratique-pixel.png';
-import celebreConquistas from '@/assets/kids/celebre-conquistas-pixel.png';
-import escolasEducadores from '@/assets/kids/escolas-educadores-pixel.png';
+import heroAcademiaMissoes640 from '@/assets/kids/hero-academia-missoes-pixel-640.webp';
+import heroAcademiaMissoes1200 from '@/assets/kids/hero-academia-missoes-pixel-1200.webp';
+import escolhaAventura640 from '@/assets/kids/escolha-aventura-pixel-640.webp';
+import escolhaAventura1200 from '@/assets/kids/escolha-aventura-pixel-1200.webp';
+import aprendaPratique640 from '@/assets/kids/aprenda-pratique-pixel-640.webp';
+import aprendaPratique1200 from '@/assets/kids/aprenda-pratique-pixel-1200.webp';
+import celebreConquistas640 from '@/assets/kids/celebre-conquistas-pixel-640.webp';
+import celebreConquistas1200 from '@/assets/kids/celebre-conquistas-pixel-1200.webp';
+import escolasEducadores640 from '@/assets/kids/escolas-educadores-pixel-640.webp';
+import escolasEducadores1200 from '@/assets/kids/escolas-educadores-pixel-1200.webp';
 
 const missionTracks = [
   {
@@ -32,19 +37,22 @@ const missionTracks = [
 
 const steps = [
   {
-    image: escolhaAventura,
+    image640: escolhaAventura640,
+    image1200: escolhaAventura1200,
     alt: 'Criança escolhendo uma aventura de aprendizado no tablet',
     title: 'Escolha uma aventura',
     text: 'Comece pelo tema que mais combina com a sua turma.',
   },
   {
-    image: aprendaPratique,
+    image640: aprendaPratique640,
+    image1200: aprendaPratique1200,
     alt: 'Criança praticando atividades de segurança digital',
     title: 'Aprenda e pratique',
     text: 'Veja as dicas e resolva desafios de um jeito leve.',
   },
   {
-    image: celebreConquistas,
+    image640: celebreConquistas640,
+    image1200: celebreConquistas1200,
     alt: 'Criança celebrando uma conquista ao lado de uma adulta',
     title: 'Celebre conquistas',
     text: 'Transforme cada descoberta em confiança para navegar.',
@@ -60,11 +68,30 @@ const faqs = [
 export function KidsLandingContent() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [openFaq, setOpenFaq] = useState<number | null>(0);
+  const menuButtonRef = useRef<HTMLButtonElement>(null);
+  const mobileMenuRef = useRef<HTMLElement>(null);
   const navigate = useNavigate();
   const go = (id: string) => {
     document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
-    setMenuOpen(false);
+    closeMenu();
   };
+  const closeMenu = () => {
+    setMenuOpen(false);
+    requestAnimationFrame(() => menuButtonRef.current?.focus());
+  };
+
+  useEffect(() => {
+    if (!menuOpen) return;
+    mobileMenuRef.current?.querySelector<HTMLButtonElement>('button')?.focus();
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        closeMenu();
+      }
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [menuOpen]);
 
   return (
     <>
@@ -79,7 +106,7 @@ export function KidsLandingContent() {
           <button onClick={() => go('faq')}>Dúvidas</button>
         </nav>
         <button className="kids-login" onClick={() => navigate('/login')}>Entrar</button>
-        <button className="kids-menu" onClick={() => setMenuOpen(!menuOpen)} aria-label={menuOpen ? 'Fechar menu' : 'Abrir menu'}>
+        <button ref={menuButtonRef} className="kids-menu" onClick={() => menuOpen ? closeMenu() : setMenuOpen(true)} aria-label={menuOpen ? 'Fechar menu' : 'Abrir menu'} aria-expanded={menuOpen} aria-controls="kids-mobile-navigation">
           {menuOpen ? <X /> : <Menu />}
         </button>
         <AnimatePresence>
@@ -89,12 +116,14 @@ export function KidsLandingContent() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
               className="kids-mobile-nav"
+              id="kids-mobile-navigation"
+              ref={mobileMenuRef}
             >
               <button onClick={() => go('inicio')}>A proposta</button>
               <button onClick={() => go('missoes')}>Missões</button>
               <button onClick={() => go('escolas')}>Para escolas</button>
               <button onClick={() => go('faq')}>Dúvidas</button>
-              <button onClick={() => navigate('/login')}>Entrar</button>
+              <button onClick={() => { closeMenu(); navigate('/login'); }}>Entrar</button>
             </motion.nav>
           )}
         </AnimatePresence>
@@ -131,7 +160,7 @@ export function KidsLandingContent() {
             animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: 0.15, type: 'spring', stiffness: 90 }}
           >
-            <img src={heroAcademiaMissoes} alt="Duas crianças explorando um mapa de missões digitais em uma sala de aula" />
+            <img src={heroAcademiaMissoes640} srcSet={`${heroAcademiaMissoes640} 640w, ${heroAcademiaMissoes1200} 1200w`} sizes="(max-width: 760px) calc(100vw - 40px), (max-width: 960px) 45vw, 610px" alt="Duas crianças explorando um mapa de missões digitais em uma sala de aula" />
           </motion.figure>
         </section>
 
@@ -169,11 +198,11 @@ export function KidsLandingContent() {
             text="A experiência respeita o tempo da criança e transforma cada avanço em assunto para continuar a conversa."
           />
           <div className="kids-steps">
-            {steps.map(({ image, alt, title, text }, index) => (
+            {steps.map(({ image640, image1200, alt, title, text }, index) => (
               <article key={title} className="kids-step">
                 <span className="kids-step-number">0{index + 1}</span>
                 <figure className="kids-step-media">
-                  <img src={image} alt={alt} loading="lazy" />
+                  <img src={image640} srcSet={`${image640} 640w, ${image1200} 1200w`} sizes="(max-width: 760px) calc(100vw - 40px), 400px" alt={alt} loading="lazy" />
                 </figure>
                 <h3>{title}</h3>
                 <p>{text}</p>
@@ -199,7 +228,7 @@ export function KidsLandingContent() {
               </button>
             </div>
             <figure className="kids-school-art">
-              <img src={escolasEducadores} alt="Educadora e duas crianças explorando uma missão de aprendizado" loading="lazy" />
+              <img src={escolasEducadores640} srcSet={`${escolasEducadores640} 640w, ${escolasEducadores1200} 1200w`} sizes="(max-width: 760px) calc(100vw - 40px), 600px" alt="Educadora e duas crianças explorando uma missão de aprendizado" loading="lazy" />
             </figure>
           </div>
         </section>
