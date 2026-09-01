@@ -14,7 +14,7 @@ describe('AppController', () => {
 
   describe('root', () => {
     it('should return the health status', () => {
-      expect(appController.health()).toEqual({ message: 'Server is Running' });
+      expect(appController.health()).toEqual({ status: 'ok' });
     });
   });
 });

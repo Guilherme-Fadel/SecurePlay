@@ -1,12 +1,14 @@
 import { Controller, Get, UseGuards, Req } from '@nestjs/common';
 import { JwtAuthGuard } from './auth/auth.guard';
 import type { FastifyRequest } from 'fastify';
+import { Public } from './auth/public.decorator';
 
 @Controller()
 export class AppController {
-  @Get()
+  @Public()
+  @Get(['', 'health'])
   health() {
-    return { message: 'Server is Running' };
+    return { status: 'ok' };
   }
 
   @UseGuards(JwtAuthGuard)

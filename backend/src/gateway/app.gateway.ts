@@ -10,10 +10,11 @@ import { Logger } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { RedisService } from '../redis/redis.service';
 import { Role } from '../auth/roles.enum';
+import { getAllowedOrigins } from '../config/origins';
 
 @WebSocketGateway({
   cors: {
-    origin: process.env.CORS_ORIGIN?.split(',') || ['http://localhost:5173'],
+    origin: getAllowedOrigins(),
     credentials: true,
   },
   transports: ['websocket', 'polling'],
@@ -59,7 +60,9 @@ export class AppGateway implements OnGatewayConnection, OnGatewayDisconnect {
       client.data.userId = userId;
       await client.join(`user_${userId}`);
     } catch {
-      this.logger.warn(`Conexão rejeitada por JWT inválido (socket: ${client.id})`);
+      this.logger.warn(
+        `Conexão rejeitada por JWT inválido (socket: ${client.id})`,
+      );
       client.disconnect();
       return;
     }

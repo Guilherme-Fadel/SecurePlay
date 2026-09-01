@@ -20,8 +20,18 @@ export class S3Service {
       'secureplay-media',
     );
 
+    const endpoint = this.configService.get<string>('S3_ENDPOINT')?.trim();
+    const forcePathStyle =
+      this.configService.get<string>('S3_FORCE_PATH_STYLE')?.toLowerCase() ===
+      'true';
+
     this.s3Client = new S3Client({
-      region: this.configService.get<string>('AWS_REGION', 'us-east-1'),
+      region: this.configService.get<string>(
+        'AWS_REGION',
+        endpoint ? 'auto' : 'us-east-1',
+      ),
+      endpoint: endpoint || undefined,
+      forcePathStyle,
       credentials: {
         accessKeyId: this.configService.get<string>('AWS_ACCESS_KEY_ID', ''),
         secretAccessKey: this.configService.get<string>(
@@ -84,7 +94,9 @@ export class S3Service {
   ): string {
     const extension = extensionForUpload(type, contentType ?? '');
     if ((type === 'video' || type === 'page') && !aulaId) {
-      throw new BadRequestException('aulaId é obrigatório para este tipo de conteúdo');
+      throw new BadRequestException(
+        'aulaId é obrigatório para este tipo de conteúdo',
+      );
     }
     if (type === 'page' && !pageOrder) {
       throw new BadRequestException('pageOrder é obrigatório para páginas');

@@ -54,7 +54,7 @@ export class AuthController {
     const token = req.cookies?.token;
     const result = await this.authService.signOut(token);
 
-    res.clearCookie('token', { path: '/' });
+    res.clearCookie('token', this.authService.cookieClearOptions);
 
     return result;
   }

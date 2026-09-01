@@ -7,6 +7,7 @@ import {
 import { ValidationPipe } from '@nestjs/common';
 import { SocketIoAdapter } from './gateway/socket-io.adapter';
 import fastifyCookie from '@fastify/cookie';
+import { getAllowedOrigins } from './config/origins';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestFastifyApplication>(
@@ -22,9 +23,7 @@ async function bootstrap() {
 
   app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
 
-  const allowedOrigins = (
-    process.env.CORS_ORIGIN || 'http://localhost:5173'
-  ).split(',');
+  const allowedOrigins = getAllowedOrigins();
 
   app.enableCors({
     origin: allowedOrigins,
@@ -35,7 +34,7 @@ async function bootstrap() {
 
   app.useWebSocketAdapter(new SocketIoAdapter(app));
 
-  const port = process.env.PORT || 3001;
-  await app.listen(port as number, '0.0.0.0');
+  const port = Number(process.env.PORT || 3001);
+  await app.listen(port, '0.0.0.0');
 }
 bootstrap();

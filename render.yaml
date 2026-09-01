@@ -1,0 +1,51 @@
+services:
+  - type: web
+    name: secureplay-api
+    runtime: docker
+    plan: free
+    region: virginia
+    rootDir: backend
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: JWT_SECRET
+        generateValue: true
+      - key: CORS_ORIGIN
+        sync: false
+      - key: DB_HOST
+        sync: false
+      - key: DB_PORT
+        sync: false
+      - key: DB_USER
+        sync: false
+      - key: DB_PASSWORD
+        sync: false
+      - key: DB_NAME
+        sync: false
+      - key: DB_SSL
+        value: "true"
+      - key: DB_SSL_REJECT_UNAUTHORIZED
+        value: "true"
+      - key: DB_CA_CERT_BASE64
+        sync: false
+      - key: DB_SYNCHRONIZE
+        value: "true"
+      - key: REDIS_URL
+        sync: false
+      - key: COOKIE_SAME_SITE
+        value: none
+      - key: S3_BUCKET_NAME
+        sync: false
+      - key: AWS_REGION
+        value: auto
+      - key: AWS_ACCESS_KEY_ID
+        sync: false
+      - key: AWS_SECRET_ACCESS_KEY
+        sync: false
+      - key: S3_ENDPOINT
+        sync: false
+      - key: S3_FORCE_PATH_STYLE
+        value: "false"

@@ -19,13 +19,33 @@ export class AuthService {
   get cookieOptions() {
     const isProduction =
       this.configService.get<string>('NODE_ENV') === 'production';
+    const configuredSameSite = this.configService
+      .get<string>('COOKIE_SAME_SITE')
+      ?.trim()
+      .toLowerCase();
+    const sameSite =
+      configuredSameSite === 'strict' ||
+      configuredSameSite === 'lax' ||
+      configuredSameSite === 'none'
+        ? configuredSameSite
+        : isProduction
+          ? 'none'
+          : 'lax';
+    const domain = this.configService.get<string>('COOKIE_DOMAIN')?.trim();
+
     return {
       httpOnly: true,
-      secure: isProduction,
-      sameSite: 'lax' as const,
+      secure: isProduction || sameSite === 'none',
+      sameSite,
       path: '/',
       maxAge: 2 * 60 * 60,
+      ...(domain ? { domain } : {}),
     };
+  }
+
+  get cookieClearOptions() {
+    const { maxAge: _maxAge, ...options } = this.cookieOptions;
+    return options;
   }
 
   async signIn(dto: LoginDto) {
