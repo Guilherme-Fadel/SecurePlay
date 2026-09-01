@@ -2,25 +2,30 @@ import { Controller, Post, Body } from '@nestjs/common';
 import { S3Service } from './s3.service';
 import { Roles } from '../../auth/roles.decorator';
 import { Role } from '../../auth/roles.enum';
-import { IsString, IsInt, IsOptional } from 'class-validator';
+import { IsIn, IsInt, IsOptional, IsString, Min } from 'class-validator';
 import { Throttle } from '@nestjs/throttler';
+import { CONTENT_UPLOAD_TYPES, MAX_UPLOAD_BYTES } from './upload-policy';
 
 class PresignUploadDto {
   @IsString()
+  @IsIn(['thumbnail', 'video', 'page'])
   type: 'thumbnail' | 'video' | 'page';
 
   @IsInt()
+  @Min(1)
   moduloId: number;
 
   @IsOptional()
   @IsInt()
+  @Min(1)
   aulaId?: number;
 
   @IsOptional()
   @IsInt()
+  @Min(1)
   pageOrder?: number;
 
-  @IsString()
+  @IsIn([...CONTENT_UPLOAD_TYPES.thumbnail, ...CONTENT_UPLOAD_TYPES.video])
   contentType: string;
 }
 
@@ -37,14 +42,17 @@ export class UploadController {
       dto.moduloId,
       dto.aulaId,
       dto.pageOrder,
+      dto.contentType,
     );
-    const url = await this.s3Service.generatePresignedUploadUrl(
+    const { url: uploadUrl, fields } = await this.s3Service.generatePresignedUploadPost(
       key,
       dto.contentType,
+      MAX_UPLOAD_BYTES[dto.type],
     );
 
     return {
-      uploadUrl: url,
+      uploadUrl,
+      fields,
       key,
     };
   }

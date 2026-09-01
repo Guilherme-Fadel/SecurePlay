@@ -17,28 +17,24 @@ import { RedisModule } from './redis/redis.module';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { AppGateway } from './gateway/app.gateway';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
+import { RedisThrottlerStorage } from './redis/redis-throttler.storage';
 import { AchievementsModule } from './achievements/achievements.module';
 
 @Module({
   imports: [
     EventEmitterModule.forRoot(),
-    ThrottlerModule.forRoot([
-      {
-        name: 'short',
-        ttl: 1000,
-        limit: 10,
-      },
-      {
-        name: 'medium',
-        ttl: 10000,
-        limit: 50,
-      },
-      {
-        name: 'long',
-        ttl: 60000,
-        limit: 200,
-      },
-    ]),
+    ThrottlerModule.forRootAsync({
+      imports: [RedisModule],
+      inject: [RedisThrottlerStorage],
+      useFactory: (storage: RedisThrottlerStorage) => ({
+        storage,
+        throttlers: [
+          { name: 'short', ttl: 1000, limit: 10 },
+          { name: 'medium', ttl: 10000, limit: 50 },
+          { name: 'long', ttl: 60000, limit: 200 },
+        ],
+      }),
+    }),
     RedisModule,
     AuthModule,
     UsuarioModule,

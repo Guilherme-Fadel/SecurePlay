@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import {
   S3Client,
@@ -6,6 +6,8 @@ import {
   GetObjectCommand,
 } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
+import { createPresignedPost } from '@aws-sdk/s3-presigned-post';
+import { extensionForUpload } from './upload-policy';
 
 @Injectable()
 export class S3Service {
@@ -44,6 +46,23 @@ export class S3Service {
     return getSignedUrl(this.s3Client, command, { expiresIn });
   }
 
+  async generatePresignedUploadPost(
+    key: string,
+    contentType: string,
+    maxBytes: number,
+  ) {
+    return createPresignedPost(this.s3Client, {
+      Bucket: this.bucketName,
+      Key: key,
+      Expires: 300,
+      Fields: { 'Content-Type': contentType },
+      Conditions: [
+        ['eq', '$Content-Type', contentType],
+        ['content-length-range', 1, maxBytes],
+      ],
+    });
+  }
+
   async generatePresignedGetUrl(
     key: string,
     expiresIn = 3600,
@@ -61,14 +80,22 @@ export class S3Service {
     moduloId: number,
     aulaId?: number,
     pageOrder?: number,
+    contentType?: string,
   ): string {
+    const extension = extensionForUpload(type, contentType ?? '');
+    if ((type === 'video' || type === 'page') && !aulaId) {
+      throw new BadRequestException('aulaId é obrigatório para este tipo de conteúdo');
+    }
+    if (type === 'page' && !pageOrder) {
+      throw new BadRequestException('pageOrder é obrigatório para páginas');
+    }
     switch (type) {
       case 'thumbnail':
-        return `modulos/${moduloId}/thumbnail`;
+        return `modulos/${moduloId}/thumbnail.${extension}`;
       case 'video':
-        return `modulos/${moduloId}/aulas/${aulaId}/video`;
+        return `modulos/${moduloId}/aulas/${aulaId}/video.${extension}`;
       case 'page':
-        return `modulos/${moduloId}/aulas/${aulaId}/pages/${pageOrder}`;
+        return `modulos/${moduloId}/aulas/${aulaId}/pages/${pageOrder}.${extension}`;
     }
   }
 }

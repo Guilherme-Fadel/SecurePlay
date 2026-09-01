@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import { AlertCircle, CheckCircle2, Copy, Link2, Plus, QrCode, Trash2, UsersRound } from 'lucide-react';
 import { AppButton } from '@/components/ui/buttons/AppButton';
@@ -26,6 +26,40 @@ export function UserManagementTab({ empresaId, empresaNome, podeCriarAdministrad
   const [revoking, setRevoking] = useState<number | null>(null);
   const [linkGerado, setLinkGerado] = useState<string | null>(null);
   const [feedback, setFeedback] = useState<string | null>(null);
+  const dialogRef = useRef<HTMLDivElement>(null);
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
+  const openerRef = useRef<HTMLElement | null>(null);
+
+  const fecharConvite = () => {
+    setLinkGerado(null);
+    requestAnimationFrame(() => openerRef.current?.focus());
+  };
+
+  useEffect(() => {
+    if (!linkGerado) return;
+    closeButtonRef.current?.focus();
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        fecharConvite();
+        return;
+      }
+      if (event.key !== 'Tab' || !dialogRef.current) return;
+      const focusable = Array.from(dialogRef.current.querySelectorAll<HTMLElement>('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'));
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (!first || !last) return;
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [linkGerado]);
 
   const carregar = async () => {
     try {
@@ -55,7 +89,8 @@ export function UserManagementTab({ empresaId, empresaNome, podeCriarAdministrad
         },
         empresaId,
       );
-      const link = `${window.location.origin}/cadastro/${result.token}`;
+      openerRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+      const link = `${window.location.origin}/cadastro#${result.token}`;
       setLinkGerado(link);
       setConvites((current) => [result.convite, ...current]);
       setEmail('');
@@ -116,6 +151,6 @@ export function UserManagementTab({ empresaId, empresaNome, podeCriarAdministrad
       <div className="admin-invites-table">{convites.length === 0 ? <p className="admin-users-empty">Nenhum convite criado ainda.</p> : convites.map((convite) => <div key={convite.id} className="admin-invite-row"><div><strong>{convite.email ?? 'Link aberto para a empresa'}{convite.role === 'admin' ? ' · Administrador' : ''}</strong><small>Expira em {formatDate(convite.expires_at)} · {convite.uses}/{convite.max_uses} usos</small></div><span className={`admin-invite-status is-${convite.status}`}>{convite.status}</span>{convite.status === 'ativo' && <AppButton variant="ghost" size="sm" icon={<Trash2 size={14} />} disabled={revoking === convite.id} onClick={() => revogar(convite.id)}>Revogar</AppButton>}</div>)}</div>
     </section>
 
-    {linkGerado && <div className="admin-qr-modal" role="dialog" aria-modal="true" aria-label="Convite gerado"><div className="admin-qr-card"><button className="admin-qr-close" onClick={() => setLinkGerado(null)} aria-label="Fechar">×</button><div className="admin-qr-title"><QrCode size={20} /><div><strong>Convite pronto</strong><span>Compartilhe pelo link ou QR code.</span></div></div><div className="admin-qr-code"><QRCodeSVG value={linkGerado} size={172} level="M" includeMargin /></div><div className="admin-qr-link"><span>{linkGerado}</span><button onClick={() => copiar(linkGerado)}><Copy size={15} /> Copiar</button></div></div></div>}
+    {linkGerado && <div className="admin-qr-modal" role="dialog" aria-modal="true" aria-labelledby="invite-dialog-title"><div className="admin-qr-card" ref={dialogRef}><button ref={closeButtonRef} className="admin-qr-close" onClick={fecharConvite} aria-label="Fechar">×</button><div className="admin-qr-title"><QrCode size={20} /><div><strong id="invite-dialog-title">Convite pronto</strong><span>Compartilhe pelo link ou QR code.</span></div></div><div className="admin-qr-code"><QRCodeSVG value={linkGerado} size={172} level="M" includeMargin /></div><div className="admin-qr-link"><span>{linkGerado}</span><button onClick={() => copiar(linkGerado)}><Copy size={15} /> Copiar</button></div></div></div>}
   </div>;
 }

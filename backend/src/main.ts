@@ -11,7 +11,11 @@ import fastifyCookie from '@fastify/cookie';
 async function bootstrap() {
   const app = await NestFactory.create<NestFastifyApplication>(
     AppModule,
-    new FastifyAdapter({ logger: true }),
+    new FastifyAdapter({
+      logger: {
+        redact: ['req.headers.authorization', 'req.body.token'],
+      },
+    }),
   );
 
   await app.register(fastifyCookie);

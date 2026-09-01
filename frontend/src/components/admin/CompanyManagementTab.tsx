@@ -32,7 +32,7 @@ export function CompanyManagementTab({
       setNome('');
       setEmailAdministrador('');
       setErro(false);
-      setLinkAdministrador(`${window.location.origin}/cadastro/${resultado.token}`);
+      setLinkAdministrador(`${window.location.origin}/cadastro#${resultado.token}`);
       setMensagem('Empresa cadastrada e convite do administrador gerado.');
     } catch (error: any) {
       setErro(true);

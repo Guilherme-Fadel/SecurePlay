@@ -26,6 +26,7 @@ import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { useDashboardStats } from '@/hooks/useDashboard';
 import { useSectionContext } from '@/contexts/SectionContext';
 import { changePassword } from '@/services/profile';
+import { passwordValidationMessage } from '@/lib/password-policy';
 
 function initials(name?: string) {
   const parts = name?.trim().split(/\s+/).filter(Boolean) ?? [];
@@ -91,8 +92,9 @@ export function Perfil() {
       setPasswordError('Preencha todos os campos para continuar.');
       return;
     }
-    if (passwords.newPassword.length < 6) {
-      setPasswordError('A nova senha deve ter ao menos 6 caracteres.');
+    const newPasswordError = passwordValidationMessage(passwords.newPassword);
+    if (newPasswordError) {
+      setPasswordError(newPasswordError);
       return;
     }
     if (passwords.newPassword !== passwords.confirmPassword) {
@@ -279,7 +281,7 @@ export function Perfil() {
             <PasswordField
               id="new-password"
               label="Nova senha"
-              hint="Use ao menos 6 caracteres."
+              hint="Use ao menos 6 caracteres e no máximo 72 bytes."
               value={passwords.newPassword}
               visible={showPasswords.next}
               autoComplete="new-password"

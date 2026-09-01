@@ -1,4 +1,5 @@
 import { IsEmail, IsString, MinLength } from 'class-validator';
+import { IsSecurePassword } from '../../common/validators/password.validator';
 
 export class CompleteCadastroConviteDto {
   @IsString()
@@ -8,7 +9,6 @@ export class CompleteCadastroConviteDto {
   @IsEmail()
   email: string;
 
-  @IsString()
-  @MinLength(6)
+  @IsSecurePassword()
   password: string;
 }

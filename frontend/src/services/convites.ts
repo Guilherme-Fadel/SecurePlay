@@ -55,11 +55,11 @@ export async function revogarConvite(id: number, empresaId?: number): Promise<Co
 }
 
 export async function consultarConvite(token: string): Promise<ConvitePublico> {
-  const response = await api.get(`/convites/${token}`);
+  const response = await api.post('/convites/consultar', { token });
   return response.data;
 }
 
 export async function concluirCadastroConvite(token: string, data: { name: string; email: string; password: string }) {
-  const response = await api.post(`/convites/${token}/cadastro`, data);
+  const response = await api.post('/convites/cadastro', { ...data, token });
   return response.data as { sucesso: boolean; mensagem: string };
 }

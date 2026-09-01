@@ -10,6 +10,7 @@ import { Role } from '../auth/roles.enum';
 import { Empresa } from '../empresa/empresa.entity';
 import { UpdateTemaDto } from './dto/update-tema.dto';
 import { S3Service } from '../conteudo/s3/s3.service';
+import { extensionForLogo, MAX_UPLOAD_BYTES } from '../conteudo/s3/upload-policy';
 import { Usuario } from '../usuario/usuario.entity';
 import { Convite } from './entities/convite.entity';
 
@@ -125,13 +126,14 @@ export class AdminService {
 
   async presignLogoDaEmpresa(empresaId: number, contentType: string) {
     const empresa = await this.getEmpresa(empresaId);
-    const key = `empresas/${empresa.id}/logo`;
-    const uploadUrl = await this.s3Service.generatePresignedUploadUrl(
+    const key = `empresas/${empresa.id}/logo.${extensionForLogo(contentType)}`;
+    const { url: uploadUrl, fields } = await this.s3Service.generatePresignedUploadPost(
       key,
       contentType,
+      MAX_UPLOAD_BYTES.logo,
     );
 
-    return { uploadUrl, key };
+    return { uploadUrl, fields, key };
   }
 
   private async getEmpresaDoUsuario(userId: number): Promise<Empresa> {

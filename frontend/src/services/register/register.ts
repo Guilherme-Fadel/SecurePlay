@@ -1,4 +1,5 @@
 import { api } from '@/services/api';
+import { passwordValidationMessage } from '@/lib/password-policy';
 
 export interface RegisterResult {
   sucesso: boolean;
@@ -21,8 +22,9 @@ export async function registerService(
     return { sucesso: false, mensagem: 'E-mail inválido' };
   }
 
-  if (!password || password.length < 6) {
-    return { sucesso: false, mensagem: 'Senha deve ter pelo menos 6 caracteres' };
+  const passwordError = passwordValidationMessage(password);
+  if (passwordError) {
+    return { sucesso: false, mensagem: passwordError };
   }
 
   if (password !== confirmPassword) {

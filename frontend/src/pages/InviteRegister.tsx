@@ -1,13 +1,14 @@
 import { useEffect, useState } from 'react';
-import { Link, useNavigate, useParams } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { CheckCircle2, LockKeyhole, ShieldCheck, UserRound } from 'lucide-react';
 import { Toaster, toast } from 'sonner';
 import { consultarConvite, concluirCadastroConvite, type ConvitePublico } from '@/services/convites';
 import { PageTransition } from '@/components/shared/PageTransition';
+import { passwordValidationMessage } from '@/lib/password-policy';
 import './invite-register.css';
 
 export default function InviteRegister() {
-  const { token = '' } = useParams();
+  const [token] = useState(() => window.location.hash.startsWith('#') ? window.location.hash.slice(1) : '');
   const navigate = useNavigate();
   const [convite, setConvite] = useState<ConvitePublico | null>(null);
   const [loading, setLoading] = useState(true);
@@ -18,6 +19,11 @@ export default function InviteRegister() {
   const [confirmPassword, setConfirmPassword] = useState('');
 
   useEffect(() => {
+    if (!token) {
+      setConvite(null);
+      setLoading(false);
+      return;
+    }
     consultarConvite(token)
       .then((data) => {
         setConvite(data);
@@ -29,6 +35,11 @@ export default function InviteRegister() {
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    const passwordError = passwordValidationMessage(password);
+    if (passwordError) {
+      toast.error(passwordError);
+      return;
+    }
     if (password !== confirmPassword) {
       toast.error('As senhas não coincidem.');
       return;
@@ -72,8 +83,8 @@ export default function InviteRegister() {
               <form onSubmit={handleSubmit} className="invite-form">
                 <label>Nome completo<input value={name} onChange={(event) => setName(event.target.value)} minLength={3} required /></label>
                 <label>E-mail corporativo<input type="email" value={email} onChange={(event) => setEmail(event.target.value)} disabled={Boolean(convite.email)} required /></label>
-                <label>Crie uma senha<input type="password" value={password} onChange={(event) => setPassword(event.target.value)} minLength={6} autoComplete="new-password" required /></label>
-                <label>Confirme a senha<input type="password" value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} minLength={6} autoComplete="new-password" required /></label>
+                <label>Crie uma senha<input type="password" value={password} onChange={(event) => setPassword(event.target.value)} minLength={6} maxLength={72} autoComplete="new-password" required /></label>
+                <label>Confirme a senha<input type="password" value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} minLength={6} maxLength={72} autoComplete="new-password" required /></label>
                 <button type="submit" disabled={submitting}>{submitting ? 'Criando acesso...' : 'Concluir cadastro'}</button>
               </form>
 

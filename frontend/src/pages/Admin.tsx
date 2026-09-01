@@ -184,9 +184,9 @@ export default function Admin({
         const file = e.target.files?.[0];
         if (!file)
             return;
-        const allowedTypes = ['image/png', 'image/svg+xml', 'image/webp', 'image/jpeg'];
+        const allowedTypes = ['image/png', 'image/webp', 'image/jpeg'];
         if (!allowedTypes.includes(file.type)) {
-            setMessage('Formato inválido. Use PNG, SVG, WEBP ou JPEG.');
+            setMessage('Formato inválido. Use PNG, WEBP ou JPEG.');
             setTimeout(() => setMessage(null), 3000);
             return;
         }
@@ -197,12 +197,12 @@ export default function Admin({
         }
         setUploading(true);
         try {
-            const { uploadUrl, key } = await presignLogo(file.type, empresaAlvoId);
-            await fetch(uploadUrl, {
-                method: 'PUT',
-                body: file,
-                headers: { 'Content-Type': file.type },
-            });
+            const { uploadUrl, fields, key } = await presignLogo(file.type, empresaAlvoId);
+            const formData = new FormData();
+            Object.entries(fields).forEach(([name, value]) => formData.append(name, value));
+            formData.append('file', file);
+            const response = await fetch(uploadUrl, { method: 'POST', body: formData });
+            if (!response.ok) throw new Error('Falha no upload do logo');
             setLogoUrl(key);
             setLogoPreview(URL.createObjectURL(file));
             setMessage('Logo enviado com sucesso');
@@ -308,11 +308,11 @@ export default function Admin({
                       </div>
                       <div className="admin-logo-copy">
                         <strong>{empresaNome || 'Sua empresa'}</strong>
-                        <p>PNG, SVG, WEBP ou JPEG. Tamanho máximo de 2 MB.</p>
+                        <p>PNG, WEBP ou JPEG. Tamanho máximo de 2 MB.</p>
                         <label className={cn('app-button app-button--soft app-button--sm admin-upload-button', uploading && 'is-disabled')}>
                           <Upload size={15}/>
                           <span>{uploading ? 'Enviando...' : 'Selecionar arquivo'}</span>
-                          <input type="file" accept="image/png,image/svg+xml,image/webp,image/jpeg" onChange={handleLogoUpload} disabled={uploading}/>
+                          <input type="file" accept="image/png,image/webp,image/jpeg" onChange={handleLogoUpload} disabled={uploading}/>
                         </label>
                       </div>
                     </InfoCard.Section>

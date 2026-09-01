@@ -51,7 +51,7 @@ export async function updateTema(
 export async function presignLogo(
   contentType: string,
   empresaId?: number,
-): Promise<{ uploadUrl: string; key: string }> {
+): Promise<{ uploadUrl: string; fields: Record<string, string>; key: string }> {
   const response = await api.post(`${empresaPath(empresaId)}/logo/presign`, { contentType });
   return response.data;
 }
