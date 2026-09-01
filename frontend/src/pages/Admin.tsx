@@ -17,6 +17,7 @@ import { AppButton } from '@/components/ui/buttons/AppButton';
 import { InfoCard } from '@/components/ui/visuals/InfoCard';
 import { AppSectionHeader } from '@/components/ui/visuals/AppSectionHeader';
 import { UserManagementTab } from '@/components/admin/UserManagementTab';
+import { CompanyManagementTab } from '@/components/admin/CompanyManagementTab';
 import { AlertCircle, ArrowLeft, Building2, CheckCircle2, Eye, LayoutTemplate, Palette, RotateCcw, Save, ShieldCheck, SlidersHorizontal, Upload, UsersRound, WandSparkles, } from 'lucide-react';
 import '@/styles/app-ui.css';
 import './admin-users.css';
@@ -122,11 +123,16 @@ export default function Admin({
     const [saving, setSaving] = useState(false);
     const [message, setMessage] = useState<string | null>(null);
     const [uploading, setUploading] = useState(false);
-    const [activeTab, setActiveTab] = useState<'usuarios' | 'layout'>(initialTab);
+    const [activeTab, setActiveTab] = useState<'empresas' | 'usuarios' | 'layout'>(initialTab);
     const [empresas, setEmpresas] = useState<EmpresaAdministravel[]>([]);
     const [empresaSelecionadaId, setEmpresaSelecionadaId] = useState<number | null>(null);
     const empresaSelecionada = empresas.find((empresa) => empresa.id === empresaSelecionadaId) ?? null;
     const empresaAlvoId = platformMode ? empresaSelecionadaId ?? undefined : undefined;
+
+    const handleEmpresaCriada = (empresa: EmpresaAdministravel) => {
+        setEmpresas((current) => [...current, empresa].sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR')));
+        setEmpresaSelecionadaId(empresa.id);
+    };
 
     useEffect(() => {
         setActiveTab(initialTab);
@@ -242,17 +248,21 @@ export default function Admin({
           </AppButton>
         </div>}
 
-        {platformMode && <div className="admin-platform-context">
-          <span>Empresa administrada</span>
-          <select value={empresaSelecionadaId ?? ''} onChange={(event) => setEmpresaSelecionadaId(Number(event.target.value))} aria-label="Selecionar empresa">
-            <option value="" disabled>Selecione uma empresa</option>
-            {empresas.map((empresa) => <option key={empresa.id} value={empresa.id}>{empresa.nome}</option>)}
-          </select>
-        </div>}
+        <div className={cn('admin-console', platformMode && 'is-platform')}>
+          {platformMode && <div className="admin-platform-context">
+            <span>Empresa administrada</span>
+            <select value={empresaSelecionadaId ?? ''} onChange={(event) => setEmpresaSelecionadaId(Number(event.target.value))} aria-label="Selecionar empresa">
+              <option value="" disabled>Selecione uma empresa</option>
+              {empresas.map((empresa) => <option key={empresa.id} value={empresa.id}>{empresa.nome}</option>)}
+            </select>
+          </div>}
 
-        {platformMode && !empresaSelecionada ? <div className="admin-feedback is-error" role="status">Selecione uma empresa para administrar usuários, convites e layout.</div> : <section className={cn('admin-workspace', lockedTab && 'is-single-column')}>
+        <section className={cn('admin-workspace', lockedTab && 'is-single-column')}>
           {!lockedTab && <aside className="admin-tabs" aria-label="Seções administrativas">
             <span className="admin-tabs-label">{platformMode ? 'Administração global' : 'Configurações da empresa'}</span>
+            {platformMode && <button type="button" onClick={() => setActiveTab('empresas')} className={cn('admin-tab', activeTab === 'empresas' && 'is-active')}>
+              <Building2 size={17}/><span>Empresas</span>
+            </button>}
             <button type="button" onClick={() => setActiveTab('usuarios')} className={cn('admin-tab', activeTab === 'usuarios' && 'is-active')}>
               <UsersRound size={17}/><span>Usuários</span>
             </button>
@@ -262,7 +272,7 @@ export default function Admin({
           </aside>}
 
           <section className="admin-workspace-content">
-            {activeTab === 'usuarios' ? <UserManagementTab empresaId={empresaAlvoId} empresaNome={platformMode ? empresaSelecionada?.nome : undefined}/> : <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }} className="app-page admin-page-content">
+            {activeTab === 'empresas' && platformMode ? <CompanyManagementTab empresas={empresas} onEmpresaCriada={handleEmpresaCriada} /> : platformMode && !empresaSelecionada ? <div className="admin-feedback is-error" role="status">Selecione uma empresa para administrar usuários, convites e layout.</div> : activeTab === 'usuarios' ? <UserManagementTab empresaId={empresaAlvoId} empresaNome={platformMode ? empresaSelecionada?.nome : undefined} podeCriarAdministrador={platformMode}/> : <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }} className="app-page admin-page-content">
             <div className="admin-page-heading">
               <div>
                 <span className="admin-page-eyebrow">Identidade visual</span>
@@ -437,6 +447,7 @@ export default function Admin({
             </div>
             </motion.div>}
           </section>
-        </section>}
+        </section>
+        </div>
       </div>);
 }

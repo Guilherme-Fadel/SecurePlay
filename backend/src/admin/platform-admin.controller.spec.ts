@@ -24,6 +24,53 @@ describe('Administração global e por empresa', () => {
 
     await controller.criarConvite(14, dto, { user: { userId: 9 } });
 
-    expect(convitesService.criarParaEmpresa).toHaveBeenCalledWith(14, 9, dto);
+    expect(convitesService.criarParaEmpresa).toHaveBeenCalledWith(
+      14,
+      9,
+      dto,
+      Role.USER,
+    );
+  });
+
+  it('cria convite de administrador apenas quando a flag da rota global é marcada', async () => {
+    const convitesService = { criarParaEmpresa: jest.fn().mockResolvedValue({}) };
+    const controller = new PlatformAdminController(
+      {} as never,
+      convitesService as never,
+    );
+    const dto = {
+      email: 'admin@empresa.com',
+      validade_dias: 7,
+      max_uses: 1,
+      administrador: true,
+    };
+
+    await controller.criarConvite(14, dto, { user: { userId: 9 } });
+
+    expect(convitesService.criarParaEmpresa).toHaveBeenCalledWith(
+      14,
+      9,
+      dto,
+      Role.ADMIN,
+    );
+  });
+
+  it('permite cadastrar empresa somente pelo serviço global', async () => {
+    const adminService = { criarEmpresa: jest.fn().mockResolvedValue({ id: 15 }) };
+    const controller = new PlatformAdminController(
+      adminService as never,
+      {} as never,
+    );
+
+    await controller.criarEmpresa(
+      { nome: 'Empresa Nova', email_administrador: 'admin@empresa.com' },
+      { user: { userId: 9 } },
+    );
+
+    expect(adminService.criarEmpresa).toHaveBeenCalledWith(
+      'Empresa Nova',
+      'admin@empresa.com',
+      9,
+    );
   });
 });

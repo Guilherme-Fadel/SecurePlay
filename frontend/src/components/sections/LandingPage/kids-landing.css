@@ -1,0 +1,560 @@
+.kids-landing {
+  --kids-ink: #29213c;
+  --kids-muted: #6f687d;
+  --kids-purple: #5e42b7;
+  --kids-purple-deep: #342758;
+  --kids-paper: #fcf7ee;
+  --kids-mint: #d9eee4;
+  --kids-coral: #e88d76;
+  --kids-gold: #e4b64b;
+  --kids-layout: min(calc(100% - 48px), 1240px);
+  color: var(--kids-ink);
+  font-family: 'Plus Jakarta Sans', 'Inter', sans-serif;
+}
+
+.kids-landing *,
+.kids-landing button { font-family: inherit; }
+
+.kids-landing h1,
+.kids-landing h2,
+.kids-landing h3,
+.kids-landing p,
+.kids-landing figure { margin: 0; }
+
+.kids-landing img { display: block; max-width: 100%; }
+
+.kids-header {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  display: flex;
+  width: var(--kids-layout);
+  align-items: center;
+  justify-content: space-between;
+  margin: 0 auto;
+  padding: 20px 0;
+  /* The background fades into the ambient violet glow instead of ending as a hard panel. */
+  background: linear-gradient(
+    90deg,
+    rgba(252, 247, 238, 0.9) 0%,
+    rgba(252, 247, 238, 0.88) 70%,
+    rgba(252, 247, 238, 0.54) 88%,
+    rgba(252, 247, 238, 0) 100%
+  );
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+
+.kids-brand {
+  color: var(--kids-ink);
+  font-size: 23px;
+  font-weight: 700;
+  letter-spacing: -0.045em;
+  line-height: 1;
+  text-decoration: none;
+}
+
+.kids-brand strong { color: var(--kids-purple); font: inherit; }
+
+.kids-nav { display: flex; align-items: center; gap: clamp(20px, 2vw, 32px); }
+
+.kids-nav button,
+.kids-login,
+.kids-menu,
+.kids-mobile-nav button {
+  border: 0;
+  background: transparent;
+  color: var(--kids-muted);
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.kids-nav button:hover,
+.kids-login:hover { color: var(--kids-purple); }
+
+.kids-login {
+  padding: 10px 17px;
+  border-radius: 999px;
+  background: #eee8fc;
+  color: var(--kids-purple);
+}
+
+.kids-menu,
+.kids-mobile-nav { display: none; }
+
+.kids-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 0.92fr) minmax(430px, 1.08fr);
+  width: var(--kids-layout);
+  min-height: 650px;
+  align-items: center;
+  gap: clamp(48px, 7vw, 116px);
+  margin: 0 auto;
+  padding: 46px 0 94px;
+}
+
+.kids-eyebrow {
+  color: var(--kids-purple);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  line-height: 1.45;
+  text-transform: uppercase;
+}
+
+.kids-hero h1 {
+  max-width: 640px;
+  margin: 18px 0 19px;
+  color: var(--kids-ink);
+  font-size: clamp(43px, 4.7vw, 68px);
+  font-weight: 700;
+  letter-spacing: -0.045em;
+  line-height: 1.04;
+}
+
+.kids-landing em {
+  color: var(--kids-purple);
+  font: inherit;
+  font-style: normal;
+}
+
+.kids-lead {
+  max-width: 550px;
+  color: var(--kids-muted);
+  font-size: 16px;
+  line-height: 1.75;
+}
+
+.kids-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 31px; }
+
+.kids-button {
+  display: inline-flex;
+  min-height: 50px;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  padding: 0 21px;
+  border: 0;
+  border-radius: 14px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 700;
+  transition: transform 160ms ease, box-shadow 160ms ease, background 160ms ease;
+}
+
+.kids-button:hover { transform: translateY(-2px); }
+
+.kids-button-primary {
+  background: var(--kids-purple);
+  box-shadow: 0 12px 24px rgba(83, 58, 170, 0.22);
+  color: #fff;
+}
+
+.kids-button-secondary { background: rgba(255, 255, 255, 0.72); color: var(--kids-purple); }
+
+.kids-trust { display: flex; flex-wrap: wrap; gap: 17px; margin-top: 24px; color: #716a7f; font-size: 11px; font-weight: 600; }
+
+.kids-trust span { display: inline-flex; align-items: center; gap: 7px; }
+
+.kids-trust span::before {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--kids-coral);
+  content: '';
+}
+
+.kids-trust span:last-child::before { background: #489b7c; }
+
+.kids-hero-art {
+  position: relative;
+  z-index: 0;
+  width: min(100%, 610px);
+  margin-left: auto;
+}
+
+.kids-hero-art::before {
+  position: absolute;
+  z-index: -1;
+  top: 8%;
+  right: -6%;
+  width: 77%;
+  height: 72%;
+  border-radius: 50% 44% 48% 53%;
+  background: #e6ddf8;
+  content: '';
+  transform: rotate(8deg);
+}
+
+.kids-hero-art::after {
+  position: absolute;
+  z-index: -1;
+  bottom: 5%;
+  left: -6%;
+  width: 35%;
+  height: 28%;
+  border-radius: 42% 58% 40% 60%;
+  background: var(--kids-mint);
+  content: '';
+}
+
+.kids-hero-art img {
+  width: 100%;
+  aspect-ratio: 1 / 0.87;
+  object-fit: cover;
+  object-position: center;
+  border-radius: 34px 34px 104px 34px;
+  box-shadow: 0 28px 54px rgba(54, 45, 76, 0.15);
+}
+
+.kids-section { width: var(--kids-layout); margin: 0 auto; padding: 112px 0; }
+
+.kids-section-heading { max-width: 760px; margin-bottom: 48px; }
+
+.kids-section-heading h2 {
+  margin: 13px 0 15px;
+  font-size: clamp(32px, 3.45vw, 47px);
+  font-weight: 700;
+  letter-spacing: -0.04em;
+  line-height: 1.1;
+}
+
+.kids-section-heading > p:last-child { max-width: 625px; color: var(--kids-muted); font-size: 14px; line-height: 1.75; }
+
+.kids-mission-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+
+.kids-mission-card {
+  position: relative;
+  min-height: 294px;
+  padding: 30px 30px 27px;
+  overflow: hidden;
+  border-radius: 27px;
+  background: #e9e0fb;
+}
+
+.kids-mission-card::after {
+  position: absolute;
+  right: -14%;
+  bottom: -33%;
+  width: 74%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.3);
+  content: '';
+}
+
+.kids-mission-card:nth-child(2) { background: #d9ede4; }
+
+.kids-mission-card:nth-child(2)::after { right: -12%; bottom: -20%; border-radius: 42% 58% 55% 45%; background: rgba(255, 255, 255, 0.38); }
+
+.kids-mission-card:nth-child(3) { background: #f7e6bc; }
+
+.kids-mission-card:nth-child(3)::after { right: -20%; bottom: -35%; background: rgba(255, 255, 255, 0.42); }
+
+.kids-mission-card > * { position: relative; z-index: 1; }
+
+.kids-mission-number {
+  display: inline-flex;
+  width: 34px;
+  height: 34px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.64);
+  color: var(--kids-purple-deep);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.kids-mission-card p { margin-top: 32px; color: rgba(43, 34, 64, 0.64); font-size: 10px; font-weight: 700; letter-spacing: 0.13em; }
+
+.kids-mission-card h3 { max-width: 250px; margin: 11px 0 13px; font-size: 25px; font-weight: 700; letter-spacing: -0.025em; line-height: 1.12; }
+
+.kids-mission-rule { display: block; width: 34px; height: 3px; border-radius: 999px; background: rgba(52, 39, 88, 0.35); }
+
+.kids-mission-card > div { max-width: 267px; margin-top: 14px; color: rgba(43, 34, 64, 0.76); font-size: 13px; line-height: 1.65; }
+
+.kids-how {
+  width: 100%;
+  margin: 0;
+  padding-right: max(24px, calc((100% - 1240px) / 2));
+  padding-left: max(24px, calc((100% - 1240px) / 2));
+  background: rgba(221, 239, 230, 0.72);
+}
+
+.kids-how .kids-section-heading { max-width: 760px; }
+
+.kids-steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 21px; }
+
+.kids-step {
+  position: relative;
+  overflow: hidden;
+  border-radius: 24px;
+  background: rgba(255, 253, 249, 0.92);
+  box-shadow: 0 14px 30px rgba(49, 71, 65, 0.08);
+}
+
+.kids-step-number {
+  position: absolute;
+  z-index: 1;
+  top: 15px;
+  left: 15px;
+  padding: 5px 8px;
+  border-radius: 999px;
+  background: rgba(255, 253, 249, 0.84);
+  color: var(--kids-purple);
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.kids-step-media { height: 200px; overflow: hidden; background: #e7e0f4; }
+
+.kids-step-media img { width: 100%; height: 100%; object-fit: cover; }
+
+.kids-step h3 { margin: 23px 24px 0; font-size: 19px; font-weight: 700; letter-spacing: -0.02em; }
+
+.kids-step p { margin: 9px 24px 26px; color: var(--kids-muted); font-size: 12px; line-height: 1.67; }
+
+.kids-school { padding-top: 104px; padding-bottom: 104px; }
+
+.kids-school-card {
+  display: grid;
+  grid-template-columns: minmax(0, 1.02fr) minmax(370px, 0.98fr);
+  min-height: 472px;
+  overflow: hidden;
+  border-radius: 36px;
+  background: var(--kids-purple-deep);
+  box-shadow: 0 22px 50px rgba(48, 37, 79, 0.17);
+  color: #fff;
+}
+
+.kids-school-copy { display: flex; align-items: flex-start; flex-direction: column; justify-content: center; padding: clamp(42px, 5vw, 80px); }
+
+.kids-school-copy .kids-eyebrow { color: #dbcff9; }
+
+.kids-school-copy h2 {
+  max-width: 500px;
+  margin: 15px 0 17px;
+  font-size: clamp(31px, 3.1vw, 44px);
+  font-weight: 700;
+  letter-spacing: -0.04em;
+  line-height: 1.1;
+}
+
+.kids-school-copy > p:not(.kids-eyebrow) { max-width: 505px; color: #e8e0f4; font-size: 14px; line-height: 1.75; }
+
+.kids-school-notes { display: flex; flex-wrap: wrap; gap: 8px 18px; margin-top: 24px; color: #d9eeda; font-size: 11px; font-weight: 600; }
+
+.kids-school-notes span + span::before { margin-right: 18px; color: var(--kids-gold); content: '•'; }
+
+.kids-button-light { margin-top: 27px; background: #fffaf0; color: var(--kids-purple-deep); }
+
+.kids-school-art { min-height: 315px; background: #e9dcae; }
+
+.kids-school-art img { width: 100%; height: 100%; object-fit: cover; object-position: center; }
+
+.kids-faq { max-width: 800px; }
+
+.kids-faq .kids-section-heading { margin-right: auto; margin-left: auto; text-align: center; }
+
+.kids-faq .kids-section-heading > p:last-child { margin-right: auto; margin-left: auto; }
+
+.kids-faq-list { display: grid; gap: 12px; }
+
+.kids-faq-item { overflow: hidden; border-radius: 19px; background: rgba(255, 253, 249, 0.88); box-shadow: 0 8px 20px rgba(60, 47, 84, 0.055); }
+
+.kids-faq-item.is-open { box-shadow: 0 14px 27px rgba(81, 60, 143, 0.11); }
+
+.kids-faq-item button {
+  display: flex;
+  width: var(--kids-layout);
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 21px 23px;
+  border: 0;
+  background: transparent;
+  color: var(--kids-ink);
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 700;
+  text-align: left;
+}
+
+.kids-faq-item.is-open button svg { color: var(--kids-purple); transform: rotate(180deg); }
+
+.kids-faq-item p { padding: 0 23px 22px; color: var(--kids-muted); font-size: 13px; line-height: 1.72; }
+
+.kids-cta {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(240px, 0.58fr);
+  width: min(calc(100% - 64px), 1080px);
+  min-height: 264px;
+  margin: 0 auto 72px;
+  overflow: hidden;
+  border-radius: 28px;
+  background: #e6b64d;
+}
+
+.kids-cta-copy { position: relative; z-index: 1; padding: clamp(30px, 3.5vw, 48px); }
+
+.kids-cta-copy .kids-eyebrow { color: #65451d; }
+
+.kids-cta h2 {
+  max-width: 510px;
+  margin: 10px 0 11px;
+  color: #31284a;
+  font-size: clamp(27px, 2.4vw, 35px);
+  font-weight: 700;
+  letter-spacing: -0.04em;
+  line-height: 1.1;
+}
+
+.kids-cta p:not(.kids-eyebrow) { max-width: 470px; color: rgba(49, 40, 74, 0.78); font-size: 13px; line-height: 1.6; }
+
+.kids-button-sun { min-height: 45px; margin-top: 18px; background: var(--kids-purple-deep); color: #fff; box-shadow: 0 11px 22px rgba(65, 44, 113, 0.18); }
+
+.kids-cta-map {
+  position: relative;
+  min-height: 100%;
+  overflow: hidden;
+  background: linear-gradient(135deg, rgba(99, 68, 180, 0.21), rgba(255, 249, 224, 0.24));
+}
+
+.kids-cta-map::before,
+.kids-cta-map::after,
+.kids-cta-map span,
+.kids-cta-map i,
+.kids-cta-map b { position: absolute; display: block; content: ''; }
+
+.kids-cta-map::before {
+  top: 14%;
+  right: 8%;
+  width: 61%;
+  height: 57%;
+  border: 12px solid rgba(255, 250, 228, 0.58);
+  border-radius: 48% 52% 43% 57% / 44% 40% 60% 56%;
+  transform: rotate(-16deg);
+}
+
+.kids-cta-map::after { top: 39%; left: 9%; width: 32%; height: 7px; border-radius: 50%; background: rgba(79, 55, 135, 0.68); transform: rotate(-32deg); }
+
+.kids-cta-map span { top: 22%; left: 20%; width: 23px; height: 23px; border-radius: 50%; background: #f8f0d3; box-shadow: 118px 133px 0 -4px #5d42ad; }
+
+.kids-cta-map i { right: 16%; bottom: 19%; width: 42px; height: 42px; border-radius: 14px 26px 16px 28px; background: #78b79d; transform: rotate(18deg); }
+
+.kids-cta-map b { top: 36%; left: 43%; width: 13px; height: 13px; border-radius: 50%; background: #e46f5b; }
+
+.kids-footer {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  width: var(--kids-layout);
+  margin: auto;
+  padding: 25px 0 37px;
+  gap: 24px;
+  color: #968e9e;
+  font-size: 11px;
+}
+
+.kids-footer p { margin: 0; }
+
+.kids-footer div { display: flex; gap: 17px; }
+
+.kids-footer a { color: inherit; text-decoration: none; }
+
+.kids-footer a:hover { color: var(--kids-purple); }
+
+.kids-footer small {
+  grid-column: 1 / -1;
+  padding-top: 20px;
+  color: var(--kids-muted);
+  font-size: 10px;
+}
+
+.kids-scroll-top {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  z-index: 50;
+  display: grid;
+  width: 46px;
+  height: 46px;
+  place-items: center;
+  border: 0;
+  border-radius: 50%;
+  background: #fffaf1;
+  box-shadow: 0 10px 24px rgba(70, 49, 150, 0.16);
+  color: var(--kids-purple);
+  cursor: pointer;
+  transition: background 160ms ease, color 160ms ease, box-shadow 160ms ease;
+}
+
+.kids-scroll-top:hover { background: var(--kids-purple); box-shadow: 0 12px 28px rgba(70, 49, 150, 0.25); color: #fff; }
+
+@media (min-width: 761px) {
+  .kids-landing { --kids-layout: min(calc(100% - clamp(64px, 10vw, 240px)), 1240px); }
+  .kids-how { padding-right: max(clamp(32px, 5vw, 120px), calc((100% - 1240px) / 2)); padding-left: max(clamp(32px, 5vw, 120px), calc((100% - 1240px) / 2)); }
+}
+
+@media (max-width: 960px) {
+  .kids-hero { grid-template-columns: minmax(0, 1fr) minmax(330px, 0.9fr); gap: 38px; }
+  .kids-hero h1 { font-size: clamp(42px, 5vw, 56px); }
+  .kids-mission-card { min-height: 315px; padding: 26px; }
+  .kids-school-card { grid-template-columns: minmax(0, 1fr) minmax(310px, 0.9fr); }
+  .kids-school-copy { padding: 44px; }
+}
+
+@media (max-width: 760px) {
+  .kids-landing { --kids-layout: calc(100% - 40px); }
+  .kids-header { padding: 16px 0; }
+  .kids-brand { font-size: 21px; }
+  .kids-nav,
+  .kids-header > .kids-login { display: none; }
+  .kids-menu { display: grid; width: 38px; height: 38px; place-items: center; color: var(--kids-purple); }
+  .kids-mobile-nav {
+    position: absolute;
+    top: 65px;
+    right: 0;
+    left: 0;
+    z-index: 2;
+    padding: 9px;
+    border-radius: 18px;
+    background: #fffaf2;
+    box-shadow: 0 16px 35px rgba(42, 33, 88, 0.15);
+  }
+  .kids-mobile-nav button { display: block; width: 100%; padding: 13px; color: var(--kids-ink); text-align: left; }
+  .kids-hero { grid-template-columns: 1fr; min-height: 0; gap: 42px; padding: 52px 0 74px; text-align: center; }
+  .kids-hero-copy { display: flex; align-items: center; flex-direction: column; }
+  .kids-hero h1 { font-size: clamp(41px, 12vw, 54px); }
+  .kids-actions,
+  .kids-trust { justify-content: center; }
+  .kids-hero-art { width: 100%; }
+  .kids-hero-art img { aspect-ratio: 1 / 0.9; border-radius: 25px 25px 72px 25px; }
+  .kids-section { padding: 77px 0; }
+  .kids-section-heading { margin-bottom: 35px; }
+  .kids-section-heading h2 { font-size: 34px; }
+  .kids-mission-grid,
+  .kids-steps { grid-template-columns: 1fr; }
+  .kids-mission-card { min-height: 260px; }
+  .kids-how { width: 100%; padding-right: 20px; padding-left: 20px; }
+  .kids-step-media { height: 212px; }
+  .kids-school { padding-top: 77px; padding-bottom: 77px; }
+  .kids-school-card { grid-template-columns: 1fr; border-radius: 28px; }
+  .kids-school-copy { padding: 43px 28px; }
+  .kids-school-copy h2 { font-size: 34px; }
+  .kids-school-art { min-height: 265px; }
+  .kids-school-notes span + span::before { margin-right: 10px; }
+  .kids-cta { grid-template-columns: 1fr; width: var(--kids-layout); min-height: 0; margin-bottom: 55px; border-radius: 24px; }
+  .kids-cta-copy { padding: 43px 28px; }
+  .kids-cta h2 { font-size: 34px; }
+  .kids-cta-map { min-height: 160px; }
+  .kids-cta-map::before { top: -7%; right: 9%; width: 48%; height: 95%; }
+  .kids-cta-map span { top: 28%; left: 22%; }
+  .kids-footer { grid-template-columns: 1fr; padding: 26px 0; gap: 15px; text-align: center; }
+  .kids-footer .kids-brand,
+  .kids-footer div { justify-content: center; }
+  .kids-footer small { margin-top: 4px; }
+}

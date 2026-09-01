@@ -6,6 +6,7 @@ export interface Convite {
   expires_at: string;
   max_uses: number;
   uses: number;
+  role: 'user' | 'admin';
   status: 'ativo' | 'utilizado' | 'expirado' | 'revogado';
   created_at: string;
 }
@@ -41,7 +42,7 @@ export async function listarConvites(empresaId?: number): Promise<Convite[]> {
 }
 
 export async function criarConvite(
-  data: { email?: string; validade_dias: number; max_uses: number },
+  data: { email?: string; validade_dias: number; max_uses: number; administrador?: boolean },
   empresaId?: number,
 ) {
   const response = await api.post(`${empresaPath(empresaId)}/convites`, data);

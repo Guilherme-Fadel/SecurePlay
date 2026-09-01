@@ -1,66 +1,10 @@
-import { motion } from 'motion/react';
-import { useMemo } from 'react';
 export function LandingBackground() {
-    const particles = useMemo(() => generateParticles(40), []);
-    return (<div className="fixed inset-0 z-0 overflow-hidden pointer-events-none">
-
-      <div className="absolute inset-0 bg-[var(--background)]"/>
-      <div className="absolute inset-0 bg-gradient-to-br from-[var(--primary)]/10 via-transparent to-[var(--secondary)]/10"/>
-
-
-      <ColorOrb className="w-[46vw] h-[46vw] -top-[12vw] -left-[10vw]" color="var(--primary)" drift={{ x: [0, 40, 0], y: [0, 30, 0] }} duration={18}/>
-      <ColorOrb className="w-[40vw] h-[40vw] top-[30%] -right-[12vw]" color="var(--secondary)" drift={{ x: [0, -50, 0], y: [0, 40, 0] }} duration={22}/>
-      <ColorOrb className="w-[34vw] h-[34vw] -bottom-[10vw] left-[20%]" color="var(--accent)" drift={{ x: [0, 30, 0], y: [0, -30, 0] }} duration={26} opacity={0.1}/>
-
-
-      <div className="absolute inset-0 opacity-[0.05]" style={{
-            backgroundImage: `
-            linear-gradient(90deg, var(--secondary) 1px, transparent 1px),
-            linear-gradient(var(--secondary) 1px, transparent 1px)
-          `,
-            backgroundSize: '32px 32px',
-        }}/>
-
-
-      {particles.map((p) => (<motion.div key={p.id} className="absolute w-1 h-1" style={{
-                left: `${p.x}%`,
-                top: `${p.y}%`,
-                background: p.color,
-                boxShadow: `0 0 4px ${p.color}`,
-            }} animate={{ y: [-12, 12, -12], opacity: [0.1, 0.45, 0.1] }} transition={{ duration: p.duration, repeat: Infinity, delay: p.delay }}/>))}
-
-
-      <div className="absolute inset-0 opacity-[0.04]" style={{
-            backgroundImage: 'repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(0,0,0,0.6) 3px, rgba(0,0,0,0.6) 4px)',
-        }}/>
-
-
-      <div className="absolute inset-0" style={{
-            background: 'radial-gradient(120% 90% at 50% 40%, transparent 55%, rgba(0,0,0,0.45) 100%)',
-        }}/>
-    </div>);
-}
-interface ColorOrbProps {
-    className: string;
-    color: string;
-    drift: {
-        x: number[];
-        y: number[];
-    };
-    duration: number;
-    opacity?: number;
-}
-function ColorOrb({ className, color, drift, duration, opacity = 0.16 }: ColorOrbProps) {
-    return (<motion.div className={`absolute rounded-full blur-[80px] ${className}`} style={{ background: color, opacity }} animate={{ x: drift.x, y: drift.y }} transition={{ duration, repeat: Infinity, ease: 'easeInOut' }}/>);
-}
-function generateParticles(count: number) {
-    const colors = ['var(--secondary)', 'var(--primary)', 'var(--accent)'];
-    return Array.from({ length: count }, (_, i) => ({
-        id: i,
-        x: Math.random() * 100,
-        y: Math.random() * 100,
-        delay: Math.random() * 3,
-        duration: 3 + Math.random() * 3,
-        color: colors[i % colors.length],
-    }));
+  return (
+    <div className="fixed inset-0 z-0 overflow-hidden pointer-events-none" aria-hidden="true">
+      <div className="absolute inset-0 bg-[#fcf7ee]" />
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_93%_8%,rgba(224,206,244,.58),transparent_24%),radial-gradient(circle_at_7%_46%,rgba(217,238,228,.52),transparent_20%),radial-gradient(circle_at_78%_86%,rgba(246,226,178,.46),transparent_24%)]" />
+      <div className="absolute -left-[18vw] top-[24%] h-[34vw] w-[34vw] rounded-full bg-[#f4dfd2]/40 blur-3xl" />
+      <div className="absolute -right-[16vw] bottom-[12%] h-[30vw] w-[30vw] rounded-full bg-[#dceade]/40 blur-3xl" />
+    </div>
+  );
 }

@@ -11,6 +11,11 @@ export interface EmpresaAdministravel extends TemaEmpresa {
   id: number;
 }
 
+export interface EmpresaCriadaComAdministrador {
+  empresa: EmpresaAdministravel;
+  token: string;
+}
+
 function empresaPath(empresaId?: number) {
   return empresaId
     ? `/platform/admin/empresas/${empresaId}`
@@ -19,6 +24,14 @@ function empresaPath(empresaId?: number) {
 
 export async function listarEmpresas(): Promise<EmpresaAdministravel[]> {
   const response = await api.get('/platform/admin/empresas');
+  return response.data;
+}
+
+export async function criarEmpresa(data: {
+  nome: string;
+  email_administrador: string;
+}): Promise<EmpresaCriadaComAdministrador> {
+  const response = await api.post('/platform/admin/empresas', data);
   return response.data;
 }
 

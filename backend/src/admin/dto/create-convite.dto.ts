@@ -1,5 +1,5 @@
 import { Type } from 'class-transformer';
-import { IsEmail, IsInt, IsOptional, Max, Min } from 'class-validator';
+import { IsBoolean, IsEmail, IsInt, IsOptional, Max, Min } from 'class-validator';
 
 export class CreateConviteDto {
   @IsOptional()
@@ -19,4 +19,8 @@ export class CreateConviteDto {
   @Min(1)
   @Max(100)
   max_uses?: number;
+
+  @IsOptional()
+  @IsBoolean()
+  administrador?: boolean;
 }

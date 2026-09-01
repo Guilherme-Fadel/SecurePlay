@@ -9,6 +9,7 @@ import {
 } from 'typeorm';
 import { Empresa } from '../../empresa/empresa.entity';
 import { Usuario } from '../../usuario/usuario.entity';
+import { Role } from '../../auth/roles.enum';
 
 @Entity()
 export class Convite {
@@ -40,6 +41,9 @@ export class Convite {
 
   @Column({ default: 1 })
   max_uses: number;
+
+  @Column({ type: 'varchar', length: 32, default: Role.USER })
+  role: Role;
 
   @Column({ default: 0 })
   uses: number;

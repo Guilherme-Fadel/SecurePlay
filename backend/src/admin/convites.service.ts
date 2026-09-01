@@ -57,9 +57,15 @@ export class ConvitesService {
     empresaId: number,
     userId: number,
     dto: CreateConviteDto,
+    role: Role = Role.USER,
   ) {
     await this.getEmpresa(empresaId);
     const email = dto.email?.trim().toLowerCase() || null;
+    const roleDoConvite = role === Role.ADMIN ? Role.ADMIN : Role.USER;
+
+    if (roleDoConvite === Role.ADMIN && !email) {
+      throw new BadRequestException('Convites de administrador exigem um e-mail');
+    }
 
     if (email && (await this.usuarioRepository.findOne({ where: { email } }))) {
       throw new BadRequestException('Este e-mail já possui um acesso cadastrado');
@@ -76,7 +82,8 @@ export class ConvitesService {
       empresa_id: empresaId,
       criado_por_id: userId,
       expires_at: expiresAt,
-      max_uses: dto.max_uses ?? 1,
+      max_uses: roleDoConvite === Role.ADMIN ? 1 : (dto.max_uses ?? 1),
+      role: roleDoConvite,
     });
     const saved = await this.conviteRepository.save(convite);
 
@@ -154,7 +161,7 @@ export class ConvitesService {
         email,
         password: await bcrypt.hash(dto.password, 10),
         empresa_id: convite.empresa_id,
-        role: Role.USER,
+        role: convite.role === Role.ADMIN ? Role.ADMIN : Role.USER,
       });
       await usuarioRepository.save(usuario);
 
@@ -215,6 +222,7 @@ export class ConvitesService {
       expires_at: convite.expires_at,
       max_uses: convite.max_uses,
       uses: convite.uses,
+      role: convite.role,
       status,
       created_at: convite.created_at,
     };

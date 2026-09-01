@@ -1,9 +1,17 @@
-import { Injectable, Inject, NotFoundException } from '@nestjs/common';
-import { Repository } from 'typeorm';
+import {
+  BadRequestException,
+  Injectable,
+  Inject,
+  NotFoundException,
+} from '@nestjs/common';
+import { createHash, randomBytes } from 'crypto';
+import { DataSource, Repository } from 'typeorm';
+import { Role } from '../auth/roles.enum';
 import { Empresa } from '../empresa/empresa.entity';
 import { UpdateTemaDto } from './dto/update-tema.dto';
 import { S3Service } from '../conteudo/s3/s3.service';
 import { Usuario } from '../usuario/usuario.entity';
+import { Convite } from './entities/convite.entity';
 
 @Injectable()
 export class AdminService {
@@ -12,6 +20,8 @@ export class AdminService {
     private empresaRepository: Repository<Empresa>,
     @Inject('USUARIO_REPOSITORY')
     private usuarioRepository: Repository<Usuario>,
+    @Inject('DATA_SOURCE')
+    private readonly dataSource: DataSource,
     private readonly s3Service: S3Service,
   ) {}
 
@@ -38,6 +48,51 @@ export class AdminService {
       logo_url: empresa.logo_url,
       paleta: empresa.paleta,
     }));
+  }
+
+  async criarEmpresa(
+    nome: string,
+    emailAdministrador: string,
+    criadoPorId: number,
+  ) {
+    const token = randomBytes(32).toString('base64url');
+    const email = emailAdministrador.toLowerCase();
+    const expiresAt = new Date();
+    expiresAt.setDate(expiresAt.getDate() + 7);
+
+    const empresa = await this.dataSource.transaction(async (manager) => {
+      const empresaRepository = manager.getRepository(Empresa);
+      const usuarioRepository = manager.getRepository(Usuario);
+      const conviteRepository = manager.getRepository(Convite);
+
+      if (await empresaRepository.findOne({ where: { nome } })) {
+        throw new BadRequestException('Já existe uma empresa com este nome');
+      }
+      if (await usuarioRepository.findOne({ where: { email } })) {
+        throw new BadRequestException('Este e-mail já possui um acesso cadastrado');
+      }
+
+      const novaEmpresa = await empresaRepository.save(
+        empresaRepository.create({ nome }),
+      );
+      await conviteRepository.save(
+        conviteRepository.create({
+          token_hash: createHash('sha256').update(token).digest('hex'),
+          email,
+          empresa_id: novaEmpresa.id,
+          criado_por_id: criadoPorId,
+          expires_at: expiresAt,
+          max_uses: 1,
+          role: Role.ADMIN,
+        }),
+      );
+      return novaEmpresa;
+    });
+
+    return {
+      empresa: { id: empresa.id, ...this.toTema(empresa) },
+      token,
+    };
   }
 
   async listarUsuariosGlobais() {

@@ -30,12 +30,12 @@ function IndicatorBox() {
         </span>
       </div>
 
-      <CornerPixels />
+      <CornerAccents />
     </div>
   );
 }
 
-function CornerPixels() {
+function CornerAccents() {
   const cornerClass = "absolute w-1 h-1 bg-[var(--secondary)]";
 
   return (

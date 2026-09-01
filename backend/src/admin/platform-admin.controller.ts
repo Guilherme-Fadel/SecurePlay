@@ -14,6 +14,7 @@ import { Role } from '../auth/roles.enum';
 import { AdminService } from './admin.service';
 import { ConvitesService } from './convites.service';
 import { CreateConviteDto } from './dto/create-convite.dto';
+import { CreateEmpresaDto } from './dto/create-empresa.dto';
 import { PresignLogoDto } from './dto/presign-logo.dto';
 import { UpdateTemaDto } from './dto/update-tema.dto';
 
@@ -28,6 +29,16 @@ export class PlatformAdminController {
   @Get('empresas')
   async listarEmpresas() {
     return this.adminService.listarEmpresas();
+  }
+
+  @Post('empresas')
+  @Throttle({ short: { limit: 10, ttl: 60000 } })
+  async criarEmpresa(@Body() dto: CreateEmpresaDto, @Request() req: any) {
+    return this.adminService.criarEmpresa(
+      dto.nome,
+      dto.email_administrador,
+      req.user.userId,
+    );
   }
 
   @Get('usuarios')
@@ -82,6 +93,7 @@ export class PlatformAdminController {
       empresaId,
       req.user.userId,
       dto,
+      dto.administrador ? Role.ADMIN : Role.USER,
     );
   }
 

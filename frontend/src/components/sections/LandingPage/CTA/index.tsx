@@ -2,7 +2,6 @@ import { useNavigate } from 'react-router-dom';
 import { motion } from 'motion/react';
 import { ArrowRight, Sparkles } from 'lucide-react';
 
-import { GameButton } from '@/components/ui/buttons/GameButton';
 
 import { CTATitle } from './Title';
 import { CTABenefits } from './Benefits';
@@ -31,7 +30,7 @@ export function CTASection() {
 
             <CTAContent />
 
-            <GameButton
+            <button
               onClick={() => navigate('/start')}
               className="cursor-pointer mt-8  px-10 py-5 border border-[var(--border)] rounded-md
                          shadow-[0_6px_20px_rgba(0,0,0,0.25)]
@@ -49,7 +48,7 @@ export function CTASection() {
               >
                 <Sparkles className="w-4 h-4 text-[var(--text-primary)]" />
               </motion.div>
-            </GameButton>
+            </button>
 
             <CTABenefits />
 
