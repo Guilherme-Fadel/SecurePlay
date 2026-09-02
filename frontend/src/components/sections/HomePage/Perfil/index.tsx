@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   BadgeCheck,
   Building2,
+  Camera,
   Check,
   Copy,
   Eye,
@@ -25,7 +26,7 @@ import { Modal } from '@/components/ui/modal';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { useDashboardStats } from '@/hooks/useDashboard';
 import { useSectionContext } from '@/contexts/SectionContext';
-import { changePassword } from '@/services/profile';
+import { changePassword, presignProfileImage, requestNickname, saveProfileImage } from '@/services/profile';
 import { passwordValidationMessage } from '@/lib/password-policy';
 
 function initials(name?: string) {
@@ -44,7 +45,7 @@ function formatNumber(value: number) {
 }
 
 export function Perfil() {
-  const { user, loading: userLoading } = useCurrentUser();
+  const { user, loading: userLoading, refreshSession } = useCurrentUser();
   const { stats, loading: statsLoading } = useDashboardStats();
   const { navigateToSection } = useSectionContext();
   const [emailCopied, setEmailCopied] = useState(false);
@@ -53,15 +54,77 @@ export function Perfil() {
   const [showPasswords, setShowPasswords] = useState({ current: false, next: false, confirmation: false });
   const [passwordError, setPasswordError] = useState<string | null>(null);
   const [passwordSaving, setPasswordSaving] = useState(false);
+  const [nicknameDraft, setNicknameDraft] = useState('');
+  const [nicknameSaving, setNicknameSaving] = useState(false);
+  const [photoUploading, setPhotoUploading] = useState(false);
+  const photoInputRef = useRef<HTMLInputElement>(null);
 
   const points = stats?.totalPoints ?? 0;
   const xpToNextLevel = stats?.xpToNextLevel ?? 0;
   const xpCeiling = points + xpToNextLevel;
   const xpProgress = stats && xpCeiling > 0 ? Math.min(100, Math.round((points / xpCeiling) * 100)) : 0;
-  const displayName = user?.name || (userLoading ? 'Carregando perfil...' : 'Participante SecurePlay');
+  const displayName = user?.nickname || user?.name || (userLoading ? 'Carregando perfil...' : 'Participante SecurePlay');
   const firstName = displayName.split(/\s+/)[0] || 'você';
   const companyName = user?.empresa_nome || 'Comunidade SecurePlay';
   const displayLevel = stats?.level ?? user?.level;
+
+  useEffect(() => {
+    setNicknameDraft(user?.nickname ?? '');
+  }, [user?.nickname]);
+
+  const handleNicknameRequest = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const requestedNickname = nicknameDraft.trim();
+    if (!requestedNickname) {
+      toast.error('Escolha um apelido de aventura para enviar.');
+      return;
+    }
+
+    setNicknameSaving(true);
+    try {
+      const result = await requestNickname(requestedNickname);
+      await refreshSession();
+      toast.success(result.message);
+    } catch (error: unknown) {
+      const response = error as { response?: { data?: { message?: string | string[] } } };
+      const message = response.response?.data?.message;
+      toast.error(Array.isArray(message) ? message[0] : message || 'Não foi possível enviar o apelido.');
+    } finally {
+      setNicknameSaving(false);
+    }
+  };
+
+  const handlePhotoUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    const allowedTypes = ['image/png', 'image/jpeg', 'image/webp'];
+    if (!allowedTypes.includes(file.type)) {
+      toast.error('Escolha uma imagem PNG, JPEG ou WebP.');
+      return;
+    }
+    if (file.size > 2 * 1024 * 1024) {
+      toast.error('A imagem deve ter no máximo 2 MB.');
+      return;
+    }
+
+    setPhotoUploading(true);
+    try {
+      const { uploadUrl, fields, key } = await presignProfileImage(file.type);
+      const formData = new FormData();
+      Object.entries(fields).forEach(([name, value]) => formData.append(name, value));
+      formData.append('file', file);
+      const uploadResponse = await fetch(uploadUrl, { method: 'POST', body: formData });
+      if (!uploadResponse.ok) throw new Error('Falha ao enviar a imagem');
+      const result = await saveProfileImage(key);
+      await refreshSession();
+      toast.success(result.message);
+    } catch {
+      toast.error('Não foi possível atualizar sua foto agora.');
+    } finally {
+      setPhotoUploading(false);
+      if (photoInputRef.current) photoInputRef.current.value = '';
+    }
+  };
 
   const handleCopyEmail = async () => {
     if (!user?.email) return;
@@ -145,12 +208,38 @@ export function Perfil() {
         <InfoCard raised className="profile-hero">
           <div className="profile-hero-accent" aria-hidden="true" />
           <div className="profile-hero-main">
-            <div className="profile-avatar" aria-hidden="true">{initials(user?.name)}</div>
+            <label
+              className={`profile-avatar profile-avatar-upload ${photoUploading ? 'is-uploading' : ''}`}
+              aria-label={photoUploading ? 'Enviando nova foto de perfil' : 'Alterar foto de perfil'}
+              title={photoUploading ? 'Enviando nova foto...' : 'Clique para alterar sua foto'}
+            >
+              {user?.profile_image_url ? <img src={user.profile_image_url} alt="" /> : initials(displayName)}
+              <span className="profile-avatar-upload-action" aria-hidden="true">
+                <Camera size={18} />
+              </span>
+              <input
+                ref={photoInputRef}
+                type="file"
+                accept="image/png,image/jpeg,image/webp"
+                onChange={handlePhotoUpload}
+                disabled={photoUploading}
+              />
+            </label>
             <div className="profile-identity">
               <div className="profile-identity-heading">
                 <h2>{displayName}</h2>
                 <span className="profile-role-chip"><ShieldCheck size={13} /> {roleLabel(user?.role)}</span>
               </div>
+              <form className="profile-nickname-form profile-hero-nickname-form" onSubmit={handleNicknameRequest}>
+                <label htmlFor="profile-nickname">Apelido no ranking</label>
+                <div>
+                  <input id="profile-nickname" value={nicknameDraft} onChange={(event) => setNicknameDraft(event.target.value)} minLength={3} maxLength={24} pattern="[A-Za-zÀ-ÿ0-9 _-]+" disabled={nicknameSaving || user?.nickname_request_status === 'pending'} placeholder="Ex.: Guardião Solar" />
+                  <AppButton type="submit" size="sm" disabled={nicknameSaving || user?.nickname_request_status === 'pending'}>{nicknameSaving ? 'Enviando...' : 'Pedir aprovação'}</AppButton>
+                </div>
+                {user?.nickname_request_status === 'pending' && <p className="profile-nickname-status is-pending">Seu pedido para “{user.nickname_pending}” está aguardando o administrador.</p>}
+                {user?.nickname_request_status === 'rejected' && <p className="profile-nickname-status is-rejected">Seu último pedido não foi aprovado. Você pode tentar outro apelido.</p>}
+                {user?.nickname && user.nickname_request_status !== 'pending' && <p className="profile-nickname-status">Apelido atual no ranking: <strong>{user.nickname}</strong></p>}
+              </form>
               <div className="profile-identity-meta">
                 <span><Building2 size={14} /> {companyName}</span>
                 <span><BadgeCheck size={14} /> Conta ativa</span>
@@ -222,6 +311,7 @@ export function Perfil() {
               />
               <InfoCard.Section className="profile-account-list">
                 <ProfileDetail icon={Mail} label="E-mail de acesso" value={user?.email ?? 'Não informado'} />
+                <ProfileDetail icon={UserRound} label="Nome do cadastro" value={user?.name ?? 'Não informado'} />
                 <ProfileDetail icon={Building2} label="Organização" value={companyName} />
                 <ProfileDetail icon={UserRound} label="Tipo de conta" value={roleLabel(user?.role)} />
               </InfoCard.Section>
@@ -232,6 +322,7 @@ export function Perfil() {
                 </AppButton>
               </InfoCard.Footer>
             </InfoCard>
+
           </div>
 
           <aside className="profile-side-column">

@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
-import { AlertCircle, CheckCircle2, Copy, Link2, Plus, QrCode, Trash2, UsersRound } from 'lucide-react';
+import { AlertCircle, Check, CheckCircle2, Copy, Link2, Plus, QrCode, Trash2, UsersRound, X } from 'lucide-react';
 import { AppButton } from '@/components/ui/buttons/AppButton';
 import { cn } from '@/lib/utils';
-import { criarConvite, listarConvites, listarUsuarios, revogarConvite, type Convite, type UsuarioEmpresa } from '@/services/convites';
+import { aprovarApelido, criarConvite, listarConvites, listarUsuarios, rejeitarApelido, revogarConvite, type Convite, type UsuarioEmpresa } from '@/services/convites';
 
 function formatDate(value: string) {
   return new Intl.DateTimeFormat('pt-BR', { dateStyle: 'medium' }).format(new Date(value));
@@ -24,6 +24,7 @@ export function UserManagementTab({ empresaId, empresaNome, podeCriarAdministrad
   const [administrador, setAdministrador] = useState(false);
   const [creating, setCreating] = useState(false);
   const [revoking, setRevoking] = useState<number | null>(null);
+  const [reviewingNickname, setReviewingNickname] = useState<number | null>(null);
   const [linkGerado, setLinkGerado] = useState<string | null>(null);
   const [feedback, setFeedback] = useState<string | null>(null);
   const dialogRef = useRef<HTMLDivElement>(null);
@@ -111,12 +112,28 @@ export function UserManagementTab({ empresaId, empresaNome, podeCriarAdministrad
     finally { setRevoking(null); }
   };
 
+  const reviewNickname = async (usuarioId: number, approved: boolean) => {
+    setReviewingNickname(usuarioId);
+    try {
+      const updated = approved
+        ? await aprovarApelido(usuarioId, empresaId)
+        : await rejeitarApelido(usuarioId, empresaId);
+      setUsuarios((current) => current.map((usuario) => usuario.id === usuarioId ? updated : usuario));
+      setFeedback(approved ? 'Apelido aprovado e liberado no ranking.' : 'Pedido de apelido recusado.');
+    } catch (error: any) {
+      setFeedback(error.response?.data?.message ?? 'Não foi possível revisar o apelido.');
+    } finally {
+      setReviewingNickname(null);
+    }
+  };
+
   const copiar = async (link: string) => {
     await navigator.clipboard.writeText(link);
     setFeedback('Link copiado para a área de transferência.');
   };
 
   const ativos = useMemo(() => convites.filter((convite) => convite.status === 'ativo').length, [convites]);
+  const apelidosPendentes = useMemo(() => usuarios.filter((usuario) => usuario.nickname_request_status === 'pending' && usuario.nickname_pending), [usuarios]);
 
   return <div className="admin-users-content">
     <div className="admin-users-heading">
@@ -142,9 +159,14 @@ export function UserManagementTab({ empresaId, empresaNome, podeCriarAdministrad
 
       <section className="admin-users-card admin-users-list-card">
         <div className="admin-users-card-heading"><span className="admin-users-heading-icon is-secondary"><UsersRound size={19} /></span><div><h2>Usuários cadastrados</h2><p>Usuários que concluíram o cadastro.</p></div></div>
-        <div className="admin-users-list">{usuarios.length === 0 ? <p className="admin-users-empty">Ainda não há usuários cadastrados.</p> : usuarios.map((usuario) => <div key={usuario.id} className="admin-user-row"><span>{usuario.name.charAt(0).toUpperCase()}</span><div><strong>{usuario.name}</strong><small>{usuario.email}{usuario.role === 'admin' ? ' · Administrador' : ''}</small></div><em>Nível {usuario.level}</em></div>)}</div>
+        <div className="admin-users-list">{usuarios.length === 0 ? <p className="admin-users-empty">Ainda não há usuários cadastrados.</p> : usuarios.map((usuario) => <div key={usuario.id} className="admin-user-row"><span>{(usuario.nickname ?? usuario.name).charAt(0).toUpperCase()}</span><div><strong>{usuario.nickname ?? usuario.name}</strong><small>{usuario.nickname ? `${usuario.name} · ` : ''}{usuario.email}{usuario.role === 'admin' ? ' · Administrador' : ''}</small></div><em>Nível {usuario.level}</em></div>)}</div>
       </section>
     </div>
+
+    <section className="admin-users-card admin-nickname-review-card">
+      <div className="admin-users-card-heading"><span className="admin-users-heading-icon is-accent"><CheckCircle2 size={19} /></span><div><h2>Apelidos aguardando aprovação</h2><p>Confira se o apelido é apropriado antes de mostrar no ranking da turma.</p></div></div>
+      <div className="admin-nickname-review-list">{apelidosPendentes.length === 0 ? <p className="admin-users-empty">Não há apelidos aguardando revisão.</p> : apelidosPendentes.map((usuario) => <div key={usuario.id} className="admin-nickname-review-row"><div><strong>{usuario.nickname_pending}</strong><small>Pedido de {usuario.name}</small></div><div><AppButton size="sm" icon={<Check size={14} />} disabled={reviewingNickname === usuario.id} onClick={() => reviewNickname(usuario.id, true)}>Aprovar</AppButton><AppButton variant="ghost" size="sm" icon={<X size={14} />} disabled={reviewingNickname === usuario.id} onClick={() => reviewNickname(usuario.id, false)}>Recusar</AppButton></div></div>)}</div>
+    </section>
 
     <section className="admin-users-card admin-invites-card">
       <div className="admin-users-card-heading"><span className="admin-users-heading-icon is-accent"><QrCode size={19} /></span><div><h2>Convites emitidos</h2><p>Links com expiração e uso controlado.</p></div></div>

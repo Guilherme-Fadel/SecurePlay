@@ -1,4 +1,4 @@
-import { useMemo, type ReactNode } from 'react';
+import { useMemo, useState, type ReactNode } from 'react';
 import {
   Crown,
   Medal,
@@ -15,21 +15,14 @@ import { AppButton } from '@/components/ui/buttons/AppButton';
 import { AppSectionHeader } from '@/components/ui/visuals/AppSectionHeader';
 import { InfoCard } from '@/components/ui/visuals/InfoCard';
 import { useDashboardRanking } from '@/hooks/useDashboard';
+import { Avatar } from '@/components/ui/visuals/Avatar';
 import type { RankingEntry } from '@/services/dashboard';
 
 const formatXp = (value: number) => `${value.toLocaleString('pt-BR')} XP`;
 
-function initials(name: string) {
-  return name
-    .trim()
-    .split(/\s+/)
-    .slice(0, 2)
-    .map((part) => part.charAt(0).toUpperCase())
-    .join('');
-}
-
 export function Ranking() {
-  const { ranking, loading, error, refetch } = useDashboardRanking();
+  const [selectedScope, setSelectedScope] = useState<'global' | 'company'>('global');
+  const { ranking, loading, error, refetch } = useDashboardRanking(selectedScope);
 
   const podium = useMemo(() => {
     const firstThree = ranking?.top.slice(0, 3) ?? [];
@@ -71,7 +64,7 @@ export function Ranking() {
       <div className="app-page ranking-page">
         <AppSectionHeader
           title="Ranking"
-          subtitle="Conquiste XP e acompanhe seu progresso com a sua turma."
+          subtitle="Conquiste XP e acompanhe seu progresso na comunidade SecurePlay."
           action={(
             <AppButton variant="ghost" size="sm" icon={<RefreshCw size={15} />} onClick={refetch}>
               Atualizar
@@ -86,6 +79,24 @@ export function Ranking() {
               <span className="ranking-eyebrow"><Sparkles size={14} /> Liga SecurePlay</span>
               <h3>{ranking.scopeLabel}</h3>
               <p>{ranking.totalParticipants} aventureiros juntando XP</p>
+            </div>
+            <div className="ranking-scope-switch" aria-label="Escopo do ranking">
+              <button
+                type="button"
+                className={selectedScope === 'global' ? 'is-active' : ''}
+                onClick={() => setSelectedScope('global')}
+              >
+                Global
+              </button>
+              <button
+                type="button"
+                className={selectedScope === 'company' ? 'is-active' : ''}
+                onClick={() => setSelectedScope('company')}
+                disabled={!ranking.companyAvailable}
+                title={ranking.companyAvailable ? undefined : 'Você ainda não faz parte de uma turma'}
+              >
+                Minha turma
+              </button>
             </div>
           </div>
 
@@ -103,8 +114,8 @@ export function Ranking() {
                 <span><Users size={15} /> Classificação</span>
                 <p>
                   {ranking.totalParticipants <= 20
-                    ? `${ranking.totalParticipants} aventureiros nesta turma`
-                    : 'Os 20 aventureiros com mais XP nesta turma'}
+                    ? `${ranking.totalParticipants} aventureiros neste ranking`
+                    : `Os 20 aventureiros com mais XP ${ranking.scope === 'global' ? 'da comunidade' : 'da sua turma'}`}
                 </p>
               </div>
               <strong>{ranking.scopeLabel}</strong>
@@ -130,11 +141,15 @@ export function Ranking() {
             <InfoCard raised className="ranking-player-card">
               <div className="ranking-player-topline">
                 <span>Sua posição</span>
-                <div><ShieldCheck size={15} /> {ranking.scope === 'company' ? 'Sua turma' : 'Seu caminho'}</div>
+                <div><ShieldCheck size={15} /> {ranking.scope === 'company' ? 'Sua turma' : 'Global'}</div>
               </div>
 
               <div className="ranking-player-identity">
-                <div className="ranking-player-avatar">{initials(currentUser.name)}</div>
+                <Avatar
+                  name={currentUser.name}
+                  imageUrl={currentUser.profileImageUrl}
+                  className="ranking-player-avatar"
+                />
                 <div>
                   <strong>{currentUser.name}</strong>
                   <span>{currentUser.companyName ?? 'Comunidade SecurePlay'}</span>
@@ -193,7 +208,11 @@ function PodiumPlayer({ entry, place }: { entry: RankingEntry; place: number }) 
     <div className={`ranking-podium-player place-${place}`}>
       <div className="ranking-podium-avatar-wrap">
         {place === 1 && <Crown className="ranking-podium-crown" size={22} />}
-        <div className="ranking-podium-avatar">{initials(entry.name)}</div>
+        <Avatar
+          name={entry.name}
+          imageUrl={entry.profileImageUrl}
+          className="ranking-podium-avatar"
+        />
         <span className="ranking-podium-place">{place}</span>
       </div>
       <strong>{entry.name}</strong>
@@ -219,7 +238,11 @@ function RankingRow({
       <div className={`ranking-row-position rank-${entry.position}`}>
         {entry.position <= 3 ? <Trophy size={14} /> : entry.position}
       </div>
-      <div className="ranking-row-avatar">{initials(entry.name)}</div>
+      <Avatar
+        name={entry.name}
+        imageUrl={entry.profileImageUrl}
+        className="ranking-row-avatar"
+      />
       <div className="ranking-row-person">
         <strong>{entry.name}{entry.isCurrentUser && <em>Você</em>}</strong>
         <span>Nível {entry.level}</span>

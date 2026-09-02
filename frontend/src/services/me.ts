@@ -18,6 +18,10 @@ export interface CurrentUser {
   empresa_paleta: EmpresaPaleta | null;
   empresa_logo: string | null;
   empresa_nome: string | null;
+  nickname: string | null;
+  nickname_pending: string | null;
+  nickname_request_status: 'none' | 'pending' | 'approved' | 'rejected';
+  profile_image_url: string | null;
 }
 
 export async function getMe(): Promise<CurrentUser> {

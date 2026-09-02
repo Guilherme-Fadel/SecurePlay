@@ -1,4 +1,12 @@
-import { Controller, Get, Put, Post, Body, Request, Param } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Put,
+  Post,
+  Body,
+  Request,
+  Param,
+} from '@nestjs/common';
 import { AdminService } from './admin.service';
 import { ConvitesService } from './convites.service';
 import { CreateConviteDto } from './dto/create-convite.dto';
@@ -51,5 +59,15 @@ export class AdminController {
   @Post('convites/:id/revogar')
   async revogarConvite(@Request() req: any, @Param('id') id: string) {
     return this.convitesService.revogar(req.user.userId, Number(id));
+  }
+
+  @Post('usuarios/:id/apelido/aprovar')
+  async aprovarApelido(@Request() req: any, @Param('id') id: string) {
+    return this.convitesService.aprovarApelido(req.user.userId, Number(id));
+  }
+
+  @Post('usuarios/:id/apelido/rejeitar')
+  async rejeitarApelido(@Request() req: any, @Param('id') id: string) {
+    return this.convitesService.rejeitarApelido(req.user.userId, Number(id));
   }
 }

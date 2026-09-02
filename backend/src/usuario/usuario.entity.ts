@@ -16,6 +16,18 @@ export class Usuario {
   @Column({ length: 100 })
   name: string;
 
+  @Column({ type: 'varchar', length: 24, nullable: true })
+  nickname: string | null;
+
+  @Column({ type: 'varchar', length: 24, nullable: true })
+  nickname_pending: string | null;
+
+  @Column({ type: 'varchar', length: 20, default: 'none' })
+  nickname_request_status: 'none' | 'pending' | 'approved' | 'rejected';
+
+  @Column({ type: 'varchar', length: 255, nullable: true })
+  profile_image_key: string | null;
+
   @Column({ length: 100 })
   email: string;
 

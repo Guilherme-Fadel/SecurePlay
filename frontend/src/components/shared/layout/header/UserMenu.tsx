@@ -7,20 +7,12 @@ import { useNavigate } from 'react-router-dom';
 import { useSectionContext } from '@/contexts/SectionContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useAchievementShop } from '@/hooks/useAchievements';
+import { Avatar } from '@/components/ui/visuals/Avatar';
 
 interface UserMenuProps {
   open: boolean;
   onToggle: () => void;
   onClose: () => void;
-}
-
-function initials(name: string | undefined) {
-  return (name ?? 'Você')
-    .trim()
-    .split(/\s+/)
-    .slice(0, 2)
-    .map((part) => part.charAt(0).toUpperCase())
-    .join('');
 }
 
 export function UserMenu({ open, onToggle, onClose }: UserMenuProps) {
@@ -52,16 +44,16 @@ export function UserMenu({ open, onToggle, onClose }: UserMenuProps) {
         aria-expanded={open}
         aria-label="Abrir opções do perfil"
       >
-        <span
+        <Avatar
+          name={user?.name}
+          nickname={user?.nickname}
+          imageUrl={user?.profile_image_url}
           className={cn('secure-user-avatar cosmetic-avatar w-9 h-9 rounded-md flex-shrink-0', equippedFrame)}
-          aria-hidden="true"
-        >
-          {initials(user?.name)}
-        </span>
+        />
 
         <div className="text-left hidden md:block">
           <p className="text-[var(--text-primary)] text-[var(--font-xs)] leading-tight">
-            {loading ? '...' : user?.name}
+            {loading ? '...' : user?.nickname ?? user?.name}
           </p>
           <p className="text-[var(--text-secondary)] text-[var(--font-xs)] font-[var(--font-family-inter)] leading-tight">
             Nivel {stats?.level ?? (loading ? '...' : user?.level)}

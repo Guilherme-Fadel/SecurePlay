@@ -20,8 +20,8 @@ describe('UsuarioService.changePassword', () => {
   it('rejeita a troca quando a senha atual não confere', async () => {
     const users = repository();
     users.findOne.mockResolvedValue({ id: 11, password: '$2b$10$hash-atual' });
-    (bcrypt.compare as jest.MockedFunction<typeof bcrypt.compare>).mockResolvedValue(false);
-    const service = new UsuarioService(users as never);
+    bcrypt.compare.mockResolvedValue(false);
+    const service = new UsuarioService(users as never, undefined as never);
 
     await expect(
       service.changePassword(11, {
@@ -38,9 +38,9 @@ describe('UsuarioService.changePassword', () => {
     const user = { id: 11, password: '$2b$10$hash-atual' };
     users.findOne.mockResolvedValue(user);
     users.save.mockResolvedValue(user);
-    (bcrypt.compare as jest.MockedFunction<typeof bcrypt.compare>).mockResolvedValue(true);
-    (bcrypt.hash as jest.MockedFunction<typeof bcrypt.hash>).mockResolvedValue('$2b$10$novo-hash');
-    const service = new UsuarioService(users as never);
+    bcrypt.compare.mockResolvedValue(true);
+    bcrypt.hash.mockResolvedValue('$2b$10$novo-hash');
+    const service = new UsuarioService(users as never, undefined as never);
 
     await expect(
       service.changePassword(11, {
@@ -57,7 +57,7 @@ describe('UsuarioService.changePassword', () => {
 
   it('rejeita uma nova senha igual à atual antes de consultar o banco', async () => {
     const users = repository();
-    const service = new UsuarioService(users as never);
+    const service = new UsuarioService(users as never, undefined as never);
 
     await expect(
       service.changePassword(11, {

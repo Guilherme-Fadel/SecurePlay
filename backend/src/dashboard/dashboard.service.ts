@@ -13,6 +13,7 @@ import {
   now,
 } from '../common/utils/date.utils';
 import { EventEmitter2 } from '@nestjs/event-emitter';
+import { S3Service } from '../conteudo/s3/s3.service';
 @Injectable()
 export class DashboardService {
   constructor(
@@ -22,7 +23,18 @@ export class DashboardService {
     private redisService: RedisService,
     private tokenService: TokenService,
     private eventEmitter: EventEmitter2,
+    private s3Service: S3Service,
   ) {}
+  private async resolveProfileImageUrl(
+    key: string | null | undefined,
+  ): Promise<string | null> {
+    if (!key) return null;
+    try {
+      return await this.s3Service.generatePresignedGetUrl(key);
+    } catch {
+      return null;
+    }
+  }
   private async getOrCreateStats(usuario_id: number): Promise<UsuarioStats> {
     let stats = await this.statsRepository.findOne({ where: { usuario_id } });
     if (!stats) {
@@ -47,7 +59,7 @@ export class DashboardService {
   }
   async getRanking(
     usuario_id: number,
-    requestedScope: 'company' = 'company',
+    requestedScope: 'global' | 'company' = 'global',
   ) {
     const currentStats = await this.getOrCreateStats(usuario_id);
     const currentEntry = await this.statsRepository
@@ -58,16 +70,13 @@ export class DashboardService {
       .getOne();
     const company = currentEntry?.usuario?.empresa ?? null;
     const companyAvailable = !!company;
-    const scope = requestedScope === 'company' && companyAvailable
-      ? 'company'
-      : 'personal';
+    const scope =
+      requestedScope === 'company' && companyAvailable ? 'company' : 'global';
     const applyScope = (
       query: SelectQueryBuilder<UsuarioStats>,
     ): SelectQueryBuilder<UsuarioStats> => {
       if (scope === 'company' && company) {
         query.andWhere('u.empresa_id = :empresaId', { empresaId: company.id });
-      } else {
-        query.andWhere('s.usuario_id = :usuarioId', { usuarioId: usuario_id });
       }
       return query;
     };
@@ -81,23 +90,28 @@ export class DashboardService {
     const topEntries = await applyScope(topEntriesQuery).getMany();
     let previousPoints: number | null = null;
     let previousPosition = 0;
-    const top = topEntries.map((entry, index) => {
-      if (previousPoints === null || entry.total_points < previousPoints) {
-        previousPosition = index + 1;
-        previousPoints = entry.total_points;
-      }
-      return {
-        position: previousPosition,
-        name:
-          entry.usuario_id === usuario_id
-            ? currentEntry?.usuario?.name ?? 'Você'
-            : `Aventureiro ${index + 1}`,
-        points: entry.total_points,
-        level: calcLevel(entry.total_points),
-        companyName: null,
-        isCurrentUser: entry.usuario_id === usuario_id,
-      };
-    });
+    const top = await Promise.all(
+      topEntries.map(async (entry, index) => {
+        if (previousPoints === null || entry.total_points < previousPoints) {
+          previousPosition = index + 1;
+          previousPoints = entry.total_points;
+        }
+        return {
+          position: previousPosition,
+          name:
+            entry.usuario_id === usuario_id
+              ? (currentEntry?.usuario?.nickname ?? 'Você')
+              : (entry.usuario?.nickname ?? `Aventureiro ${index + 1}`),
+          points: entry.total_points,
+          level: calcLevel(entry.total_points),
+          companyName: null,
+          isCurrentUser: entry.usuario_id === usuario_id,
+          profileImageUrl: await this.resolveProfileImageUrl(
+            entry.usuario?.profile_image_key,
+          ),
+        };
+      }),
+    );
     const higherCountQuery = this.statsRepository
       .createQueryBuilder('s')
       .innerJoin('s.usuario', 'u')
@@ -144,10 +158,13 @@ export class DashboardService {
       level: calcLevel(currentStats.total_points),
       companyName: company?.nome ?? null,
       isCurrentUser: true,
+      profileImageUrl: await this.resolveProfileImageUrl(
+        currentEntry?.usuario?.profile_image_key,
+      ),
     };
     return {
       scope,
-      scopeLabel: scope === 'company' && company ? 'Sua turma' : 'Seu progresso',
+      scopeLabel: scope === 'company' && company ? 'Sua turma' : 'Ranking global',
       companyAvailable,
       company: company ? { id: company.id, name: company.nome } : null,
       totalParticipants,
@@ -193,7 +210,9 @@ export class DashboardService {
     stats.total_points += points;
     await this.statsRepository.save(stats);
     await this.incrementRedisXpToday(usuario_id, points);
-    await this.eventEmitter.emitAsync('progress.changed', { usuarioId: usuario_id });
+    await this.eventEmitter.emitAsync('progress.changed', {
+      usuarioId: usuario_id,
+    });
   }
   async getWeeklyStreak(usuario_id: number) {
     const key = `streak:${usuario_id}:${getMondayOfWeek()}`;

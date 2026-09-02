@@ -14,6 +14,7 @@ export default function InviteRegister() {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [name, setName] = useState('');
+  const [nickname, setNickname] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -47,7 +48,7 @@ export default function InviteRegister() {
 
     setSubmitting(true);
     try {
-      const result = await concluirCadastroConvite(token, { name, email, password });
+      const result = await concluirCadastroConvite(token, { name, nickname: nickname.trim() || undefined, email, password });
       toast.success(result.mensagem);
       setTimeout(() => navigate('/login', { replace: true }), 800);
     } catch (error: any) {
@@ -82,6 +83,7 @@ export default function InviteRegister() {
 
               <form onSubmit={handleSubmit} className="invite-form">
                 <label>Seu nome<input value={name} onChange={(event) => setName(event.target.value)} minLength={3} required /></label>
+                <label>Apelido de aventura <small>vai para aprovação</small><input value={nickname} onChange={(event) => setNickname(event.target.value)} minLength={3} maxLength={24} pattern="[A-Za-zÀ-ÿ0-9 _-]+" placeholder="Ex.: Guardiã Estelar" /></label>
                 <label>E-mail da escola<input type="email" value={email} onChange={(event) => setEmail(event.target.value)} disabled={Boolean(convite.email)} required /></label>
                 <label>Crie uma senha secreta<input type="password" value={password} onChange={(event) => setPassword(event.target.value)} minLength={6} maxLength={72} autoComplete="new-password" required /></label>
                 <label>Repita a senha secreta<input type="password" value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} minLength={6} maxLength={72} autoComplete="new-password" required /></label>

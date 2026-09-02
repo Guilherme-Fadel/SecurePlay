@@ -17,6 +17,9 @@ export interface UsuarioEmpresa {
   email: string;
   role: string;
   level: number;
+  nickname: string | null;
+  nickname_pending: string | null;
+  nickname_request_status: 'none' | 'pending' | 'approved' | 'rejected';
 }
 
 export interface ConvitePublico {
@@ -59,7 +62,17 @@ export async function consultarConvite(token: string): Promise<ConvitePublico> {
   return response.data;
 }
 
-export async function concluirCadastroConvite(token: string, data: { name: string; email: string; password: string }) {
+export async function concluirCadastroConvite(token: string, data: { name: string; nickname?: string; email: string; password: string }) {
   const response = await api.post('/convites/cadastro', { ...data, token });
   return response.data as { sucesso: boolean; mensagem: string };
+}
+
+export async function aprovarApelido(usuarioId: number, empresaId?: number): Promise<UsuarioEmpresa> {
+  const response = await api.post(`${empresaPath(empresaId)}/usuarios/${usuarioId}/apelido/aprovar`);
+  return response.data;
+}
+
+export async function rejeitarApelido(usuarioId: number, empresaId?: number): Promise<UsuarioEmpresa> {
+  const response = await api.post(`${empresaPath(empresaId)}/usuarios/${usuarioId}/apelido/rejeitar`);
+  return response.data;
 }

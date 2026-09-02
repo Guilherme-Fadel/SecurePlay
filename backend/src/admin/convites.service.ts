@@ -45,6 +45,9 @@ export class ConvitesService {
       email: usuario.email,
       role: usuario.role,
       level: usuario.level,
+      nickname: usuario.nickname,
+      nickname_pending: usuario.nickname_pending,
+      nickname_request_status: usuario.nickname_request_status,
     }));
   }
 
@@ -64,11 +67,15 @@ export class ConvitesService {
     const roleDoConvite = role === Role.ADMIN ? Role.ADMIN : Role.USER;
 
     if (roleDoConvite === Role.ADMIN && !email) {
-      throw new BadRequestException('Convites de administrador exigem um e-mail');
+      throw new BadRequestException(
+        'Convites de administrador exigem um e-mail',
+      );
     }
 
     if (email && (await this.usuarioRepository.findOne({ where: { email } }))) {
-      throw new BadRequestException('Este e-mail já possui um acesso cadastrado');
+      throw new BadRequestException(
+        'Este e-mail já possui um acesso cadastrado',
+      );
     }
 
     const token = randomBytes(32).toString('base64url');
@@ -148,12 +155,16 @@ export class ConvitesService {
       }
 
       if (convite.email && convite.email !== email) {
-        throw new ForbiddenException('Use o e-mail para o qual este convite foi criado');
+        throw new ForbiddenException(
+          'Use o e-mail para o qual este convite foi criado',
+        );
       }
 
       const usuarioRepository = manager.getRepository(Usuario);
       if (await usuarioRepository.findOne({ where: { email } })) {
-        throw new BadRequestException('Este e-mail já possui um acesso cadastrado');
+        throw new BadRequestException(
+          'Este e-mail já possui um acesso cadastrado',
+        );
       }
 
       const usuario = usuarioRepository.create({
@@ -162,6 +173,8 @@ export class ConvitesService {
         password: await bcrypt.hash(dto.password, 10),
         empresa_id: convite.empresa_id,
         role: convite.role === Role.ADMIN ? Role.ADMIN : Role.USER,
+        nickname_pending: dto.nickname?.trim().replace(/\s+/g, ' ') || null,
+        nickname_request_status: dto.nickname ? 'pending' : 'none',
       });
       await usuarioRepository.save(usuario);
 
@@ -169,22 +182,90 @@ export class ConvitesService {
       await manager.getRepository(Convite).save(convite);
     });
 
-    return { sucesso: true, mensagem: 'Cadastro concluído. Você já pode entrar na plataforma.' };
+    return {
+      sucesso: true,
+      mensagem: dto.nickname
+        ? 'Cadastro concluído. Seu apelido será revisado pelo administrador da turma.'
+        : 'Cadastro concluído. Você já pode entrar na plataforma.',
+    };
+  }
+
+  async aprovarApelido(userId: number, usuarioId: number) {
+    const empresa = await this.getEmpresaDoAdministrador(userId);
+    return this.aprovarApelidoDaEmpresa(empresa.id, usuarioId);
+  }
+
+  async aprovarApelidoDaEmpresa(empresaId: number, usuarioId: number) {
+    const usuario = await this.getUsuarioDaEmpresa(empresaId, usuarioId);
+    if (!usuario.nickname_pending) {
+      throw new BadRequestException('Não há apelido pendente para aprovar');
+    }
+
+    usuario.nickname = usuario.nickname_pending;
+    usuario.nickname_pending = null;
+    usuario.nickname_request_status = 'approved';
+    await this.usuarioRepository.save(usuario);
+    return this.toUsuarioResumo(usuario);
+  }
+
+  async rejeitarApelido(userId: number, usuarioId: number) {
+    const empresa = await this.getEmpresaDoAdministrador(userId);
+    return this.rejeitarApelidoDaEmpresa(empresa.id, usuarioId);
+  }
+
+  async rejeitarApelidoDaEmpresa(empresaId: number, usuarioId: number) {
+    const usuario = await this.getUsuarioDaEmpresa(empresaId, usuarioId);
+    if (!usuario.nickname_pending) {
+      throw new BadRequestException('Não há apelido pendente para rejeitar');
+    }
+
+    usuario.nickname_pending = null;
+    usuario.nickname_request_status = 'rejected';
+    await this.usuarioRepository.save(usuario);
+    return this.toUsuarioResumo(usuario);
   }
 
   private async getEmpresaDoAdministrador(userId: number) {
-    const usuario = await this.usuarioRepository.findOne({ where: { id: userId } });
+    const usuario = await this.usuarioRepository.findOne({
+      where: { id: userId },
+    });
     if (!usuario?.empresa_id) {
-      throw new NotFoundException('Empresa não encontrada para este administrador');
+      throw new NotFoundException(
+        'Empresa não encontrada para este administrador',
+      );
     }
 
     return this.getEmpresa(usuario.empresa_id);
   }
 
   private async getEmpresa(empresaId: number) {
-    const empresa = await this.empresaRepository.findOne({ where: { id: empresaId } });
+    const empresa = await this.empresaRepository.findOne({
+      where: { id: empresaId },
+    });
     if (!empresa) throw new NotFoundException('Empresa não encontrada');
     return empresa;
+  }
+
+  private async getUsuarioDaEmpresa(empresaId: number, usuarioId: number) {
+    const usuario = await this.usuarioRepository.findOne({
+      where: { id: usuarioId, empresa_id: empresaId },
+    });
+    if (!usuario)
+      throw new NotFoundException('Usuário não encontrado nesta turma');
+    return usuario;
+  }
+
+  private toUsuarioResumo(usuario: Usuario) {
+    return {
+      id: usuario.id,
+      name: usuario.name,
+      email: usuario.email,
+      role: usuario.role,
+      level: usuario.level,
+      nickname: usuario.nickname,
+      nickname_pending: usuario.nickname_pending,
+      nickname_request_status: usuario.nickname_request_status,
+    };
   }
 
   private async getConviteValido(token: string, incluirEmpresa = false) {
@@ -199,7 +280,11 @@ export class ConvitesService {
   }
 
   private estaValido(convite: Convite) {
-    return !convite.revoked && convite.uses < convite.max_uses && convite.expires_at > new Date();
+    return (
+      !convite.revoked &&
+      convite.uses < convite.max_uses &&
+      convite.expires_at > new Date()
+    );
   }
 
   private hashToken(token: string) {

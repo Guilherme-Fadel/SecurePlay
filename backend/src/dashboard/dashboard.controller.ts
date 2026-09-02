@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Request } from '@nestjs/common';
+import { Controller, Get, Post, Query, Request } from '@nestjs/common';
 import { DashboardService } from './dashboard.service';
 import { Throttle } from '@nestjs/throttler';
 
@@ -7,8 +7,14 @@ export class DashboardController {
   constructor(private readonly dashboardService: DashboardService) {}
 
   @Get('ranking')
-  async getRanking(@Request() req: any) {
-    return this.dashboardService.getRanking(req.user.userId);
+  async getRanking(
+    @Request() req: any,
+    @Query('scope') scope?: 'global' | 'company',
+  ) {
+    return this.dashboardService.getRanking(
+      req.user.userId,
+      scope === 'company' ? 'company' : 'global',
+    );
   }
 
   @Get('stats')

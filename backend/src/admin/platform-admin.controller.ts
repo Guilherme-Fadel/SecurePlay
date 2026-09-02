@@ -104,4 +104,20 @@ export class PlatformAdminController {
   ) {
     return this.convitesService.revogarDaEmpresa(empresaId, conviteId);
   }
+
+  @Post('empresas/:empresaId/usuarios/:usuarioId/apelido/aprovar')
+  async aprovarApelido(
+    @Param('empresaId', ParseIntPipe) empresaId: number,
+    @Param('usuarioId', ParseIntPipe) usuarioId: number,
+  ) {
+    return this.convitesService.aprovarApelidoDaEmpresa(empresaId, usuarioId);
+  }
+
+  @Post('empresas/:empresaId/usuarios/:usuarioId/apelido/rejeitar')
+  async rejeitarApelido(
+    @Param('empresaId', ParseIntPipe) empresaId: number,
+    @Param('usuarioId', ParseIntPipe) usuarioId: number,
+  ) {
+    return this.convitesService.rejeitarApelidoDaEmpresa(empresaId, usuarioId);
+  }
 }
