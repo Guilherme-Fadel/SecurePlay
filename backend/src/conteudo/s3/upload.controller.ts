@@ -44,11 +44,12 @@ export class UploadController {
       dto.pageOrder,
       dto.contentType,
     );
-    const { url: uploadUrl, fields } = await this.s3Service.generatePresignedUploadPost(
-      key,
-      dto.contentType,
-      MAX_UPLOAD_BYTES[dto.type],
-    );
+    const { url: uploadUrl, fields } =
+      await this.s3Service.generatePresignedUploadPost(
+        key,
+        dto.contentType,
+        MAX_UPLOAD_BYTES[dto.type],
+      );
 
     return {
       uploadUrl,

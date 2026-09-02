@@ -22,6 +22,8 @@ export class XpService {
     await this.statsRepository.save(stats);
     const key = `xp-today:${usuario_id}`;
     await this.redisService.incrBy(key, amount, ttlUntilEndOfDay());
-    await this.eventEmitter.emitAsync('progress.changed', { usuarioId: usuario_id });
+    await this.eventEmitter.emitAsync('progress.changed', {
+      usuarioId: usuario_id,
+    });
   }
 }

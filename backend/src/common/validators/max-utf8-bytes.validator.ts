@@ -17,7 +17,10 @@ export function MaxUtf8Bytes(
       options: validationOptions,
       validator: {
         validate(value: unknown) {
-          return typeof value === 'string' && Buffer.byteLength(value, 'utf8') <= maxBytes;
+          return (
+            typeof value === 'string' &&
+            Buffer.byteLength(value, 'utf8') <= maxBytes
+          );
         },
         defaultMessage(args: ValidationArguments) {
           return `${args.property} deve ter no máximo ${maxBytes} bytes em UTF-8.`;

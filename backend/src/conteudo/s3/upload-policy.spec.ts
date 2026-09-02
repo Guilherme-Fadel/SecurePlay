@@ -8,7 +8,11 @@ describe('upload policy', () => {
   });
 
   it('rejeita conteúdo ativo ou incompatível com a finalidade do upload', () => {
-    expect(() => extensionForLogo('image/svg+xml')).toThrow(BadRequestException);
-    expect(() => extensionForUpload('video', 'image/png')).toThrow(BadRequestException);
+    expect(() => extensionForLogo('image/svg+xml')).toThrow(
+      BadRequestException,
+    );
+    expect(() => extensionForUpload('video', 'image/png')).toThrow(
+      BadRequestException,
+    );
   });
 });

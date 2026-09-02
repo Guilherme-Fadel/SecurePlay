@@ -10,7 +10,10 @@ import { Role } from '../auth/roles.enum';
 import { Empresa } from '../empresa/empresa.entity';
 import { UpdateTemaDto } from './dto/update-tema.dto';
 import { S3Service } from '../conteudo/s3/s3.service';
-import { extensionForLogo, MAX_UPLOAD_BYTES } from '../conteudo/s3/upload-policy';
+import {
+  extensionForLogo,
+  MAX_UPLOAD_BYTES,
+} from '../conteudo/s3/upload-policy';
 import { Usuario } from '../usuario/usuario.entity';
 import { Convite } from './entities/convite.entity';
 
@@ -42,7 +45,9 @@ export class AdminService {
   }
 
   async listarEmpresas() {
-    const empresas = await this.empresaRepository.find({ order: { nome: 'ASC' } });
+    const empresas = await this.empresaRepository.find({
+      order: { nome: 'ASC' },
+    });
     return empresas.map((empresa) => ({
       id: empresa.id,
       nome: empresa.nome,
@@ -70,7 +75,9 @@ export class AdminService {
         throw new BadRequestException('Já existe uma empresa com este nome');
       }
       if (await usuarioRepository.findOne({ where: { email } })) {
-        throw new BadRequestException('Este e-mail já possui um acesso cadastrado');
+        throw new BadRequestException(
+          'Este e-mail já possui um acesso cadastrado',
+        );
       }
 
       const novaEmpresa = await empresaRepository.save(
@@ -127,17 +134,20 @@ export class AdminService {
   async presignLogoDaEmpresa(empresaId: number, contentType: string) {
     const empresa = await this.getEmpresa(empresaId);
     const key = `empresas/${empresa.id}/logo.${extensionForLogo(contentType)}`;
-    const { url: uploadUrl, fields } = await this.s3Service.generatePresignedUploadPost(
-      key,
-      contentType,
-      MAX_UPLOAD_BYTES.logo,
-    );
+    const { url: uploadUrl, fields } =
+      await this.s3Service.generatePresignedUploadPost(
+        key,
+        contentType,
+        MAX_UPLOAD_BYTES.logo,
+      );
 
     return { uploadUrl, fields, key };
   }
 
   private async getEmpresaDoUsuario(userId: number): Promise<Empresa> {
-    const usuario = await this.usuarioRepository.findOne({ where: { id: userId } });
+    const usuario = await this.usuarioRepository.findOne({
+      where: { id: userId },
+    });
     if (!usuario?.empresa_id) {
       throw new NotFoundException('Empresa não encontrada para este usuário');
     }
@@ -145,7 +155,9 @@ export class AdminService {
   }
 
   private async getEmpresa(empresaId: number): Promise<Empresa> {
-    const empresa = await this.empresaRepository.findOne({ where: { id: empresaId } });
+    const empresa = await this.empresaRepository.findOne({
+      where: { id: empresaId },
+    });
     if (!empresa) throw new NotFoundException('Empresa não encontrada');
     return empresa;
   }

@@ -302,7 +302,9 @@ export class ChallengeService {
       await this.redisService.set(xpKey, String(newXp), ttl);
     }
 
-    await this.eventEmitter.emitAsync('progress.changed', { usuarioId: usuario_id });
+    await this.eventEmitter.emitAsync('progress.changed', {
+      usuarioId: usuario_id,
+    });
 
     return {
       score,

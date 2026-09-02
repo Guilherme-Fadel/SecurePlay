@@ -10,10 +10,7 @@ import {
   AchievementRequirement,
 } from './entities/achievement.entity';
 import { UsuarioAchievement } from './entities/usuario-achievement.entity';
-import {
-  CosmeticItem,
-  CosmeticType,
-} from './entities/cosmetic-item.entity';
+import { CosmeticItem, CosmeticType } from './entities/cosmetic-item.entity';
 import { UsuarioCosmetic } from './entities/usuario-cosmetic.entity';
 import { PrestigeWallet } from './entities/prestige-wallet.entity';
 import {
@@ -213,7 +210,8 @@ export class AchievementsService {
         unlockedSlugs.has(definition.prerequisite_slug);
       const metric = this.metricValue(metrics, definition.requirement_type);
       const progress = Math.min(metric, definition.requirement_value);
-      const shouldUnlock = prerequisiteMet && metric >= definition.requirement_value;
+      const shouldUnlock =
+        prerequisiteMet && metric >= definition.requirement_value;
       const newlyUnlocked = shouldUnlock && !record?.unlocked;
       if (!record) {
         record = this.usuarioAchievementRepository.create({
@@ -262,7 +260,9 @@ export class AchievementsService {
           ? 0
           : Math.min(
               100,
-              Math.round((record.progress / definition.requirement_value) * 100),
+              Math.round(
+                (record.progress / definition.requirement_value) * 100,
+              ),
             ),
         status: record.unlocked
           ? 'unlocked'
@@ -302,7 +302,9 @@ export class AchievementsService {
         relations: ['cosmetic_item'],
       }),
     ]);
-    const ownedByItem = new Map(owned.map((item) => [item.cosmetic_item_id, item]));
+    const ownedByItem = new Map(
+      owned.map((item) => [item.cosmetic_item_id, item]),
+    );
     const unlockedSlugs = new Set(
       trail.nodes
         .filter((node) => node.status === 'unlocked')
@@ -355,7 +357,9 @@ export class AchievementsService {
           node.status === 'unlocked',
       )
     ) {
-      throw new BadRequestException('A conquista necessária ainda está bloqueada');
+      throw new BadRequestException(
+        'A conquista necessária ainda está bloqueada',
+      );
     }
     await this.dataSource.transaction(async (manager) => {
       const walletRepository = manager.getRepository(PrestigeWallet);
@@ -410,7 +414,8 @@ export class AchievementsService {
       where: { usuario_id, cosmetic_item_id: itemId },
       relations: ['cosmetic_item'],
     });
-    if (!selected) throw new NotFoundException('Adquira o item antes de equipar');
+    if (!selected)
+      throw new NotFoundException('Adquira o item antes de equipar');
     const owned = await this.usuarioCosmeticRepository.find({
       where: { usuario_id },
       relations: ['cosmetic_item'],

@@ -1,4 +1,12 @@
-import { Controller, Get, Param, ParseEnumPipe, ParseIntPipe, Post, Request } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Param,
+  ParseEnumPipe,
+  ParseIntPipe,
+  Post,
+  Request,
+} from '@nestjs/common';
 import { AchievementsService } from './achievements.service';
 import { CosmeticType } from './entities/cosmetic-item.entity';
 

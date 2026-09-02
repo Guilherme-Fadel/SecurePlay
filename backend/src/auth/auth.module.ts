@@ -14,22 +14,22 @@ import { RedisModule } from 'src/redis/redis.module';
     RedisModule,
     UsuarioModule,
     PassportModule.register({ defaultStrategy: 'jwt' }),
-      JwtModule.registerAsync({
-        inject: [ConfigService],
-        useFactory: (config: ConfigService) => {
-          const secret = config.get<string>('JWT_SECRET')?.trim();
-          if (!secret || secret.length < 32) {
-            throw new Error(
-              'JWT_SECRET deve estar definido e ter ao menos 32 caracteres',
-            );
-          }
+    JwtModule.registerAsync({
+      inject: [ConfigService],
+      useFactory: (config: ConfigService) => {
+        const secret = config.get<string>('JWT_SECRET')?.trim();
+        if (!secret || secret.length < 32) {
+          throw new Error(
+            'JWT_SECRET deve estar definido e ter ao menos 32 caracteres',
+          );
+        }
 
-          return {
-            global: true,
-            secret,
-            signOptions: { expiresIn: '2h' },
-          };
-        },
+        return {
+          global: true,
+          secret,
+          signOptions: { expiresIn: '2h' },
+        };
+      },
     }),
   ],
   providers: [AuthService, JwtStrategy, JwtAuthGuard],

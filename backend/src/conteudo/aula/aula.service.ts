@@ -248,7 +248,9 @@ export class AulaService {
     await this.creditarXp(usuario_id, aula.xp);
 
     await this.verificarModuloConcluido(aula.modulo_id, usuario_id);
-    await this.eventEmitter.emitAsync('progress.changed', { usuarioId: usuario_id });
+    await this.eventEmitter.emitAsync('progress.changed', {
+      usuarioId: usuario_id,
+    });
 
     return {
       sucesso: true,
@@ -342,7 +344,9 @@ export class AulaService {
     }
 
     await this.verificarModuloConcluido(aula.modulo_id, usuario_id);
-    await this.eventEmitter.emitAsync('progress.changed', { usuarioId: usuario_id });
+    await this.eventEmitter.emitAsync('progress.changed', {
+      usuarioId: usuario_id,
+    });
 
     return {
       score,

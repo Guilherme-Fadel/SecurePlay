@@ -15,7 +15,9 @@ export class CreateEmpresaDto {
   @MaxLength(100)
   nome: string;
 
-  @Transform(({ value }) => (typeof value === 'string' ? value.trim().toLowerCase() : value))
+  @Transform(({ value }) =>
+    typeof value === 'string' ? value.trim().toLowerCase() : value,
+  )
   @IsEmail()
   email_administrador: string;
 }

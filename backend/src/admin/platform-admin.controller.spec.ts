@@ -5,7 +5,9 @@ import { Role } from '../auth/roles.enum';
 
 describe('Administração global e por empresa', () => {
   it('mantém as rotas de empresa exclusivas para admin', () => {
-    expect(Reflect.getMetadata(ROLES_KEY, AdminController)).toEqual([Role.ADMIN]);
+    expect(Reflect.getMetadata(ROLES_KEY, AdminController)).toEqual([
+      Role.ADMIN,
+    ]);
   });
 
   it('protege o namespace global com platform_admin', () => {
@@ -15,7 +17,9 @@ describe('Administração global e por empresa', () => {
   });
 
   it('encaminha a criação global de convite com empresa-alvo explícita', async () => {
-    const convitesService = { criarParaEmpresa: jest.fn().mockResolvedValue({}) };
+    const convitesService = {
+      criarParaEmpresa: jest.fn().mockResolvedValue({}),
+    };
     const controller = new PlatformAdminController(
       {} as never,
       convitesService as never,
@@ -33,7 +37,9 @@ describe('Administração global e por empresa', () => {
   });
 
   it('cria convite de administrador apenas quando a flag da rota global é marcada', async () => {
-    const convitesService = { criarParaEmpresa: jest.fn().mockResolvedValue({}) };
+    const convitesService = {
+      criarParaEmpresa: jest.fn().mockResolvedValue({}),
+    };
     const controller = new PlatformAdminController(
       {} as never,
       convitesService as never,
@@ -56,7 +62,9 @@ describe('Administração global e por empresa', () => {
   });
 
   it('permite cadastrar empresa somente pelo serviço global', async () => {
-    const adminService = { criarEmpresa: jest.fn().mockResolvedValue({ id: 15 }) };
+    const adminService = {
+      criarEmpresa: jest.fn().mockResolvedValue({ id: 15 }),
+    };
     const controller = new PlatformAdminController(
       adminService as never,
       {} as never,

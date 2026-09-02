@@ -31,13 +31,19 @@ export function extensionForUpload(
   contentType: string,
 ) {
   if (!CONTENT_UPLOAD_TYPES[type].includes(contentType as never)) {
-    throw new BadRequestException('Tipo de arquivo não permitido para este conteúdo');
+    throw new BadRequestException(
+      'Tipo de arquivo não permitido para este conteúdo',
+    );
   }
   return EXTENSIONS[contentType];
 }
 
 export function extensionForLogo(contentType: string) {
-  if (!LOGO_CONTENT_TYPES.includes(contentType as (typeof LOGO_CONTENT_TYPES)[number])) {
+  if (
+    !LOGO_CONTENT_TYPES.includes(
+      contentType as (typeof LOGO_CONTENT_TYPES)[number],
+    )
+  ) {
     throw new BadRequestException('O logo deve ser PNG, JPEG ou WebP');
   }
   return EXTENSIONS[contentType];

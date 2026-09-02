@@ -1,5 +1,12 @@
 import { Type } from 'class-transformer';
-import { IsBoolean, IsEmail, IsInt, IsOptional, Max, Min } from 'class-validator';
+import {
+  IsBoolean,
+  IsEmail,
+  IsInt,
+  IsOptional,
+  Max,
+  Min,
+} from 'class-validator';
 
 export class CreateConviteDto {
   @IsOptional()
