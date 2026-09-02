@@ -89,6 +89,7 @@ export default function InviteRegister() {
               </form>
 
               <p className="invite-security"><CheckCircle2 size={14} /> Seu acesso será vinculado à empresa com segurança.</p>
+              <p className="invite-legal-note">Ao criar sua conta, você confirma que leu a <Link to="/privacidade">Privacidade</Link> e os <Link to="/termos">Termos de uso</Link>. Se for criança, peça ajuda a um responsável ou educador.</p>
             </>
           )}
         </main>

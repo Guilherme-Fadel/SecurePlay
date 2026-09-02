@@ -9,6 +9,9 @@ const Home = lazy(() => import('@/pages/Home'));
 const WorldMapPage = lazy(() => import('@/prototypes/worldmap/WorldMapPage'));
 const DashboardV2Page = lazy(() => import('@/prototypes/dashboard-v2/DashboardV2Page'));
 const InviteRegister = lazy(() => import('@/pages/InviteRegister'));
+const PrivacyPage = lazy(() => import('@/pages/LegalPages').then((module) => ({ default: module.PrivacyPage })));
+const TermsPage = lazy(() => import('@/pages/LegalPages').then((module) => ({ default: module.TermsPage })));
+const NotFoundPage = lazy(() => import('@/pages/LegalPages').then((module) => ({ default: module.NotFoundPage })));
 export default function App() {
     const location = useLocation();
     return (<AnimatePresence mode="wait">
@@ -22,6 +25,8 @@ export default function App() {
             <InviteRegister />
           </Suspense>}/>
         <Route path="/cadastro/:token" element={<LegacyInviteRedirect />}/>
+        <Route path="/privacidade" element={<Suspense fallback={null}><PrivacyPage /></Suspense>}/>
+        <Route path="/termos" element={<Suspense fallback={null}><TermsPage /></Suspense>}/>
 
         <Route path="/prototipo-mapa" element={<Suspense fallback={<div style={{ padding: 24 }}>Carregando mapa...</div>}>
               <WorldMapPage />
@@ -30,8 +35,9 @@ export default function App() {
         <Route path="/prototipo-dashboard" element={<PrivateRoute>
               <Suspense fallback={<div style={{ padding: 24 }}>Carregando dashboard...</div>}>
                 <DashboardV2Page />
-              </Suspense>
-            </PrivateRoute>}/>
+          </Suspense>
+        </PrivateRoute>}/>
+        <Route path="*" element={<Suspense fallback={null}><NotFoundPage /></Suspense>}/>
       </Routes>
     </AnimatePresence>);
 }
