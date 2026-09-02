@@ -66,7 +66,7 @@ export interface RankingEntry {
 }
 
 export interface RankingData {
-  scope: 'global' | 'company';
+  scope: 'company' | 'personal';
   scopeLabel: string;
   companyAvailable: boolean;
   company: { id: number; name: string } | null;
@@ -82,7 +82,7 @@ export interface RankingData {
 }
 
 export async function getDashboardRanking(
-  scope: 'global' | 'company' = 'global',
+  scope: 'company' = 'company',
 ): Promise<RankingData> {
   const response = await api.get('/dashboard/ranking', { params: { scope } });
   return response.data;

@@ -52,7 +52,7 @@ export function useWeeklyStreak() {
         checkinMessage,
     };
 }
-export function useDashboardRanking(scope: 'global' | 'company' = 'global') {
+export function useDashboardRanking(scope: 'company' = 'company') {
     const { data, loading, error, refetch } = useCachedQuery(`dashboardRanking:${scope}`, () => getDashboardRanking(scope));
     return { ranking: data, loading, error, refetch };
 }

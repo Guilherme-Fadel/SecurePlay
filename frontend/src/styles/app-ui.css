@@ -4171,10 +4171,15 @@
   line-height: 1.5;
 }
 
-.secure-header img {
+.secure-header .secure-user-avatar {
+  display: grid;
+  place-items: center;
   border: 1px solid rgba(var(--primary-rgb), 0.18);
   border-radius: 50% !important;
   background: rgba(var(--primary-rgb), 0.1);
+  color: var(--primary);
+  font-size: 12px;
+  font-weight: 800;
 }
 
 .secure-home-main {

@@ -14,6 +14,15 @@ interface UserMenuProps {
   onClose: () => void;
 }
 
+function initials(name: string | undefined) {
+  return (name ?? 'Você')
+    .trim()
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((part) => part.charAt(0).toUpperCase())
+    .join('');
+}
+
 export function UserMenu({ open, onToggle, onClose }: UserMenuProps) {
   const { user, loading, clearSession } = useCurrentUser();
   const { stats } = useDashboardStats();
@@ -43,11 +52,12 @@ export function UserMenu({ open, onToggle, onClose }: UserMenuProps) {
         aria-expanded={open}
         aria-label="Abrir opções do perfil"
       >
-        <img
-          src={`https://ui-avatars.com/api/?name=${encodeURIComponent(user?.name ?? '')}&background=c7d2fe&color=3730a3&bold=true`}
-          alt="User avatar"
-          className={cn('cosmetic-avatar w-9 h-9 rounded-md flex-shrink-0', equippedFrame)}
-        />
+        <span
+          className={cn('secure-user-avatar cosmetic-avatar w-9 h-9 rounded-md flex-shrink-0', equippedFrame)}
+          aria-hidden="true"
+        >
+          {initials(user?.name)}
+        </span>
 
         <div className="text-left hidden md:block">
           <p className="text-[var(--text-primary)] text-[var(--font-xs)] leading-tight">

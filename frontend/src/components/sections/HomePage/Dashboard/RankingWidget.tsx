@@ -20,7 +20,7 @@ export function RankingWidget() {
   return (
     <InfoCard variant="accent" raised className="dashboard-ranking-card flex flex-col h-full min-h-0 overflow-hidden">
       <div className="dashboard-ranking-body">
-        <p>Top 3 da comunidade</p>
+        <p>Top 3 da sua turma</p>
         <div className="dashboard-podium flex items-end justify-center gap-2">
           {podium.map((entry) => (
             <PodiumColumn key={entry.position} entry={entry} />

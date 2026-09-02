@@ -47,7 +47,7 @@ export class DashboardService {
   }
   async getRanking(
     usuario_id: number,
-    requestedScope: 'global' | 'company' = 'global',
+    requestedScope: 'company' = 'company',
   ) {
     const currentStats = await this.getOrCreateStats(usuario_id);
     const currentEntry = await this.statsRepository
@@ -58,13 +58,16 @@ export class DashboardService {
       .getOne();
     const company = currentEntry?.usuario?.empresa ?? null;
     const companyAvailable = !!company;
-    const scope =
-      requestedScope === 'company' && companyAvailable ? 'company' : 'global';
+    const scope = requestedScope === 'company' && companyAvailable
+      ? 'company'
+      : 'personal';
     const applyScope = (
       query: SelectQueryBuilder<UsuarioStats>,
     ): SelectQueryBuilder<UsuarioStats> => {
       if (scope === 'company' && company) {
         query.andWhere('u.empresa_id = :empresaId', { empresaId: company.id });
+      } else {
+        query.andWhere('s.usuario_id = :usuarioId', { usuarioId: usuario_id });
       }
       return query;
     };
@@ -85,10 +88,13 @@ export class DashboardService {
       }
       return {
         position: previousPosition,
-        name: entry.usuario?.name ?? 'Usuário',
+        name:
+          entry.usuario_id === usuario_id
+            ? currentEntry?.usuario?.name ?? 'Você'
+            : `Aventureiro ${index + 1}`,
         points: entry.total_points,
         level: calcLevel(entry.total_points),
-        companyName: entry.usuario?.empresa?.nome ?? null,
+        companyName: null,
         isCurrentUser: entry.usuario_id === usuario_id,
       };
     });
@@ -141,8 +147,7 @@ export class DashboardService {
     };
     return {
       scope,
-      scopeLabel:
-        scope === 'company' && company ? company.nome : 'Comunidade global',
+      scopeLabel: scope === 'company' && company ? 'Sua turma' : 'Seu progresso',
       companyAvailable,
       company: company ? { id: company.id, name: company.nome } : null,
       totalParticipants,

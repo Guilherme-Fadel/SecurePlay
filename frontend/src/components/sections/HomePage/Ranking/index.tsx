@@ -1,8 +1,6 @@
-import { useMemo, useState, type ReactNode } from 'react';
+import { useMemo, type ReactNode } from 'react';
 import {
-  Building2,
   Crown,
-  Globe2,
   Medal,
   RefreshCw,
   ShieldCheck,
@@ -19,8 +17,6 @@ import { InfoCard } from '@/components/ui/visuals/InfoCard';
 import { useDashboardRanking } from '@/hooks/useDashboard';
 import type { RankingEntry } from '@/services/dashboard';
 
-type RankingScope = 'global' | 'company';
-
 const formatXp = (value: number) => `${value.toLocaleString('pt-BR')} XP`;
 
 function initials(name: string) {
@@ -33,8 +29,7 @@ function initials(name: string) {
 }
 
 export function Ranking() {
-  const [scope, setScope] = useState<RankingScope>('global');
-  const { ranking, loading, error, refetch } = useDashboardRanking(scope);
+  const { ranking, loading, error, refetch } = useDashboardRanking();
 
   const podium = useMemo(() => {
     const firstThree = ranking?.top.slice(0, 3) ?? [];
@@ -53,7 +48,7 @@ export function Ranking() {
     return (
       <PageTransition>
         <div className="app-page ranking-page">
-          <AppSectionHeader title="Ranking" subtitle="Acompanhe sua evolução na comunidade." />
+          <AppSectionHeader title="Ranking" subtitle="Acompanhe sua evolução com segurança." />
           <InfoCard raised className="ranking-error-state">
             <Trophy size={32} />
             <h3>Não foi possível carregar o ranking</h3>
@@ -76,7 +71,7 @@ export function Ranking() {
       <div className="app-page ranking-page">
         <AppSectionHeader
           title="Ranking"
-          subtitle="Compare seu desempenho, acompanhe a equipe e conquiste novas posições."
+          subtitle="Conquiste XP e acompanhe seu progresso com a sua turma."
           action={(
             <AppButton variant="ghost" size="sm" icon={<RefreshCw size={15} />} onClick={refetch}>
               Atualizar
@@ -90,30 +85,7 @@ export function Ranking() {
             <div>
               <span className="ranking-eyebrow"><Sparkles size={14} /> Liga SecurePlay</span>
               <h3>{ranking.scopeLabel}</h3>
-              <p>{ranking.totalParticipants} participantes competindo por XP</p>
-            </div>
-
-            <div className="ranking-scope-switch" role="tablist" aria-label="Escopo do ranking">
-              <button
-                type="button"
-                role="tab"
-                aria-selected={scope === 'global'}
-                className={scope === 'global' ? 'is-active' : ''}
-                onClick={() => setScope('global')}
-              >
-                <Globe2 size={15} /> Global
-              </button>
-              <button
-                type="button"
-                role="tab"
-                aria-selected={scope === 'company'}
-                className={scope === 'company' ? 'is-active' : ''}
-                disabled={!ranking.companyAvailable}
-                title={ranking.companyAvailable ? ranking.company?.name : 'Usuário sem empresa vinculada'}
-                onClick={() => setScope('company')}
-              >
-                <Building2 size={15} /> Empresa
-              </button>
+              <p>{ranking.totalParticipants} aventureiros juntando XP</p>
             </div>
           </div>
 
@@ -131,11 +103,11 @@ export function Ranking() {
                 <span><Users size={15} /> Classificação</span>
                 <p>
                   {ranking.totalParticipants <= 20
-                    ? `${ranking.totalParticipants} participantes neste escopo`
-                    : 'Os 20 melhores no escopo selecionado'}
+                    ? `${ranking.totalParticipants} aventureiros nesta turma`
+                    : 'Os 20 aventureiros com mais XP nesta turma'}
                 </p>
               </div>
-              <strong>{ranking.scope === 'global' ? 'Global' : ranking.company?.name}</strong>
+              <strong>{ranking.scopeLabel}</strong>
             </div>
 
             <div className="ranking-table-labels" aria-hidden="true">
@@ -149,7 +121,6 @@ export function Ranking() {
                   key={`${entry.position}-${entry.name}`}
                   entry={entry}
                   leaderPoints={summary.leaderPoints}
-                  showCompany={ranking.scope === 'global'}
                 />
               ))}
             </div>
@@ -159,7 +130,7 @@ export function Ranking() {
             <InfoCard raised className="ranking-player-card">
               <div className="ranking-player-topline">
                 <span>Sua posição</span>
-                <div><ShieldCheck size={15} /> {ranking.scope === 'global' ? 'Global' : 'Empresa'}</div>
+                <div><ShieldCheck size={15} /> {ranking.scope === 'company' ? 'Sua turma' : 'Seu caminho'}</div>
               </div>
 
               <div className="ranking-player-identity">
@@ -202,26 +173,12 @@ export function Ranking() {
 
             <div className="ranking-scope-callout">
               <div className="ranking-callout-icon">
-                {ranking.scope === 'global' ? <Building2 size={20} /> : <Globe2 size={20} />}
+                <ShieldCheck size={20} />
               </div>
               <div>
-                <strong>{ranking.scope === 'global' ? 'Disputa saudável na empresa' : 'Pronto para o cenário global?'}</strong>
-                <p>
-                  {ranking.scope === 'global'
-                    ? ranking.companyAvailable
-                      ? `Compare sua posição apenas com pessoas da ${ranking.company?.name}.`
-                      : 'Vincule seu perfil a uma empresa para liberar este comparativo.'
-                    : 'Volte ao ranking global para comparar seu desempenho com toda a comunidade.'}
-                </p>
+                <strong>Ranking feito para aprender com segurança</strong>
+                <p>Os colegas aparecem com apelidos de aventura. Assim, todos podem se divertir sem expor dados pessoais.</p>
               </div>
-              <AppButton
-                variant="soft"
-                size="sm"
-                disabled={ranking.scope === 'global' && !ranking.companyAvailable}
-                onClick={() => setScope(ranking.scope === 'global' ? 'company' : 'global')}
-              >
-                {ranking.scope === 'global' ? 'Ver empresa' : 'Ver global'}
-              </AppButton>
             </div>
           </aside>
         </div>
@@ -252,11 +209,9 @@ function PodiumPlayer({ entry, place }: { entry: RankingEntry; place: number }) 
 function RankingRow({
   entry,
   leaderPoints,
-  showCompany,
 }: {
   entry: RankingEntry;
   leaderPoints: number;
-  showCompany: boolean;
 }) {
   const progress = leaderPoints > 0 ? Math.max(4, Math.round((entry.points / leaderPoints) * 100)) : 0;
   return (
@@ -267,7 +222,7 @@ function RankingRow({
       <div className="ranking-row-avatar">{initials(entry.name)}</div>
       <div className="ranking-row-person">
         <strong>{entry.name}{entry.isCurrentUser && <em>Você</em>}</strong>
-        <span>{showCompany && entry.companyName ? entry.companyName : `Nível ${entry.level}`}</span>
+        <span>Nível {entry.level}</span>
       </div>
       <div className="ranking-row-performance">
         <strong>{entry.points.toLocaleString('pt-BR')} XP</strong>
