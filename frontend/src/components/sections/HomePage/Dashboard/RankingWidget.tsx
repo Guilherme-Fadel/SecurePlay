@@ -1,6 +1,7 @@
 import { InfoCard } from '@/components/ui/visuals/InfoCard';
 import { Crown } from 'lucide-react';
 import { useDashboardRanking } from '@/hooks/useDashboard';
+import { Avatar } from '@/components/ui/visuals/Avatar';
 import type { RankingEntry } from '@/services/dashboard';
 
 export function RankingWidget() {
@@ -43,11 +44,11 @@ function PodiumColumn({ entry }: { entry: RankingEntry }) {
             className="absolute -top-3.5 left-1/2 -translate-x-1/2 text-[var(--accent)] fill-[var(--accent)]"
           />
         )}
-        <div className="dashboard-podium-avatar w-9 h-9 rounded-full border-2 border-[var(--border)] bg-[var(--surface-alt)] flex items-center justify-center">
-          <span className="text-[var(--text-primary)] font-[var(--font-family-base)]">
-            {entry.name.charAt(0)}
-          </span>
-        </div>
+        <Avatar
+          name={entry.name}
+          imageUrl={entry.profileImageUrl}
+          className="dashboard-podium-avatar w-9 h-9 rounded-full border-2 border-[var(--border)] bg-[var(--surface-alt)] flex items-center justify-center overflow-hidden text-[var(--text-primary)] font-[var(--font-family-base)]"
+        />
       </div>
 
       <span className="dashboard-podium-name text-[var(--text-primary)] text-[11px] font-medium truncate max-w-full text-center leading-tight">

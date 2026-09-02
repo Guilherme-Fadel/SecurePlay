@@ -13,6 +13,7 @@ import { Achievements } from './Achievements';
 import { AppSectionHeader } from '@/components/ui/visuals/AppSectionHeader';
 import { AppButton } from '@/components/ui/buttons/AppButton';
 import { useAchievementShop } from '@/hooks/useAchievements';
+import { Avatar } from '@/components/ui/visuals/Avatar';
 import { cn } from '@/lib/utils';
 
 
@@ -44,10 +45,14 @@ export function Dashboard() {
         <InfoCard variant="primary" raised className={cn('dashboard-welcome cosmetic-background-host', equippedBackground)}>
           <div className="dashboard-welcome-content">
             <div className="dashboard-welcome-left">
-              <div className={cn('dashboard-welcome-avatar cosmetic-avatar', equippedFrame)} aria-hidden="true">
-                {user?.name?.charAt(0).toUpperCase() ?? '?'}
+              <Avatar
+                name={user?.name}
+                nickname={user?.nickname}
+                imageUrl={user?.profile_image_url}
+                className={cn('dashboard-welcome-avatar cosmetic-avatar', equippedFrame)}
+              >
                 <i />
-              </div>
+              </Avatar>
               <div className="dashboard-welcome-info">
                 <h2>Bem-vindo de volta, {user?.name?.split(' ')[0] ?? '—'}!</h2>
                 <p>Continue sua jornada de segurança e evolua no ranking.</p>
