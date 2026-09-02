@@ -1,6 +1,4 @@
 import { useState } from 'react';
-import { Search } from 'lucide-react';
-import { SearchBar } from './SearchBar';
 import { NotificationsMenu } from './NotificationsMenu';
 import { UserMenu } from './UserMenu';
 
@@ -15,17 +13,7 @@ export function Header() {
 
   return (
     <header className="secure-header sticky top-0 z-40 h-16 bg-[var(--surface)] border-b-2 border-[var(--border)]">
-      <div className="secure-header-inner h-full px-4 md:px-6 flex items-center justify-between">
-
-        <div className="flex-1 max-w-md hidden sm:block">
-          <SearchBar />
-        </div>
-
-        <div className="sm:hidden">
-          <button className="p-2 hover:bg-[var(--background)] rounded-md transition-colors text-[var(--text-primary)]">
-            <Search size={20} />
-          </button>
-        </div>
+      <div className="secure-header-inner h-full px-4 md:px-6 flex items-center justify-end">
 
         <div className="flex items-center gap-2">
 

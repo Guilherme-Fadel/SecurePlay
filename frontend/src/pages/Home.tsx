@@ -2,7 +2,7 @@ import { PageTransition } from '@/components/shared/PageTransition';
 import { LoadingScreen } from '@/components/shared/LoadingScreen';
 import { HomeLoadingOverlay } from '@/components/shared/HomeLoadingOverlay';
 import { Header } from "@/components/shared/layout/header/index";
-import { Sidebar, SidebarItem } from '@/components/shared/Sidebar';
+import { MobileNavigation, Sidebar, SidebarItem } from '@/components/shared/Sidebar';
 import { TrophyIcon, LayoutDashboard, Gamepad2, AwardIcon, BookOpenIcon, SettingsIcon, ArrowLeft, ShieldIcon } from "lucide-react";
 import { Dashboard, Awards, Challenges, Ranking, Conteudos, Settings, Perfil } from '@/components/sections/HomePage/index';
 import { lazy, Suspense, useState, useCallback } from 'react';
@@ -82,6 +82,7 @@ function HomeContent() {
           </div>
 
         </div>
+        <MobileNavigation activeSection={activeSection} onSelect={setActiveSection} showAdmin={user?.role === 'platform_admin'} />
         </SectionContext.Provider>
     </>);
 }

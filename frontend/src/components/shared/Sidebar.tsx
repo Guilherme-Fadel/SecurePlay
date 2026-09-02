@@ -1,6 +1,6 @@
-import { Section } from "@/pages/Home"
-import { Menu, ChevronLeft, ShieldCheck } from "lucide-react"
-import {createContext, useContext, useState, ReactNode} from "react"
+import type { Section } from "@/pages/Home"
+import { Award, BookOpen, ChevronLeft, Gamepad2, LayoutDashboard, Menu, MoreHorizontal, Settings, ShieldCheck, ShieldIcon, Trophy, UserRound } from "lucide-react"
+import { createContext, useContext, useEffect, useState, type ReactNode } from "react"
 
 interface SidebarContextProps {
   expanded: boolean
@@ -81,47 +81,88 @@ export function SidebarItem({
   alert = false,
 }: SidebarItemProps) {
   const { expanded } = useSidebar()
-  const [hovered, setHovered] = useState(false)
 
   return (
-    <li
-    onClick={() => onSelect(id)}
-    onMouseEnter={() => setHovered(true)}
-    onMouseLeave={() => setHovered(false)}
-    className={`secure-sidebar-item
-      relative flex items-center py-2 px-3 my-1
-      rounded-md cursor-pointer
-      transition-colors
-      hover:bg-[var(--background)] text-[var(--text-primary)]
-
-      ${active ? "is-active bg-sidebar-accent text-[var(--text-primary)]" : ""}
-    `}
->
-      {icon}
-
-      <span
-        className={`secure-sidebar-item-label overflow-hidden transition-all text-xl ${
-          expanded ? "w-52 ml-4 " : "w-0"
-        }`}
+    <li>
+      <button
+        type="button"
+        onClick={() => onSelect(id)}
+        title={expanded ? undefined : text}
+        aria-current={active ? 'page' : undefined}
+        className={`secure-sidebar-item relative flex w-full items-center py-2 px-3 my-1 rounded-md cursor-pointer transition-colors hover:bg-[var(--background)] text-[var(--text-primary)] ${active ? "is-active bg-sidebar-accent text-[var(--text-primary)]" : ""}`}
       >
-        {text}
-      </span>
-
-      {alert && (
-        <div
-          className={`absolute right-2 w-2 h-2 rounded bg-indigo-400 ${
-            expanded ? "" : "top-2"
-          }`}
-        />
-      )}
-
-      {!expanded && hovered && (
-        <div
-          className="absolute left-full ml-1 px-2 py-1 rounded-md bg-[var(--surface-alt)] text-[var(--text-primary)] text-sm whitespace-nowrap z-[9999] shadow-lg border border-[var(--border)]"
-        >
+        {icon}
+        <span className={`secure-sidebar-item-label overflow-hidden transition-all text-xl ${expanded ? "w-52 ml-4 " : "w-0"}`}>
           {text}
-        </div>
-      )}
+        </span>
+        {alert && <span className={`absolute right-2 w-2 h-2 rounded bg-indigo-400 ${expanded ? "" : "top-2"}`} aria-label="Há novidade" />}
+      </button>
     </li>
+  )
+}
+
+type MobileNavigationProps = {
+  activeSection: Section
+  onSelect: (section: Section) => void
+  showAdmin: boolean
+}
+
+const mobilePrimaryItems: Array<{ id: Section; label: string; icon: ReactNode }> = [
+  { id: 'dashboard', label: 'Início', icon: <LayoutDashboard /> },
+  { id: 'conteudos', label: 'Aprender', icon: <BookOpen /> },
+  { id: 'desafios', label: 'Jogar', icon: <Gamepad2 /> },
+  { id: 'ranking', label: 'Ranking', icon: <Trophy /> },
+]
+
+const mobileMoreItems: Array<{ id: Section; label: string; icon: ReactNode }> = [
+  { id: 'conquistas', label: 'Conquistas', icon: <Award /> },
+  { id: 'perfil', label: 'Meu perfil', icon: <UserRound /> },
+  { id: 'configuracoes', label: 'Configurações', icon: <Settings /> },
+]
+
+export function MobileNavigation({ activeSection, onSelect, showAdmin }: MobileNavigationProps) {
+  const [moreOpen, setMoreOpen] = useState(false)
+  const isMoreActive = mobileMoreItems.some((item) => item.id === activeSection) || (showAdmin && activeSection === 'admin')
+  const moreItems = showAdmin
+    ? [...mobileMoreItems, { id: 'admin' as Section, label: 'Administrador', icon: <ShieldIcon /> }]
+    : mobileMoreItems
+
+  useEffect(() => {
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setMoreOpen(false)
+    }
+    window.addEventListener('keydown', closeOnEscape)
+    return () => window.removeEventListener('keydown', closeOnEscape)
+  }, [])
+
+  const choose = (section: Section) => {
+    onSelect(section)
+    setMoreOpen(false)
+  }
+
+  return (
+    <nav className="secure-mobile-nav" aria-label="Navegação principal">
+      <div className="secure-mobile-nav-list">
+        {mobilePrimaryItems.map((item) => (
+          <button key={item.id} type="button" onClick={() => choose(item.id)} aria-current={activeSection === item.id ? 'page' : undefined} className={`secure-mobile-nav-button ${activeSection === item.id ? 'is-active' : ''}`}>
+            {item.icon}<span>{item.label}</span>
+          </button>
+        ))}
+        <div className="secure-mobile-nav-more">
+          <button type="button" onClick={() => setMoreOpen((current) => !current)} aria-expanded={moreOpen} aria-controls="secure-mobile-more-menu" className={`secure-mobile-nav-button ${isMoreActive ? 'is-active' : ''}`}>
+            <MoreHorizontal /><span>Mais</span>
+          </button>
+          {moreOpen && (
+            <div id="secure-mobile-more-menu" className="secure-mobile-more-menu" aria-label="Mais seções">
+              {moreItems.map((item) => (
+                <button key={item.id} type="button" onClick={() => choose(item.id)} aria-current={activeSection === item.id ? 'page' : undefined}>
+                  {item.icon}<span>{item.label}</span>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    </nav>
   )
 }
