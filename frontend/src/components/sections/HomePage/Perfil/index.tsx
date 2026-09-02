@@ -230,16 +230,6 @@ export function Perfil() {
                 <h2>{displayName}</h2>
                 <span className="profile-role-chip"><ShieldCheck size={13} /> {roleLabel(user?.role)}</span>
               </div>
-              <form className="profile-nickname-form profile-hero-nickname-form" onSubmit={handleNicknameRequest}>
-                <label htmlFor="profile-nickname">Apelido no ranking</label>
-                <div>
-                  <input id="profile-nickname" value={nicknameDraft} onChange={(event) => setNicknameDraft(event.target.value)} minLength={3} maxLength={24} pattern="[A-Za-zÀ-ÿ0-9 _-]+" disabled={nicknameSaving || user?.nickname_request_status === 'pending'} placeholder="Ex.: Guardião Solar" />
-                  <AppButton type="submit" size="sm" disabled={nicknameSaving || user?.nickname_request_status === 'pending'}>{nicknameSaving ? 'Enviando...' : 'Pedir aprovação'}</AppButton>
-                </div>
-                {user?.nickname_request_status === 'pending' && <p className="profile-nickname-status is-pending">Seu pedido para “{user.nickname_pending}” está aguardando o administrador.</p>}
-                {user?.nickname_request_status === 'rejected' && <p className="profile-nickname-status is-rejected">Seu último pedido não foi aprovado. Você pode tentar outro apelido.</p>}
-                {user?.nickname && user.nickname_request_status !== 'pending' && <p className="profile-nickname-status">Apelido atual no ranking: <strong>{user.nickname}</strong></p>}
-              </form>
               <div className="profile-identity-meta">
                 <span><Building2 size={14} /> {companyName}</span>
                 <span><BadgeCheck size={14} /> Conta ativa</span>
@@ -260,6 +250,21 @@ export function Perfil() {
                 )}
               </div>
             </div>
+          </div>
+
+          <div className="profile-hero-action">
+            <form className="profile-nickname-form profile-hero-nickname-form" onSubmit={handleNicknameRequest}>
+              <div className="profile-nickname-heading">
+                <label htmlFor="profile-nickname">Apelido no ranking</label>
+                {user?.nickname && user.nickname_request_status !== 'pending' && <span>Atual: {user.nickname}</span>}
+              </div>
+              <div>
+                <input id="profile-nickname" value={nicknameDraft} onChange={(event) => setNicknameDraft(event.target.value)} minLength={3} maxLength={24} pattern="[A-Za-zÀ-ÿ0-9 _-]+" disabled={nicknameSaving || user?.nickname_request_status === 'pending'} placeholder="Ex.: Guardião Solar" />
+                <AppButton type="submit" size="sm" disabled={nicknameSaving || user?.nickname_request_status === 'pending'}>{nicknameSaving ? 'Enviando...' : 'Pedir aprovação'}</AppButton>
+              </div>
+              {user?.nickname_request_status === 'pending' && <p className="profile-nickname-status is-pending">Pedido para “{user.nickname_pending}” aguardando aprovação.</p>}
+              {user?.nickname_request_status === 'rejected' && <p className="profile-nickname-status is-rejected">O último pedido não foi aprovado. Tente outro apelido.</p>}
+            </form>
           </div>
 
           <div className="profile-level-summary">

@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { motion } from 'motion/react';
 import { ArrowRight, Eye, EyeOff, KeyRound, LockKeyhole, Mail, ShieldCheck } from 'lucide-react';
 import { toast } from 'sonner';
+import learningScene from '@/assets/kids/academia-missoes-login-v1.png';
 
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { loginService } from '@/services/login/login';
@@ -54,14 +55,18 @@ export function LoginRegister() {
         transition={{ duration: 0.55, ease: 'easeOut' }}
       >
         <div className="login-brand">
-          <span className="login-brand-mark" aria-hidden="true"><ShieldCheck size={24} /></span>
           <span>secure<span>play</span></span>
         </div>
 
         <div className="login-showcase-copy">
-          <span className="login-eyebrow"><span /> Sua aventura digital</span>
-          <h1>Aprenda a se<br /><em>proteger</em> jogando.</h1>
-          <p>Entre para descobrir missões, desafios e dicas para navegar na internet com mais segurança.</p>
+          <span className="login-academy-label"><ShieldCheck size={18} /> Academia de Missões</span>
+          <h1>Aprender a se<br /><em>proteger</em> é uma aventura.</h1>
+          <span className="login-mission-divider" aria-hidden="true"><i /><ShieldCheck size={18} /><i /></span>
+          <p>Um ambiente seguro para aprender, explorar e construir boas escolhas digitais.</p>
+        </div>
+
+        <div className="login-scene" aria-hidden="true">
+          <img src={learningScene} alt="" />
         </div>
 
         <div className="login-security-note">
@@ -80,20 +85,19 @@ export function LoginRegister() {
         transition={{ duration: 0.45, delay: 0.1, ease: 'easeOut' }}
       >
         <div className="login-mobile-brand">
-          <span className="login-brand-mark" aria-hidden="true"><ShieldCheck size={22} /></span>
           <span>secure<span>play</span></span>
         </div>
 
         <section className="login-card" aria-labelledby="login-title">
           <div className="login-card-icon" aria-hidden="true"><KeyRound size={23} /></div>
           <div className="login-heading">
-            <h2 id="login-title">Olá, aventureiro!</h2>
-            <p>Use o e-mail que sua escola ou organização cadastrou.</p>
+            <h2 id="login-title">Acesse sua<br />próxima missão</h2>
+            <p>Entre com os dados da sua escola ou organização para continuar.</p>
           </div>
 
           <form onSubmit={handleLogin} className="login-form">
             <label className="login-field">
-              <span>E-mail da escola</span>
+              <span>E-mail</span>
               <div>
                 <Mail size={18} aria-hidden="true" />
                 <input
@@ -141,7 +145,7 @@ export function LoginRegister() {
             </div>
 
             <button type="submit" className="login-submit" disabled={isLoading}>
-              {isLoading ? 'Preparando...' : 'Começar minhas missões'}
+              {isLoading ? 'Preparando...' : 'Entrar na aventura'}
               {!isLoading && <ArrowRight size={18} aria-hidden="true" />}
             </button>
           </form>
