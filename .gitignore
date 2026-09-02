@@ -7,3 +7,6 @@ mockup-conteudos.html
 dist
 *.png
 *.mp4
+!frontend/src/assets/
+!frontend/src/assets/kids/
+!frontend/src/assets/kids/*.png
