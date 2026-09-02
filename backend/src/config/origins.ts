@@ -8,3 +8,10 @@ export function getAllowedOrigins(value = process.env.CORS_ORIGIN): string[] {
 
   return origins.length > 0 ? origins : [LOCAL_ORIGIN];
 }
+
+export function isAllowedOrigin(
+  origin: string | undefined,
+  allowedOrigins = getAllowedOrigins(),
+): boolean {
+  return Boolean(origin && allowedOrigins.includes(origin));
+}

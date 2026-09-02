@@ -16,9 +16,11 @@ import { RolesGuard } from './auth/roles.guard';
 import { RedisModule } from './redis/redis.module';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { AppGateway } from './gateway/app.gateway';
-import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
+import { ThrottlerModule } from '@nestjs/throttler';
 import { RedisThrottlerStorage } from './redis/redis-throttler.storage';
 import { AchievementsModule } from './achievements/achievements.module';
+import { AppThrottlerGuard } from './common/security/app-throttler.guard';
+import { CsrfGuard } from './auth/csrf.guard';
 
 @Module({
   imports: [
@@ -62,7 +64,11 @@ import { AchievementsModule } from './achievements/achievements.module';
     },
     {
       provide: APP_GUARD,
-      useClass: ThrottlerGuard,
+      useClass: CsrfGuard,
+    },
+    {
+      provide: APP_GUARD,
+      useClass: AppThrottlerGuard,
     },
     AppGateway,
   ],

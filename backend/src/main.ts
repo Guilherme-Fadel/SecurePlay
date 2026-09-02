@@ -9,10 +9,18 @@ import { SocketIoAdapter } from './gateway/socket-io.adapter';
 import fastifyCookie from '@fastify/cookie';
 import { getAllowedOrigins } from './config/origins';
 
+function getTrustProxy(): boolean | number {
+  const configuredHops = Number(process.env.TRUST_PROXY ?? 0);
+  return Number.isInteger(configuredHops) && configuredHops > 0
+    ? configuredHops
+    : false;
+}
+
 async function bootstrap() {
   const app = await NestFactory.create<NestFastifyApplication>(
     AppModule,
     new FastifyAdapter({
+      trustProxy: getTrustProxy(),
       logger: {
         redact: ['req.headers.authorization', 'req.body.token'],
       },
@@ -28,7 +36,7 @@ async function bootstrap() {
   app.enableCors({
     origin: allowedOrigins,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
     credentials: true,
   });
 
