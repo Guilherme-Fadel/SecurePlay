@@ -77,18 +77,18 @@ export default function InviteRegister() {
           ) : (
             <>
               <div className="invite-icon"><UserRound size={23} /></div>
-              <h1>Crie seu acesso</h1>
-              <p className="invite-intro">Você foi convidado para fazer parte de <strong>{convite.empresa_nome}</strong>.</p>
+              <h1>Crie seu passe de aventura</h1>
+              <p className="invite-intro">Você vai entrar na turma de <strong>{convite.empresa_nome}</strong>.</p>
 
               <form onSubmit={handleSubmit} className="invite-form">
-                <label>Nome completo<input value={name} onChange={(event) => setName(event.target.value)} minLength={3} required /></label>
-                <label>E-mail corporativo<input type="email" value={email} onChange={(event) => setEmail(event.target.value)} disabled={Boolean(convite.email)} required /></label>
-                <label>Crie uma senha<input type="password" value={password} onChange={(event) => setPassword(event.target.value)} minLength={6} maxLength={72} autoComplete="new-password" required /></label>
-                <label>Confirme a senha<input type="password" value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} minLength={6} maxLength={72} autoComplete="new-password" required /></label>
-                <button type="submit" disabled={submitting}>{submitting ? 'Criando acesso...' : 'Concluir cadastro'}</button>
+                <label>Seu nome<input value={name} onChange={(event) => setName(event.target.value)} minLength={3} required /></label>
+                <label>E-mail da escola<input type="email" value={email} onChange={(event) => setEmail(event.target.value)} disabled={Boolean(convite.email)} required /></label>
+                <label>Crie uma senha secreta<input type="password" value={password} onChange={(event) => setPassword(event.target.value)} minLength={6} maxLength={72} autoComplete="new-password" required /></label>
+                <label>Repita a senha secreta<input type="password" value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} minLength={6} maxLength={72} autoComplete="new-password" required /></label>
+                <button type="submit" disabled={submitting}>{submitting ? 'Criando seu passe...' : 'Começar minha aventura'}</button>
               </form>
 
-              <p className="invite-security"><CheckCircle2 size={14} /> Seu acesso será vinculado à empresa com segurança.</p>
+              <p className="invite-security"><CheckCircle2 size={14} /> Seu acesso será preparado com segurança.</p>
               <p className="invite-legal-note">Ao criar sua conta, você confirma que leu a <Link to="/privacidade">Privacidade</Link> e os <Link to="/termos">Termos de uso</Link>. Se for criança, peça ajuda a um responsável ou educador.</p>
             </>
           )}

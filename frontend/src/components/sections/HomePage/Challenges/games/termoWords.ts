@@ -1,68 +1,58 @@
-export const ANSWERS: string[] = [
-    'CACHE', 'LOGIN', 'PROXY', 'TOKEN', 'BYTES', 'STACK', 'QUERY', 'ARRAY',
-    'CLASS', 'DEBUG', 'EMAIL', 'MOUSE', 'PIXEL', 'VIRUS', 'CLOUD', 'CYBER',
-    'PATCH', 'FRAME', 'INPUT', 'MACRO', 'MODEM', 'LINUX', 'REACT', 'REDIS',
-    'REGEX', 'SCOPE', 'SHELL', 'SLASH', 'SPLIT', 'FETCH', 'MERGE', 'CLONE',
-    'BUILD', 'FLASK', 'NGINX', 'PANIC', 'RETRY', 'ASYNC', 'AWAIT', 'INDEX',
-    'QUEUE', 'STORE', 'TABLE', 'TRACE', 'VALUE', 'WRITE', 'PARSE', 'BLOCK',
-    'CHAIN', 'CRYPT', 'FRAUD', 'GHOST', 'MEDIA', 'PHONE', 'ROBOT', 'SPARK',
+export type WordOfTheDay = {
+  word: string;
+  hint: string;
+};
+
+export const ANSWERS: WordOfTheDay[] = [
+  { word: 'SENHA', hint: 'Ela protege a sua conta. Não conte para ninguém.' },
+  { word: 'VIRUS', hint: 'Um programa perigoso que pode deixar o computador doente.' },
+  { word: 'EMAIL', hint: 'Uma mensagem que chega pela internet.' },
+  { word: 'NUVEM', hint: 'Lugar na internet onde arquivos podem ficar guardados.' },
+  { word: 'DADOS', hint: 'Informações que devemos cuidar com atenção.' },
+  { word: 'REDES', hint: 'Lugares da internet para conversar e compartilhar.' },
+  { word: 'JOGOS', hint: 'Missões divertidas para aprender brincando.' },
+  { word: 'VIDEO', hint: 'Imagem que se mexe na tela.' },
+  { word: 'MOUSE', hint: 'Ajudante usado para apontar e clicar no computador.' },
+  { word: 'PIXEL', hint: 'Pequeno quadradinho que ajuda a formar uma imagem na tela.' },
+  { word: 'BOTAO', hint: 'Você aperta este item para fazer algo acontecer na tela.' },
+  { word: 'FOTOS', hint: 'Imagens de momentos que merecem cuidado ao compartilhar.' },
+  { word: 'CHAVE', hint: 'Também pode ser uma forma de abrir algo protegido.' },
+  { word: 'SITES', hint: 'Páginas que visitamos na internet.' },
+  { word: 'AVISO', hint: 'Um sinal importante para parar e prestar atenção.' },
+  { word: 'SINAL', hint: 'Algo que pode mostrar se uma mensagem é segura ou estranha.' },
+  { word: 'DICAS', hint: 'Pequenas ajudas para descobrir uma resposta.' },
+  { word: 'AMIGO', hint: 'Pessoa que respeita você e suas informações.' },
+  { word: 'GRUPO', hint: 'Pessoas reunidas para aprender ou brincar juntas.' },
+  { word: 'TELAS', hint: 'Elas mostram imagens, jogos e mensagens.' },
 ];
-const COMMON: string[] = [
-    'ABOUT', 'ABOVE', 'ADMIN', 'AGENT', 'ALARM', 'ALERT', 'ALIVE', 'ALLOW',
-    'ALONE', 'ALPHA', 'ANGLE', 'APPLE', 'APPLY', 'AUDIO', 'BADGE', 'BASIC',
-    'BEACH', 'BEGIN', 'BOARD', 'BRAIN', 'BRAND', 'BREAK', 'BRING', 'BROWN',
-    'BRUSH', 'CABLE', 'CANDY', 'CARRY', 'CATCH', 'CAUSE', 'CHAIR', 'CHART',
-    'CHASE', 'CHEAP', 'CHECK', 'CHESS', 'CHILD', 'CLAIM', 'CLEAN', 'CLEAR',
-    'CLICK', 'CLIMB', 'CLOCK', 'CLOSE', 'COACH', 'COAST', 'COLOR', 'COUNT',
-    'COURT', 'COVER', 'CRAFT', 'CRASH', 'CRAZY', 'CREAM', 'CRIME', 'CROSS',
-    'CROWD', 'CROWN', 'CURVE', 'DAILY', 'DANCE', 'DEALT', 'DEATH', 'DELAY',
-    'DEPTH', 'DIARY', 'DIRTY', 'DOZEN', 'DRAFT', 'DRAMA', 'DREAM', 'DRESS',
-    'DRINK', 'DRIVE', 'EAGER', 'EARLY', 'EARTH', 'EIGHT', 'ELECT', 'EMPTY',
-    'ENEMY', 'ENJOY', 'ENTER', 'ENTRY', 'EQUAL', 'ERROR', 'EVENT', 'EVERY',
-    'EXACT', 'EXIST', 'EXTRA', 'FAITH', 'FALSE', 'FAULT', 'FAVOR', 'FIELD',
-    'FIGHT', 'FINAL', 'FIRST', 'FLASH', 'FLEET', 'FLOOR', 'FOCUS', 'FORCE',
-    'FORTH', 'FORTY', 'FORUM', 'FOUND', 'FRESH', 'FRONT', 'FRUIT', 'FUNNY',
-    'GIANT', 'GLASS', 'GLOBE', 'GRACE', 'GRADE', 'GRAND', 'GRANT', 'GRASS',
-    'GREAT', 'GREEN', 'GROUP', 'GUARD', 'GUESS', 'GUEST', 'GUIDE', 'HAPPY',
-    'HEART', 'HEAVY', 'HORSE', 'HOTEL', 'HOUSE', 'HUMAN', 'IDEAL', 'IMAGE',
-    'ISSUE', 'JOINT', 'JUDGE', 'KNIFE', 'KNOWN', 'LABEL', 'LARGE', 'LASER',
-    'LAYER', 'LEARN', 'LEAST', 'LEAVE', 'LEGAL', 'LEVEL', 'LIGHT', 'LIMIT',
-    'LOCAL', 'LOGIC', 'LOOSE', 'LOWER', 'LUCKY', 'LUNCH', 'MAGIC', 'MAJOR',
-    'MARCH', 'MATCH', 'METAL', 'MIGHT', 'MINOR', 'MINUS', 'MONEY', 'MONTH',
-    'MORAL', 'MOTOR', 'MOUNT', 'MOVIE', 'MUSIC', 'NIGHT', 'NOISE', 'NORTH',
-    'NOVEL', 'NURSE', 'OCCUR', 'OCEAN', 'OFFER', 'ORDER', 'OTHER', 'OUGHT',
-    'PAINT', 'PANEL', 'PAPER', 'PARTY', 'PEACE', 'PHASE', 'PHOTO', 'PIANO',
-    'PIECE', 'PILOT', 'PITCH', 'PLACE', 'PLAIN', 'PLANE', 'PLANT', 'PLATE',
-    'POINT', 'POUND', 'POWER', 'PRESS', 'PRICE', 'PRIDE', 'PRIME', 'PRINT',
-    'PRIOR', 'PRIZE', 'PROOF', 'PROUD', 'PROVE', 'QUICK', 'QUIET', 'QUITE',
-    'RADIO', 'RAISE', 'RANGE', 'RAPID', 'RATIO', 'REACH', 'READY', 'REFER',
-    'RIGHT', 'RIVAL', 'RIVER', 'ROUND', 'ROUTE', 'ROYAL', 'RURAL', 'SCALE',
-    'SCENE', 'SCORE', 'SENSE', 'SERVE', 'SEVEN', 'SHALL', 'SHAPE', 'SHARE',
-    'SHARP', 'SHEET', 'SHELF', 'SHIFT', 'SHINE', 'SHIRT', 'SHOCK', 'SHOOT',
-    'SHORT', 'SIGHT', 'SILLY', 'SINCE', 'SIXTH', 'SIXTY', 'SKILL', 'SLEEP',
-    'SLIDE', 'SMALL', 'SMART', 'SMILE', 'SMOKE', 'SOLID', 'SOLVE', 'SORRY',
-    'SOUND', 'SOUTH', 'SPACE', 'SPEAK', 'SPEED', 'SPEND', 'SPENT', 'SPORT',
-    'STAFF', 'STAGE', 'STAND', 'START', 'STATE', 'STEAM', 'STEEL', 'STICK',
-    'STILL', 'STOCK', 'STONE', 'STOOD', 'STORM', 'STORY', 'STUDY', 'STUFF',
-    'STYLE', 'SUGAR', 'SUITE', 'SUPER', 'SWEET', 'TASTE', 'TEACH', 'TEETH',
-    'THANK', 'THEME', 'THERE', 'THESE', 'THICK', 'THING', 'THINK', 'THIRD',
-    'THOSE', 'THREE', 'THREW', 'THROW', 'TIGHT', 'TIMER', 'TITLE', 'TODAY',
-    'TOPIC', 'TOTAL', 'TOUCH', 'TOUGH', 'TOWER', 'TRACK', 'TRADE', 'TRAIN',
-    'TREAT', 'TREND', 'TRIAL', 'TRIBE', 'TRICK', 'TRUCK', 'TRULY', 'TRUST',
-    'TRUTH', 'TWICE', 'UNCLE', 'UNDER', 'UNION', 'UNITY', 'UNTIL', 'UPPER',
-    'UPSET', 'URBAN', 'USAGE', 'USUAL', 'VITAL', 'VOICE', 'WASTE', 'WATCH',
-    'WATER', 'WHEEL', 'WHERE', 'WHICH', 'WHILE', 'WHITE', 'WHOLE', 'WHOSE',
-    'WOMAN', 'WORLD', 'WORRY', 'WORSE', 'WORST', 'WORTH', 'WOULD', 'WOUND',
-    'WRIST', 'WRONG', 'YOUNG', 'YOUTH',
+
+const KID_FRIENDLY_GUESSES = [
+  'AGORA', 'ALUNO', 'AMIGO', 'ANTES', 'APOIO', 'AVISO', 'BOLAS', 'BOTAO',
+  'CABOS', 'CAIXA', 'CALMA', 'CANAL', 'CARTA', 'CHAVE', 'CINCO', 'CLARO',
+  'COISA', 'CORES', 'CONTA', 'COPIA', 'CUIDA', 'DADOS', 'DICAS', 'EMAIL',
+  'FALAR', 'FOTOS', 'FRASE', 'GRUPO', 'IDEIA', 'JOGOS', 'LETRA', 'LIGAR',
+  'LIVRO', 'MAGIA', 'MOUSE', 'MUNDO', 'NOMES', 'NUVEM', 'PASTA', 'PIXEL',
+  'REDES', 'SENHA', 'SINAL', 'SITES', 'TELAS', 'TEXTO', 'VIDEO', 'VIRUS',
+  'VOCE',
 ];
-const VALID = new Set<string>([...ANSWERS, ...COMMON]);
-export function getWordOfTheDay(date = new Date()): string {
-    const epoch = Date.UTC(2026, 0, 1);
-    const today = Date.UTC(date.getFullYear(), date.getMonth(), date.getDate());
-    const dayIndex = Math.floor((today - epoch) / 86400000);
-    const idx = ((dayIndex % ANSWERS.length) + ANSWERS.length) % ANSWERS.length;
-    return ANSWERS[idx];
+
+const VALID = new Set<string>([
+  ...ANSWERS.map(({ word }) => word),
+  ...KID_FRIENDLY_GUESSES,
+]);
+
+export function getWordOfTheDayDetails(date = new Date()): WordOfTheDay {
+  const epoch = Date.UTC(2026, 0, 1);
+  const today = Date.UTC(date.getFullYear(), date.getMonth(), date.getDate());
+  const dayIndex = Math.floor((today - epoch) / 86400000);
+  const index = ((dayIndex % ANSWERS.length) + ANSWERS.length) % ANSWERS.length;
+  return ANSWERS[index];
 }
+
+export function getWordOfTheDay(date = new Date()): string {
+  return getWordOfTheDayDetails(date).word;
+}
+
 export function isValidWord(word: string): boolean {
-    return VALID.has(word.toUpperCase());
+  return VALID.has(word.toUpperCase());
 }

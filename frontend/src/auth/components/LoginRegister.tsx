@@ -59,16 +59,16 @@ export function LoginRegister() {
         </div>
 
         <div className="login-showcase-copy">
-          <span className="login-eyebrow"><span /> Plataforma de conscientização</span>
-          <h1>Segurança que<br /><em>evolui</em> com você.</h1>
-          <p>Aprenda, pratique e fortaleça a cultura de segurança da sua empresa em uma experiência feita para o dia a dia.</p>
+          <span className="login-eyebrow"><span /> Sua aventura digital</span>
+          <h1>Aprenda a se<br /><em>proteger</em> jogando.</h1>
+          <p>Entre para descobrir missões, desafios e dicas para navegar na internet com mais segurança.</p>
         </div>
 
         <div className="login-security-note">
           <span className="login-security-icon"><LockKeyhole size={18} /></span>
           <div>
-            <strong>Ambiente protegido</strong>
-            <p>Seu acesso é monitorado e protegido.</p>
+            <strong>Espaço seguro</strong>
+            <p>Uma aventura para aprender com cuidado.</p>
           </div>
         </div>
       </motion.aside>
@@ -87,18 +87,18 @@ export function LoginRegister() {
         <section className="login-card" aria-labelledby="login-title">
           <div className="login-card-icon" aria-hidden="true"><KeyRound size={23} /></div>
           <div className="login-heading">
-            <h2 id="login-title">Boas-vindas</h2>
-            <p>Entre com suas credenciais para continuar.</p>
+            <h2 id="login-title">Olá, aventureiro!</h2>
+            <p>Use o e-mail que sua escola ou organização cadastrou.</p>
           </div>
 
           <form onSubmit={handleLogin} className="login-form">
             <label className="login-field">
-              <span>E-mail corporativo</span>
+              <span>E-mail da escola</span>
               <div>
                 <Mail size={18} aria-hidden="true" />
                 <input
                   type="email"
-                  placeholder="voce@empresa.com"
+                  placeholder="voce@escola.com"
                   autoComplete="email"
                   value={email}
                   onChange={(event) => setEmail(event.target.value)}
@@ -134,25 +134,25 @@ export function LoginRegister() {
               <button
                 type="button"
                 className="login-forgot-password"
-                onClick={() => toast.info('Fale com o administrador da sua empresa para redefinir a senha.')}
+                onClick={() => toast.info('Peça ajuda a um responsável ou educador para entrar de novo.')}
               >
-                Esqueci minha senha
+                Preciso de ajuda
               </button>
             </div>
 
             <button type="submit" className="login-submit" disabled={isLoading}>
-              {isLoading ? 'Entrando...' : 'Entrar na plataforma'}
+              {isLoading ? 'Preparando...' : 'Começar minhas missões'}
               {!isLoading && <ArrowRight size={18} aria-hidden="true" />}
             </button>
           </form>
 
           <div className="login-help">
-            <span>Não possui acesso?</span>
-            <p>Peça um convite ao administrador da sua empresa.</p>
+            <span>Ainda não tem convite?</span>
+            <p>Peça ajuda a um responsável, educador ou administrador da sua turma.</p>
           </div>
         </section>
 
-        <p className="login-footer"><ShieldCheck size={14} aria-hidden="true" /> Acesso exclusivo para usuários autorizados</p>
+        <p className="login-footer"><ShieldCheck size={14} aria-hidden="true" /> Um lugar para aprender e se cuidar na internet</p>
       </motion.main>
     </div>
   );

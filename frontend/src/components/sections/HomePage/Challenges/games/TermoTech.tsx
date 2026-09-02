@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Binary, CalendarDays, CornerDownLeft, Delete, Keyboard, Target } from 'lucide-react';
-import { getWordOfTheDay, isValidWord } from './termoWords';
+import { getWordOfTheDayDetails, isValidWord } from './termoWords';
 import { evaluateGuess, mergeKeyStates, type LetterState, } from './termoLogic';
 import { ChallengeGameShell } from '../ChallengeGameShell';
 interface TermoTechProps {
@@ -13,7 +13,7 @@ const WORD_LEN = 5;
 const KEYS = ['QWERTYUIOP', 'ASDFGHJKL', 'ZXCVBNM'];
 const dayKey = () => {
     const d = new Date();
-    return `termotech:${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`;
+    return `termotech:v2:${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`;
 };
 interface SavedGame {
     guesses: string[];
@@ -29,7 +29,8 @@ function loadSaved(): SavedGame | null {
     }
 }
 export function TermoTech({ onExit, onWin }: TermoTechProps) {
-    const answer = useMemo(() => getWordOfTheDay(), []);
+    const dailyWord = useMemo(() => getWordOfTheDayDetails(), []);
+    const answer = dailyWord.word;
     const saved = useMemo(() => loadSaved(), []);
     const [guesses, setGuesses] = useState<string[]>(saved?.guesses ?? []);
     const [current, setCurrent] = useState('');
@@ -58,12 +59,13 @@ export function TermoTech({ onExit, onWin }: TermoTechProps) {
         if (status !== 'playing')
             return;
         if (current.length !== WORD_LEN) {
+            showToast('Use cinco letras para tentar.');
             setShake(true);
             setTimeout(() => setShake(false), 400);
             return;
         }
         if (!isValidWord(current)) {
-            showToast('Palavra nao esta na lista');
+            showToast('Essa palavra não faz parte do jogo. Tente outra!');
             setShake(true);
             setTimeout(() => setShake(false), 400);
             return;
@@ -104,20 +106,21 @@ export function TermoTech({ onExit, onWin }: TermoTechProps) {
         return () => window.removeEventListener('keydown', onKey);
     }, [press]);
     const rows = Array.from({ length: MAX_ATTEMPTS });
-    return (<ChallengeGameShell title="Termo Tech" eyebrow="Laboratório de decodificação" description="Descubra a palavra de tecnologia do dia em até seis tentativas." icon={Binary} onExit={onExit} progress={(guesses.length / MAX_ATTEMPTS) * 100} progressLabel={`${guesses.length} de ${MAX_ATTEMPTS} tentativas utilizadas`} metrics={[
+    return (<ChallengeGameShell title="Palavra secreta" eyebrow="Missão de palavras" description="Descubra a palavra do dia em até seis tentativas." icon={Binary} onExit={onExit} progress={(guesses.length / MAX_ATTEMPTS) * 100} progressLabel={`${guesses.length} de ${MAX_ATTEMPTS} tentativas utilizadas`} metrics={[
             { icon: Target, label: 'Tentativas', value: `${guesses.length}/${MAX_ATTEMPTS}` },
             { icon: Keyboard, label: 'Palavra', value: `${WORD_LEN} letras` },
             { icon: CalendarDays, label: 'Rotação', value: 'Diária' },
         ]} className="termotech-mission">
       <div className="termotech-workspace">
         <aside className="termotech-briefing">
-          <span className="termotech-briefing-code">PALAVRA // {WORD_LEN} CARACTERES</span>
-          <h2>Decodifique o termo oculto</h2>
-          <p>Cada tentativa revela o quanto você se aproximou da resposta.</p>
+          <span className="termotech-briefing-code">PALAVRA SECRETA // {WORD_LEN} LETRAS</span>
+          <h2>Qual é a palavra secreta?</h2>
+          <p>Use a dica e as cores para chegar pertinho da resposta.</p>
+          <p className="termotech-hint"><strong>Dica do dia:</strong> {dailyWord.hint}</p>
           <div className="termotech-legend">
-            <div><i className="is-correct"/><span>Posição correta</span></div>
-            <div><i className="is-present"/><span>Letra deslocada</span></div>
-            <div><i className="is-absent"/><span>Fora da palavra</span></div>
+            <div><i className="is-correct" aria-hidden="true">✓</i><span>Letra certa no lugar certo</span></div>
+            <div><i className="is-present" aria-hidden="true">↔</i><span>A letra existe, mas está em outro lugar</span></div>
+            <div><i className="is-absent" aria-hidden="true">×</i><span>Essa letra não está na palavra</span></div>
           </div>
           <div className="termotech-attempt-readout">
             <span>Tentativa ativa</span>
@@ -128,12 +131,12 @@ export function TermoTech({ onExit, onWin }: TermoTechProps) {
         <section className="termotech-board" aria-label="Tabuleiro do Termo Tech">
           {toast && <div className="termotech-toast" role="status">{toast}</div>}
 
-          <motion.div className="termotech-grid" animate={shake ? { x: [0, -8, 8, -6, 6, 0] } : {}} transition={{ duration: 0.4 }}>
+          <motion.div className="termotech-grid" role="grid" aria-label="Tentativas da palavra secreta" animate={shake ? { x: [0, -8, 8, -6, 6, 0] } : {}} transition={{ duration: 0.4 }}>
             {rows.map((_, r) => {
             const guess = guesses[r];
             const isCurrentRow = r === guesses.length && status === 'playing';
             const states = guess ? evaluateGuess(guess, answer) : [];
-            return (<div key={r} className="termotech-row">
+            return (<div key={r} className="termotech-row" role="row">
                   {Array.from({ length: WORD_LEN }).map((_, c) => {
                     const letter = guess
                         ? guess[c]
@@ -147,7 +150,7 @@ export function TermoTech({ onExit, onWin }: TermoTechProps) {
         })}
           </motion.div>
 
-          {status !== 'playing' && (<div className={`termotech-status-banner is-${status}`}>
+          {status !== 'playing' && (<div className={`termotech-status-banner is-${status}`} role="status" aria-live="polite">
               {status === 'won'
                 ? `Código decifrado em ${guesses.length} tentativas. Excelente análise!`
                 : `Protocolo encerrado. A palavra correta era ${answer}.`}
@@ -176,10 +179,23 @@ const stateClass: Record<LetterState, string> = {
     present: 'is-present',
     absent: 'is-absent',
 };
+const stateDescription: Record<LetterState, string> = {
+    correct: 'letra certa no lugar certo',
+    present: 'letra presente em outro lugar',
+    absent: 'letra fora da palavra',
+};
+const stateSymbol: Record<LetterState, string> = {
+    correct: '✓',
+    present: '↔',
+    absent: '×',
+};
 function Tile({ letter, state, filled, delay, revealed }: TileProps) {
     const look = state ? stateClass[state] : filled ? 'is-filled' : '';
-    return (<motion.div className={`termotech-tile ${look}`} initial={revealed ? { rotateX: 0 } : false} animate={revealed ? { rotateX: [0, 90, 0] } : filled ? { scale: [1, 1.08, 1] } : {}} transition={revealed ? { duration: 0.5, delay } : { duration: 0.12 }}>
-      {letter}
+    const accessibleLabel = letter
+        ? `${letter}: ${state ? stateDescription[state] : 'ainda sem resultado'}`
+        : 'Casa vazia';
+    return (<motion.div role="gridcell" aria-label={accessibleLabel} className={`termotech-tile ${look}`} initial={revealed ? { rotateX: 0 } : false} animate={revealed ? { rotateX: [0, 90, 0] } : filled ? { scale: [1, 1.08, 1] } : {}} transition={revealed ? { duration: 0.5, delay } : { duration: 0.12 }}>
+      <span>{letter}</span>{state && <small aria-hidden="true">{stateSymbol[state]}</small>}
     </motion.div>);
 }
 interface KeyCapProps {
@@ -191,7 +207,8 @@ interface KeyCapProps {
 }
 function KeyCap({ label, state, wide, icon: Icon, onClick }: KeyCapProps) {
     const look = state ? stateClass[state] : '';
-    return (<button onClick={onClick} aria-label={label} className={`termotech-key ${wide ? 'is-wide' : ''} ${look}`}>
+    const labelWithState = state ? `${label}: ${stateDescription[state]}` : label;
+    return (<button type="button" onClick={onClick} aria-label={labelWithState} className={`termotech-key ${wide ? 'is-wide' : ''} ${look}`}>
       {Icon ? <Icon size={16}/> : label}
     </button>);
 }
