@@ -11,6 +11,7 @@ import { useArcadeGames, useTokens } from '@/hooks/useArcade';
 import { AppSectionHeader } from '@/components/ui/visuals/AppSectionHeader';
 import { AppButton } from '@/components/ui/buttons/AppButton';
 import { InfoCard } from '@/components/ui/visuals/InfoCard';
+import { getChallengeArtwork } from '@/lib/challengeArtwork';
 const WorldMapPage = lazy(() => import('@/prototypes/worldmap/WorldMapPage'));
 export function Challenges() {
     const [active, setActive] = useState<string | null>(null);
@@ -22,7 +23,7 @@ export function Challenges() {
             id: g.slug,
             title: g.title,
             description: g.description,
-            image: g.image ?? '',
+            image: getChallengeArtwork(g.image, g.slug),
             xp: g.xp,
             status: g.status,
             tag: g.tag,

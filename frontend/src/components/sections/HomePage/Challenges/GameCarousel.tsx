@@ -129,7 +129,7 @@ function CarouselCard({ game, focused, onPlay }: CarouselCardProps) {
     const disabled = game.status === 'SOON';
     return (<InfoCard raised className={`app-game-card w-72 overflow-hidden flex flex-col ${focused ? 'is-focused' : ''}`}>
       <div className="relative h-48 overflow-hidden" style={{ background: `linear-gradient(135deg, ${game.color}, ${game.colorDark})` }}>
-        {!imgError ? (<img src={game.image} alt={game.title} draggable={false} onError={() => setImgError(true)} className="w-full h-full object-cover"/>) : (<div className="w-full h-full flex items-center justify-center">
+        {!imgError ? (<img src={game.image} alt={game.title} draggable={false} onError={() => setImgError(true)} className={`w-full h-full object-cover ${game.image.endsWith('-pixel.png') ? 'challenge-pixel-art' : ''}`}/>) : (<div className="w-full h-full flex items-center justify-center">
             <span className="font-[var(--font-family-base)] text-white/80 text-2xl tracking-wide">
               {game.title}
             </span>
