@@ -1,7 +1,7 @@
 import { InfoCard } from "@/components/ui/visuals/InfoCard";
 import { useConteudos } from "@/hooks/useConteudos";
 import { useSectionContext } from "@/contexts/SectionContext";
-import { PlayCircle, CircleDot } from "lucide-react";
+import { PlayCircle, CircleDot, ChevronRight } from "lucide-react";
 
 export function ActiveTraining() {
   const { allModulos, loading } = useConteudos();
@@ -9,7 +9,7 @@ export function ActiveTraining() {
 
   const pendingModulos = (allModulos ?? [])
     .filter((modulo) => modulo.progress < 100)
-    .slice(0, 5);
+    .slice(0, 2);
 
   const handleClick = () => {
     navigateToSection('conteudos');
@@ -55,15 +55,16 @@ export function ActiveTraining() {
                   </div>
                 </div>
                 <div className="dashboard-training-xp flex items-center gap-2">
-                  <span className="text-xs text-[var(--text-secondary)] font-medium">
-                    {modulo.xp_total} XP
-                  </span>
+                  <span>Continuar</span><ChevronRight size={13} />
                 </div>
               </div>
             );
           })
         )}
       </div>
+      <InfoCard.Footer className="academy-card-footer-link">
+        <button type="button" className="academy-footer-action" onClick={handleClick}>Ver todas as aulas <ChevronRight size={11} /></button>
+      </InfoCard.Footer>
     </InfoCard>
   );
 }

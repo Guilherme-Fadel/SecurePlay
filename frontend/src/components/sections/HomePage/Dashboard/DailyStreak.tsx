@@ -1,8 +1,9 @@
 import { InfoCard } from '@/components/ui/visuals/InfoCard';
-import { Flame } from 'lucide-react';
 import { useWeeklyStreak } from '@/hooks/useDashboard';
+import pixelFlame from '@/assets/dashboard/streak-flame-pixel.png';
+import { Check, Star } from 'lucide-react';
 
-const DAYS = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'];
+const weekDays = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'];
 
 export function DailyStreak() {
   const { streak, loading, doCheckin, checkinLoading, checkinMessage } = useWeeklyStreak();
@@ -18,44 +19,46 @@ export function DailyStreak() {
   const checkedDays = streak?.checkedDays ?? [false, false, false, false, false, false, false];
   const streakCount = streak?.streak ?? 0;
   const checkedToday = streak?.checkedToday ?? false;
+  const activeDays = checkedDays.filter(Boolean).length;
 
   return (
     <InfoCard variant="primary" raised className="dashboard-streak-card flex flex-col h-full">
-      <div className="flex flex-1 flex-col justify-center gap-2 px-4 py-2.5">
-        <div className="dashboard-streak-summary">
-          <span>Sequência atual</span>
-          <strong>{streakCount} {streakCount === 1 ? 'dia' : 'dias'}</strong>
+      <div className="academy-streak-body academy-streak-overview">
+        <div className="academy-streak-pixels" aria-hidden="true"><i /><i /><i /></div>
+        <Star className="academy-streak-star" size={26} aria-hidden="true" />
+        <div className="academy-streak-ring">
+          <svg viewBox="0 0 120 120" aria-label={`${activeDays} de 7 dias ativos nesta semana`} role="img">
+            <circle className="academy-streak-ring-track" cx="60" cy="60" r="54" />
+            <circle className="academy-streak-ring-fill" cx="60" cy="60" r="54" pathLength="7" strokeDasharray={`${activeDays} 7`} transform="rotate(-90 60 60)" />
+          </svg>
+          <div className="academy-streak-ring-content">
+            <img src={pixelFlame} alt="" aria-hidden="true" />
+            <strong>{streakCount} {streakCount === 1 ? 'dia' : 'dias'}</strong>
+            <small>de sequência</small>
+          </div>
         </div>
-        <div className="flex items-center justify-between w-full gap-1">
-          {DAYS.map((day, index) => {
+        <div className="academy-streak-week" role="list" aria-label="Check-ins da semana">
+          {weekDays.map((day, index) => {
             const isChecked = checkedDays[index];
+            const isToday = index === streak?.todayIndex;
             return (
-              <div key={day} className="flex flex-col items-center gap-1.5 flex-1">
-                <div
-                  className={`w-full aspect-square max-w-9 flex items-center justify-center rounded-lg border transition-all duration-300 ${
-                    isChecked
-                      ? 'bg-[var(--success-20)] border-[var(--success)] text-[var(--success)]'
-                      : 'bg-[var(--surface-alt)] border-[var(--border)] text-[var(--text-secondary)]'
-                  }`}
-                >
-                  <Flame size={14} />
-                </div>
-                <span className={`text-[9px] font-medium ${
-                  isChecked ? 'text-[var(--success)]' : 'text-[var(--text-secondary)]'
-                }`}>
-                  {day}
-                </span>
+              <div key={day} role="listitem" className={`academy-streak-day ${isChecked ? 'is-checked' : ''} ${isToday ? 'is-today' : ''}`} aria-label={`${day}${isToday ? ', hoje' : ''}: ${isChecked ? 'check-in realizado' : 'sem check-in'}`} aria-current={isToday ? 'date' : undefined}>
+                <i aria-hidden="true">{isChecked ? <Check size={15} strokeWidth={3} /> : <b />}</i>
+                <small>{day}</small>
               </div>
             );
           })}
         </div>
-
+        <div className="academy-streak-encouragement">
+          <strong>{activeDays}/7 dias ativos nesta semana</strong>
+          <small>{activeDays === 7 ? 'Semana completa. Muito bem!' : checkedToday ? 'Hoje já conta. Continue amanhã!' : 'Um dia de cada vez. Você consegue!'}</small>
+        </div>
         {checkinMessage && (
           <p className="text-sm text-center text-[var(--success)]">{checkinMessage}</p>
         )}
       </div>
 
-      <InfoCard.Footer className="flex justify-center">
+      <InfoCard.Footer className="academy-streak-action flex justify-center">
         <button
           onClick={doCheckin}
           disabled={checkedToday || checkinLoading}

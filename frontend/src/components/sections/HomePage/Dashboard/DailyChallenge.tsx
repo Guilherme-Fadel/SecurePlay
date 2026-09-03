@@ -1,4 +1,3 @@
-import { Play } from 'lucide-react';
 import { InfoCard } from '@/components/ui/visuals/InfoCard';
 import { useDailyChallenge } from '@/hooks/useDashboard';
 import { Modal } from '@/components/ui/modal';
@@ -7,12 +6,7 @@ import { motion } from 'motion/react';
 import { useState, useEffect } from 'react';
 import { getChallengeStatus, getChallengeQuestions, QuestionResponse } from '@/services/challenge';
 import { getCached, setCache } from '@/lib/queryCache';
-
-const difficultyMeta = {
-  iniciante: 'Iniciante',
-  intermediario: 'Intermediário',
-  avancado: 'Avançado',
-};
+import { getChallengeArtwork } from '@/lib/challengeArtwork';
 
 export function DailyChallenge() {
   const { challenge, loading } = useDailyChallenge();
@@ -106,8 +100,6 @@ export function DailyChallenge() {
     );
   }
 
-  const difficultyLabel = difficultyMeta[challenge.difficulty];
-
   const totalObjectives = questions.length;
   const doneObjectives = completed ? totalObjectives : Math.min(answeredCount, totalObjectives);
   const progressPercent = totalObjectives > 0 ? Math.round((doneObjectives / totalObjectives) * 100) : (completed ? 100 : 0);
@@ -115,30 +107,19 @@ export function DailyChallenge() {
   return (
     <InfoCard variant="primary" raised className="dashboard-daily-card flex flex-col h-full min-h-0">
       <div className="dashboard-daily-body flex-1 min-h-0 flex flex-col gap-2 p-2.5 overflow-hidden">
+        <img className="academy-daily-illustration" src={getChallengeArtwork(challenge.image, 'caca-phishing')} alt="" aria-hidden="true" onError={(event) => {
+          const fallback = getChallengeArtwork(null, 'caca-phishing');
+          if (event.currentTarget.getAttribute('src') !== fallback) event.currentTarget.src = fallback;
+        }} />
         <div className="dashboard-daily-summary shrink-0">
           <h3>{challenge.title}</h3>
         </div>
-
-        <div className="dashboard-daily-meta">
-          <div><span>Dificuldade</span><strong>{difficultyLabel}</strong></div>
-          <div><span>Tempo estimado</span><strong>{challenge.duration} min</strong></div>
-          <div><span>Recompensa</span><strong>{challenge.points} XP</strong></div>
-        </div>
-
-        <div className="dashboard-challenge-briefing">
-          <span>Briefing da missão</span>
-          <p>{challenge.description}</p>
-        </div>
-
-        {totalObjectives > 0 && (
-          <div className="dashboard-daily-progress-wrap flex flex-col gap-1 shrink-0">
-            <div className="flex items-center justify-between text-[10px] tracking-widest text-[var(--text-secondary)]">
-              <span>PROGRESSO</span>
-              <span className="text-[var(--text-primary)] font-semibold">{doneObjectives}/{totalObjectives}</span>
-            </div>
-            <div className="dashboard-daily-progress h-2 rounded-full bg-[var(--surface-alt)] border border-[var(--border)] overflow-hidden">
+        {doneObjectives > 0 && totalObjectives > 0 && (
+          <div className="academy-mission-completion">
+            <small>{doneObjectives} de {totalObjectives} etapas</small>
+            <div className="academy-mission-completion-track" role="progressbar" aria-label="Etapas da missão" aria-valuemin={0} aria-valuemax={totalObjectives} aria-valuenow={doneObjectives}>
               <motion.div
-                className="h-full rounded-full bg-[var(--primary)]"
+                className="academy-mission-completion-fill"
                 initial={{ width: 0 }}
                 animate={{ width: `${progressPercent}%` }}
                 transition={{ duration: 0.7, ease: 'easeOut' }}
@@ -161,8 +142,7 @@ export function DailyChallenge() {
               : ''
           }`}
         >
-          {!completed && <Play size={13} className="fill-current" />}
-          <span className="text-[13px]">{completed ? 'DESAFIO CONCLUÍDO' : doneObjectives > 0 ? 'CONTINUAR MISSÃO' : 'INICIAR DESAFIO'}</span>
+          <span>{completed ? 'Missão concluída' : doneObjectives > 0 ? 'Continuar missão' : 'Iniciar missão'}</span>
         </motion.button>
       </InfoCard.Footer>
 

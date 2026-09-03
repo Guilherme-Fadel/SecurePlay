@@ -8,13 +8,13 @@ import { useEffect } from 'react';
 import { useSectionContext } from '@/contexts/SectionContext';
 import { DailyStreak } from './DailyStreak';
 import { RankingWidget } from './RankingWidget';
-import { Sparkles, Zap } from 'lucide-react';
+import { Map } from 'lucide-react';
 import { Achievements } from './Achievements';
 import { AppSectionHeader } from '@/components/ui/visuals/AppSectionHeader';
-import { AppButton } from '@/components/ui/buttons/AppButton';
 import { useAchievementShop } from '@/hooks/useAchievements';
-import { Avatar } from '@/components/ui/visuals/Avatar';
 import { cn } from '@/lib/utils';
+import journeyMap from '@/assets/dashboard/journey-map-pixel-v2.png';
+import heroArt from '@/assets/dashboard/welcome-adventurer-pixel-v3.png';
 
 
 export function Dashboard() {
@@ -22,7 +22,6 @@ export function Dashboard() {
   const { stats, loading: statsLoading } = useDashboardStats();
   const { setLoading, registerBootstrap, navigateToSection } = useSectionContext();
   const { data: cosmeticShop } = useAchievementShop();
-  const equippedFrame = cosmeticShop?.equipped.find((item) => item.type === 'frame')?.visualValue ?? '';
   const equippedBackground = cosmeticShop?.equipped.find((item) => item.type === 'background')?.visualValue ?? '';
 
   useEffect(() => {
@@ -37,25 +36,21 @@ export function Dashboard() {
   const totalPoints = stats?.totalPoints ?? 0;
   const xpMax = totalPoints + (stats?.xpToNextLevel ?? 0);
   const xpPercent = xpMax > 0 ? Math.round((totalPoints / xpMax) * 100) : 0;
+  const completedMissions = stats?.completedChallenges ?? 0;
+  const totalMissions = stats?.totalActiveChallenges ?? 0;
 
   return (
     <PageTransition>
-      <div className="dashboard-real flex flex-col gap-3 lg:h-full min-h-0 px-1 py-2">
+      <div className="dashboard-real academy-dashboard flex flex-col gap-4 min-h-0 px-1 py-2">
 
-        <InfoCard variant="primary" raised className={cn('dashboard-welcome cosmetic-background-host', equippedBackground)}>
+        <InfoCard variant="primary" raised className={cn('dashboard-welcome academy-welcome cosmetic-background-host', equippedBackground)}>
+          <img className="academy-welcome-art" src={heroArt} alt="Ilustração da Academia de Missões" />
           <div className="dashboard-welcome-content">
             <div className="dashboard-welcome-left">
-              <Avatar
-                name={user?.name}
-                nickname={user?.nickname}
-                imageUrl={user?.profile_image_url}
-                className={cn('dashboard-welcome-avatar cosmetic-avatar', equippedFrame)}
-              >
-                <i />
-              </Avatar>
               <div className="dashboard-welcome-info">
-                <h2>Bem-vindo de volta, {user?.name?.split(' ')[0] ?? '—'}!</h2>
-                <p>Continue sua jornada de segurança e evolua no ranking.</p>
+                <span className="academy-kicker">Academia de Missões</span>
+                <h2>Olá, {user?.name?.split(' ')[0] ?? 'Agente'}!</h2>
+                <p>Pronta para sua próxima descoberta?</p>
 
                 <div className="dashboard-welcome-metrics">
                   <div>
@@ -77,61 +72,56 @@ export function Dashboard() {
               </div>
             </div>
 
-            <div className="dashboard-welcome-badges">
-              <div className="dashboard-level-badge">
-                <Zap size={15} />
-                <span>Nível</span>
-                <strong>{stats?.level ?? '—'}</strong>
-              </div>
-              <div className="dashboard-today-badge">
-                <Sparkles size={15} />
-                <span>Hoje</span>
-                <strong>+{stats?.xpToday ?? 0} XP</strong>
-              </div>
-            </div>
           </div>
         </InfoCard>
 
-        <div className="dashboard-main-grid lg:flex-1 lg:min-h-0">
-          <div className="dashboard-left-column">
+        <div className="academy-dashboard-grid">
+          <section className="dashboard-panel academy-journey-panel">
+            <AppSectionHeader title="Sua jornada" />
+            <div className="academy-journey-card">
+              <img src={journeyMap} alt="Mapa em pixel art com o caminho da jornada" />
+              <div className="academy-journey-footer">
+                <div className="academy-journey-progress">
+                  <div><span>Missões concluídas</span><strong>{completedMissions} / {totalMissions || '—'}</strong></div>
+                  <div className="academy-progress-track"><i style={{ width: `${totalMissions ? Math.min(100, Math.round((completedMissions / totalMissions) * 100)) : 0}%` }} /></div>
+                </div>
+                <button className="academy-journey-map-button" type="button" aria-label="Abrir mapa da jornada" title="Abrir mapa da jornada" onClick={() => navigateToSection('conteudos')}>
+                  <Map size={23} aria-hidden="true" />
+                </button>
+              </div>
+            </div>
+          </section>
+
+          <section className="dashboard-panel dashboard-daily-panel academy-daily-panel">
+            <AppSectionHeader title="Missão do dia" />
+            <DailyChallenge />
+          </section>
+
+          <section className="dashboard-panel dashboard-streak-panel academy-streak-panel">
+            <AppSectionHeader title="Sequência semanal" />
+            <DailyStreak />
+          </section>
+
+          <div className="dashboard-left-column academy-training-area">
             <section className="dashboard-panel dashboard-training-panel">
               <AppSectionHeader
-                title="Conteúdos pendentes"
-                action={<AppButton variant="ghost" size="sm" onClick={() => navigateToSection('conteudos')}>Ver todos</AppButton>}
+                title="Próximas aulas"
               />
               <ActiveTraining />
             </section>
-
-            <section className="dashboard-panel dashboard-achievements-panel">
-              <AppSectionHeader
-                title="Conquistas recentes"
-                action={<AppButton variant="ghost" size="sm" onClick={() => navigateToSection('conquistas')}>Ver todas</AppButton>}
-              />
-              <Achievements />
-            </section>
           </div>
 
-          <div className="dashboard-center-column">
-            <section className="dashboard-panel dashboard-daily-panel">
-              <AppSectionHeader title="Desafio do dia" />
-              <DailyChallenge />
-            </section>
-          </div>
+          <section className="dashboard-panel dashboard-achievements-panel academy-achievements-area">
+            <AppSectionHeader
+              title="Conquistas recentes"
+            />
+            <Achievements />
+          </section>
 
-          <div className="dashboard-right-column">
-            <section className="dashboard-panel dashboard-ranking-panel">
-              <AppSectionHeader
-                title="Ranking"
-                action={<AppButton variant="ghost" size="sm" onClick={() => navigateToSection('ranking')}>Ver ranking</AppButton>}
-              />
-              <RankingWidget />
-            </section>
-
-            <section className="dashboard-panel dashboard-streak-panel">
-              <AppSectionHeader title="Sequência semanal" />
-              <DailyStreak />
-            </section>
-          </div>
+          <section className="dashboard-panel dashboard-ranking-panel academy-ranking-area">
+            <AppSectionHeader title="Ranking da turma" />
+            <RankingWidget />
+          </section>
         </div>
 
       </div>

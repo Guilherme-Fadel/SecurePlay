@@ -1,6 +1,7 @@
 import type { Section } from "@/pages/Home"
 import { Award, BookOpen, ChevronLeft, Gamepad2, LayoutDashboard, Menu, MoreHorizontal, Settings, ShieldCheck, ShieldIcon, Trophy, UserRound } from "lucide-react"
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react"
+import academyCastle from '@/assets/dashboard/academy-castle-pixel-v3.png'
 
 interface SidebarContextProps {
   expanded: boolean
@@ -56,6 +57,7 @@ export function Sidebar({ children }: SidebarProps) {
         <SidebarContext.Provider value={{ expanded }}>
           <ul className="secure-sidebar-list flex-1 px-3 overflow-visible">{children}</ul>
         </SidebarContext.Provider>
+        {expanded && <img className="secure-sidebar-castle" src={academyCastle} alt="" aria-hidden="true" />}
 
       </nav>
     </aside>
