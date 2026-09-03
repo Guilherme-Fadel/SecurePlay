@@ -3,6 +3,7 @@ import {
   Inject,
   Injectable,
   NotFoundException,
+  Optional,
 } from '@nestjs/common';
 import { DataSource, Repository } from 'typeorm';
 import {
@@ -23,6 +24,7 @@ import { UsuarioAula } from '../conteudo/usuario-aula/usuario-aula.entity';
 import { UsuarioArcadeStats } from '../arcade/entities/usuario-arcade-stats.entity';
 import { calcLevel } from '../common/utils/xp.utils';
 import { OnEvent } from '@nestjs/event-emitter';
+import { S3Service } from '../conteudo/s3/s3.service';
 
 export interface AchievementMetrics {
   total_xp: number;
@@ -92,11 +94,24 @@ export class AchievementsService {
     private arcadeStatsRepository: Repository<UsuarioArcadeStats>,
     @Inject('DATA_SOURCE')
     private dataSource: DataSource,
+    @Optional() private readonly s3Service?: S3Service,
   ) {}
 
   @OnEvent('progress.changed')
   async synchronizeProgress(payload: { usuarioId: number }): Promise<void> {
     await this.getTrail(payload.usuarioId);
+  }
+
+  private async resolveArtwork(definition: Achievement): Promise<string> {
+    const source = definition.image_url;
+    if (!source) return definition.icon;
+    if (!source.startsWith('s3://')) return source;
+    if (!this.s3Service) return definition.icon;
+    try {
+      return (await this.s3Service.resolveImageUrl(source)) ?? definition.icon;
+    } catch {
+      return definition.icon;
+    }
   }
 
   private async getWallet(usuario_id: number): Promise<PrestigeWallet> {
@@ -250,7 +265,7 @@ export class AchievementsService {
         category: definition.category,
         rarity: definition.rarity,
         tier: definition.tier,
-        icon: concealed ? 'lock-keyhole' : definition.icon,
+        icon: concealed ? 'lock-keyhole' : await this.resolveArtwork(definition),
         rewardPrestige: concealed ? null : definition.reward_prestige,
         prerequisiteSlug: definition.prerequisite_slug,
         position: { x: definition.position_x, y: definition.position_y },

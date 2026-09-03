@@ -9,6 +9,7 @@ CREATE TABLE IF NOT EXISTS achievement (
   requirement_value INT NOT NULL,
   tier INT NOT NULL DEFAULT 1,
   icon VARCHAR(60) NOT NULL,
+  image_url VARCHAR(1024) NULL,
   reward_prestige INT NOT NULL DEFAULT 1,
   prerequisite_slug VARCHAR(80) NULL,
   position_x INT NOT NULL DEFAULT 0,

@@ -7,6 +7,7 @@ import {
   OnModuleInit,
 } from '@nestjs/common';
 import { Repository } from 'typeorm';
+import { S3Service } from '../conteudo/s3/s3.service';
 import { randomUUID } from 'crypto';
 import { ArcadeGame, ArcadeGameType } from './entities/arcade-game.entity';
 import {
@@ -50,6 +51,7 @@ export class ArcadeService implements OnModuleInit {
     private readonly dataItemRepository: Repository<DataItem>,
     @Inject('USUARIO_ARCADE_STATS_REPOSITORY')
     private readonly usuarioArcadeStatsRepository: Repository<UsuarioArcadeStats>,
+    private readonly s3Service: S3Service,
   ) {}
   async onModuleInit() {
     const seeds: Partial<ArcadeGame>[] = [
@@ -263,7 +265,7 @@ export class ArcadeService implements OnModuleInit {
   }
   async listGames() {
     const games = await this.gameRepository.find({ where: { active: true } });
-    return games.map((g) => ({
+    return Promise.all(games.map(async (g) => ({
       slug: g.slug,
       title: g.title,
       description: g.description,
@@ -272,9 +274,9 @@ export class ArcadeService implements OnModuleInit {
       status: 'AVAILABLE' as const,
       color: g.color,
       colorDark: g.color_dark,
-      image: g.image,
+      image: await this.s3Service.resolveImageUrl(g.image),
       gameType: g.game_type,
-    }));
+    })));
   }
   getTokens(usuario_id: number) {
     return this.tokenService.getState(usuario_id);

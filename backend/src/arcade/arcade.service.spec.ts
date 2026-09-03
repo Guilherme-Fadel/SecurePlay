@@ -5,6 +5,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { ArcadeService } from './arcade.service';
+import { S3Service } from '../conteudo/s3/s3.service';
 import { RedisService } from '../redis/redis.service';
 import { XpService } from '../common/gamification/xp.service';
 import { TokenService } from './token.service';
@@ -124,6 +125,7 @@ describe('ArcadeService (ciclo start/submit e XP)', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         ArcadeService,
+        { provide: S3Service, useValue: { resolveImageUrl: jest.fn(async (source) => source) } },
         { provide: 'ARCADE_GAME_REPOSITORY', useValue: gameRepository },
         { provide: RedisService, useValue: redis },
         { provide: XpService, useValue: xpService },

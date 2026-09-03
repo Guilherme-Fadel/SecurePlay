@@ -7,6 +7,7 @@ import { usuarioAulaProviders } from '../conteudo/usuario-aula/usuario-aula.prov
 import { usuarioArcadeStatsProviders } from '../arcade/arcade.providers';
 import { AchievementsController } from './achievements.controller';
 import { AchievementsService } from './achievements.service';
+import { S3Service } from '../conteudo/s3/s3.service';
 
 @Module({
   imports: [DatabaseModule],
@@ -18,6 +19,7 @@ import { AchievementsService } from './achievements.service';
     ...usuarioAulaProviders,
     ...usuarioArcadeStatsProviders,
     AchievementsService,
+    S3Service,
   ],
   exports: [AchievementsService],
 })

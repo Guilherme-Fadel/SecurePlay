@@ -1,0 +1,102 @@
+[
+  {
+    "slug": "sentinela-primeira-missao",
+    "name": "Primeira missão",
+    "description": "Conclua seu primeiro desafio de segurança."
+  },
+  {
+    "slug": "sentinela-em-acao",
+    "name": "Sentinela em ação",
+    "description": "Conclua 3 desafios de segurança."
+  },
+  {
+    "slug": "sentinela-veterano",
+    "name": "Sentinela veterano",
+    "description": "Conclua 10 desafios de segurança."
+  },
+  {
+    "slug": "sentinela-implacavel",
+    "name": "Sentinela implacável",
+    "description": "Conclua 25 desafios de segurança."
+  },
+  {
+    "slug": "especialista-primeira-aula",
+    "name": "Primeiro aprendizado",
+    "description": "Conclua sua primeira aula."
+  },
+  {
+    "slug": "especialista-dedicado",
+    "name": "Aprendiz dedicado",
+    "description": "Conclua 5 aulas."
+  },
+  {
+    "slug": "especialista-da-academia",
+    "name": "Especialista da academia",
+    "description": "Conclua 15 aulas."
+  },
+  {
+    "slug": "mestre-do-conhecimento",
+    "name": "Mestre do conhecimento",
+    "description": "Conclua 30 aulas."
+  },
+  {
+    "slug": "investigador-primeira-partida",
+    "name": "Primeira investigação",
+    "description": "Finalize sua primeira partida nos Jogos."
+  },
+  {
+    "slug": "investigador-dez-partidas",
+    "name": "Olhar treinado",
+    "description": "Finalize 10 partidas nos Jogos."
+  },
+  {
+    "slug": "investigador-perfeito",
+    "name": "Análise perfeita",
+    "description": "Alcance pontuação perfeita em uma partida."
+  },
+  {
+    "slug": "investigador-lendario",
+    "name": "Investigador lendário",
+    "description": "Alcance 10 partidas perfeitas."
+  },
+  {
+    "slug": "consistencia-primeiro-dia",
+    "name": "Primeiro passo",
+    "description": "Realize seu primeiro check-in."
+  },
+  {
+    "slug": "consistencia-tres-dias",
+    "name": "Ritmo constante",
+    "description": "Mantenha uma sequência de 3 dias."
+  },
+  {
+    "slug": "consistencia-sete-dias",
+    "name": "Semana protegida",
+    "description": "Mantenha uma sequência de 7 dias."
+  },
+  {
+    "slug": "consistencia-trinta-dias",
+    "name": "Disciplina inabalável",
+    "description": "Mantenha uma sequência de 30 dias."
+  },
+  {
+    "slug": "elite-nivel-dois",
+    "name": "Nova patente",
+    "description": "Alcance o nível 2."
+  },
+  {
+    "slug": "elite-nivel-cinco",
+    "name": "Em ascensão",
+    "description": "Alcance o nível 5."
+  },
+  {
+    "slug": "elite-nivel-dez",
+    "name": "Referência SecurePlay",
+    "description": "Alcance o nível 10."
+  },
+  {
+    "slug": "elite-vinte-cinco-mil",
+    "name": "Lenda da comunidade",
+    "description": "Acumule 25.000 XP."
+  }
+]

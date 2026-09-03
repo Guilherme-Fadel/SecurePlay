@@ -64,6 +64,9 @@ export class Achievement {
   @Column({ length: 60 })
   icon: string;
 
+  @Column({ type: 'varchar', length: 1024, nullable: true })
+  image_url: string | null;
+
   @Column({ type: 'int', default: 1 })
   reward_prestige: number;
 

@@ -42,6 +42,15 @@ export class S3Service {
     });
   }
 
+  async resolveImageUrl(source: string | null): Promise<string | null> {
+    if (!source?.startsWith('s3://')) return source;
+    const prefix = `s3://${this.bucketName}/`;
+    if (!source.startsWith(prefix) || source.length === prefix.length) {
+      throw new BadRequestException('Referência de imagem S3 inválida');
+    }
+    return this.generatePresignedGetUrl(source.slice(prefix.length));
+  }
+
   async generatePresignedUploadUrl(
     key: string,
     contentType: string,

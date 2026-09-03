@@ -5,6 +5,7 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { Repository } from 'typeorm';
+import { S3Service } from '../conteudo/s3/s3.service';
 import { Challenge } from './challenge.entity';
 import { Question } from '../question/question.entity';
 import { UsuarioChallenge } from '../usuario-challenge/usuario-challenge.entity';
@@ -31,11 +32,15 @@ export class ChallengeService {
 
     private redisService: RedisService,
     private eventEmitter: EventEmitter2,
+    private readonly s3Service: S3Service,
   ) {}
 
   async getDailyChallenge(usuario_id: number): Promise<Challenge | null> {
     const cached = await this.getRedisDailyChallenge(usuario_id);
-    if (cached) return cached;
+    if (cached) {
+      const current = await this.challengeRepository.findOne({ where: { id: cached.id } });
+      return { ...cached, image: await this.s3Service.resolveImageUrl(current?.image ?? cached.image) };
+    }
 
     const completedIds = await this.usuarioChallengeRepository
       .find({ where: { usuario_id }, select: ['challenge_id'] })
@@ -55,7 +60,7 @@ export class ChallengeService {
       await this.setRedisDailyChallenge(usuario_id, challenge);
     }
 
-    return challenge;
+    return challenge ? { ...challenge, image: await this.s3Service.resolveImageUrl(challenge.image) } : null;
   }
 
   async countCompleted(usuario_id: number): Promise<number> {
