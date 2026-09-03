@@ -39,6 +39,7 @@ import { PageTransition } from '@/components/shared/PageTransition';
 import { AppButton } from '@/components/ui/buttons/AppButton';
 import { AppSectionHeader } from '@/components/ui/visuals/AppSectionHeader';
 import { InfoCard } from '@/components/ui/visuals/InfoCard';
+import { AchievementIcon } from '@/components/ui/visuals/AchievementIcon';
 import { useAchievementShop, useAchievementTrail } from '@/hooks/useAchievements';
 import type {
   AchievementCategory,
@@ -75,29 +76,6 @@ const cosmeticLabels: Record<CosmeticType, string> = {
   effect: 'Efeitos',
 };
 
-const iconMap: Record<string, ComponentType<LucideProps>> = {
-  'shield-check': ShieldCheck,
-  shield: Shield,
-  'badge-check': BadgeCheck,
-  'shield-half': ShieldHalf,
-  'book-open-check': BookOpenCheck,
-  library: Library,
-  'graduation-cap': GraduationCap,
-  brain: Brain,
-  search: Search,
-  'scan-search': ScanSearch,
-  crosshair: Crosshair,
-  fingerprint: Fingerprint,
-  flame: Flame,
-  'calendar-check': CalendarCheck,
-  'calendar-days': CalendarDays,
-  sparkles: Sparkles,
-  'chevrons-up': ChevronsUp,
-  'trending-up': TrendingUp,
-  crown: Crown,
-  trophy: Trophy,
-  'lock-keyhole': LockKeyhole,
-};
 
 export function Awards() {
   const [view, setView] = useState<AwardsView>('trail');
@@ -209,13 +187,12 @@ function AchievementBranch({ category, nodes, selectedSlug, onSelect }: {
       </div>
       <div className="achievement-node-track">
         {nodes.map((node, index) => {
-          const NodeIcon = iconMap[node.icon] ?? CircleHelp;
           return (
             <div className="achievement-node-slot" key={node.slug}>
               {index > 0 && <span className={`achievement-connector ${node.status === 'unlocked' ? 'is-complete' : ''}`} />}
               <button type="button" className={`achievement-node is-${node.status} rarity-${node.rarity} ${selectedSlug === node.slug ? 'is-selected' : ''}`} onClick={() => onSelect(node.slug)} aria-label={node.name}>
                 <span className="achievement-node-progress" style={{ '--node-progress': `${node.progressPercent * 3.6}deg` } as CSSProperties} />
-                <NodeIcon size={22} />
+                <AchievementIcon icon={node.icon} size={22} />
                 {node.status === 'unlocked' && <Check className="achievement-node-check" size={12} strokeWidth={3} />}
               </button>
               <span className="achievement-node-tier">Nível {node.tier}</span>
@@ -229,12 +206,11 @@ function AchievementBranch({ category, nodes, selectedSlug, onSelect }: {
 
 function AchievementDetail({ node }: { node: AchievementNode | null }) {
   if (!node) return null;
-  const Icon = iconMap[node.icon] ?? CircleHelp;
   const category = categoryMeta[node.category];
   return (
     <aside className={`achievement-detail rarity-${node.rarity}`}>
       <div className="achievement-detail-top">
-        <span className={`achievement-detail-icon is-${node.status}`}><Icon size={28} /></span>
+        <span className={`achievement-detail-icon is-${node.status}`}><AchievementIcon icon={node.icon} size={28} /></span>
         <span className="achievement-rarity">{rarityLabels[node.rarity]}</span>
       </div>
       <span className="achievement-detail-path">{category.label} · Nível {node.tier}</span>
