@@ -17,6 +17,7 @@ import { InfoCard } from '@/components/ui/visuals/InfoCard';
 import { useDashboardRanking } from '@/hooks/useDashboard';
 import { Avatar } from '@/components/ui/visuals/Avatar';
 import type { RankingEntry } from '@/services/dashboard';
+import '@/styles/ranking-ui.css';
 
 const formatXp = (value: number) => `${value.toLocaleString('pt-BR')} XP`;
 
