@@ -7764,9 +7764,6 @@ html[data-compact-ui=''] .secure-home-main { padding: 16px; }
 .achievement-detail-icon .achievement-artwork { width: 84px !important; height: 84px !important; }
 .dashboard-achievement-icon .achievement-artwork { width: 40px !important; height: 40px !important; }
 .achievement-node.is-locked .achievement-artwork { filter: grayscale(.65); opacity: .8; }
-.academy-achievements-area .dashboard-achievement-item { flex: 1; justify-content: flex-start; }
-.academy-achievements-area .dashboard-achievement-item > div:last-child { width: 100%; min-width: 0; }
-.academy-achievements-area .dashboard-achievement-item strong { min-height: 28px; line-height: 14px; }
 
 .academy-ranking-area { min-height: 0; }
 .academy-ranking-area .dashboard-ranking-card { min-height: 207px; }

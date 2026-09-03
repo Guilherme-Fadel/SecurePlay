@@ -14,6 +14,7 @@ import { useHomeLoading } from '@/hooks/useHomeLoading';
 import { useEmpresaTema } from '@/hooks/useEmpresaTema';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import '@/styles/app-ui.css';
+import '@/styles/dashboard-overrides.css';
 import { AppButton } from '@/components/ui/buttons/AppButton';
 const Admin = lazy(() => import('@/pages/Admin'));
 export type Section = 'dashboard' | 'desafios' | 'ranking' | 'conquistas' | 'conteudos' | 'configuracoes' | 'perfil' | 'admin';
