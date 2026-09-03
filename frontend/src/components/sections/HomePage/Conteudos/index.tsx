@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import '@/styles/learning-ui.css';
 import { PageTransition } from '@/components/shared/PageTransition';
 import { ModuloList } from './ModuloList';
 import { ModuloDetalhes } from './ModuloDetalhes';
