@@ -1,6 +1,7 @@
 import { lazy, Suspense, useState, useMemo } from 'react';
 import { ArrowLeft, Coins, Gamepad2, RefreshCcw, Sparkles, Trophy, } from 'lucide-react';
 import '@/styles/challenges-ui.css';
+import '@/styles/challenge-games-ui.css';
 import { type GameCardData } from './games';
 import { GameCarousel } from './GameCarousel';
 import { TermoTech } from './games/TermoTech';
