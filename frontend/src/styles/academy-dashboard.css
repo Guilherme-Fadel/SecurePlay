@@ -1,0 +1,560 @@
+/*
+ * Academy dashboard layout and card refinements.
+ * Imported only by Home.tsx because these selectors are page-specific.
+ */
+/* Academia de Missões: visual exclusivo do painel principal */
+.academy-dashboard { max-width: 1240px; margin: 0 auto; }
+.academy-welcome { position: relative; min-height: 178px; overflow: hidden; border: 1px solid rgba(238, 190, 87, .22) !important; background: linear-gradient(110deg, #fffaf0 0%, #fff8e8 52%, #f4f1ff 100%) !important; }
+.academy-welcome::before { content: ''; position: absolute; inset: 0; pointer-events: none; background-image: radial-gradient(circle at 12% 22%, #ff8e75 0 3px, transparent 4px), radial-gradient(circle at 28% 78%, #52b6b2 0 3px, transparent 4px), radial-gradient(circle at 68% 17%, #f6bd43 0 3px, transparent 4px); background-size: 140px 105px, 185px 150px, 200px 130px; opacity: .75; }
+.academy-welcome-art { position: absolute; z-index: 0; right: -1px; bottom: 0; width: min(55%, 600px); height: 100%; object-fit: cover; object-position: center; mix-blend-mode: multiply; opacity: .9; image-rendering: pixelated; }
+.academy-welcome .dashboard-welcome-content { position: relative; z-index: 1; min-height: 178px; }
+.academy-welcome .dashboard-welcome-left { align-items: flex-start; }
+.academy-welcome .dashboard-welcome-info { max-width: 510px; padding: 8px 0; }
+.academy-kicker { display: block; margin-bottom: 5px; color: var(--primary); font-size: 10px; font-weight: 850; letter-spacing: .1em; text-transform: uppercase; }
+.academy-welcome .dashboard-welcome-info h2 { color: #1d1a49; font-size: clamp(27px, 3vw, 39px); letter-spacing: -.055em; }
+.academy-welcome .dashboard-welcome-info > p { color: #5035a8; font-size: clamp(14px, 1.5vw, 18px); font-weight: 780; }
+.academy-welcome .dashboard-welcome-metrics { margin-top: 14px; padding: 8px 10px; border: 1px solid rgba(87, 59, 180, .13); border-radius: 11px; background: rgba(255,255,255,.76); }
+.academy-welcome-badges { position: relative; z-index: 2; }
+.academy-journey-card { position: relative; min-height: 234px; overflow: hidden; border: 1px solid var(--dashboard-border); border-radius: 16px; background: #fff; box-shadow: 0 7px 21px rgba(50, 38, 88, .07); }
+.academy-journey-card > img { display: block; width: 100%; height: 234px; object-fit: cover; image-rendering: pixelated; }
+.academy-journey-nodes { position: absolute; z-index: 1; top: 48%; left: 13%; right: 12%; display: flex; align-items: center; justify-content: space-between; color: #fff; filter: drop-shadow(0 2px 1px rgba(44,31,100,.5)); pointer-events: none; }
+.academy-journey-nodes svg { width: 22px; height: 22px; stroke-width: 3; }
+.academy-journey-progress { position: absolute; z-index: 2; left: 18px; right: 18px; bottom: 14px; padding: 9px 11px; border: 1px solid rgba(82,54,169,.18); border-radius: 10px; background: rgba(255,255,255,.92); box-shadow: 0 4px 10px rgba(36, 24, 86, .1); }
+.academy-journey-progress > div:first-child { display: flex; justify-content: space-between; margin-bottom: 6px; color: #2b2654; font-size: 10px; }
+.academy-journey-progress strong { color: var(--primary); }
+.academy-progress-track { height: 6px; overflow: hidden; border-radius: 99px; background: #e4def2; }
+.academy-progress-track i { display: block; height: 100%; border-radius: inherit; background: linear-gradient(90deg, #ffba3d, #5a39c7); transition: width .35s ease; }
+.secure-sidebar-nav { position: relative; overflow: hidden !important; background: linear-gradient(180deg, #fffdf7 0%, #fff8ed 100%) !important; }
+.secure-sidebar-castle { position: absolute; bottom: -3px; left: -16px; width: 175px; max-height: 195px; object-fit: contain; object-position: bottom left; pointer-events: none; image-rendering: pixelated; }
+.secure-sidebar-list { position: relative; z-index: 1; }
+.secure-sidebar-item.is-active { background: linear-gradient(135deg, #5f3ac3, #452b9d) !important; color: #fff !important; box-shadow: 0 7px 13px rgba(75, 44, 169, .2); }
+
+@media (max-width: 900px) { .academy-welcome-art { width: 45%; opacity: .55; } .academy-welcome-badges { display: none; } }
+@media (max-width: 640px) { .academy-welcome { min-height: 210px; } .academy-welcome .dashboard-welcome-content { min-height: 210px; } .academy-welcome-art { width: 88%; opacity: .2; } .academy-welcome .dashboard-welcome-metrics { flex-wrap: wrap; } .academy-journey-card, .academy-journey-card > img { min-height: 210px; height: 210px; } .academy-journey-nodes { top: 51%; left: 10%; right: 9%; } }
+
+@media (max-width: 480px) {
+  .profile-password-actions { flex-direction: column-reverse; }
+  .profile-password-actions .app-button { width: 100%; }
+}
+
+/* Dashboard Academia v2 — composição fiel ao conceito pixel-art */
+.academy-dashboard { max-width: 1180px; }
+.academy-dashboard-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.7fr) minmax(220px, .78fr) minmax(230px, .92fr);
+  grid-template-areas: 'journey daily streak' 'training achievements ranking';
+  gap: 16px;
+}
+.academy-dashboard-grid > * { min-width: 0; }
+.academy-journey-card { grid-area: journey; height: 244px; min-height: 244px; background: var(--dashboard-surface); }
+.academy-daily-panel { grid-area: daily; }
+.academy-streak-panel { grid-area: streak; }
+.academy-training-area { grid-area: training; display: block; }
+.academy-achievements-area { grid-area: achievements; }
+.academy-ranking-area { grid-area: ranking; }
+.academy-dashboard-grid .dashboard-panel { gap: 8px; }
+.academy-dashboard-grid .dashboard-panel > .sp-card { flex: 1; }
+
+.academy-welcome {
+  min-height: 186px;
+  border-color: rgba(136, 101, 255, .25) !important;
+  background: linear-gradient(110deg, #16142f 0%, #1c193b 51%, #201946 100%) !important;
+}
+.academy-welcome .dashboard-welcome-content { min-height: 186px; padding: 24px 28px; }
+.academy-welcome-art {
+  right: 0; width: 61%; height: 100%; object-fit: contain; object-position: right bottom;
+  mix-blend-mode: normal; opacity: 1; filter: drop-shadow(-20px 0 28px rgba(15, 12, 45, .12));
+}
+.academy-welcome .dashboard-welcome-info h2 { color: #f7f5ff; }
+.academy-welcome .dashboard-welcome-info > p { color: #b9a8ff; }
+.academy-welcome .dashboard-welcome-metrics { border-color: rgba(191,174,255,.2); background: rgba(15,13,40,.7); }
+.academy-welcome .dashboard-welcome-metrics strong { color: #fff; }
+
+[data-theme='light'] .academy-welcome { border-color: rgba(238,190,87,.22) !important; background: linear-gradient(110deg,#fffaf0 0%,#fff8e8 52%,#f4f1ff 100%) !important; }
+[data-theme='light'] .academy-welcome .dashboard-welcome-info h2 { color: #1d1a49; }
+[data-theme='light'] .academy-welcome .dashboard-welcome-info > p { color: #5035a8; }
+[data-theme='light'] .academy-welcome .dashboard-welcome-metrics { border-color: rgba(87,59,180,.13); background: rgba(255,255,255,.82); }
+[data-theme='light'] .academy-welcome .dashboard-welcome-metrics strong { color: #29234e; }
+
+.academy-journey-card > img { width: 100%; height: 100%; object-fit: cover; object-position: center 54%; transform: none; }
+.academy-journey-progress { left: 14px; right: 14px; bottom: 12px; padding: 9px 11px; }
+.academy-journey-nodes { top: 50%; left: 12%; right: 11%; }
+
+.academy-daily-panel .app-section-header,
+.academy-streak-panel .app-section-header,
+.academy-ranking-area .app-section-header { min-height: 28px; }
+.academy-daily-panel .dashboard-daily-card { padding: 0; border-color: var(--dashboard-border) !important; background: var(--dashboard-surface) !important; }
+.academy-daily-panel .dashboard-daily-card::before { display: none; }
+.academy-daily-panel .dashboard-daily-body { align-items: center; justify-content: center; gap: 7px !important; padding: 14px 12px 10px !important; border: 0; border-radius: 0; background: transparent !important; text-align: center; }
+.academy-daily-illustration { width: 94px; height: 76px; object-fit: contain; image-rendering: pixelated; }
+.academy-daily-panel .dashboard-daily-summary { padding: 0 !important; border: 0 !important; }
+.academy-daily-panel .dashboard-daily-summary h3 { font-size: 16px; line-height: 1.25; }
+.academy-daily-panel .dashboard-daily-progress-wrap { width: 100%; margin-top: 3px; }
+.academy-daily-panel .dashboard-daily-card > .sp-card-footer { padding: 0 12px 12px !important; }
+.academy-daily-panel .dashboard-primary-button { height: 38px !important; }
+
+.academy-streak-panel .dashboard-streak-card { overflow: hidden; }
+.academy-streak-body { display: flex; flex: 1; flex-direction: column; justify-content: center; gap: 16px; padding: 16px; }
+.academy-streak-panel .dashboard-streak-summary { display: flex; align-items: center; gap: 14px; }
+.academy-streak-panel .dashboard-streak-summary strong { color: var(--dashboard-text); font-size: 22px; }
+.academy-pixel-flame { display: grid; width: 58px; height: 64px; place-items: center; color: #ff6b3d; filter: drop-shadow(0 5px 0 rgba(255,183,55,.25)); }
+.academy-pixel-flame svg { width: 52px; height: 58px; fill: #ff8b3d; stroke: #e74b38; stroke-width: 2.5; image-rendering: pixelated; }
+.academy-streak-dots { display: flex; align-items: center; justify-content: space-between; gap: 6px; }
+.academy-streak-dots span { display: grid; width: 28px; height: 28px; place-items: center; border-radius: 50%; background: var(--dashboard-surface-soft); color: white; font-size: 12px; font-weight: 900; }
+.academy-streak-dots span.is-checked { background: #57b7b2; }
+.academy-streak-action { display: none !important; }
+
+.academy-training-area .dashboard-training-panel { height: 100%; }
+.academy-training-area .dashboard-training-card { min-height: 176px; }
+.academy-training-area .dashboard-training-item { min-height: 82px; }
+.academy-training-area .dashboard-training-xp { border: 1px solid rgba(var(--primary-rgb),.45); background: transparent; color: var(--primary); }
+.academy-training-area .dashboard-training-xp span { color: var(--primary) !important; font-family: inherit !important; }
+
+.academy-achievements-area .dashboard-achievements-card { min-height: 176px; flex-direction: row; align-items: stretch; justify-content: space-around; gap: 4px; padding: 14px 7px; }
+.academy-achievements-area .dashboard-achievement-item { flex: 1; flex-direction: column; justify-content: center; gap: 7px; padding: 7px 3px; text-align: center; }
+.academy-achievements-area .dashboard-achievement-item + .dashboard-achievement-item { border-top: 0; }
+.academy-achievements-area .dashboard-achievement-icon { width: 52px; height: 52px; flex-basis: 52px; margin: 0 auto; border: 3px solid currentColor; border-radius: 16px; box-shadow: inset 0 0 0 3px var(--dashboard-surface); }
+.dashboard-achievement-icon.is-red { background: rgba(244,77,85,.12); color: #ef5961; }
+.academy-achievements-area .dashboard-achievement-item strong { font-size: 10px; }
+.academy-achievements-area .dashboard-achievement-item p { color: #d49a19; font-size: 9px; }
+
+.academy-ranking-area { min-height: 217px; }
+.academy-ranking-area > .sp-card { flex: 1; }
+.academy-ranking-area > .app-button { margin-top: 8px; }
+.dashboard-ranking-card > .dashboard-ranking-body { padding: 5px 8px; }
+.academy-ranking-list { display: flex; flex-direction: column; }
+.academy-ranking-row { display: grid; min-height: 38px; align-items: center; grid-template-columns: 24px 30px minmax(0,1fr) auto; gap: 7px; padding: 4px 6px; border-bottom: 1px solid var(--dashboard-border); border-radius: 8px; color: var(--dashboard-text); }
+.academy-ranking-row.rank-1 { border: 1px solid rgba(var(--primary-rgb),.38); background: rgba(var(--primary-rgb),.05); }
+.academy-ranking-position { display: grid; place-items: center; color: var(--dashboard-muted); font-size: 11px; font-weight: 800; }
+.rank-1 .academy-ranking-position { color: #f0a900; }.rank-2 .academy-ranking-position { color: #8794a3; }.rank-3 .academy-ranking-position { color: #b86b32; }
+.academy-ranking-avatar { width: 28px; height: 28px; border-radius: 50%; overflow: hidden; background: var(--dashboard-surface-soft); font-size: 9px; }
+.academy-ranking-name { overflow: hidden; font-size: 10px; font-weight: 700; text-overflow: ellipsis; white-space: nowrap; }
+.academy-ranking-row strong { color: var(--primary); font-size: 9px; font-weight: 700; white-space: nowrap; }
+
+.secure-sidebar-castle { left: 0; bottom: 0; width: 100%; max-height: 280px; object-fit: cover; object-position: center bottom; }
+:root:not([data-theme='light']) .secure-sidebar-nav { background: linear-gradient(180deg,#121126 0%,#18142e 100%) !important; }
+:root:not([data-theme='light']) .secure-sidebar-castle { opacity: .86; filter: saturate(.86) brightness(.7); }
+[data-theme='light'] .secure-sidebar-nav { background: linear-gradient(180deg,#fffdf7 0%,#fff8ed 100%) !important; }
+
+@media (max-width: 1100px) {
+  .academy-dashboard-grid { grid-template-columns: 1.4fr 1fr; grid-template-areas: 'journey journey' 'daily streak' 'training ranking' 'achievements ranking'; }
+}
+@media (max-width: 720px) {
+  .academy-dashboard-grid { grid-template-columns: 1fr; grid-template-areas: 'journey' 'daily' 'streak' 'training' 'achievements' 'ranking'; }
+  .academy-welcome-art { width: 76%; opacity: .35; }
+  .academy-journey-card { height: 224px; min-height: 224px; }
+}
+
+/* Dashboard Academia v3 — correções de alinhamento e transparência */
+.academy-dashboard-grid { grid-template-rows: 244px auto; align-items: stretch; }
+.academy-journey-card,
+.academy-daily-panel,
+.academy-streak-panel { height: 244px; min-height: 244px; }
+
+.academy-daily-panel,
+.academy-streak-panel {
+  overflow: hidden;
+  gap: 0 !important;
+  padding: 14px 13px 13px;
+  border: 1px solid var(--dashboard-border);
+  border-radius: 16px;
+  background: var(--dashboard-surface);
+  box-shadow: 0 7px 21px rgba(50,38,88,.07);
+}
+.academy-daily-panel > .app-section-header,
+.academy-streak-panel > .app-section-header { min-height: 23px; flex: 0 0 23px; margin-bottom: 5px; }
+.academy-daily-panel > .sp-card,
+.academy-streak-panel > .sp-card { border: 0 !important; border-radius: 0; background: transparent !important; box-shadow: none !important; }
+.academy-daily-panel .dashboard-daily-body { padding: 5px 0 8px !important; }
+.academy-daily-panel .academy-daily-illustration { width: 86px; height: 67px; }
+.academy-daily-panel .dashboard-daily-card > .sp-card-footer { padding: 0 !important; }
+
+.academy-streak-body { position: relative; justify-content: flex-start; gap: 13px; padding: 8px 2px 5px; }
+.academy-streak-panel .dashboard-streak-summary { justify-content: flex-start; gap: 10px; min-height: 82px; }
+.academy-streak-panel .dashboard-streak-summary strong { flex: 0 0 auto; margin: 0; font-family: 'Plus Jakarta Sans','Inter',sans-serif; font-size: 24px; letter-spacing: -.03em; }
+.academy-pixel-flame { display: block; width: 74px; height: 78px; object-fit: contain; image-rendering: pixelated; filter: none; }
+.academy-streak-dots { justify-content: flex-start; gap: 8px; }
+.academy-streak-dots span { width: 26px; height: 26px; }
+.academy-streak-pixels { position: absolute; top: -25px; right: 0; width: 54px; height: 40px; pointer-events: none; }
+.academy-streak-pixels i { position: absolute; display: block; width: 5px; height: 5px; background: #51b8b2; image-rendering: pixelated; }
+.academy-streak-pixels i:nth-child(1) { top: 2px; right: 5px; }
+.academy-streak-pixels i:nth-child(2) { top: 17px; right: 28px; width: 4px; height: 4px; background: #ff866f; }
+.academy-streak-pixels i:nth-child(3) { top: 29px; right: 10px; width: 3px; height: 3px; background: #b699e8; }
+
+.academy-welcome .dashboard-welcome-metrics { align-items: stretch; height: 70px; padding: 9px 11px; }
+.academy-welcome .dashboard-welcome-metrics > div { min-width: 92px; justify-content: center; padding: 0 19px; }
+.academy-welcome .dashboard-welcome-metrics > div:first-child { padding-left: 0; }
+.academy-welcome .dashboard-welcome-metrics .dashboard-welcome-xp { width: 250px; min-width: 250px; padding-right: 0; }
+.academy-welcome .dashboard-welcome-metrics span { line-height: 1.2; }
+.academy-welcome .dashboard-welcome-metrics strong { min-height: 20px; line-height: 20px; }
+.academy-welcome .dashboard-welcome-progress { width: 100%; margin-top: 3px; }
+
+@media (max-width: 1100px) {
+  .academy-dashboard-grid { grid-template-rows: 244px auto auto; }
+}
+@media (max-width: 720px) {
+  .academy-dashboard-grid { grid-template-rows: none; }
+  .academy-journey-card,
+  .academy-daily-panel,
+  .academy-streak-panel { height: auto; min-height: 224px; }
+  .academy-welcome .dashboard-welcome-metrics { width: min(100%, 440px); height: auto; }
+  .academy-welcome .dashboard-welcome-metrics .dashboard-welcome-xp { width: min(210px, 44vw); min-width: 150px; }
+}
+
+/* Dashboard Academia v4 — títulos externos, rodapés e ranking */
+.academy-dashboard-grid { grid-template-rows: 272px auto; }
+.academy-journey-panel { grid-area: journey; display: flex; min-width: 0; min-height: 0; flex-direction: column; gap: 8px; }
+.academy-journey-card { grid-area: auto; height: auto; min-height: 0; flex: 1; }
+.academy-journey-panel,
+.academy-daily-panel,
+.academy-streak-panel { height: 272px; min-height: 272px; }
+.academy-journey-panel > .app-section-header,
+.academy-daily-panel > .app-section-header,
+.academy-streak-panel > .app-section-header { min-height: 28px; flex: 0 0 28px; margin: 0; }
+
+.academy-daily-panel,
+.academy-streak-panel {
+  overflow: visible;
+  gap: 8px !important;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+.academy-daily-panel > .sp-card,
+.academy-streak-panel > .sp-card {
+  overflow: hidden;
+  border: 1px solid var(--dashboard-border) !important;
+  border-radius: 16px;
+  background: var(--dashboard-surface) !important;
+  box-shadow: 0 7px 21px rgba(50,38,88,.07) !important;
+}
+.academy-journey-footer {
+  position: absolute;
+  z-index: 2;
+  left: 14px;
+  right: 14px;
+  bottom: 12px;
+  display: flex;
+  align-items: stretch;
+  gap: 12px;
+}
+.academy-journey-footer .academy-journey-progress {
+  position: static;
+  flex: 1;
+  min-width: 0;
+}
+.academy-journey-map-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 46px;
+  min-height: 46px;
+  padding: 0;
+  border: 1px solid rgba(82,54,169,.25);
+  border-radius: 10px;
+  background: rgba(255,255,255,.95);
+  color: #5134ae;
+  box-shadow: 0 4px 10px rgba(36,24,86,.1);
+  cursor: pointer;
+}
+.academy-journey-map-button:hover { background: #eee8ff; }
+.academy-journey-map-button:focus-visible { outline: 3px solid #7950df; outline-offset: 3px; }
+
+.academy-welcome-art {
+  right: 0;
+  bottom: -1px;
+  width: 54%;
+  height: calc(100% - 7px);
+  object-fit: contain;
+  object-position: right bottom;
+}
+.academy-welcome .dashboard-welcome-content { justify-content: flex-start; }
+.academy-welcome .dashboard-welcome-info { position: relative; z-index: 2; }
+
+.academy-training-area .dashboard-training-card,
+.academy-achievements-area .dashboard-achievements-card { overflow: hidden; }
+.academy-card-footer-link {
+  min-height: 31px;
+  flex: 0 0 31px;
+  justify-content: center !important;
+  padding: 3px 8px 6px !important;
+  border-top: 0 !important;
+}
+.academy-card-footer-link .app-button { min-height: 24px; padding: 3px 8px; background: transparent; color: var(--primary); font-size: 9px; box-shadow: none; }
+.academy-card-footer-link .app-button:hover { background: rgba(var(--primary-rgb),.07); }
+.academy-footer-action {
+  display: inline-flex;
+  min-height: 20px;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 2px 5px;
+  border: 0;
+  border-radius: 5px;
+  background: transparent;
+  color: var(--primary);
+  cursor: pointer;
+  font-family: var(--font-family-ui);
+  font-size: 9px;
+  font-weight: 650;
+  line-height: 1;
+  white-space: nowrap;
+  transition: color 140ms ease, background-color 140ms ease;
+}
+.academy-footer-action svg { flex: 0 0 auto; }
+.academy-footer-action:hover { background: rgba(var(--primary-rgb),.06); color: var(--primary-hover); }
+.academy-footer-action:focus-visible { outline: 2px solid rgba(var(--primary-rgb),.4); outline-offset: 2px; }
+
+.academy-achievements-area .dashboard-achievements-card { display: flex; flex-direction: column; padding: 0; }
+.academy-achievements-items { display: grid; min-height: 0; flex: 1; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); align-content: center; align-items: stretch; gap: 4px; padding: 10px 7px 2px; }
+.academy-achievements-state { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; padding: 16px; text-align: center; color: var(--dashboard-muted); }
+.academy-achievements-state p { font-size: 12px; margin: 0; }
+.academy-achievements-state small { font-size: 11px; }
+.academy-achievement-date { display: block; margin-top: 3px; font-size: 9px; color: var(--dashboard-muted); }
+.achievement-node .achievement-artwork { width: 56px !important; height: 56px !important; }
+.achievement-detail-icon .achievement-artwork { width: 84px !important; height: 84px !important; }
+.dashboard-achievement-icon .achievement-artwork { width: 40px !important; height: 40px !important; }
+.achievement-node.is-locked .achievement-artwork { filter: grayscale(.65); opacity: .8; }
+
+.academy-ranking-area { min-height: 0; }
+.academy-ranking-area .dashboard-ranking-card { min-height: 207px; }
+.academy-ranking-area .dashboard-ranking-body { justify-content: flex-start; padding: 7px 9px 3px; }
+.academy-ranking-list { gap: 0; }
+.academy-ranking-row { min-height: 39px; grid-template-columns: 25px 30px minmax(0,1fr) auto; border-bottom: 1px solid var(--dashboard-border); border-radius: 0; }
+.academy-ranking-row.rank-1 { border: 1px solid rgba(var(--primary-rgb),.42); border-radius: 8px; }
+.academy-ranking-position { width: 25px; height: 25px; border-radius: 50%; background: var(--dashboard-surface-soft); }
+.rank-1 .academy-ranking-position { background: #fff0b8; color: #c48700; }
+.rank-2 .academy-ranking-position { background: #e5ebf0; color: #647282; }
+.rank-3 .academy-ranking-position { background: #f0c29d; color: #995322; }
+.academy-ranking-footer { padding: 8px 10px 10px !important; border-top: 0 !important; }
+.academy-ranking-footer .app-button { width: 100%; min-height: 36px; justify-content: center; border: 1px solid var(--primary); background: transparent; color: var(--primary); box-shadow: none; font-size: 13px; }
+
+@media (max-width: 1100px) {
+  .academy-dashboard-grid { grid-template-rows: 272px auto auto; }
+}
+@media (max-width: 720px) {
+  .academy-dashboard-grid { grid-template-rows: none; }
+  .academy-journey-panel,
+  .academy-daily-panel,
+  .academy-streak-panel { height: auto; min-height: 252px; }
+  .academy-welcome-art { width: 74%; height: 100%; opacity: .28; }
+}
+
+/* Dashboard Academia v5 — densidade para viewport desktop sem rolagem */
+@media (min-width: 1101px) {
+  .secure-home-main { padding: 16px 24px 18px !important; }
+  .dashboard-real.academy-dashboard {
+    --academy-hero-height: clamp(176px, 23dvh, 220px);
+    width: 100%;
+    max-width: 1380px;
+    height: 100%;
+    min-height: 640px;
+    margin: 0 auto;
+    gap: 13px !important;
+  }
+
+  .academy-welcome { min-height: var(--academy-hero-height); height: var(--academy-hero-height); }
+  .academy-welcome .dashboard-welcome-content { min-height: var(--academy-hero-height); height: var(--academy-hero-height); padding: 15px 28px; }
+  .academy-welcome .dashboard-welcome-info { padding: 0; }
+  .academy-welcome .dashboard-welcome-info h2 { font-size: 36px; line-height: 1.08; }
+  .academy-welcome .dashboard-welcome-info > p { margin: 4px 0 10px; font-size: 16px; }
+  .academy-welcome .dashboard-welcome-metrics { height: 60px; margin-top: 0; padding: 7px 11px; }
+  /* Compensa as margens transparentes do PNG sem deformar a personagem.
+     A arte ocupa ~75% da altura do arquivo e termina a ~13% da base. */
+  .academy-welcome-art {
+    width: auto;
+    max-width: none;
+    height: 134%;
+    bottom: -17.5%;
+  }
+
+  .academy-dashboard-grid { flex: 1; min-height: 0; grid-template-rows: minmax(220px, 1.12fr) minmax(218px, 1fr); gap: 13px 16px; }
+  .academy-journey-panel,
+  .academy-daily-panel,
+  .academy-streak-panel { height: 100%; min-height: 0; }
+  .academy-journey-panel > .app-section-header,
+  .academy-daily-panel > .app-section-header,
+  .academy-streak-panel > .app-section-header { min-height: 25px; flex-basis: 25px; }
+
+  .academy-training-area,
+  .academy-training-area .dashboard-training-panel,
+  .academy-achievements-area,
+  .academy-ranking-area { height: 100%; min-height: 0; }
+  .academy-training-area .dashboard-training-card,
+  .academy-achievements-area .dashboard-achievements-card,
+  .academy-ranking-area .dashboard-ranking-card { min-height: 0; height: auto; }
+  .academy-training-area .dashboard-training-item { min-height: 61px; height: 61px; padding-top: 7px !important; padding-bottom: 7px !important; }
+  .academy-training-area .dashboard-training-icon { width: 31px !important; height: 31px !important; }
+  .academy-training-area .dashboard-training-progress { margin-top: 4px; }
+  .academy-achievements-items { padding-top: 5px; }
+  .academy-achievements-area .dashboard-achievement-icon { width: 45px; height: 45px; flex-basis: 45px; }
+
+  .academy-ranking-area .dashboard-ranking-card { min-height: 189px; }
+  .academy-ranking-row { min-height: 31px; height: 31px; }
+  .academy-ranking-avatar { width: 24px; height: 24px; }
+  .academy-ranking-footer { padding: 5px 9px 7px !important; }
+  .academy-ranking-footer .app-button { min-height: 32px; }
+}
+
+.academy-card-footer-link { min-height: 34px; flex-basis: 34px; }
+.academy-footer-action { min-height: 24px; padding: 3px 7px; font-size: 10.5px; font-weight: 700; }
+
+/* Avatar reutilizavel: garante que a foto preencha qualquer container de avatar */
+.sp-avatar-img {
+  width: 100%;
+  height: 100%;
+  border-radius: inherit;
+  object-fit: cover;
+}
+
+/* Arte de missão e ação compacta, com respiro dentro do card. */
+.academy-daily-panel .dashboard-daily-body {
+  padding: 10px 14px 8px !important;
+  gap: 8px !important;
+}
+.academy-daily-panel .academy-daily-illustration {
+  width: 136px;
+  height: 150px;
+  max-height: 80%;
+  flex-shrink: 1;
+  object-fit: contain;
+}
+.academy-daily-panel .dashboard-daily-card > .sp-card-footer {
+  padding: 0 14px 14px !important;
+  flex-shrink: 0;
+}
+.academy-daily-panel .dashboard-primary-button {
+  height: 36px !important;
+  min-height: 36px;
+  padding: 0 12px;
+  border-radius: 7px;
+  font-size: 13px;
+  font-weight: 600;
+  text-transform: none;
+  letter-spacing: normal;
+  box-shadow: none;
+}
+.academy-daily-panel .dashboard-daily-progress-wrap {
+  width: 88% !important;
+  align-self: center;
+  gap: 3px !important;
+  margin-top: 0 !important;
+}
+.academy-daily-panel .dashboard-daily-progress-wrap > div:first-child {
+  font-size: 9px !important;
+  line-height: 1.1 !important;
+  letter-spacing: .08em;
+}
+.academy-daily-panel .dashboard-daily-progress-wrap > div:first-child span:last-child {
+  font-size: 11px !important;
+  letter-spacing: 0;
+}
+.academy-daily-panel .dashboard-daily-progress-wrap .academy-daily-progress-label {
+  font-size: 10px !important;
+  line-height: 12px !important;
+  font-weight: 400;
+  letter-spacing: 0;
+  text-transform: none;
+}
+.academy-daily-panel .dashboard-daily-progress {
+  height: 3px !important;
+  min-height: 3px;
+  border-radius: 999px;
+}
+.app-game-card img.challenge-pixel-art {
+  object-fit: contain;
+  padding: 20px;
+  image-rendering: pixelated;
+}
+.academy-mission-completion {
+  display: flex;
+  flex: 0 0 auto;
+  flex-direction: column;
+  align-self: center;
+  gap: 6px;
+  width: 164px;
+  max-width: 100%;
+  margin: 2px 0 4px;
+  text-align: center;
+}
+.academy-mission-completion > small {
+  color: var(--dashboard-muted);
+  font-size: 11px;
+  line-height: 14px;
+  font-weight: 500;
+}
+.academy-mission-completion-track {
+  display: block;
+  height: 4px;
+  flex: 0 0 4px;
+  overflow: hidden;
+  border-radius: 4px;
+  background: var(--dashboard-border);
+}
+.academy-mission-completion-fill {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--primary);
+}
+
+/* Sequência: aro semanal, calendário legível e incentivo sem recompensas fictícias. */
+.academy-streak-panel .dashboard-streak-card > .academy-streak-overview {
+  position: relative;
+  align-items: center;
+  justify-content: space-evenly;
+  gap: 9px;
+  padding: 12px 16px !important;
+  background: radial-gradient(ellipse at 50% 10%, rgba(255,196,68,.12), transparent 75%);
+}
+.academy-streak-overview .academy-streak-pixels { top: 12px; right: 12px; }
+.academy-streak-star { position: absolute; top: 14px; left: 20px; color: #e8aa23; fill: #ffda72; transform: rotate(-14deg); }
+.academy-streak-ring { position: relative; width: 110px; height: 110px; flex: 0 0 110px; }
+.academy-streak-ring > svg { width: 100%; height: 100%; overflow: visible; }
+.academy-streak-ring circle { fill: none; stroke-width: 7; }
+.academy-streak-ring-track { stroke: rgba(221,167,52,.24); }
+.academy-streak-ring-fill { stroke: #efb632; }
+.academy-streak-ring-content { position: absolute; inset: 9px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; }
+.academy-streak-ring-content img { width: 38px; height: 39px; object-fit: contain; image-rendering: pixelated; }
+.academy-streak-ring-content strong { color: var(--dashboard-text); font-size: 20px; line-height: 1.1; white-space: nowrap; }
+.academy-streak-ring-content small { color: var(--dashboard-muted); font-size: 9px; white-space: nowrap; }
+.academy-streak-week { display: grid; grid-template-columns: repeat(7,minmax(0,1fr)); width: 100%; gap: 5px; }
+.academy-streak-day { display: flex; flex-direction: column; align-items: center; gap: 5px; }
+.academy-streak-day i { display: grid; place-items: center; width: 27px; height: 27px; border-radius: 50%; border: 1px solid var(--dashboard-muted); background: var(--dashboard-surface-soft); }
+.academy-streak-day i b { width: 4px; height: 4px; border-radius: 50%; background: var(--dashboard-muted); }
+.academy-streak-day.is-checked i { background: #318c82; border-color: #318c82; color: #fff; }
+.academy-streak-day.is-today i { outline: 2px solid var(--primary); outline-offset: 2px; }
+.academy-streak-day small { color: var(--dashboard-muted); font-size: 10px; }
+.academy-streak-day.is-today small { color: var(--primary); font-weight: 800; }
+.academy-streak-encouragement { width: 100%; display: flex; flex-direction: column; align-items: center; gap: 3px; padding-top: 8px; border-top: 1px solid var(--dashboard-border); text-align: center; }
+.academy-streak-encouragement strong { color: var(--dashboard-text); font-size: 11px; }
+.academy-streak-encouragement small { color: var(--dashboard-muted); font-size: 10px; }
+
+/* Medalhas próprias e quatro colunas estáveis para o ranking. */
+.academy-ranking-area .dashboard-ranking-card > .dashboard-ranking-body {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  padding: 10px 14px 4px !important;
+}
+.academy-ranking-area .academy-ranking-list { width: 100%; flex: 1; justify-content: space-evenly; gap: 3px; }
+.academy-ranking-area .academy-ranking-row {
+  grid-template-columns: 28px 30px minmax(0, 1fr) auto;
+  gap: 9px;
+  height: auto;
+  min-height: 37px;
+  padding: 3px 7px;
+  border-bottom-color: var(--dashboard-border);
+}
+.academy-ranking-area .academy-ranking-row:last-child { border-bottom: 0; }
+.academy-ranking-area .academy-ranking-position { width: 28px; height: 32px; background: transparent; border-radius: 0; }
+.academy-ranking-medal { display: block; width: 26px; height: 32px; overflow: visible; }
+.academy-ranking-area .academy-ranking-avatar { width: 30px; height: 30px; font-size: 10px !important; }
+.academy-ranking-area .academy-ranking-name { font-size: 12px !important; font-weight: 600 !important; }
+.academy-ranking-area .academy-ranking-row strong { font-size: 10px; font-weight: 500; color: var(--dashboard-muted); text-align: right; }
+.academy-ranking-area .academy-ranking-row.rank-1 { background: rgba(var(--primary-rgb),.06); border: 1px solid rgba(var(--primary-rgb),.35); border-radius: 8px; }
+.academy-ranking-area .academy-ranking-row.rank-1 strong { color: var(--primary); }
+.academy-ranking-area .academy-ranking-footer { padding: 8px 14px 12px !important; }
+.academy-ranking-area .academy-ranking-footer .app-button { min-height: 34px; font-size: 12px !important; font-weight: 500; border-radius: 7px; }
