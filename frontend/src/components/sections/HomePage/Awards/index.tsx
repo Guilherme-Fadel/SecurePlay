@@ -49,6 +49,7 @@ import type {
   CosmeticItem,
   CosmeticType,
 } from '@/services/achievements';
+import '@/styles/awards-ui.css';
 
 type AwardsView = 'trail' | 'shop';
 
