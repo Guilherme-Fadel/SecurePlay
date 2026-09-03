@@ -20,6 +20,7 @@ import { UserManagementTab } from '@/components/admin/UserManagementTab';
 import { CompanyManagementTab } from '@/components/admin/CompanyManagementTab';
 import { AlertCircle, ArrowLeft, Building2, CheckCircle2, Eye, LayoutTemplate, Palette, RotateCcw, Save, ShieldCheck, SlidersHorizontal, Upload, UsersRound, WandSparkles, } from 'lucide-react';
 import '@/styles/app-ui.css';
+import './admin-ui.css';
 import './admin-users.css';
 function hexToHsl(hex: string): [
     number,
