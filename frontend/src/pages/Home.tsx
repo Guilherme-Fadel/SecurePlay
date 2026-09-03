@@ -16,6 +16,7 @@ import { useCurrentUser } from '@/hooks/useCurrentUser';
 import '@/styles/app-ui.css';
 import '@/styles/settings-ui.css';
 import '@/styles/profile-ui.css';
+import '@/styles/dashboard-ui.css';
 import '@/styles/academy-dashboard.css';
 import '@/styles/dashboard-overrides.css';
 import { AppButton } from '@/components/ui/buttons/AppButton';
