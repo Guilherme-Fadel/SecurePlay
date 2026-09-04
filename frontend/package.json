@@ -8,6 +8,9 @@
     "prebuild": "npm run check:assets && npm run typecheck",
     "check:assets": "node scripts/check-assets.cjs",
     "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "lint:types": "eslint --config eslint.typed.config.mjs .",
     "dev": "vite"
   },
   "dependencies": {
@@ -26,13 +29,17 @@
     "tw-animate-css": "1.3.8"
   },
   "devDependencies": {
+    "@eslint/js": "^9.39.5",
     "@tailwindcss/vite": "4.1.12",
     "@types/node": "^25.7.0",
     "@types/react": "^18.3.31",
     "@types/react-dom": "^18.3.7",
     "@vitejs/plugin-react": "4.7.0",
+    "eslint": "^9.39.5",
+    "globals": "^17.12.0",
     "tailwindcss": "4.1.12",
     "typescript": "^5.7.3",
+    "typescript-eslint": "^8.69.0",
     "vite": "^6.4.1"
   },
   "pnpm": {
