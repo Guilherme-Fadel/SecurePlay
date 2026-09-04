@@ -20,7 +20,7 @@ public static class BookBackgroundExtractor {
       for (int y=0; y<height; y++) { add(0,y); add(width-1,y); }
       while(queue.Count>0) {
         var point=queue.Dequeue(); var color=bitmap.GetPixel(point.X,point.Y);
-        bool background = dark ? color.R < 80 && color.G < 80 && color.B < 80 : color.R > 225 && color.G > 225 && color.B > 225;
+        bool background = dark ? color.R < 80 && color.G < 80 && color.B < 80 : color.R > 170 && color.G > 170 && color.B > 170;
         if(!background) continue;
         bitmap.SetPixel(point.X,point.Y,Color.FromArgb(0,color.R,color.G,color.B));
         if(point.X>0) add(point.X-1,point.Y); if(point.X+1<width) add(point.X+1,point.Y);

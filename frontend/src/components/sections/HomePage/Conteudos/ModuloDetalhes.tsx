@@ -10,7 +10,7 @@ interface ModuloDetalhesProps { moduloId: number; onBack: () => void; onSelectAu
 export function ModuloDetalhes({ moduloId, onBack, onSelectAula }: ModuloDetalhesProps) {
   const { modulo, loading } = useModulo(moduloId);
   const assets = useMissionRoomAssets();
-  if (loading || !modulo || !assets['module-book-frame-dark-safe']) return <div className="flex items-center justify-center h-64"><p className="text-[var(--text-secondary)]">Abrindo o livro da missão...</p></div>;
+  if (loading || !modulo || !assets['module-book-frame-clean']) return <div className="flex items-center justify-center h-64"><p className="text-[var(--text-secondary)]">Abrindo o livro da missão...</p></div>;
 
   const sections = groupBySections(modulo.aulas);
   const nextAula = modulo.aulas.find((aula) => aula.status === 'unlocked');
@@ -19,7 +19,7 @@ export function ModuloDetalhes({ moduloId, onBack, onSelectAula }: ModuloDetalhe
   return (
     <div className="app-page module-book-page">
       <AppButton onClick={onBack} variant="ghost" size="sm" icon={<ArrowLeft size={16} />} className="w-fit">Voltar aos conteúdos</AppButton>
-      <main className="module-book" style={{ '--module-book-frame': `url(${assets['module-book-frame-dark-safe']})` } as React.CSSProperties}>
+      <main className="module-book" style={{ '--module-book-frame': `url(${assets['module-book-frame-clean']})` } as React.CSSProperties}>
         <section className="module-book-summary">
           <div className="module-book-cover">{modulo.thumbnail ? <img src={modulo.thumbnail} alt="" /> : <BookOpenCheck size={54} />}</div>
           <span className="module-book-category">{modulo.category}</span>
