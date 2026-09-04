@@ -5,8 +5,8 @@ import { Header } from "@/components/shared/layout/header/index";
 import { MobileNavigation, Sidebar, SidebarItem } from '@/components/shared/Sidebar';
 import { TrophyIcon, LayoutDashboard, Gamepad2, AwardIcon, BookOpenIcon, SettingsIcon, ArrowLeft, ShieldIcon } from "lucide-react";
 import { Dashboard, Awards, Challenges, Ranking, Conteudos, Settings, Perfil } from '@/components/sections/HomePage/index';
-import { lazy, Suspense, useState, useCallback, useEffect } from 'react';
-import { useLocation } from 'react-router-dom';
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import { Toaster } from 'sonner';
 import { SectionContext, type ContentTarget } from '@/contexts/SectionContext';
 import { ThemeProvider } from '@/contexts/ThemeContext';
@@ -23,31 +23,14 @@ import { AppButton } from '@/components/ui/buttons/AppButton';
 const Admin = lazy(() => import('@/pages/Admin'));
 export type Section = 'dashboard' | 'desafios' | 'ranking' | 'conquistas' | 'conteudos' | 'configuracoes' | 'perfil' | 'admin';
 const validSections: Section[] = ['dashboard', 'desafios', 'ranking', 'conquistas', 'conteudos', 'configuracoes', 'perfil', 'admin'];
+const DEFAULT_SECTION: Section = 'dashboard';
 
-function readNavigationState(): { section: Section | null; target: ContentTarget | null } {
-    const params = new URLSearchParams(window.location.search);
-    const requestedSection = params.get('section') as Section | null;
-    const moduloId = Number(params.get('modulo'));
-    const aulaId = Number(params.get('aula'));
-    return {
-        section: requestedSection && validSections.includes(requestedSection) ? requestedSection : null,
-        target: Number.isInteger(moduloId) && moduloId > 0
-            ? { moduloId, ...(Number.isInteger(aulaId) && aulaId > 0 ? { aulaId } : {}) }
-            : null,
-    };
-}
-
-function writeNavigationState(section: Section, target: ContentTarget | null, replace = false) {
-    const url = new URL(window.location.href);
-    url.searchParams.set('section', section);
-    url.searchParams.delete('modulo');
-    url.searchParams.delete('aula');
+/** Monta o pathname da Home. O conteudo carrega modulo/aula direto na URL. */
+function sectionPath(section: Section, target: ContentTarget | null): string {
     if (section === 'conteudos' && target) {
-        url.searchParams.set('modulo', String(target.moduloId));
-        if (target.aulaId) url.searchParams.set('aula', String(target.aulaId));
+        return `/home/conteudos/${target.moduloId}${target.aulaId ? `/${target.aulaId}` : ''}`;
     }
-    if (replace) window.history.replaceState({}, '', url);
-    else window.history.pushState({}, '', url);
+    return `/home/${section}`;
 }
 
 /**
@@ -57,7 +40,8 @@ function writeNavigationState(section: Section, target: ContentTarget | null, re
  */
 const restrictedSections: Partial<Record<Section, string>> = { admin: 'platform_admin' };
 function HomeContent() {
-    const location = useLocation();
+    const navigate = useNavigate();
+    const params = useParams();
     const { user, loading: userLoading } = useCurrentUser();
     const canOpenSection = useCallback(
         (section: Section) => {
@@ -78,74 +62,80 @@ function HomeContent() {
     };
     useEmpresaTema();
     useVisualPreload();
-    const [activeSection, setActiveSectionState] = useState<Section>(() => {
-        const querySection = readNavigationState().section;
-        if (querySection) return querySection;
-        const routeState = location.state as { initialSection?: Section } | null;
-        return routeState?.initialSection === 'admin' ? 'admin' : 'dashboard';
-    });
-    const [contentTarget, setContentTargetState] = useState<ContentTarget | null>(() => readNavigationState().target);
-    const [previousSection, setPreviousSection] = useState<Section | null>(null);
+
+    // A URL e a fonte de verdade da navegacao. O router cuida do historico, entao
+    // nao ha pushState manual nem listener de popstate: o botao voltar do navegador
+    // funciona sozinho.
+    const rawSection = params.section as Section | undefined;
+    const activeSection: Section = rawSection && validSections.includes(rawSection) ? rawSection : DEFAULT_SECTION;
+    const moduloId = Number(params.moduloId);
+    const aulaId = Number(params.aulaId);
+    // Memoizado por moduloId/aulaId: o Conteudos observa contentTarget num useEffect,
+    // entao a identidade do objeto precisa ser estavel entre renders da mesma URL.
+    const contentTarget: ContentTarget | null = useMemo(
+        () =>
+            activeSection === 'conteudos' && Number.isInteger(moduloId) && moduloId > 0
+                ? { moduloId, ...(Number.isInteger(aulaId) && aulaId > 0 ? { aulaId } : {}) }
+                : null,
+        [activeSection, moduloId, aulaId],
+    );
+
+    // "Voltar" leva a secao de onde o usuario entrou no conteudo. Guardado em ref
+    // (nao muda o render) e so vale enquanto a secao atual for conteudos.
+    const enteredContentFrom = useRef<Section | null>(null);
+
     const { isLoading, setLoading, bootstrapReady, registerBootstrap } = useHomeLoading();
+
+    const go = useCallback((section: Section, target: ContentTarget | null, options?: { replace?: boolean }) => {
+        const allowed = canOpenSection(section) ? section : DEFAULT_SECTION;
+        navigate(sectionPath(allowed, target), { replace: options?.replace });
+    }, [canOpenSection, navigate]);
+
     const setActiveSection = useCallback((section: Section) => {
-        const target = canOpenSection(section) ? section : 'dashboard';
-        setPreviousSection(null);
-        setActiveSectionState(target);
-        setContentTargetState(null);
-        writeNavigationState(target, null);
-    }, [canOpenSection]);
+        enteredContentFrom.current = null;
+        go(section, null);
+    }, [go]);
     const navigateToSection = useCallback((section: Section) => {
-        const target = canOpenSection(section) ? section : 'dashboard';
-        setActiveSectionState((current) => {
-            setPreviousSection(current);
-            return target;
-        });
-        setContentTargetState(null);
-        writeNavigationState(target, null);
-    }, [canOpenSection]);
+        enteredContentFrom.current = activeSection === 'conteudos' ? enteredContentFrom.current : activeSection;
+        go(section, null);
+    }, [go, activeSection]);
     const navigateToContent = useCallback((target: ContentTarget) => {
-        setActiveSectionState((current) => {
-            setPreviousSection(current === 'conteudos' ? null : current);
-            return 'conteudos';
-        });
-        setContentTargetState(target);
-        writeNavigationState('conteudos', target);
-    }, []);
+        if (activeSection !== 'conteudos') enteredContentFrom.current = activeSection;
+        go('conteudos', target);
+    }, [go, activeSection]);
     const setContentTarget = useCallback((target: ContentTarget | null) => {
-        setContentTargetState(target);
-        writeNavigationState('conteudos', target);
-    }, []);
+        go('conteudos', target);
+    }, [go]);
+    const previousSection = activeSection === 'conteudos' ? enteredContentFrom.current : null;
     const goBack = useCallback(() => {
-        if (previousSection) {
-            setActiveSectionState(previousSection);
-            setContentTargetState(null);
-            writeNavigationState(previousSection, null);
-            setPreviousSection(null);
+        if (enteredContentFrom.current) {
+            const target = enteredContentFrom.current;
+            enteredContentFrom.current = null;
+            go(target, null);
         }
-    }, [previousSection]);
+    }, [go]);
+
+    // /home sem segmento (vindo do login) vira /home/dashboard, para a URL bater
+    // com a secao exibida. replace: nao cria passo extra no historico.
     useEffect(() => {
-        const handlePopState = () => {
-            const navigation = readNavigationState();
-            const section = navigation.section ?? 'dashboard';
-            setActiveSectionState(canOpenSection(section) ? section : 'dashboard');
-            setContentTargetState(navigation.target);
-            setPreviousSection(null);
-        };
-        window.addEventListener('popstate', handlePopState);
-        return () => window.removeEventListener('popstate', handlePopState);
-    }, [canOpenSection]);
+        if (!rawSection) navigate(sectionPath(DEFAULT_SECTION, null), { replace: true });
+    }, [rawSection, navigate]);
+
     // A secao inicial vem da URL, antes de o usuario estar carregado. Quando ele
     // resolve sem a role, volta para o dashboard e corrige a URL com replace, para
     // nao deixar no historico uma entrada que reabre a secao negada.
     useEffect(() => {
         if (userLoading || canOpenSection(activeSection)) return;
-        setActiveSectionState('dashboard');
-        setContentTargetState(null);
-        setPreviousSection(null);
-        writeNavigationState('dashboard', null, true);
-    }, [userLoading, canOpenSection, activeSection]);
+        go(DEFAULT_SECTION, null, { replace: true });
+    }, [userLoading, canOpenSection, activeSection, go]);
+
+    const sectionValue = useMemo(
+        () => ({ activeSection, setActiveSection, navigateToSection, navigateToContent, contentTarget, setContentTarget, previousSection, goBack, setLoading, registerBootstrap }),
+        [activeSection, setActiveSection, navigateToSection, navigateToContent, contentTarget, setContentTarget, previousSection, goBack, setLoading, registerBootstrap],
+    );
+
     return (<>
-        <SectionContext.Provider value={{ activeSection, setActiveSection, navigateToSection, navigateToContent, contentTarget, setContentTarget, previousSection, goBack, setLoading, registerBootstrap }}>
+        <SectionContext.Provider value={sectionValue}>
         <LoadingScreen ready={bootstrapReady}/>
         <Toaster position="top-right" richColors/>
 

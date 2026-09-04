@@ -15,12 +15,15 @@ const TermsPage = lazy(() => import('@/pages/LegalPages').then((module) => ({ de
 const NotFoundPage = lazy(() => import('@/pages/LegalPages').then((module) => ({ default: module.NotFoundPage })));
 export default function App() {
     const location = useLocation();
+    // A transicao de rota anima por segmento raiz. Sem isso, navegar entre secoes
+    // (/home/ranking -> /home/conteudos) remontaria a Home inteira a cada aba.
+    const animationKey = location.pathname.startsWith('/home') ? '/home' : location.pathname;
     return (<AnimatePresence mode="wait">
-      <Routes location={location} key={location.pathname}>
+      <Routes location={location} key={animationKey}>
         <Route path="/" element={<Suspense fallback={null}><Landing /></Suspense>}/>
         <Route path="/start" element={<Suspense fallback={null}><Start /></Suspense>}/>
         <Route path="/login" element={<PublicRoute><Suspense fallback={null}><Login /></Suspense></PublicRoute>}/>
-        <Route path="/home" element={<PrivateRoute><Suspense fallback={null}><Home /></Suspense></PrivateRoute>}/>
+        <Route path="/home/:section?/:moduloId?/:aulaId?" element={<PrivateRoute><Suspense fallback={null}><Home /></Suspense></PrivateRoute>}/>
         <Route path="/admin" element={<PrivateRoute><AdminEntry /></PrivateRoute>}/>
         <Route path="/cadastro" element={<Suspense fallback={null}>
             <InviteRegister />
@@ -49,13 +52,13 @@ function LegacyInviteRedirect() {
 }
 
 /**
- * /admin nao renderiza tela propria, so aponta a secao dentro da Home. So pede a
- * secao admin quem tem a role; os demais caem no dashboard sem disparar as
- * chamadas administrativas. Roda dentro de PrivateRoute, entao o usuario ja esta
- * resolvido aqui. A autorizacao de verdade continua no backend.
+ * /admin nao renderiza tela propria, so aponta a secao dentro da Home. So leva a
+ * secao admin quem tem a role; os demais caem no dashboard, sem montar a tela nem
+ * disparar as chamadas administrativas. Roda dentro de PrivateRoute, entao o
+ * usuario ja esta resolvido aqui. A autorizacao de verdade continua no backend.
  */
 function AdminEntry() {
   const { user } = useCurrentUser();
   const allowed = user?.role === 'platform_admin';
-  return <Navigate to="/home" replace state={allowed ? { initialSection: 'admin' } : undefined} />;
+  return <Navigate to={allowed ? '/home/admin' : '/home'} replace />;
 }
