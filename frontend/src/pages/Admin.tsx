@@ -18,92 +18,12 @@ import { InfoCard } from '@/components/ui/visuals/InfoCard';
 import { AppSectionHeader } from '@/components/ui/visuals/AppSectionHeader';
 import { UserManagementTab } from '@/components/admin/UserManagementTab';
 import { CompanyManagementTab } from '@/components/admin/CompanyManagementTab';
-import { AlertCircle, ArrowLeft, Building2, CheckCircle2, Eye, LayoutTemplate, Palette, RotateCcw, Save, ShieldCheck, SlidersHorizontal, Upload, UsersRound, WandSparkles, } from 'lucide-react';
+import { AdminThemePreview } from '@/components/admin/AdminThemePreview';
+import { derivePalette } from '@/lib/palette';
+import { AlertCircle, ArrowLeft, Building2, CheckCircle2, LayoutTemplate, Palette, RotateCcw, Save, SlidersHorizontal, Upload, UsersRound, WandSparkles, } from 'lucide-react';
 import '@/styles/app-ui.css';
 import './admin-ui.css';
 import './admin-users.css';
-function hexToHsl(hex: string): [
-    number,
-    number,
-    number
-] {
-    const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-    if (!result)
-        return [0, 0, 0];
-    let r = parseInt(result[1], 16) / 255;
-    let g = parseInt(result[2], 16) / 255;
-    let b = parseInt(result[3], 16) / 255;
-    const max = Math.max(r, g, b);
-    const min = Math.min(r, g, b);
-    let h = 0, s = 0;
-    const l = (max + min) / 2;
-    if (max !== min) {
-        const d = max - min;
-        s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
-        switch (max) {
-            case r:
-                h = ((g - b) / d + (g < b ? 6 : 0)) / 6;
-                break;
-            case g:
-                h = ((b - r) / d + 2) / 6;
-                break;
-            case b:
-                h = ((r - g) / d + 4) / 6;
-                break;
-        }
-    }
-    return [Math.round(h * 360), Math.round(s * 100), Math.round(l * 100)];
-}
-function hslToHex(h: number, s: number, l: number): string {
-    s /= 100;
-    l /= 100;
-    const c = (1 - Math.abs(2 * l - 1)) * s;
-    const x = c * (1 - Math.abs(((h / 60) % 2) - 1));
-    const m = l - c / 2;
-    let r = 0, g = 0, b = 0;
-    if (h < 60) {
-        r = c;
-        g = x;
-    }
-    else if (h < 120) {
-        r = x;
-        g = c;
-    }
-    else if (h < 180) {
-        g = c;
-        b = x;
-    }
-    else if (h < 240) {
-        g = x;
-        b = c;
-    }
-    else if (h < 300) {
-        r = x;
-        b = c;
-    }
-    else {
-        r = c;
-        b = x;
-    }
-    const toHex = (n: number) => {
-        const hex = Math.round((n + m) * 255).toString(16);
-        return hex.length === 1 ? '0' + hex : hex;
-    };
-    return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
-}
-function derivePalette(primaryHex: string): EmpresaPaleta {
-    const [h, s, l] = hexToHsl(primaryHex);
-    const secondary = hslToHex((h + 180) % 360, Math.min(s, 80), Math.max(l, 40));
-    const accent = hslToHex((h + 60) % 360, Math.min(s + 10, 100), Math.min(l + 10, 60));
-    const isDark = l < 50;
-    return {
-        primary: primaryHex,
-        secondary,
-        accent,
-        text_primary: isDark ? '#ECECEC' : '#1E293B',
-        text_secondary: isDark ? '#94a3b8' : '#475569',
-    };
-}
 interface AdminProps {
   platformMode?: boolean;
   initialTab?: 'usuarios' | 'layout';
@@ -391,50 +311,7 @@ export default function Admin({
               </div>
 
               <aside className="admin-preview-column">
-                <section className="admin-settings-section admin-preview-section">
-                  <AppSectionHeader title="Pré-visualização" subtitle="Uma amostra do dashboard com a paleta selecionada."/>
-                  <InfoCard raised className="admin-preview-card">
-                    <InfoCard.Header title="Dashboard da empresa" icon={Eye} variant="accent"/>
-                    <InfoCard.Section>
-                      <div className="admin-interface-preview" style={{
-            '--preview-primary': paleta.primary,
-            '--preview-secondary': paleta.secondary,
-            '--preview-accent': paleta.accent,
-            '--preview-text': paleta.text_primary,
-            '--preview-muted': paleta.text_secondary,
-            '--preview-bg': paleta.text_primary.toUpperCase() === '#ECECEC' ? '#111827' : '#F8FAFC',
-            '--preview-surface': paleta.text_primary.toUpperCase() === '#ECECEC' ? '#1E293B' : '#FFFFFF',
-        } as React.CSSProperties}>
-                        <div className="admin-preview-sidebar">
-                          <div className="admin-preview-company-mark">
-                            {logoPreview ? <img src={logoPreview} alt=""/> : <ShieldCheck size={16}/>}
-                          </div>
-                          <i className="is-active"/><i /><i /><i />
-                        </div>
-                        <div className="admin-preview-workspace">
-                          <div className="admin-preview-header">
-                            <div><strong>{empresaNome || 'Sua Empresa'}</strong><span>Dashboard</span></div>
-                            <span className="admin-preview-avatar">{user.name?.charAt(0).toUpperCase()}</span>
-                          </div>
-                          <div className="admin-preview-welcome">
-                            <div className="admin-preview-user-icon">{user.name?.charAt(0).toUpperCase()}</div>
-                            <div><strong>Bem-vindo de volta!</strong><span>Continue sua jornada de segurança.</span></div>
-                          </div>
-                          <div className="admin-preview-cards">
-                            <div><span>Progresso</span><strong>72%</strong><i><b /></i></div>
-                            <div className="is-highlight"><span>Desafio do dia</span><strong>Blindagem de Conta</strong><button>Iniciar desafio</button></div>
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="admin-preview-legend">
-                        <div><i style={{ backgroundColor: paleta.primary }}/><span>Primária</span><code>{paleta.primary}</code></div>
-                        <div><i style={{ backgroundColor: paleta.secondary }}/><span>Secundária</span><code>{paleta.secondary}</code></div>
-                        <div><i style={{ backgroundColor: paleta.accent }}/><span>Destaque</span><code>{paleta.accent}</code></div>
-                      </div>
-                    </InfoCard.Section>
-                  </InfoCard>
-                </section>
+                <AdminThemePreview paleta={paleta} logoPreview={logoPreview} empresaNome={empresaNome} userInitial={user.name?.charAt(0).toUpperCase() ?? ''}/>
 
                 <div className="admin-mobile-actions">
                   <AppButton variant="ghost" icon={<RotateCcw size={16}/>} onClick={handleReset}>
