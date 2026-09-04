@@ -19,9 +19,5 @@ dist
 !frontend/src/assets/kids/
 !frontend/src/assets/kids/academia-missoes-login-v1.png
 !frontend/src/assets/dashboard/
-!frontend/src/assets/dashboard/academy-castle-pixel-v3.png
-!frontend/src/assets/dashboard/journey-map-pixel-v2.png
-!frontend/src/assets/dashboard/streak-flame-pixel.png
-!frontend/src/assets/dashboard/welcome-adventurer-pixel-v3.png
 !frontend/public/challenges/*-pixel.png
 /tmp/
