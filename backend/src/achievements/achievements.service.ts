@@ -6,10 +6,7 @@ import {
   Optional,
 } from '@nestjs/common';
 import { DataSource, Repository } from 'typeorm';
-import {
-  Achievement,
-  AchievementRequirement,
-} from './entities/achievement.entity';
+import { Achievement } from './entities/achievement.entity';
 import { UsuarioAchievement } from './entities/usuario-achievement.entity';
 import { CosmeticItem, CosmeticType } from './entities/cosmetic-item.entity';
 import { UsuarioCosmetic } from './entities/usuario-cosmetic.entity';
@@ -22,54 +19,25 @@ import { UsuarioStats } from '../usuario-stats/usuario-stats.entity';
 import { UsuarioChallenge } from '../usuario-challenge/usuario-challenge.entity';
 import { UsuarioAula } from '../conteudo/usuario-aula/usuario-aula.entity';
 import { UsuarioArcadeStats } from '../arcade/entities/usuario-arcade-stats.entity';
-import { calcLevel } from '../common/utils/xp.utils';
 import { OnEvent } from '@nestjs/event-emitter';
 import { S3Service } from '../conteudo/s3/s3.service';
+import {
+  AchievementMetrics,
+  AchievementTrailNode,
+  AchievementTrailResponse,
+} from './achievements.types';
+import { buildMetrics, metricValue } from './achievement-metrics';
+import { buildTrailNode, buildTrailSummary } from './achievement-trail.mapper';
+import { buildEquippedList, buildShopItems } from './cosmetic-shop.mapper';
+import { executeCosmeticPurchase } from './cosmetic-purchase';
 
-export interface AchievementMetrics {
-  total_xp: number;
-  level: number;
-  challenges_completed: number;
-  lessons_completed: number;
-  streak: number;
-  arcade_plays: number;
-  perfect_arcade_runs: number;
-}
-
-export interface AchievementTrailNode {
-  id: number;
-  slug: string;
-  name: string;
-  description: string;
-  category: Achievement['category'];
-  rarity: Achievement['rarity'];
-  tier: number;
-  icon: string;
-  iconName: string;
-  artworkUrl: string | null;
-  rewardPrestige: number | null;
-  prerequisiteSlug: string | null;
-  position: { x: number; y: number };
-  progress: number;
-  target: number | null;
-  progressPercent: number;
-  status: 'unlocked' | 'in_progress' | 'locked';
-  unlockedAt: Date | null;
-  secret: boolean;
-}
-
-export interface AchievementTrailResponse {
-  summary: {
-    unlocked: number;
-    total: number;
-    progressPercent: number;
-    prestigeBalance: number;
-    prestigeEarned: number;
-    level: number;
-  };
-  metrics: AchievementMetrics;
-  nodes: AchievementTrailNode[];
-}
+// A interface publica deste arquivo nao muda: quem importava os tipos daqui
+// continua importando daqui.
+export type {
+  AchievementMetrics,
+  AchievementTrailNode,
+  AchievementTrailResponse,
+} from './achievements.types';
 
 @Injectable()
 export class AchievementsService {
@@ -104,7 +72,9 @@ export class AchievementsService {
     await this.getTrail(payload.usuarioId);
   }
 
-  private async resolveArtwork(definition: Achievement): Promise<string | null> {
+  private async resolveArtwork(
+    definition: Achievement,
+  ): Promise<string | null> {
     const source = definition.image_url;
     if (!source) return null;
     if (!source.startsWith('s3://')) return source;
@@ -165,26 +135,12 @@ export class AchievementsService {
       }),
       this.arcadeStatsRepository.find({ where: { usuario_id } }),
     ]);
-    const totalXp = stats?.total_points ?? 0;
-    return {
-      total_xp: totalXp,
-      level: calcLevel(totalXp),
+    return buildMetrics({
+      stats,
       challenges_completed: challenges,
       lessons_completed: lessons,
-      streak: stats?.current_streak ?? 0,
-      arcade_plays: arcade.reduce((sum, item) => sum + item.total_plays, 0),
-      perfect_arcade_runs: arcade.reduce(
-        (sum, item) => sum + item.perfect_runs,
-        0,
-      ),
-    };
-  }
-
-  private metricValue(
-    metrics: AchievementMetrics,
-    requirement: AchievementRequirement,
-  ): number {
-    return metrics[requirement];
+      arcade,
+    });
   }
 
   private async grantLevelPrestige(
@@ -225,7 +181,7 @@ export class AchievementsService {
       const prerequisiteMet =
         !definition.prerequisite_slug ||
         unlockedSlugs.has(definition.prerequisite_slug);
-      const metric = this.metricValue(metrics, definition.requirement_type);
+      const metric = metricValue(metrics, definition.requirement_type);
       const progress = Math.min(metric, definition.requirement_value);
       const shouldUnlock =
         prerequisiteMet && metric >= definition.requirement_value;
@@ -257,53 +213,23 @@ export class AchievementsService {
         );
       }
       const concealed = definition.secret && !record.unlocked;
-      nodes.push({
-        id: definition.id,
-        slug: definition.slug,
-        name: concealed ? 'Conquista secreta' : definition.name,
-        description: concealed
-          ? 'Continue avançando para revelar esta conquista.'
-          : definition.description,
-        category: definition.category,
-        rarity: definition.rarity,
-        tier: definition.tier,
-        icon: concealed ? 'lock-keyhole' : definition.icon,
-        iconName: concealed ? 'lock-keyhole' : definition.icon,
-        artworkUrl: concealed ? null : await this.resolveArtwork(definition),
-        rewardPrestige: concealed ? null : definition.reward_prestige,
-        prerequisiteSlug: definition.prerequisite_slug,
-        position: { x: definition.position_x, y: definition.position_y },
-        progress: concealed ? 0 : record.progress,
-        target: concealed ? null : definition.requirement_value,
-        progressPercent: concealed
-          ? 0
-          : Math.min(
-              100,
-              Math.round(
-                (record.progress / definition.requirement_value) * 100,
-              ),
-            ),
-        status: record.unlocked
-          ? 'unlocked'
-          : prerequisiteMet
-            ? 'in_progress'
-            : 'locked',
-        unlockedAt: record.unlocked_at,
-        secret: definition.secret,
-      });
+      nodes.push(
+        buildTrailNode({
+          definition,
+          record,
+          prerequisiteMet,
+          concealed,
+          artworkUrl: concealed ? null : await this.resolveArtwork(definition),
+        }),
+      );
     }
     const refreshedWallet = await this.getWallet(usuario_id);
-    const unlocked = nodes.filter((node) => node.status === 'unlocked').length;
     return {
-      summary: {
-        unlocked,
-        total: nodes.length,
-        progressPercent:
-          nodes.length === 0 ? 0 : Math.round((unlocked / nodes.length) * 100),
-        prestigeBalance: refreshedWallet.balance,
-        prestigeEarned: refreshedWallet.total_earned,
+      summary: buildTrailSummary({
+        nodes,
+        wallet: refreshedWallet,
         level: metrics.level,
-      },
+      }),
       metrics,
       nodes,
     };
@@ -346,33 +272,12 @@ export class AchievementsService {
     );
     return {
       prestigeBalance: trail.summary.prestigeBalance,
-      equipped: owned
-        .filter((item) => item.equipped)
-        .map((item) => ({
-          type: item.cosmetic_item.type,
-          slug: item.cosmetic_item.slug,
-          visualValue: item.cosmetic_item.visual_value,
-        })),
-      items: items.map((item) => {
-        const userItem = ownedByItem.get(item.id);
-        const requirementMet =
-          !item.required_achievement_slug ||
-          unlockedSlugs.has(item.required_achievement_slug);
-        return {
-          id: item.id,
-          slug: item.slug,
-          name: item.name,
-          description: item.description,
-          type: item.type,
-          rarity: item.rarity,
-          price: item.price,
-          visualValue: item.visual_value,
-          requiredAchievementSlug: item.required_achievement_slug,
-          requirementMet,
-          owned: !!userItem,
-          equipped: !!userItem?.equipped,
-          affordable: trail.summary.prestigeBalance >= item.price,
-        };
+      equipped: buildEquippedList(owned),
+      items: buildShopItems({
+        items,
+        ownedByItem,
+        unlockedSlugs,
+        prestigeBalance: trail.summary.prestigeBalance,
       }),
     };
   }
@@ -396,49 +301,7 @@ export class AchievementsService {
       );
     }
     await this.dataSource.transaction(async (manager) => {
-      const walletRepository = manager.getRepository(PrestigeWallet);
-      const userCosmeticRepository = manager.getRepository(UsuarioCosmetic);
-      const transactionRepository = manager.getRepository(PrestigeTransaction);
-      const existing = await userCosmeticRepository.findOne({
-        where: { usuario_id, cosmetic_item_id: item.id },
-      });
-      if (existing) throw new BadRequestException('Este item já foi adquirido');
-      const wallet = await walletRepository.findOne({
-        where: { usuario_id },
-        lock: { mode: 'pessimistic_write' },
-      });
-      if (!wallet || wallet.balance < item.price) {
-        throw new BadRequestException('Prestígio insuficiente');
-      }
-      wallet.balance -= item.price;
-      await walletRepository.save(wallet);
-      await transactionRepository.save(
-        transactionRepository.create({
-          usuario_id,
-          amount: -item.price,
-          type: PrestigeTransactionType.PURCHASE,
-          source_key: `purchase:${item.slug}`,
-          description: `Item adquirido no Shop: ${item.name}`,
-        }),
-      );
-      const ownedCosmetics = await userCosmeticRepository.find({
-        where: { usuario_id },
-        relations: ['cosmetic_item'],
-      });
-      const equippedSameType = ownedCosmetics.filter(
-        (ownedItem) => ownedItem.cosmetic_item.type === item.type,
-      );
-      for (const ownedItem of equippedSameType) ownedItem.equipped = false;
-      if (equippedSameType.length > 0) {
-        await userCosmeticRepository.save(equippedSameType);
-      }
-      await userCosmeticRepository.save(
-        userCosmeticRepository.create({
-          usuario_id,
-          cosmetic_item_id: item.id,
-          equipped: true,
-        }),
-      );
+      await executeCosmeticPurchase(manager, { usuario_id, item });
     });
     return this.getShop(usuario_id);
   }
