@@ -1,86 +1,34 @@
+import { Check, Play, Star } from 'lucide-react';
 import { Modulo } from '@/services/conteudo';
-import { ProgressBar } from './ProgressBar';
-import { InfoCard } from '@/components/ui/visuals/InfoCard';
-import { ArrowRight, BookOpen, Check, Library, Play, Star, Video } from 'lucide-react';
+import type { MissionRoomAssets } from '@/hooks/useMissionRoomAssets';
 
-interface ModuloCardProps {
-  modulo: Modulo;
-  onClick: () => void;
+interface ModuloCardProps { modulo: Modulo; assets: MissionRoomAssets; index?: number; onClick: () => void; }
+const fallbackKeys = ['module-foundations','module-passwords','module-authentication','module-privacy','module-phishing','module-navigation'];
+
+function getModuleIcon(modulo: Modulo, index: number, assets: MissionRoomAssets) {
+  const text = `${modulo.title} ${modulo.category}`.toLocaleLowerCase('pt-BR');
+  let key = fallbackKeys[index % fallbackKeys.length];
+  if (text.includes('fundamento')) key = 'module-foundations';
+  else if (text.includes('senha') && !text.includes('autent')) key = 'module-passwords';
+  else if (text.includes('autent') || text.includes('mfa')) key = 'module-authentication';
+  else if (text.includes('privacidade') || text.includes('dados')) key = 'module-privacy';
+  else if (text.includes('golpe') || text.includes('phishing') || text.includes('link')) key = 'module-phishing';
+  else if (text.includes('navega') || text.includes('internet')) key = 'module-navigation';
+  return assets[key];
 }
 
-const difficultyConfig = {
-  iniciante: { stars: 1, label: 'Recruta' },
-  intermediario: { stars: 2, label: 'Agente' },
-  avancado: { stars: 3, label: 'Comandante' },
-};
-
-const typeConfig = {
-  video: { icon: Video, label: 'Vídeo' },
-  quadrinho: { icon: BookOpen, label: 'Quadrinho' },
-  misto: { icon: Library, label: 'Misto' },
-};
-
-export function ModuloCard({ modulo, onClick }: ModuloCardProps) {
+export function ModuloCard({ modulo, assets, index = 0, onClick }: ModuloCardProps) {
   const isCompleted = modulo.progress === 100;
-  const TypeIcon = typeConfig[modulo.type].icon;
-  const difficulty = difficultyConfig[modulo.difficulty];
-
+  const isStarted = modulo.hasStarted || modulo.progress > 0;
+  const stars = modulo.difficulty === 'iniciante' ? 1 : modulo.difficulty === 'intermediario' ? 2 : 3;
   return (
-    <button onClick={onClick} className="learning-module-card-wrap group">
-      <InfoCard
-        variant={isCompleted ? 'accent' : 'primary'}
-        raised
-        interactive
-        className="app-module-card learning-module-card"
-      >
-        <div className="app-module-cover learning-module-cover">
-          {modulo.thumbnail ? (
-            <img
-              src={modulo.thumbnail}
-              alt={modulo.title}
-              className="learning-module-image"
-            />
-          ) : (
-            <div className="learning-module-placeholder"><TypeIcon size={34} /></div>
-          )}
-
-          <div className="learning-module-type">
-            <TypeIcon size={12} className="text-[var(--primary)]" />
-            <span>{typeConfig[modulo.type].label}</span>
-          </div>
-
-          <div className={`learning-module-state ${isCompleted ? 'is-complete' : ''}`}>
-            {isCompleted ? <Check size={12} /> : <span>{modulo.progress}%</span>}
-          </div>
-        </div>
-
-        <InfoCard.Section className="learning-module-body">
-          <div className="learning-module-heading">
-            <div>
-              <span>{modulo.category}</span>
-              <h3>{modulo.title}</h3>
-            </div>
-            <ArrowRight size={17} />
-          </div>
-
-          <p>{modulo.description}</p>
-
-          <ProgressBar progress={modulo.progress} />
-
-          <div className="learning-module-footer">
-            <div className="learning-module-difficulty">
-              {Array.from({ length: difficulty.stars }).map((_, i) => (
-                <Star key={i} size={10} />
-              ))}
-              <span>{difficulty.label}</span>
-            </div>
-            <div>
-              <span><Play size={10} /> {modulo.completedAulas}/{modulo.totalAulas} fases</span>
-              <strong>{modulo.xp_total} XP</strong>
-            </div>
-          </div>
-        </InfoCard.Section>
-      </InfoCard>
+    <button onClick={onClick} className={`mission-card ${isCompleted ? 'is-complete' : isStarted ? 'is-progress' : 'is-ready'}`}>
+      <span className="mission-card-number">{String(index + 1).padStart(2, '0')}</span>
+      <span className="mission-card-type">{modulo.type === 'quadrinho' ? 'Quadrinho' : modulo.type === 'video' ? 'Vídeo' : 'Misto'}</span>
+      <span className="mission-card-art"><img src={getModuleIcon(modulo, index, assets)} alt="" /></span>
+      <span className="mission-card-copy"><strong>{modulo.title}</strong><small>{modulo.completedAulas}/{modulo.totalAulas} aulas · {modulo.xp_total} XP</small></span>
+      <span className="mission-card-stars" aria-label={`${stars} estrela(s) de dificuldade`}>{Array.from({ length: 3 }).map((_, starIndex) => <Star key={starIndex} size={16} className={starIndex < stars ? 'is-filled' : ''} />)}</span>
+      <span className="mission-card-status">{isCompleted ? <><Check size={15} /> Concluída</> : isStarted ? <><Play size={15} /> Continuar</> : 'Começar'}</span>
     </button>
   );
 }

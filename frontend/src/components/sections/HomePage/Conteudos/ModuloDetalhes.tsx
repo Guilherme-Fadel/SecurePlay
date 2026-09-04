@@ -1,149 +1,62 @@
 import { useModulo } from '@/hooks/useModulo';
-import { ProgressBar } from './ProgressBar';
 import { AulaListItem } from './AulaListItem';
 import { AulaResumo } from '@/services/conteudo';
-import { useEffect, useState } from 'react';
-import { InfoCard } from '@/components/ui/visuals/InfoCard';
-import { ArrowLeft, BookOpenCheck, CheckCircle2, ChevronDown, ChevronRight, Layers3, Play, Sparkles, Star, Trophy } from 'lucide-react';
+import { ArrowLeft, BookOpenCheck, CheckCircle2, Play, Sparkles, Star, Trophy } from 'lucide-react';
 import { AppButton } from '@/components/ui/buttons/AppButton';
+import { MissionRoomAssets, useMissionRoomAssets } from '@/hooks/useMissionRoomAssets';
 
-interface ModuloDetalhesProps {
-  moduloId: number;
-  onBack: () => void;
-  onSelectAula: (aulaId: number) => void;
-}
+interface ModuloDetalhesProps { moduloId: number; onBack: () => void; onSelectAula: (aulaId: number) => void; }
 
 export function ModuloDetalhes({ moduloId, onBack, onSelectAula }: ModuloDetalhesProps) {
   const { modulo, loading } = useModulo(moduloId);
-  const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set());
+  const assets = useMissionRoomAssets();
+  if (loading || !modulo || !assets['module-book-frame-transparent']) return <div className="flex items-center justify-center h-64"><p className="text-[var(--text-secondary)]">Abrindo o livro da missão...</p></div>;
 
-  const sections = modulo ? groupBySections(modulo.aulas) : [];
-
-  useEffect(() => {
-    const firstNamedSection = sections.find((section) => section.name)?.name;
-    if (firstNamedSection) {
-      setExpandedSections((current) => current.size ? current : new Set([firstNamedSection]));
-    }
-  }, [modulo?.id]);
-
-  if (loading || !modulo) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <p className="text-[var(--text-secondary)]">Carregando módulo...</p>
-      </div>
-    );
-  }
-
-  const difficulty = modulo.difficulty;
+  const sections = groupBySections(modulo.aulas);
   const nextAula = modulo.aulas.find((aula) => aula.status === 'unlocked');
-
-  const toggleSection = (name: string) => {
-    setExpandedSections((prev) => {
-      const next = new Set(prev);
-      if (next.has(name)) next.delete(name);
-      else next.add(name);
-      return next;
-    });
-  };
+  const stars = modulo.difficulty === 'iniciante' ? 1 : modulo.difficulty === 'intermediario' ? 2 : 3;
 
   return (
-    <div className="app-page learning-module-detail">
-      <AppButton
-        onClick={onBack}
-        variant="ghost"
-        size="sm"
-        icon={<ArrowLeft size={16} />}
-        className="w-fit"
-      >
-        Voltar aos conteúdos
-      </AppButton>
-
-      <section className="learning-module-hero">
-        <div className="learning-module-hero-visual">
-          {modulo.thumbnail ? <img src={modulo.thumbnail} alt="" /> : <BookOpenCheck size={44} />}
-          <span>{modulo.category}</span>
-        </div>
-        <div className="learning-module-hero-copy">
-          <span>DOSSIÊ DO TREINAMENTO</span>
-          <h1>{modulo.title}</h1>
-          <p>{modulo.description}</p>
-          <div className="learning-module-badges">
-            <div>
-              {Array.from({ length: difficulty === 'iniciante' ? 1 : difficulty === 'intermediario' ? 2 : 3 }).map((_, index) => <Star key={index} size={11} />)}
-              <span>{difficulty === 'iniciante' ? 'Recruta' : difficulty === 'intermediario' ? 'Agente' : 'Comandante'}</span>
-            </div>
-            <div><Layers3 size={13} /><span>{modulo.totalAulas} fases</span></div>
+    <div className="app-page module-book-page">
+      <AppButton onClick={onBack} variant="ghost" size="sm" icon={<ArrowLeft size={16} />} className="w-fit">Voltar aos conteúdos</AppButton>
+      <main className="module-book" style={{ '--module-book-frame': `url(${assets['module-book-frame-transparent']})` } as React.CSSProperties}>
+        <section className="module-book-summary">
+          <div className="module-book-cover">{modulo.thumbnail ? <img src={modulo.thumbnail} alt="" /> : <BookOpenCheck size={54} />}</div>
+          <span className="module-book-category">{modulo.category}</span>
+          <h1>{modulo.title}</h1><p>{modulo.description}</p>
+          <div className="module-book-progress-title"><i /><Sparkles size={14} /><strong>PROGRESSO DA MISSÃO</strong><Sparkles size={14} /><i /></div>
+          <div className="module-book-progress"><div className="module-book-stars" aria-label={`${stars} estrelas de dificuldade`}>{Array.from({ length: 3 }).map((_, index) => <Star key={index} className={index < Math.max(stars, Math.ceil(modulo.progress / 34)) ? 'is-filled' : ''} />)}</div><strong>{modulo.progress}%</strong></div>
+          <div className="module-book-reward"><Trophy size={22} /><span>RECOMPENSA<strong>+{modulo.xp_bonus} XP</strong></span></div>
+          {nextAula ? <AppButton icon={<Play size={17} />} onClick={() => onSelectAula(nextAula.id)}>{nextAula.progress_percent > 0 ? 'Continuar próxima aula' : 'Iniciar próxima aula'}</AppButton> : <div className="learning-module-complete"><CheckCircle2 size={16} /> Missão concluída</div>}
+        </section>
+        <section className="module-book-route" aria-label="Capítulos e aulas do módulo">
+          <div className="module-book-scroll">
+            {sections.map(({ name, aulas }, sectionIndex) => <section className="module-book-chapter" key={name || `section-${sectionIndex}`}>
+              <header><span>Capítulo {sectionIndex + 1}</span><i /><strong>{name || 'Aulas da missão'}</strong></header>
+              <div className="module-book-lessons">{aulas.map((aula, aulaIndex) => <AulaListItem key={aula.id} aula={aula} index={aulaIndex} artSrc={getLessonIcon(aula, aulaIndex, assets)} onClick={() => onSelectAula(aula.id)} />)}</div>
+            </section>)}
+            <div className="module-book-finish"><Trophy size={18} /><span>Fim da missão</span><strong>+{modulo.xp_bonus} XP</strong></div>
           </div>
-          <div className="learning-module-progress-block">
-            <div><span>Progresso da missão</span><strong>{modulo.progress}%</strong></div>
-            <ProgressBar progress={modulo.progress} />
-            <small>{modulo.completedAulas} de {modulo.totalAulas} fases concluídas</small>
-          </div>
-          {nextAula ? (
-            <AppButton icon={<Play size={15} />} onClick={() => onSelectAula(nextAula.id)}>
-              {nextAula.progress_percent > 0 ? 'Continuar próxima fase' : 'Iniciar próxima fase'}
-            </AppButton>
-          ) : (
-            <div className="learning-module-complete"><CheckCircle2 size={16} /> Treinamento concluído</div>
-          )}
-        </div>
-        <div className="learning-module-rewards">
-          <div><Sparkles size={18} /><span>XP das fases</span><strong>{modulo.xp_total}</strong></div>
-          <div><Trophy size={18} /><span>Bônus final</span><strong>+{modulo.xp_bonus}</strong></div>
-        </div>
-      </section>
-
-      <InfoCard className="learning-module-path-card">
-        <div className="learning-module-path-heading">
-          <div><Layers3 size={20} /><section><span>ROTEIRO DA MISSÃO</span><h2>Fases do treinamento</h2></section></div>
-          <p>Conclua uma fase para liberar a próxima.</p>
-        </div>
-
-        <div className="learning-module-sections">
-          {sections.map(({ name, aulas }, sectionIndex) => (
-            <section key={name || `section-${sectionIndex}`}>
-              {name && (
-                <button
-                  onClick={() => toggleSection(name)}
-                  className="learning-module-section-toggle"
-                >
-                  {expandedSections.has(name) ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
-                  <span>Capítulo {String(sectionIndex + 1).padStart(2, '0')}</span>
-                  <strong>{name}</strong>
-                </button>
-              )}
-
-              {(!name || expandedSections.has(name)) && (
-                <div className="learning-module-lesson-list">
-                  {aulas.map((aula, aulaIndex) => (
-                    <AulaListItem
-                      key={aula.id}
-                      aula={aula}
-                      index={aulaIndex}
-                      onClick={() => onSelectAula(aula.id)}
-                    />
-                  ))}
-                  {sectionIndex === sections.length - 1 && (
-                    <div className="learning-module-finish-line"><Trophy size={17} /><span>Recompensa de conclusão</span><strong>+{modulo.xp_bonus} XP</strong></div>
-                  )}
-                </div>
-              )}
-            </section>
-          ))}
-        </div>
-      </InfoCard>
+        </section>
+      </main>
     </div>
   );
 }
 
+const lessonKeys = ['module-foundations','module-passwords','module-authentication','module-privacy','module-phishing','module-navigation'];
+function getLessonIcon(aula: AulaResumo, index: number, assets: MissionRoomAssets) {
+  const text = `${aula.title} ${aula.description ?? ''}`.toLocaleLowerCase('pt-BR');
+  let key = lessonKeys[index % lessonKeys.length];
+  if (text.includes('senha')) key = 'module-passwords';
+  else if (text.includes('autent') || text.includes('mfa')) key = 'module-authentication';
+  else if (text.includes('privacidade') || text.includes('dados')) key = 'module-privacy';
+  else if (text.includes('golpe') || text.includes('phishing') || text.includes('link')) key = 'module-phishing';
+  else if (text.includes('internet') || text.includes('navega')) key = 'module-navigation';
+  return assets[key];
+}
+
 function groupBySections(aulas: AulaResumo[]): { name: string; aulas: AulaResumo[] }[] {
   const map = new Map<string, AulaResumo[]>();
-
-  for (const aula of aulas) {
-    const key = aula.section_name || '';
-    if (!map.has(key)) map.set(key, []);
-    map.get(key)!.push(aula);
-  }
-
-  return Array.from(map.entries()).map(([name, aulas]) => ({ name, aulas }));
+  for (const aula of aulas) { const key = aula.section_name || ''; if (!map.has(key)) map.set(key, []); map.get(key)!.push(aula); }
+  return Array.from(map.entries()).map(([name, groupedAulas]) => ({ name, aulas: [...groupedAulas].sort((a, b) => a.order - b.order) }));
 }

@@ -15,6 +15,7 @@ import { AulaController } from './aula/aula.controller';
 import { AulaQuizController } from './aula-quiz/aula-quiz.controller';
 import { S3Service } from './s3/s3.service';
 import { UploadController } from './s3/upload.controller';
+import { UiAssetsController } from './s3/ui-assets.controller';
 
 @Module({
   imports: [DatabaseModule, RedisModule, AuthModule, NotificationModule],
@@ -23,6 +24,7 @@ import { UploadController } from './s3/upload.controller';
     AulaController,
     AulaQuizController,
     UploadController,
+    UiAssetsController,
   ],
   providers: [
     ...moduloProviders,

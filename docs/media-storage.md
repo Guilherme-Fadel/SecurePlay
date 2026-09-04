@@ -6,7 +6,7 @@
 - Jogos: `arcade_game.image` (mesma referência).
 - Missões diárias: `challenge.image` (mesma referência).
 - A API assina a leitura no bucket privado por uma hora. Nunca persistir URLs assinadas: elas expiram.
-- Ilustrações fixas de layout permanecem importadas pelo frontend, sem criar tabelas artificiais para decoração.
+- As ilustrações da Sala de Missões ficam em `ui/missions-room/v1/`. O backend mantém um catálogo de chaves fixas e entrega URLs assinadas em `GET /conteudo/ui-assets/missions-room`; não são persistidas URLs temporárias nem criada tabela apenas para decoração.
 - PNGs antigos, referências e temporários ficam fora do Git. Os cinco PNGs de jogos são fallbacks locais usados também por instalações ainda não migradas.
 
 ## Publicação

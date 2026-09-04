@@ -6,6 +6,7 @@ interface AulaListItemProps {
   onClick: () => void;
   index?: number;
   active?: boolean;
+  artSrc?: string;
 }
 
 const statusConfig = {
@@ -14,7 +15,7 @@ const statusConfig = {
   locked: { Icon: Lock, color: 'text-[var(--text-secondary)]', bg: 'bg-[var(--surface-alt)]', border: 'border-[var(--border)]' },
 };
 
-export function AulaListItem({ aula, onClick, index = 0, active = false }: AulaListItemProps) {
+export function AulaListItem({ aula, onClick, index = 0, active = false, artSrc }: AulaListItemProps) {
   const config = statusConfig[aula.status];
   const isLocked = aula.status === 'locked';
   const TypeIcon = aula.type === 'video' ? Video : BookOpen;
@@ -27,7 +28,7 @@ export function AulaListItem({ aula, onClick, index = 0, active = false }: AulaL
     >
       <div className="learning-lesson-index">{String(index + 1).padStart(2, '0')}</div>
       <div className={`learning-lesson-status ${config.bg}`}>
-        <config.Icon size={16} className={config.color} />
+        {artSrc ? <img src={artSrc} alt="" /> : <config.Icon size={16} className={config.color} />}
       </div>
 
       <div className="learning-lesson-copy">
