@@ -28,6 +28,7 @@ export function AdventureHero({ user, stats, streak, currentModule, onContinue }
   return (
     <section className="hall-hero-grid" aria-label="Resumo da aventura">
       <article className="hall-mission-card" aria-labelledby="hall-hero-title">
+        <span className="hall-mission-frame" aria-hidden="true" />
         <div className="hall-mission-copy">
           <div className="hall-ribbon">
             <img src={missionRibbon} alt="" aria-hidden="true" />

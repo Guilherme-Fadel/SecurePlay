@@ -154,9 +154,9 @@ export function JourneyPreview({
                       </span>
                       <span className="hall-node-core">
                         {isComplete ? (
-                          <Check size={22} />
+                          <Check size={28} strokeWidth={3} />
                         ) : node.availability === 'locked' ? (
-                          <Lock size={19} />
+                          <Lock size={24} />
                         ) : (
                           <JourneyArtwork source={node.artworkUrl} />
                         )}
@@ -185,6 +185,6 @@ export function JourneyPreview({
 function JourneyArtwork({ source }: { source: string | null }) {
   const [failed, setFailed] = useState(false);
   useEffect(() => setFailed(false), [source]);
-  if (!source || failed) return <BookOpenCheck size={21} />;
+  if (!source || failed) return <BookOpenCheck size={26} />;
   return <ProgressiveImage src={source} alt="" onError={() => setFailed(true)} />;
 }

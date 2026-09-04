@@ -31,8 +31,6 @@
   display: flex;
   align-items: center;
   padding: 18px 30px;
-  outline: 4px solid #3e247f;
-  outline-offset: -7px;
   background:
     radial-gradient(circle at 82% 80%, rgba(255, 212, 91, .2), transparent 34%),
     linear-gradient(110deg, #fffaf0, #fff7e8);
@@ -52,10 +50,26 @@
 .hall-mission-card::before { top: 12px; left: 12px; border-width: 3px 0 0 3px; }
 .hall-mission-card::after { right: 12px; bottom: 12px; border-width: 0 3px 3px 0; }
 
+/*
+ * Moldura roxa interna. Era um outline com offset -7px, mas a arte do heroi
+ * (z-index 2) era pintada por cima dele: outline nao tem posicao propria na
+ * ordem de empilhamento. Como elemento com z-index 3 a moldura fica sempre a
+ * frente da arte, que continua sangrando ate a borda do card.
+ * inset 3px + 4px de borda reproduz a espessura e a profundidade do outline.
+ */
+.hall-mission-frame { position: absolute; z-index: 3; inset: 3px; border: 4px solid #3e247f; border-radius: 9px; pointer-events: none; }
+
 .hall-mission-copy { position: relative; z-index: 4; width: min(58%, 570px); }
-.hall-ribbon { position: relative; display: grid; width: 270px; height: 48px; margin: -7px 0 2px -17px; place-items: center; }
-.hall-ribbon img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: fill; }
-.hall-ribbon span { position: relative; z-index: 1; padding-left: 36px; color: #fff; font-size: 12px; font-weight: 850; text-shadow: 0 1px 2px #32116e; }
+/*
+ * Faixa "Continue sua aventura". O texto e ancorado no painel plano da arte
+ * (mission-ribbon-pixel-v1.png, 833x152), nao no centro do box: o escudo a
+ * esquerda e as abas dobradas tornam a fita assimetrica. Painel plano medido em
+ * x 15.49%..90.52% (centro 53%) e y 17.76%..91.45% (centro 54.61%).
+ * aspect-ratio da arte para nao distorcer a fita.
+ */
+.hall-ribbon { position: relative; width: 270px; aspect-ratio: 833 / 152; margin: -7px 0 2px -17px; }
+.hall-ribbon img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; }
+.hall-ribbon span { position: absolute; z-index: 1; top: 54.61%; left: 53%; max-width: 74%; color: #fff; font-size: 12px; font-weight: 850; line-height: 1; text-align: center; text-shadow: 0 1px 2px #32116e; white-space: nowrap; transform: translate(-50%, -50%); }
 .hall-hero-greeting { margin: 1px 0 2px; color: #543593; font-size: 13px; font-weight: 800; }
 .hall-mission-card h1 { max-width: 540px; margin: 0; color: var(--hall-ink); font-size: clamp(25px, 2.25vw, 34px); font-weight: 900; letter-spacing: -.045em; line-height: 1.06; }
 .hall-lesson-line { display: flex; align-items: center; gap: 7px; margin: 10px 0 6px; color: #4e4969; font-size: 12px; }
@@ -133,16 +147,22 @@
 .hall-path-progress { stroke: #46c9bd; stroke-width: 4; stroke-dasharray: 0 100; filter: drop-shadow(0 0 3px rgba(53,205,190,.65)); }
 .hall-journey-nodes { position: absolute; z-index: 3; inset: 28px 2% 20px; width: 96%; height: calc(100% - 48px); margin: 0; padding: 0; list-style: none; }
 .hall-journey-nodes > li { position: absolute; width: 102px; transform: translate(-50%, -50%); text-align: center; }
-.hall-journey-node { position: relative; display: grid; width: 50px; height: 50px; margin: 0 auto; place-items: center; border: 0; border-radius: 50%; background: transparent; cursor: pointer; }
+/*
+ * Orbe da jornada. Duas camadas claras se somavam em volta da arte: o anel de
+ * progresso (::after com inset 4px) e a borda do core (2px). Num orbe de 50px
+ * sobravam 34px para a imagem. Anel a 3px e borda a 1.5px, com orbe maior,
+ * levam a arte para 49px sem engordar o no.
+ */
+.hall-journey-node { position: relative; display: grid; width: 60px; height: 60px; margin: 0 auto; place-items: center; border: 0; border-radius: 50%; background: transparent; cursor: pointer; }
 .hall-journey-node:focus-visible { outline: 3px solid #fff; outline-offset: 3px; }
 .hall-node-orbit { position: absolute; inset: 0; border-radius: 50%; background: conic-gradient(#ffc83a var(--node-progress,0deg), rgba(255,255,255,.88) 0); box-shadow: 0 4px 0 rgba(42,26,87,.34), 0 6px 12px rgba(30,20,68,.22); }
-.hall-node-orbit::after { content: ''; position: absolute; inset: 4px; border-radius: 50%; background: #4c299f; }
-.hall-node-core { position: relative; z-index: 1; display: grid; width: 38px; height: 38px; overflow: hidden; place-items: center; border: 2px solid rgba(255,255,255,.88); border-radius: 50%; background: linear-gradient(145deg,#7850e8,#3f238d); color: #fff; }
+.hall-node-orbit::after { content: ''; position: absolute; inset: 3px; border-radius: 50%; background: #4c299f; }
+.hall-node-core { position: relative; z-index: 1; display: grid; width: 52px; height: 52px; overflow: hidden; place-items: center; border: 1.5px solid rgba(255,255,255,.88); border-radius: 50%; background: linear-gradient(145deg,#7850e8,#3f238d); color: #fff; }
 .hall-node-core img { width: 100%; height: 100%; object-fit: cover; }
 .hall-journey-nodes li.is-complete .hall-node-orbit::after { background: #208e80; }
-.hall-journey-nodes li.is-current .hall-journey-node { width: 62px; height: 62px; }
+.hall-journey-nodes li.is-current .hall-journey-node { width: 72px; height: 72px; }
 .hall-journey-nodes li.is-current .hall-node-orbit { box-shadow: 0 0 0 5px rgba(122,71,242,.19), 0 5px 0 rgba(42,26,87,.36), 0 8px 17px rgba(30,20,68,.25); }
-.hall-journey-nodes li.is-current .hall-node-core { width: 48px; height: 48px; border-width: 3px; }
+.hall-journey-nodes li.is-current .hall-node-core { width: 64px; height: 64px; border-width: 2px; }
 .hall-you-are-here { position: absolute; top: -26px; left: 50%; min-width: 85px; padding: 3px 7px; transform: translateX(-50%); border: 1px solid #fff; border-radius: 999px; background: #6735e9; color: #fff; font-size: 7px; font-weight: 900; text-transform: uppercase; box-shadow: 0 4px 9px rgba(48,27,104,.23); }
 .hall-node-copy { display: block; width: 112px; margin: 5px 0 0 -5px; padding: 4px 5px; border-radius: 6px; background: rgba(25,20,55,.76); color: #fff; text-shadow: 0 1px rgba(0,0,0,.4); }
 .hall-node-copy b,
@@ -316,6 +336,12 @@
   .hall-journey-path,
   .hall-journey-nodes { inset: 42px 2% 22px; width: 96%; height: calc(100% - 64px); }
   .hall-journey-nodes > li { width: 88px; }
+  /* Orbe um pouco menor aqui: cinco nos em tela estreita, mas a arte ainda fica
+     maior do que os 34px do tamanho antigo. */
+  .hall-journey-node { width: 52px; height: 52px; }
+  .hall-node-core { width: 44px; height: 44px; }
+  .hall-journey-nodes li.is-current .hall-journey-node { width: 62px; height: 62px; }
+  .hall-journey-nodes li.is-current .hall-node-core { width: 54px; height: 54px; }
   .hall-node-copy { width: 94px; margin-left: -3px; }
   .hall-support-grid { display: flex; flex-direction: column; }
   .hall-support-grid .sp-card { height: auto; min-height: 240px; }

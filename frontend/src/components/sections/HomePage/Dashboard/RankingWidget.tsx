@@ -41,7 +41,7 @@ export function RankingWidget() {
         <ol className="academy-podium-legend">
           {podium.map((entry) => (
             <li key={entry.id} className={`academy-podium-legend-item rank-${entry.position}`}>
-              <span className="academy-ranking-name" title={entry.name}>{entry.name}</span>
+              <span className="academy-ranking-name" title={entry.name}><b>{entry.name}</b></span>
               <b>{formatPoints(entry.points)} XP</b>
             </li>
           ))}
