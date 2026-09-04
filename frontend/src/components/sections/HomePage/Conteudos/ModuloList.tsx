@@ -7,6 +7,7 @@ import { SkeletonList } from './SkeletonCard';
 import { InfoCard } from '@/components/ui/visuals/InfoCard';
 import { AppButton } from '@/components/ui/buttons/AppButton';
 import { useMissionRoomAssets } from '@/hooks/useMissionRoomAssets';
+import { ProgressiveImage } from '@/components/ui/visuals/ProgressiveImage';
 
 interface ModuloListProps { onSelectModulo: (moduloId: number) => void; }
 type Difficulty = Modulo['difficulty'];
@@ -59,21 +60,21 @@ export function ModuloList({ onSelectModulo }: ModuloListProps) {
   return (
     <div className="app-page missions-room-page">
       <header className="missions-room-title">
-        <img src={assets['missions-room-emblem']} alt="" />
+        <ProgressiveImage src={assets['missions-room-emblem']} alt="" />
         <div><h1>Sala de Missões</h1><p>Escolha um nível, complete missões e torne-se um guardião digital!</p></div>
-        <div className="missions-room-total-xp"><img src={assets['icon-star']} alt="" /><strong>{allModulos.reduce((total, modulo) => total + modulo.xp_total + modulo.xp_bonus, 0)}</strong><span>XP disponíveis</span></div>
+        <div className="missions-room-total-xp"><ProgressiveImage src={assets['icon-star']} alt="" /><strong>{allModulos.reduce((total, modulo) => total + modulo.xp_total + modulo.xp_bonus, 0)}</strong><span>XP disponíveis</span></div>
       </header>
 
       <section className="missions-room-stage" style={{ '--missions-room-bg': `url(${assets['castle-library-bg']})` } as React.CSSProperties}>
         <button className="missions-level-arrow is-left" type="button" onClick={() => changeLevel(-1)} aria-label="Ver nível anterior"><ChevronLeft size={30} /></button>
         <div className={`missions-level-board slide-${slideDirection}`} key={level.key}>
-          <div className="missions-level-art"><img src={assets[level.artKey]} alt="" /></div>
+          <div className="missions-level-art"><ProgressiveImage src={assets[level.artKey]} alt="" /></div>
           <div className="missions-level-copy">
             <span>{level.eyebrow}</span><h2>{level.name}</h2><p>{level.description}</p>
             <div className="missions-level-metrics">
-              <div><img src={assets['icon-book']} alt="" /><strong>{levelAllModules.length}</strong><span>módulos</span></div>
-              <div><img src={assets['icon-flag']} alt="" /><strong>{totalLessons}</strong><span>aulas</span></div>
-              <div><img src={assets['icon-star']} alt="" /><strong>{availableXp}</strong><span>XP</span></div>
+              <div><ProgressiveImage src={assets['icon-book']} alt="" /><strong>{levelAllModules.length}</strong><span>módulos</span></div>
+              <div><ProgressiveImage src={assets['icon-flag']} alt="" /><strong>{totalLessons}</strong><span>aulas</span></div>
+              <div><ProgressiveImage src={assets['icon-star']} alt="" /><strong>{availableXp}</strong><span>XP</span></div>
             </div>
             <AppButton disabled={!nextModule} icon={<Play size={17} />} onClick={() => nextModule && onSelectModulo(nextModule.id)}>{nextModule?.hasStarted || (nextModule?.progress ?? 0) > 0 ? 'Continuar aventura' : 'Começar aventura'}</AppButton>
           </div>
@@ -88,7 +89,7 @@ export function ModuloList({ onSelectModulo }: ModuloListProps) {
         <div className="missions-filter-bar">
           <div>{statusFilters.map((filter) => <AppButton key={filter.key} onClick={() => setFilterStatus(filter.key)} variant={filterStatus === filter.key ? 'secondary' : 'ghost'} size="sm">{filter.label}</AppButton>)}</div>
         </div>
-        {levelModules.length === 0 ? <InfoCard><InfoCard.Section className="missions-empty-state"><img src={assets[level.artKey]} alt="" /><h3>Nenhuma missão por aqui ainda</h3><p>Novas aventuras podem chegar a este nível em breve.</p></InfoCard.Section></InfoCard> : (
+        {levelModules.length === 0 ? <InfoCard><InfoCard.Section className="missions-empty-state"><ProgressiveImage src={assets[level.artKey]} alt="" /><h3>Nenhuma missão por aqui ainda</h3><p>Novas aventuras podem chegar a este nível em breve.</p></InfoCard.Section></InfoCard> : (
           <div className="missions-carousel">
             {levelModules.length > 3 && <button type="button" className="missions-carousel-arrow is-prev" disabled={carouselStart === 0} onClick={() => { setSlideDirection('prev'); setCarouselStart((current) => Math.max(0, current - 1)); }} aria-label="Ver missão anterior"><ChevronLeft size={24} /></button>}
             <div className={`missions-module-grid slide-${slideDirection}`} key={`${level.key}-${filterStatus}-${carouselStart}`}>{visibleModules.map((modulo, index) => <ModuloCard key={modulo.id} modulo={modulo} assets={assets} index={carouselStart + index} onClick={() => onSelectModulo(modulo.id)} />)}</div>

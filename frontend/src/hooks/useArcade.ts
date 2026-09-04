@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useCachedQuery } from '@/hooks/useCachedQuery';
 import { getArcadeGames, getTokens, type ArcadeGameDto, type TokenState, } from '@/services/arcade';
 export function useArcadeGames() {
-    const { data, loading, error, refetch } = useCachedQuery<ArcadeGameDto[]>('arcade-games', getArcadeGames, { staleTime: 60000 });
+    const { data, loading, error, refetch } = useCachedQuery<ArcadeGameDto[]>('arcade-games', getArcadeGames, { staleTime: 50 * 60 * 1000 });
     return { games: data ?? [], loading, error, refetch };
 }
 export function useTokens() {

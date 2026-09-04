@@ -996,3 +996,7 @@
 .secure-user-theme-switch-thumb.is-light { transform: translateX(24px); color: var(--accent-text); }
 .secure-user-theme-switch-thumb.is-dark { color: var(--dashboard-muted); }
 .secure-user-theme-switch:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+.progressive-image { background:linear-gradient(110deg,rgba(148,163,184,.12) 8%,rgba(148,163,184,.24) 18%,rgba(148,163,184,.12) 33%); background-size:200% 100%; filter:blur(10px); opacity:.7; transform:scale(1.025); animation:progressive-image-shimmer 1.25s linear infinite; transition:filter 320ms ease,opacity 320ms ease,transform 320ms ease; }
+.progressive-image.is-loaded { background:transparent; filter:blur(0); opacity:1; transform:scale(1); animation:none; }
+@keyframes progressive-image-shimmer { to { background-position-x:-200%; } }
+@media (prefers-reduced-motion:reduce) { .progressive-image { animation:none; transition:none; } }

@@ -1,5 +1,6 @@
 import { AulaResumo } from '@/services/conteudo';
 import { ArrowRight, BookOpen, Check, Clock3, Lock, Play, Video } from 'lucide-react';
+import { ProgressiveImage } from '@/components/ui/visuals/ProgressiveImage';
 
 interface AulaListItemProps {
   aula: AulaResumo;
@@ -28,7 +29,7 @@ export function AulaListItem({ aula, onClick, index = 0, active = false, artSrc 
     >
       <div className="learning-lesson-index">{String(index + 1).padStart(2, '0')}</div>
       <div className={`learning-lesson-status ${config.bg}`}>
-        {artSrc ? <img src={artSrc} alt="" /> : <config.Icon size={16} className={config.color} />}
+        {artSrc ? <ProgressiveImage src={artSrc} alt="" /> : <config.Icon size={16} className={config.color} />}
       </div>
 
       <div className="learning-lesson-copy">

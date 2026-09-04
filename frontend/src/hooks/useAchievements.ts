@@ -15,7 +15,7 @@ const TRAIL_KEY = 'achievementTrail';
 const SHOP_KEY = 'achievementShop';
 
 export function useAchievementTrail() {
-  return useCachedQuery(TRAIL_KEY, getAchievementTrail, { staleTime: 30_000 });
+  return useCachedQuery(TRAIL_KEY, getAchievementTrail, { staleTime: 50 * 60 * 1000 });
 }
 
 export function useAchievementShop() {

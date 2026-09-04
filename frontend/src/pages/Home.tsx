@@ -13,6 +13,7 @@ import { ThemeProvider } from '@/contexts/ThemeContext';
 import { useHomeLoading } from '@/hooks/useHomeLoading';
 import { useEmpresaTema } from '@/hooks/useEmpresaTema';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
+import { useVisualPreload } from '@/hooks/useVisualPreload';
 import '@/styles/app-ui.css';
 import '@/styles/settings-ui.css';
 import '@/styles/profile-ui.css';
@@ -36,6 +37,7 @@ function HomeContent() {
         admin: <Suspense fallback={null}><Admin platformMode /></Suspense>,
     };
     useEmpresaTema();
+    useVisualPreload();
     const [activeSection, setActiveSectionState] = useState<Section>(() => {
         const routeState = location.state as { initialSection?: Section } | null;
         return routeState?.initialSection === 'admin' ? 'admin' : 'dashboard';
