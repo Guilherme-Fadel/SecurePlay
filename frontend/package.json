@@ -5,8 +5,9 @@
   "type": "module",
   "scripts": {
     "build": "vite build",
-    "prebuild": "node scripts/check-assets.cjs",
+    "prebuild": "npm run check:assets && npm run typecheck",
     "check:assets": "node scripts/check-assets.cjs",
+    "typecheck": "tsc --noEmit",
     "dev": "vite"
   },
   "dependencies": {
