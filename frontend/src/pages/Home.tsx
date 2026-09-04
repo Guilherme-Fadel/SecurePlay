@@ -86,6 +86,16 @@ function HomeContent() {
 
     const { isLoading, setLoading, bootstrapReady, registerBootstrap } = useHomeLoading();
 
+    // Gate de bootstrap sempre presente, independente da secao inicial. Sem isto,
+    // recarregar fora do dashboard (ex.: /home/desafios) deixaria a LoadingScreen
+    // presa: so o Dashboard registrava/resolvia bootstrap, entao a tela nunca
+    // recebia ready. A Home resolve o proprio gate assim que o usuario carrega;
+    // secoes que tenham bootstrap proprio (Dashboard) somam ao gate normalmente.
+    useEffect(() => registerBootstrap('home'), [registerBootstrap]);
+    useEffect(() => {
+        setLoading('home', userLoading);
+    }, [userLoading, setLoading]);
+
     const go = useCallback((section: Section, target: ContentTarget | null, options?: { replace?: boolean }) => {
         const allowed = canOpenSection(section) ? section : DEFAULT_SECTION;
         navigate(sectionPath(allowed, target), { replace: options?.replace });
