@@ -70,10 +70,12 @@ export function clearQueryCache(): void {
 }
 
 export function subscribe(key: string, callback: () => void): () => void {
-  if (!listeners.has(key)) {
-    listeners.set(key, new Set());
+  let keyListeners = listeners.get(key);
+  if (!keyListeners) {
+    keyListeners = new Set();
+    listeners.set(key, keyListeners);
   }
-  listeners.get(key)!.add(callback);
+  keyListeners.add(callback);
   return () => {
     listeners.get(key)?.delete(callback);
   };

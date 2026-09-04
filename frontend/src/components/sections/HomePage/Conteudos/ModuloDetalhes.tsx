@@ -54,6 +54,6 @@ function getLessonIcon(aula: AulaResumo, index: number, assets: MissionRoomAsset
 
 function groupBySections(aulas: AulaResumo[]): { name: string; aulas: AulaResumo[] }[] {
   const map = new Map<string, AulaResumo[]>();
-  for (const aula of aulas) { const key = aula.section_name || ''; if (!map.has(key)) map.set(key, []); map.get(key)!.push(aula); }
+  for (const aula of aulas) { const key = aula.section_name || ''; const group = map.get(key) ?? []; if (!map.has(key)) map.set(key, group); group.push(aula); }
   return Array.from(map.entries()).map(([name, groupedAulas]) => ({ name, aulas: [...groupedAulas].sort((a, b) => a.order - b.order) }));
 }

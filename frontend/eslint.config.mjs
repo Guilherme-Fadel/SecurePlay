@@ -39,6 +39,13 @@ export default defineConfig([
         'error',
         { argsIgnorePattern: '^_', varsIgnorePattern: '^_' },
       ],
+      // DIVIDA RASTREADA (nao e limpeza de codigo, e config). Baseline de 23
+      // usos de any restantes apos o burndown mecanico: 13 sao catch (e: any)
+      // e 10 sao props de componente da LandingPage. Tipa-los exige criar
+      // tipos de resposta de API e de props, o que muda superficie de tipo e
+      // nao e mecanico (ver decisao B do burndown). Fica em "warn" ate um PR
+      // dedicado de tipagem zerar a contagem, quando volta para "error".
+      '@typescript-eslint/no-explicit-any': 'warn',
       // Orcamento de tamanho e complexidade: tudo em "warn" de proposito.
       // Sao conversa sobre fatoracao, nao gate. Promover para "error" quando
       // a contagem de uma regra chegar a zero.
@@ -53,8 +60,8 @@ export default defineConfig([
       'max-nested-callbacks': ['warn', 3],
       // Sem baseline: nenhum arquivo do frontend acima do teto.
       'quality/max-lines': ['error', { max: 350 }],
-      // Baseline: 4 violacoes (useSocket.ts x3, prototypes/WorldMapPage.tsx).
-      // Volta para "error" quando a contagem chegar a zero.
+      // Baseline zerado. Fica em "warn" (nao "error") porque o frontend ainda
+      // nao tem um adaptador de log proprio; promover a "error" quando existir.
       'quality/no-direct-console': [
         'warn',
         { logger: 'o helper de log do projeto' },

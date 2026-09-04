@@ -2,36 +2,24 @@ import { useMemo, useState, type ComponentType, type CSSProperties } from 'react
 import {
   Award,
   BadgeCheck,
-  BookOpenCheck,
-  Brain,
-  CalendarCheck,
-  CalendarDays,
   Check,
   ChevronsUp,
   CircleHelp,
   Crown,
-  Crosshair,
-  Fingerprint,
   Flame,
   Gamepad2,
   GraduationCap,
-  Library,
   Loader2,
   LockKeyhole,
   Medal,
   RefreshCw,
   RotateCcw,
-  ScanSearch,
   Search,
-  Shield,
   ShieldCheck,
-  ShieldHalf,
   ShoppingCart,
   Sparkles,
   Store,
   Target,
-  TrendingUp,
-  Trophy,
   type LucideProps,
 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -232,6 +220,11 @@ function AchievementDetail({ node }: { node: AchievementNode | null }) {
   );
 }
 
+function extractErrorMessage(error: unknown): string | undefined {
+  const message = (error as { response?: { data?: { message?: unknown } } })?.response?.data?.message;
+  return typeof message === 'string' ? message : undefined;
+}
+
 function ShopView() {
   const { data: shop, loading, error, refetch, changingItem, purchase, equip, unequip } = useAchievementShop();
   const [filter, setFilter] = useState<CosmeticType | 'all'>('all');
@@ -241,8 +234,8 @@ function ShopView() {
     try {
       await purchase(item.id);
       toast.success(`${item.name} foi adquirido e equipado.`);
-    } catch (requestError: any) {
-      toast.error(requestError?.response?.data?.message ?? 'Não foi possível adquirir o item.');
+    } catch (requestError: unknown) {
+      toast.error(extractErrorMessage(requestError) ?? 'Não foi possível adquirir o item.');
     }
   };
 
@@ -250,8 +243,8 @@ function ShopView() {
     try {
       await equip(item.id);
       toast.success(`${item.name} equipado.`);
-    } catch (requestError: any) {
-      toast.error(requestError?.response?.data?.message ?? 'Não foi possível equipar o item.');
+    } catch (requestError: unknown) {
+      toast.error(extractErrorMessage(requestError) ?? 'Não foi possível equipar o item.');
     }
   };
 
@@ -259,8 +252,8 @@ function ShopView() {
     try {
       await unequip(item.type, item.id);
       toast.success(`${item.name} foi desequipado. Visual padrão restaurado.`);
-    } catch (requestError: any) {
-      toast.error(requestError?.response?.data?.message ?? 'Não foi possível desequipar o item.');
+    } catch (requestError: unknown) {
+      toast.error(extractErrorMessage(requestError) ?? 'Não foi possível desequipar o item.');
     }
   };
 

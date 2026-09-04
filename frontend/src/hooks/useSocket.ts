@@ -18,16 +18,11 @@ export function useSocket(userId: number | null): Socket | null {
     });
 
     newSocket.on('connect', () => {
-      console.log('[Socket] Conectado:', newSocket.id);
       setSocket(newSocket);
     });
 
-    newSocket.on('disconnect', (reason) => {
-      console.log('[Socket] Desconectado:', reason);
-    });
-
-    newSocket.on('connect_error', (err) => {
-      console.error('[Socket] Erro de conexão:', err.message);
+    newSocket.on('connect_error', () => {
+      setSocket(null);
     });
 
     return () => {
