@@ -75,7 +75,6 @@ export function JourneyPreview({
     <section className="hall-panel hall-journey-section" aria-labelledby="journey-title">
       <header className="hall-section-heading">
         <div>
-          <span>MAPA DINÂMICO</span>
           <h2 id="journey-title">Sua jornada</h2>
         </div>
         <button type="button" onClick={onOpenAll} className="hall-link-button">

@@ -20,8 +20,6 @@
 .academy-streak-body { display: flex; flex: 1; flex-direction: column; justify-content: center; gap: 16px; padding: 16px; }
 .academy-streak-action { display: none !important; }
 .dashboard-ranking-card > .dashboard-ranking-body { padding: 5px 8px; }
-.academy-ranking-avatar { width: 28px; height: 28px; border-radius: 50%; overflow: hidden; background: var(--dashboard-surface-soft); font-size: 9px; }
-.academy-ranking-name { overflow: hidden; font-size: 10px; font-weight: 700; text-overflow: ellipsis; white-space: nowrap; }
 
 .secure-sidebar-castle { left: 0; bottom: 0; width: 100%; max-height: 280px; object-fit: cover; object-position: center bottom; }
 :root:not([data-theme='light']) .secure-sidebar-nav { background: linear-gradient(180deg,#121126 0%,#18142e 100%) !important; }
@@ -164,8 +162,6 @@
 .academy-achievement-showcase::before { content: ''; position: absolute; width: 55px; height: 55px; border-radius: 50%; background: radial-gradient(circle, rgba(255, 208, 76, .26), transparent 68%); }
 .academy-achievement-showcase > i { position: absolute; bottom: 0; width: 52px; height: 8px; border-radius: 50%; background: rgba(98, 54, 232, .11); box-shadow: 0 3px 0 rgba(98, 54, 232, .05); }
 .academy-achievement-date { display: inline-flex; margin-top: 3px; padding: 2px 5px; border-radius: 999px; background: rgba(var(--primary-rgb), .07); }
-.academy-ranking-name { display: flex; min-width: 0; align-items: center; gap: 5px; }
-.academy-ranking-name small { padding: 2px 4px; border-radius: 4px; background: rgba(var(--primary-rgb), .11); color: var(--primary); font-size: 6px; font-weight: 900; letter-spacing: .06em; }
 :root:not([data-theme='light']) .academy-achievement-new { color: #e5bd61; }
 
 @media (min-width: 1101px) {
@@ -175,98 +171,3 @@
 
 /* Ajuste de legibilidade das quests: o selo não disputa mais a altura com o título. */
 .academy-training-status { min-height: 11px; line-height: 11px; }
-.academy-ranking-podium {
-  display: grid;
-  min-height: 91px;
-  align-items: end;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 5px;
-  padding-top: 9px;
-}
-.academy-podium-place {
-  position: relative;
-  display: flex;
-  min-width: 0;
-  height: 67px;
-  align-items: center;
-  flex-direction: column;
-  padding: 19px 3px 19px;
-  border: 1px solid rgba(var(--primary-rgb), .12);
-  border-radius: 10px 10px 5px 5px;
-  background: linear-gradient(180deg, rgba(var(--primary-rgb), .07), rgba(var(--primary-rgb), .02));
-}
-.academy-podium-place.rank-1 { height: 82px; border-color: rgba(224, 164, 31, .38); background: linear-gradient(180deg, rgba(255, 220, 96, .24), rgba(255, 205, 62, .07)); box-shadow: 0 5px 12px rgba(194, 135, 17, .1); }
-.academy-podium-place.rank-2 { border-color: rgba(146, 158, 180, .3); background: linear-gradient(180deg, rgba(203, 211, 224, .2), rgba(170, 179, 196, .04)); }
-.academy-podium-place.rank-3 { border-color: rgba(190, 112, 58, .26); background: linear-gradient(180deg, rgba(218, 146, 88, .15), rgba(190, 112, 58, .03)); }
-.academy-podium-place .academy-ranking-avatar { position: absolute; z-index: 2; top: -10px; width: 31px; height: 31px; border: 2px solid var(--dashboard-surface); box-shadow: 0 3px 7px rgba(35, 25, 69, .18); }
-.academy-podium-place.rank-1 .academy-ranking-avatar { top: -12px; width: 36px; height: 36px; border-color: #ffd359; }
-.academy-podium-crown { position: absolute; z-index: 3; top: -27px; left: 50%; color: #f2b521; fill: #ffd75e; filter: drop-shadow(0 2px 1px rgba(156, 96, 0, .2)); transform: translateX(-50%) rotate(-7deg); }
-.academy-podium-place .academy-ranking-name { display: block; width: 100%; overflow: hidden; color: var(--dashboard-text); font-size: 8px !important; font-weight: 800 !important; text-align: center; text-overflow: ellipsis; white-space: nowrap; }
-.academy-podium-place > strong { color: var(--primary); font-size: 7px; line-height: 11px; white-space: nowrap; }
-.academy-podium-place > i { position: absolute; right: 0; bottom: 0; left: 0; height: 17px; border-radius: 0 0 4px 4px; background: rgba(var(--primary-rgb), .1); color: rgba(var(--primary-rgb), .55); font-family: ui-monospace, monospace; font-size: 13px; font-style: normal; font-weight: 950; line-height: 17px; text-align: center; }
-.academy-podium-place.rank-1 > i { background: rgba(240, 181, 45, .18); color: #b87c00; }
-.academy-podium-place.rank-2 > i { background: rgba(139, 151, 172, .14); color: #6f7b8e; }
-.academy-podium-place.rank-3 > i { background: rgba(185, 104, 51, .12); color: #9b572e; }
-.academy-ranking-you {
-  display: grid;
-  min-height: 35px;
-  align-items: center;
-  grid-template-columns: 29px 28px minmax(0, 1fr) auto;
-  gap: 7px;
-  padding: 3px 7px;
-  border: 1px dashed rgba(var(--primary-rgb), .35);
-  border-radius: 8px;
-  background: rgba(var(--primary-rgb), .055);
-}
-.academy-ranking-you-position { color: var(--primary); font-family: ui-monospace, monospace; font-size: 10px; font-weight: 900; }
-.academy-ranking-you .academy-ranking-avatar { width: 25px; height: 25px; }
-.academy-ranking-you > span:nth-of-type(2) { display: flex; min-width: 0; flex-direction: column; }
-.academy-ranking-you small { color: var(--primary); font-size: 6px; font-weight: 900; letter-spacing: .07em; }
-.academy-ranking-you strong { overflow: hidden; color: var(--dashboard-text); font-size: 8px; text-overflow: ellipsis; white-space: nowrap; }
-.academy-ranking-you > b { color: var(--primary); font-size: 8px; white-space: nowrap; }
-
-@media (min-width: 1101px) {
-  .academy-ranking-podium { min-height: 78px; padding-top: 7px; }
-  .academy-podium-place { height: 57px; padding: 17px 3px 17px; }
-  .academy-podium-place.rank-1 { height: 70px; }
-  .academy-podium-place .academy-ranking-avatar { width: 28px; height: 28px; }
-  .academy-podium-place.rank-1 .academy-ranking-avatar { width: 32px; height: 32px; }
-  .academy-ranking-you { min-height: 30px; }
-}
-.academy-ranking-podium {
-  min-height: 128px;
-  flex-basis: 128px;
-  padding-top: 10px;
-}
-.academy-podium-place { height: 100px; padding: 10px 5px 22px; }
-.academy-podium-place.rank-1 { height: 116px; padding-top: 9px; }
-.academy-podium-place .academy-ranking-avatar,
-.academy-podium-place.rank-1 .academy-ranking-avatar {
-  width: 37px;
-  height: 37px;
-  flex-basis: 37px;
-  margin-bottom: 6px;
-}
-.academy-podium-place.rank-1 .academy-ranking-avatar { width: 43px; height: 43px; flex-basis: 43px; }
-.academy-podium-place .academy-ranking-name {
-  height: 11px;
-  flex-basis: 11px;
-  padding-inline: 4px;
-  font-size: 7px !important;
-  font-weight: 750 !important;
-  line-height: 11px;
-}
-.academy-podium-place > strong { margin-top: 1px; font-size: 6.5px; line-height: 9px; }
-.academy-podium-place > i { height: 21px; font-size: 14px; line-height: 21px; }
-.academy-podium-crown { top: -8px; left: calc(50% + 17px); }
-.academy-ranking-you { min-height: 35px; flex-basis: 35px; margin-top: 0; }
-
-@media (min-width: 1101px) {
-  .academy-ranking-podium { min-height: 120px; flex-basis: 120px; }
-  .academy-podium-place { height: 94px; }
-  .academy-podium-place.rank-1 { height: 108px; }
-  .academy-podium-place .academy-ranking-avatar,
-  .academy-podium-place.rank-1 .academy-ranking-avatar { width: 34px; height: 34px; flex-basis: 34px; }
-  .academy-podium-place.rank-1 .academy-ranking-avatar { width: 40px; height: 40px; flex-basis: 40px; }
-  .academy-ranking-you { min-height: 34px; flex-basis: 34px; }
-}
