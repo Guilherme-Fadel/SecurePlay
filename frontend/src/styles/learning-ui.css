@@ -350,8 +350,14 @@
 .module-book-page { display:flex; height:calc(100dvh - 92px); min-height:610px; flex-direction:column; gap:8px; overflow:hidden; }
 .module-book { position:relative; display:grid; min-height:0; flex:1; grid-template-columns:1fr 1fr; padding:4.7% 5.8% 5.1%; background-image:var(--module-book-frame); background-position:center; background-repeat:no-repeat; background-size:100% 100%; color:#1f1740; }
 .module-book-summary { display:flex; min-width:0; align-items:center; flex-direction:column; padding:0 8% 1% 3%; text-align:center; }
-.module-book-cover { display:grid; width:min(100%,430px); height:clamp(170px,29vh,285px); place-items:center; overflow:hidden; border:5px solid #fff8e8; border-radius:10px; background:linear-gradient(135deg,#e5d8ff,#fff1bd); box-shadow:0 0 0 2px #d6b978,0 8px 18px rgba(64,37,21,.16); color:#6732d2; }
-.module-book-cover img { width:100%; height:100%; object-fit:cover; }
+/*
+ * Capa do modulo. Era um grid com place-items:center, onde a imagem nao esticava
+ * e o height:100% caia para automatico: a arte quadrada assumia a largura do campo
+ * como altura (420x420) e o overflow cortava a sobra. Flex com altura definida faz
+ * o height:100% resolver, e contain encaixa a arte inteira em vez de recortar.
+ */
+.module-book-cover { display:flex; width:min(100%,430px); height:clamp(170px,29vh,285px); align-items:center; justify-content:center; overflow:hidden; padding:6px; border:5px solid #fff8e8; border-radius:10px; background:linear-gradient(135deg,#e5d8ff,#fff1bd); box-shadow:0 0 0 2px #d6b978,0 8px 18px rgba(64,37,21,.16); color:#6732d2; }
+.module-book-cover img { width:100%; height:100%; min-width:0; min-height:0; object-fit:contain; }
 .module-book-category { margin-top:12px; color:#6c35d5; font-size:9px; font-weight:850; letter-spacing:.08em; text-transform:uppercase; }
 .module-book-summary h1 { margin:3px 0; font-size:clamp(23px,2vw,34px); font-weight:850; letter-spacing:-.035em; }
 .module-book-summary > p { max-width:440px; margin:0; color:#5f5870; font-size:12px; line-height:1.45; }
