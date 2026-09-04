@@ -62,11 +62,8 @@ export function ModuloList({ onSelectModulo }: ModuloListProps) {
     setCarouselStart(0);
     setLevelIndex(index);
   };
-  const visibleModules = Array.from({ length: Math.min(3, levelModules.length) }, (_, offset) => {
-    const logicalIndex = carouselStart + offset;
-    const moduleIndex = ((logicalIndex % levelModules.length) + levelModules.length) % levelModules.length;
-    return { modulo: levelModules[moduleIndex], logicalIndex, moduleIndex };
-  });
+  const visibleModules = levelModules.slice(carouselStart, carouselStart + 3);
+  const carouselMax = Math.max(0, levelModules.length - 3);
 
   useEffect(() => setCarouselStart(0), [filterStatus]);
 
@@ -106,12 +103,12 @@ export function ModuloList({ onSelectModulo }: ModuloListProps) {
         </div>
         {levelModules.length === 0 ? <InfoCard><InfoCard.Section className="missions-empty-state"><ProgressiveImage src={assets[level.artKey]} alt="" /><h3>Nenhuma missão por aqui ainda</h3><p>Novas aventuras podem chegar a este nível em breve.</p></InfoCard.Section></InfoCard> : (
           <div className="missions-carousel">
-            {levelModules.length > 1 && <button type="button" className="missions-carousel-arrow is-prev" onClick={() => { setCarouselDirection('prev'); setCarouselStart((current) => current - 1); }} aria-label="Ver missão anterior"><ChevronLeft size={24} /></button>}
             <div className="missions-module-grid">
+              {levelModules.length > 3 && <button type="button" className="missions-carousel-arrow is-prev" disabled={carouselStart === 0} onClick={() => { setCarouselDirection('prev'); setCarouselStart((current) => Math.max(0, current - 1)); }} aria-label="Ver missão anterior"><ChevronLeft size={24} /></button>}
               <AnimatePresence initial={false} custom={carouselDirection} mode="popLayout">
-                {visibleModules.map(({ modulo, logicalIndex, moduleIndex }) => (
+                {visibleModules.map((modulo, index) => (
                   <motion.div
-                    key={`${modulo.id}-${logicalIndex}`}
+                    key={modulo.id}
                     className="missions-module-card-motion"
                     layout="position"
                     custom={carouselDirection}
@@ -121,12 +118,12 @@ export function ModuloList({ onSelectModulo }: ModuloListProps) {
                     exit="exit"
                     transition={{ duration: prefersReducedMotion ? 0 : 0.3, ease: [0.22, 1, 0.36, 1] }}
                   >
-                    <ModuloCard modulo={modulo} assets={assets} index={moduleIndex} onClick={() => onSelectModulo(modulo.id)} />
+                    <ModuloCard modulo={modulo} assets={assets} index={carouselStart + index} onClick={() => onSelectModulo(modulo.id)} />
                   </motion.div>
                 ))}
               </AnimatePresence>
+              {levelModules.length > 3 && <button type="button" className="missions-carousel-arrow is-next" disabled={carouselStart >= carouselMax} onClick={() => { setCarouselDirection('next'); setCarouselStart((current) => Math.min(carouselMax, current + 1)); }} aria-label="Ver próxima missão"><ChevronRight size={24} /></button>}
             </div>
-            {levelModules.length > 1 && <button type="button" className="missions-carousel-arrow is-next" onClick={() => { setCarouselDirection('next'); setCarouselStart((current) => current + 1); }} aria-label="Ver próxima missão"><ChevronRight size={24} /></button>}
           </div>
         )}
       </section>
