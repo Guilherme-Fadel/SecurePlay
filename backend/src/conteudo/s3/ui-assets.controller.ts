@@ -5,7 +5,7 @@ const missionRoomFiles = [
   'castle-library-bg.png', 'missions-room-emblem.png', 'level-easy.png', 'level-medium.png', 'level-hard.png',
   'icon-book.png', 'icon-flag.png', 'icon-star.png', 'module-foundations.png', 'module-passwords.png',
   'module-authentication.png', 'module-privacy.png', 'module-phishing.png', 'module-navigation.png',
-  'module-book-frame-transparent.png',
+  'module-book-frame-dark-safe.png',
 ] as const;
 
 @Controller('conteudo/ui-assets')
