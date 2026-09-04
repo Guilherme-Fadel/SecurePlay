@@ -140,6 +140,9 @@ export function Perfil() {
     }
   };
 
+  // force so e true no sucesso da troca de senha. Nunca ligar direto em onClick/
+  // onClose: o React passa o evento como argumento e, sendo truthy, ele anularia
+  // a protecao de passwordSaving abaixo.
   const closePasswordModal = (force = false) => {
     if (passwordSaving && !force) return;
     setPasswordModalOpen(false);
@@ -362,7 +365,7 @@ export function Perfil() {
           </aside>
         </div>
 
-        <Modal open={passwordModalOpen} onClose={closePasswordModal} title="Alterar senha" maxWidth="max-w-md">
+        <Modal open={passwordModalOpen} onClose={() => closePasswordModal()} title="Alterar senha" maxWidth="max-w-md">
           <form className="profile-password-form" onSubmit={handlePasswordChange}>
             <p className="profile-password-intro">Para sua proteção, confirme a senha atual antes de escolher uma nova.</p>
             <PasswordField
@@ -395,7 +398,7 @@ export function Perfil() {
             />
             {passwordError && <p className="profile-password-error" role="alert">{passwordError}</p>}
             <div className="profile-password-actions">
-              <AppButton type="button" variant="ghost" onClick={closePasswordModal} disabled={passwordSaving}>Cancelar</AppButton>
+              <AppButton type="button" variant="ghost" onClick={() => closePasswordModal()} disabled={passwordSaving}>Cancelar</AppButton>
               <AppButton type="submit" icon={<KeyRound size={15} />} disabled={passwordSaving}>{passwordSaving ? 'Alterando...' : 'Salvar nova senha'}</AppButton>
             </div>
           </form>

@@ -18,8 +18,8 @@ export function Modal({
   onClose,
   children,
   title,
-  Width,
-  Height,
+  Width = '',
+  Height = '',
   maxWidth = 'max-w-350',
   maxHeight = 'max-h-250'
 }: ModalProps) {
@@ -54,7 +54,7 @@ export function Modal({
             exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
             className="absolute inset-0 bg-black/60 backdrop-blur-sm"
-            onClick={onClose}
+            onClick={() => onClose()}
           />
 
           <motion.div
@@ -70,7 +70,7 @@ export function Modal({
                   {title}
                 </h2>
                 <button
-                  onClick={onClose}
+                  onClick={() => onClose()}
                   className="p-1.5 rounded-md hover:bg-[var(--background)] transition-colors text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
                   aria-label="Fechar modal"
                 >
@@ -80,7 +80,7 @@ export function Modal({
             )}
             {!title && (
               <button
-                onClick={onClose}
+                onClick={() => onClose()}
                 className="absolute top-3 right-3 p-1.5 rounded-md hover:bg-[var(--background)] transition-colors text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
                 aria-label="Fechar modal"
               >
