@@ -11,13 +11,13 @@ async function run() {
   const bucket = process.env.S3_BUCKET_NAME || 'secureplay-media';
   const db = await mysql.createConnection({ host: process.env.DB_HOST, port: Number(process.env.DB_PORT || 3306), user: process.env.DB_USER, password: process.env.DB_PASSWORD, database: process.env.DB_NAME });
   const s3 = new S3Client({ region: process.env.AWS_REGION || 'us-east-1', endpoint: process.env.S3_ENDPOINT || undefined, forcePathStyle: process.env.S3_FORCE_PATH_STYLE === 'true', credentials: { accessKeyId: process.env.AWS_ACCESS_KEY_ID, secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY } });
-  const slugs = ['caca-phishing', 'termotech', 'quiz-relampago', 'classificacao-dados', 'worldmap'];
+  const slugs = ['caca-phishing', 'termotech', 'quiz-relampago', 'classificacao-dados'];
   try {
     const updates = [];
     for (const table of ['arcade_game', 'challenge']) {
       const [rows] = await db.query(`SELECT id,image FROM ${table}`);
       for (const row of rows) {
-        const slug = slugs.find(s => row.image === `/challenges/${s}.svg` || row.image === `/challenges/${s}.png` || row.image === `/challenges/${s}-pixel.png` || (s === 'worldmap' && row.image === '/prototypes/worldmap/global-map.png'));
+        const slug = slugs.find(s => row.image === `/challenges/${s}.svg` || row.image === `/challenges/${s}.png` || row.image === `/challenges/${s}-pixel.png`);
         if (slug) updates.push({ table, id: row.id, before: row.image, slug });
       }
     }

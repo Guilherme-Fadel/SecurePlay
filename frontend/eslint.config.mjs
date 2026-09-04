@@ -51,6 +51,7 @@ export default defineConfig([
         { max: 150, skipBlankLines: true, skipComments: true },
       ],
       'max-nested-callbacks': ['warn', 3],
+      // Sem baseline: nenhum arquivo do frontend acima do teto.
       'quality/max-lines': ['error', { max: 350 }],
       // Baseline: 4 violacoes (useSocket.ts x3, prototypes/WorldMapPage.tsx).
       // Volta para "error" quando a contagem chegar a zero.

@@ -105,19 +105,11 @@ export class ArcadeService implements OnModuleInit {
         image: '/challenges/termotech.png',
         active: true,
       },
-      {
-        slug: 'worldmap',
-        game_type: ArcadeGameType.CLIENT_ONLY,
-        title: 'Mapa de Treinamento',
-        description: 'Explore biomas e complete fases de seguranca pelo mundo.',
-        tag: 'Aventura',
-        xp_base: 500,
-        color: '#8e2de2',
-        color_dark: '#6a1fb0',
-        image: '/prototypes/worldmap/global-map.png',
-        active: true,
-      },
     ];
+    // O jogo "worldmap" (Mapa de Treinamento) foi descontinuado junto com o
+    // prototipo do mapa. Remove o registro caso ja tenha sido semeado, para
+    // nao servir um card que aponta para arte inexistente.
+    await this.gameRepository.delete({ slug: 'worldmap' });
     for (const seed of seeds) {
       const existing = await this.gameRepository.findOne({
         where: { slug: seed.slug },

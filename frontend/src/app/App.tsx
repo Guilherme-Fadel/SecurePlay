@@ -7,7 +7,6 @@ const Landing = lazy(() => import('@/pages/Landing'));
 const Start = lazy(() => import('@/pages/Start'));
 const Login = lazy(() => import('@/pages/Login'));
 const Home = lazy(() => import('@/pages/Home'));
-const WorldMapPage = lazy(() => import('@/prototypes/worldmap/WorldMapPage'));
 const DashboardV2Page = lazy(() => import('@/prototypes/dashboard-v2/DashboardV2Page'));
 const InviteRegister = lazy(() => import('@/pages/InviteRegister'));
 const PrivacyPage = lazy(() => import('@/pages/LegalPages').then((module) => ({ default: module.PrivacyPage })));
@@ -31,10 +30,6 @@ export default function App() {
         <Route path="/cadastro/:token" element={<LegacyInviteRedirect />}/>
         <Route path="/privacidade" element={<Suspense fallback={null}><PrivacyPage /></Suspense>}/>
         <Route path="/termos" element={<Suspense fallback={null}><TermsPage /></Suspense>}/>
-
-        <Route path="/prototipo-mapa" element={<Suspense fallback={<div style={{ padding: 24 }}>Carregando mapa...</div>}>
-              <WorldMapPage />
-            </Suspense>}/>
 
         <Route path="/prototipo-dashboard" element={<PrivateRoute>
               <Suspense fallback={<div style={{ padding: 24 }}>Carregando dashboard...</div>}>

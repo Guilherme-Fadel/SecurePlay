@@ -1,4 +1,4 @@
-import { lazy, Suspense, useState, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { ArrowLeft, Coins, Gamepad2, RefreshCcw, Sparkles, Trophy, } from 'lucide-react';
 import '@/styles/challenges-ui.css';
 import '@/styles/challenge-games-ui.css';
@@ -14,7 +14,6 @@ import { AppSectionHeader } from '@/components/ui/visuals/AppSectionHeader';
 import { AppButton } from '@/components/ui/buttons/AppButton';
 import { InfoCard } from '@/components/ui/visuals/InfoCard';
 import { getChallengeArtwork } from '@/lib/challengeArtwork';
-const WorldMapPage = lazy(() => import('@/prototypes/worldmap/WorldMapPage'));
 export function Challenges() {
     const [active, setActive] = useState<string | null>(null);
     const [focusedSlug, setFocusedSlug] = useState<string | null>(null);
@@ -40,18 +39,6 @@ export function Challenges() {
     const maxXp = availableGames.reduce((highest, game) => Math.max(highest, game.xp), 0);
     const categories = new Set(carouselGames.map((game) => game.tag)).size;
     const focusedGame = carouselGames.find((game) => game.id === focusedSlug) ?? carouselGames[0];
-    if (active === 'worldmap') {
-        return (<div>
-        <BackBar onBack={exit}/>
-        <div className="relative w-full h-[calc(100vh-190px)] min-h-[420px] rounded-xl overflow-hidden border-2 border-[#2a2f45]">
-          <Suspense fallback={<div className="flex items-center justify-center h-full text-[var(--text-secondary)]">
-                Carregando mapa...
-              </div>}>
-            <WorldMapPage embedded/>
-          </Suspense>
-        </div>
-      </div>);
-    }
     if (active === 'termotech') {
         return <TermoTech onExit={exit}/>;
     }
@@ -156,11 +143,4 @@ export function Challenges() {
         </InfoCard.Section>
       </InfoCard>
     </div>);
-}
-function BackBar({ onBack }: {
-    onBack: () => void;
-}) {
-    return (<AppButton onClick={onBack} variant="ghost" size="sm" icon={<ArrowLeft size={16}/>} className="mb-4">
-      Voltar aos jogos
-    </AppButton>);
 }
