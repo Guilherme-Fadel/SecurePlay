@@ -78,7 +78,6 @@ export function Ranking() {
           <div className="ranking-arena-header">
             <div>
               <span className="ranking-eyebrow"><Sparkles size={14} /> Liga SecurePlay</span>
-              <h3>{ranking.scopeLabel}</h3>
               <p>{ranking.totalParticipants} aventureiros juntando XP</p>
             </div>
             <div className="ranking-scope-switch" aria-label="Escopo do ranking">
@@ -119,7 +118,6 @@ export function Ranking() {
                     : `Os 20 aventureiros com mais XP ${ranking.scope === 'global' ? 'da comunidade' : 'da sua turma'}`}
                 </p>
               </div>
-              <strong>{ranking.scopeLabel}</strong>
             </div>
 
             <div className="ranking-table-labels" aria-hidden="true">

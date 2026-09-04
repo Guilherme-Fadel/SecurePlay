@@ -6,6 +6,13 @@ Fantasy_cybersecurity_world_map_202605282209.mp4
 mockup-conteudos.html
 dist
 *.png
+!frontend/src/assets/dashboard/academy-castle-pixel-v5.png
+!frontend/src/assets/dashboard/streak-flame-pixel-v2.png
+!frontend/src/assets/dashboard/welcome-adventurer-pixel-v5.png
+!frontend/src/assets/dashboard/ranking-podium-pixel-v1.png
+!frontend/src/assets/dashboard/level-shield-pixel-v1.png
+!frontend/src/assets/dashboard/streak-calendar-pixel-v1.png
+!frontend/src/assets/dashboard/mission-ribbon-pixel-v1.png
 *.mp4
 !frontend/src/assets/
 !frontend/src/assets/kids/

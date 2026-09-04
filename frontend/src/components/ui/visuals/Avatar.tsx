@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { cn } from '@/lib/utils';
 
 export function initials(name: string | undefined | null) {
@@ -29,17 +29,20 @@ export function Avatar({
   decorative = true,
 }: AvatarProps) {
   const label = nickname || name;
+  const [failedSource, setFailedSource] = useState<string | null>(null);
+  useEffect(() => setFailedSource(null), [imageUrl]);
 
   return (
     <span
       className={cn('sp-avatar', className)}
       aria-hidden={decorative ? true : undefined}
     >
-      {imageUrl ? (
+      {imageUrl && failedSource !== imageUrl ? (
         <img
           className="sp-avatar-img"
           src={imageUrl}
           alt={decorative ? '' : `Foto de ${label ?? 'usuário'}`}
+          onError={() => setFailedSource(imageUrl)}
         />
       ) : (
         initials(label)

@@ -4,6 +4,7 @@ import { Modulo } from './modulo.entity';
 import { Aula } from '../aula/aula.entity';
 import { UsuarioAula } from '../usuario-aula/usuario-aula.entity';
 import { CreateModuloDto, UpdateModuloDto } from './dto/modulo.dto';
+import { S3Service } from '../s3/s3.service';
 
 @Injectable()
 export class ModuloService {
@@ -16,36 +17,48 @@ export class ModuloService {
 
     @Inject('USUARIO_AULA_REPOSITORY')
     private usuarioAulaRepository: Repository<UsuarioAula>,
+    private readonly s3Service: S3Service,
   ) {}
 
   async findAll(usuario_id: number) {
-    const modulos = await this.moduloRepository.find({
-      where: { active: true },
-      order: { order: 'ASC' },
-    });
+    const [modulos, aulas, progressRows] = await Promise.all([
+      this.moduloRepository.find({
+        where: { active: true },
+        order: { order: 'ASC', id: 'ASC' },
+      }),
+      this.aulaRepository.find({
+        where: { active: true },
+        order: { modulo_id: 'ASC', order: 'ASC', id: 'ASC' },
+      }),
+      this.usuarioAulaRepository
+        .createQueryBuilder('ua')
+        .innerJoinAndSelect('ua.aula', 'aula', 'aula.active = :active', {
+          active: true,
+        })
+        .where('ua.usuario_id = :usuarioId', { usuarioId: usuario_id })
+        .getMany(),
+    ]);
 
-    const result = await Promise.all(
+    const aulasByModulo = new Map<number, Aula[]>();
+    for (const aula of aulas) {
+      const grouped = aulasByModulo.get(aula.modulo_id) ?? [];
+      grouped.push(aula);
+      aulasByModulo.set(aula.modulo_id, grouped);
+    }
+    const progressByAula = new Map(
+      progressRows.map((row) => [row.aula_id, row]),
+    );
+
+    return Promise.all(
       modulos.map(async (modulo) => {
-        const totalAulas = await this.aulaRepository.count({
-          where: { modulo_id: modulo.id, active: true },
-        });
-
-        const completedAulas = await this.usuarioAulaRepository
-          .createQueryBuilder('ua')
-          .innerJoin('ua.aula', 'aula')
-          .where('aula.modulo_id = :moduloId', { moduloId: modulo.id })
-          .andWhere('ua.usuario_id = :usuarioId', { usuarioId: usuario_id })
-          .andWhere('ua.completed = :completed', { completed: true })
-          .getCount();
-
-        const startedRows = await this.usuarioAulaRepository
-          .createQueryBuilder('ua')
-          .innerJoin('ua.aula', 'aula')
-          .where('aula.modulo_id = :moduloId', { moduloId: modulo.id })
-          .andWhere('ua.usuario_id = :usuarioId', { usuarioId: usuario_id })
-          .getMany();
-
-        const lastAccessedAt = startedRows.reduce<Date | null>(
+        const moduloAulas = aulasByModulo.get(modulo.id) ?? [];
+        const moduloProgress = moduloAulas
+          .map((aula) => progressByAula.get(aula.id))
+          .filter((row): row is UsuarioAula => Boolean(row));
+        const completedAulas = moduloAulas.filter(
+          (aula) => progressByAula.get(aula.id)?.completed,
+        ).length;
+        const lastAccessedAt = moduloProgress.reduce<Date | null>(
           (latest, row) => {
             if (!row.last_accessed_at) return latest;
             return !latest || row.last_accessed_at > latest
@@ -54,22 +67,126 @@ export class ModuloService {
           },
           null,
         );
-
+        const totalAulas = moduloAulas.length;
         const progress =
           totalAulas > 0 ? Math.round((completedAulas / totalAulas) * 100) : 0;
+        const nextAula = moduloAulas.find(
+          (aula) => !progressByAula.get(aula.id)?.completed,
+        );
+        let thumbnail: string | null = modulo.thumbnail;
+        try {
+          thumbnail = await this.s3Service.resolveImageUrl(modulo.thumbnail);
+        } catch {
+          thumbnail = null;
+        }
 
         return {
           ...modulo,
+          thumbnail,
+          artworkUrl: thumbnail,
           totalAulas,
           completedAulas,
           progress,
-          hasStarted: startedRows.length > 0,
+          hasStarted: moduloProgress.length > 0,
           lastAccessedAt,
+          nextAulaId: nextAula?.id ?? null,
         };
       }),
     );
+  }
 
-    return result;
+  async getJourneySummary(usuario_id: number) {
+    const modules = await this.findAll(usuario_id);
+    const incomplete = modules.filter((modulo) => modulo.progress < 100);
+    const current =
+      [...incomplete]
+        .filter((modulo) => modulo.hasStarted)
+        .sort((a, b) => {
+          const dateDifference =
+            (Date.parse(String(b.lastAccessedAt ?? '')) || 0) -
+            (Date.parse(String(a.lastAccessedAt ?? '')) || 0);
+          return dateDifference || a.order - b.order || a.id - b.id;
+        })[0] ??
+      incomplete[0] ??
+      modules.at(-1) ??
+      null;
+
+    const stageNames: Record<string, string> = {
+      iniciante: 'Bosque dos Fundamentos',
+      intermediario: 'Vale dos Guardiões',
+      avancado: 'Cidadela Digital',
+    };
+    const stageThemes: Record<string, string> = {
+      iniciante: 'meadow',
+      intermediario: 'valley',
+      avancado: 'citadel',
+    };
+    const stages = new Map<
+      string,
+      {
+        key: string;
+        title: string;
+        order: number;
+        theme: string;
+        artworkUrl: string | null;
+        nodes: Array<Record<string, unknown>>;
+      }
+    >();
+
+    modules.forEach((modulo, globalIndex) => {
+      const key = String(modulo.difficulty || 'jornada');
+      if (!stages.has(key)) {
+        stages.set(key, {
+          key,
+          title: stageNames[key] ?? modulo.category ?? 'Nova etapa',
+          order: stages.size,
+          theme: stageThemes[key] ?? 'default',
+          artworkUrl: null,
+          nodes: [],
+        });
+      }
+      stages.get(key)!.nodes.push({
+        id: modulo.id,
+        order: modulo.order,
+        globalPosition: globalIndex + 1,
+        title: modulo.title,
+        progress: modulo.progress,
+        totalAulas: modulo.totalAulas,
+        completedAulas: modulo.completedAulas,
+        hasStarted: modulo.hasStarted,
+        lastAccessedAt: modulo.lastAccessedAt,
+        artworkUrl: modulo.artworkUrl,
+        nextAulaId: modulo.nextAulaId,
+        xpTotal: modulo.xp_total,
+        xpBonus: modulo.xp_bonus,
+        availability: 'available',
+      });
+    });
+
+    const totalLessons = modules.reduce(
+      (sum, modulo) => sum + modulo.totalAulas,
+      0,
+    );
+    const completedLessons = modules.reduce(
+      (sum, modulo) => sum + modulo.completedAulas,
+      0,
+    );
+
+    return {
+      summary: {
+        totalModules: modules.length,
+        completedModules: modules.filter((modulo) => modulo.progress === 100)
+          .length,
+        totalLessons,
+        completedLessons,
+        progressPercent:
+          totalLessons > 0
+            ? Math.round((completedLessons / totalLessons) * 100)
+            : 0,
+      },
+      currentModuleId: current?.id ?? null,
+      stages: Array.from(stages.values()),
+    };
   }
 
   async findOne(id: number, usuario_id: number) {
@@ -118,6 +235,7 @@ export class ModuloService {
         last_video_second: progress?.last_video_second ?? 0,
         last_page: progress?.last_page ?? 0,
         last_accessed_at: progress?.last_accessed_at ?? null,
+        artworkKey: null,
       };
     });
 

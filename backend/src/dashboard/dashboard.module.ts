@@ -6,12 +6,18 @@ import { usuarioStatsProviders } from '../usuario-stats/usuario-stats.providers'
 import { ChallengeModule } from '../challenge/challenge.module';
 import { RedisModule } from '../redis/redis.module';
 import { ArcadeModule } from '../arcade/arcade.module';
-import { S3Service } from '../conteudo/s3/s3.service';
+import { ConteudoModule } from '../conteudo/conteudo.module';
 
 @Module({
-  imports: [DatabaseModule, RedisModule, ChallengeModule, ArcadeModule],
+  imports: [
+    DatabaseModule,
+    RedisModule,
+    ChallengeModule,
+    ArcadeModule,
+    ConteudoModule,
+  ],
   controllers: [DashboardController],
-  providers: [...usuarioStatsProviders, DashboardService, S3Service],
+  providers: [...usuarioStatsProviders, DashboardService],
   exports: [DashboardService],
 })
 export class DashboardModule {}

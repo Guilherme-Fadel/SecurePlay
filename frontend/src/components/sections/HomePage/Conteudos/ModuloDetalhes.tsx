@@ -46,13 +46,9 @@ export function ModuloDetalhes({ moduloId, onBack, onSelectAula }: ModuloDetalhe
 
 const lessonKeys = ['module-foundations','module-passwords','module-authentication','module-privacy','module-phishing','module-navigation'];
 function getLessonIcon(aula: AulaResumo, index: number, assets: MissionRoomAssets) {
-  const text = `${aula.title} ${aula.description ?? ''}`.toLocaleLowerCase('pt-BR');
-  let key = lessonKeys[index % lessonKeys.length];
-  if (text.includes('senha')) key = 'module-passwords';
-  else if (text.includes('autent') || text.includes('mfa')) key = 'module-authentication';
-  else if (text.includes('privacidade') || text.includes('dados')) key = 'module-privacy';
-  else if (text.includes('golpe') || text.includes('phishing') || text.includes('link')) key = 'module-phishing';
-  else if (text.includes('internet') || text.includes('navega')) key = 'module-navigation';
+  const key = aula.artworkKey && assets[aula.artworkKey]
+    ? aula.artworkKey
+    : lessonKeys[index % lessonKeys.length];
   return assets[key];
 }
 

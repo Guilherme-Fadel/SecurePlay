@@ -25,10 +25,11 @@ const iconMap: Record<string, ComponentType<LucideProps>> = {
   trophy: Trophy,
   'lock-keyhole': LockKeyhole,
 };
-export function AchievementIcon({ icon, size = 28 }: { icon: string; size?: number }) {
+export function AchievementIcon({ icon, artworkUrl, size = 28 }: { icon: string; artworkUrl?: string | null; size?: number }) {
   const [failedSource, setFailedSource] = useState<string | null>(null);
-  if (/^(https?:\/\/|\/)/.test(icon) && failedSource !== icon) {
-    return <ProgressiveImage className="achievement-artwork" src={icon} alt="" aria-hidden="true" width={size} height={size} style={{ width: size, height: size, objectFit: 'contain', imageRendering: 'auto' }} onError={() => setFailedSource(icon)} />;
+  const source = artworkUrl ?? (/^(https?:\/\/|\/)/.test(icon) ? icon : null);
+  if (source && failedSource !== source) {
+    return <ProgressiveImage className="achievement-artwork" src={source} alt="" aria-hidden="true" width={size} height={size} style={{ width: size, height: size, objectFit: 'contain', imageRendering: 'auto' }} onError={() => setFailedSource(source)} />;
   }
   const Icon = iconMap[icon] ?? CircleHelp;
   return <Icon size={size} aria-hidden="true" />;

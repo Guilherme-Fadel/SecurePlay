@@ -1,6 +1,6 @@
 import { InfoCard } from '@/components/ui/visuals/InfoCard';
 import { useWeeklyStreak } from '@/hooks/useDashboard';
-import pixelFlame from '@/assets/dashboard/streak-flame-pixel.png';
+import pixelFlame from '@/assets/dashboard/streak-flame-pixel-v2.png';
 import { Check, Star } from 'lucide-react';
 
 const weekDays = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'];

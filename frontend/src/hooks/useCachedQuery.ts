@@ -27,11 +27,14 @@ export function useCachedQuery<T>(
   const [error, setError] = useState<string | null>(null);
 
   const refetch = useCallback(() => {
+    setError(null);
+    if (!getCached<T>(key)) setLoading(true);
     fetchCached(key, fetcherRef.current)
       .then(result => {
         setData(result);
       })
-      .catch(() => {});
+      .catch(() => setError('Erro ao carregar dados'))
+      .finally(() => setLoading(false));
   }, [key]);
 
   useEffect(() => {

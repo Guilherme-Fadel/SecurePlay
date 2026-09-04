@@ -45,6 +45,8 @@ export interface AchievementTrailNode {
   rarity: Achievement['rarity'];
   tier: number;
   icon: string;
+  iconName: string;
+  artworkUrl: string | null;
   rewardPrestige: number | null;
   prerequisiteSlug: string | null;
   position: { x: number; y: number };
@@ -102,15 +104,15 @@ export class AchievementsService {
     await this.getTrail(payload.usuarioId);
   }
 
-  private async resolveArtwork(definition: Achievement): Promise<string> {
+  private async resolveArtwork(definition: Achievement): Promise<string | null> {
     const source = definition.image_url;
-    if (!source) return definition.icon;
+    if (!source) return null;
     if (!source.startsWith('s3://')) return source;
-    if (!this.s3Service) return definition.icon;
+    if (!this.s3Service) return null;
     try {
-      return (await this.s3Service.resolveImageUrl(source)) ?? definition.icon;
+      return await this.s3Service.resolveImageUrl(source);
     } catch {
-      return definition.icon;
+      return null;
     }
   }
 
@@ -265,7 +267,9 @@ export class AchievementsService {
         category: definition.category,
         rarity: definition.rarity,
         tier: definition.tier,
-        icon: concealed ? 'lock-keyhole' : await this.resolveArtwork(definition),
+        icon: concealed ? 'lock-keyhole' : definition.icon,
+        iconName: concealed ? 'lock-keyhole' : definition.icon,
+        artworkUrl: concealed ? null : await this.resolveArtwork(definition),
         rewardPrestige: concealed ? null : definition.reward_prestige,
         prerequisiteSlug: definition.prerequisite_slug,
         position: { x: definition.position_x, y: definition.position_y },
@@ -302,6 +306,21 @@ export class AchievementsService {
       },
       metrics,
       nodes,
+    };
+  }
+
+  async getRecent(usuario_id: number, limit = 3) {
+    const trail = await this.getTrail(usuario_id);
+    return {
+      summary: trail.summary,
+      nodes: trail.nodes
+        .filter((node) => node.status === 'unlocked')
+        .sort(
+          (a, b) =>
+            (b.unlockedAt?.getTime() ?? 0) - (a.unlockedAt?.getTime() ?? 0) ||
+            b.id - a.id,
+        )
+        .slice(0, Math.max(1, Math.min(3, limit))),
     };
   }
 

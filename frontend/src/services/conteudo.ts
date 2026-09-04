@@ -5,6 +5,7 @@ export interface Modulo {
   title: string;
   description: string;
   thumbnail: string | null;
+  artworkUrl?: string | null;
   type: 'video' | 'quadrinho' | 'misto';
   category: string;
   difficulty: 'iniciante' | 'intermediario' | 'avancado';
@@ -16,6 +17,7 @@ export interface Modulo {
   progress: number;
   hasStarted: boolean;
   lastAccessedAt: string | null;
+  nextAulaId?: number | null;
 }
 
 export interface AulaResumo {
@@ -33,6 +35,7 @@ export interface AulaResumo {
   last_video_second: number;
   last_page: number;
   last_accessed_at: string | null;
+  artworkKey?: string | null;
 }
 
 export interface ModuloDetalhes extends Modulo {
@@ -69,6 +72,7 @@ export interface AulaProgress {
   lastPage: number;
   startedAt: string | null;
   lastAccessedAt: string | null;
+  nextAulaId?: number | null;
 }
 
 export interface UpdateAulaProgress {

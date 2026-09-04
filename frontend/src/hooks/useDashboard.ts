@@ -1,4 +1,4 @@
-import { DashboardStats, getDashboardStats, DashboardDailyChallenge, getDashboardDailyChallenge, WeeklyStreak, getWeeklyStreak, performCheckin, getDashboardRanking, } from '@/services/dashboard';
+import { DashboardStats, getDashboardStats, DashboardDailyChallenge, getDashboardDailyChallenge, WeeklyStreak, getWeeklyStreak, performCheckin, getDashboardRanking, getDashboardJourney, JourneyData, } from '@/services/dashboard';
 import { useCachedQuery } from './useCachedQuery';
 import { useState } from 'react';
 import { toast } from 'sonner';
@@ -53,6 +53,10 @@ export function useWeeklyStreak() {
     };
 }
 export function useDashboardRanking(scope: 'global' | 'company' = 'global') {
-    const { data, loading, error, refetch } = useCachedQuery(`dashboardRanking:${scope}`, () => getDashboardRanking(scope));
+    const { data, loading, error, refetch } = useCachedQuery(`dashboardRanking:${scope}`, () => getDashboardRanking(scope), { staleTime: 45 * 60 * 1000 });
     return { ranking: data, loading, error, refetch };
+}
+export function useDashboardJourney() {
+    const { data, loading, error, refetch } = useCachedQuery<JourneyData>('dashboardJourney', getDashboardJourney, { staleTime: 45 * 60 * 1000 });
+    return { journey: data, loading, error, refetch };
 }

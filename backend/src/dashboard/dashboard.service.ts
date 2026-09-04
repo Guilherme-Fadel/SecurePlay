@@ -14,6 +14,7 @@ import {
 } from '../common/utils/date.utils';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { S3Service } from '../conteudo/s3/s3.service';
+import { ModuloService } from '../conteudo/modulo/modulo.service';
 @Injectable()
 export class DashboardService {
   constructor(
@@ -24,6 +25,7 @@ export class DashboardService {
     private tokenService: TokenService,
     private eventEmitter: EventEmitter2,
     private s3Service: S3Service,
+    private moduloService: ModuloService,
   ) {}
   private async resolveProfileImageUrl(
     key: string | null | undefined,
@@ -86,7 +88,8 @@ export class DashboardService {
       .leftJoinAndSelect('u.empresa', 'e')
       .orderBy('s.total_points', 'DESC')
       .addOrderBy('s.updated_at', 'ASC')
-      .take(20);
+      .addOrderBy('s.usuario_id', 'ASC')
+      .take(3);
     const topEntries = await applyScope(topEntriesQuery).getMany();
     let previousPoints: number | null = null;
     let previousPosition = 0;
@@ -97,11 +100,12 @@ export class DashboardService {
           previousPoints = entry.total_points;
         }
         return {
+          id: entry.usuario_id,
           position: previousPosition,
           name:
             entry.usuario_id === usuario_id
-              ? (currentEntry?.usuario?.nickname ?? 'Você')
-              : (entry.usuario?.nickname ?? `Aventureiro ${index + 1}`),
+              ? (currentEntry?.usuario?.nickname ?? currentEntry?.usuario?.name ?? 'Você')
+              : (entry.usuario?.nickname ?? entry.usuario?.name ?? `Aventureiro ${index + 1}`),
           points: entry.total_points,
           level: calcLevel(entry.total_points),
           companyName: null,
@@ -152,8 +156,10 @@ export class DashboardService {
             ),
           );
     const currentUser = {
+      id: usuario_id,
       position: currentPosition,
-      name: currentEntry?.usuario?.name ?? 'Você',
+      name:
+        currentEntry?.usuario?.nickname ?? currentEntry?.usuario?.name ?? 'Você',
       points: currentStats.total_points,
       level: calcLevel(currentStats.total_points),
       companyName: company?.nome ?? null,
@@ -164,7 +170,6 @@ export class DashboardService {
     };
     return {
       scope,
-      scopeLabel: scope === 'company' && company ? 'Sua turma' : 'Ranking global',
       companyAvailable,
       company: company ? { id: company.id, name: company.nome } : null,
       totalParticipants,
@@ -180,6 +185,10 @@ export class DashboardService {
         percentile,
       },
     };
+  }
+
+  async getJourney(usuario_id: number) {
+    return this.moduloService.getJourneySummary(usuario_id);
   }
   async getStats(usuario_id: number) {
     const stats = await this.getOrCreateStats(usuario_id);

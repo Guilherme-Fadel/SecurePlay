@@ -13,6 +13,8 @@ export interface AchievementNode {
   rarity: AchievementRarity;
   tier: number;
   icon: string;
+  iconName: string;
+  artworkUrl: string | null;
   rewardPrestige: number | null;
   prerequisiteSlug: string | null;
   position: { x: number; y: number };
@@ -45,6 +47,11 @@ export interface AchievementTrail {
   nodes: AchievementNode[];
 }
 
+export interface RecentAchievements {
+  summary: AchievementTrail['summary'];
+  nodes: AchievementNode[];
+}
+
 export type CosmeticType = 'frame' | 'background' | 'title' | 'badge' | 'effect';
 
 export interface CosmeticItem {
@@ -72,6 +79,11 @@ export interface AchievementShop {
 export async function getAchievementTrail(): Promise<AchievementTrail> {
   const response = await api.get('/achievements');
   return response.data as AchievementTrail;
+}
+
+export async function getRecentAchievements(): Promise<RecentAchievements> {
+  const response = await api.get('/achievements/recent');
+  return response.data as RecentAchievements;
 }
 
 export async function getAchievementShop(): Promise<AchievementShop> {

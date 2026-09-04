@@ -1,20 +1,17 @@
 import { ChevronRight, Award } from 'lucide-react';
 import { InfoCard } from '@/components/ui/visuals/InfoCard';
 import { AchievementIcon } from '@/components/ui/visuals/AchievementIcon';
-import { useAchievementTrail } from '@/hooks/useAchievements';
+import { useRecentAchievements } from '@/hooks/useAchievements';
 import { useSectionContext } from '@/contexts/SectionContext';
 
 export function Achievements() {
-  const { data: trail, loading, error, refetch } = useAchievementTrail();
+  const { data: trail, loading, error, refetch } = useRecentAchievements();
   const { navigateToSection } = useSectionContext();
 
   if (loading && !trail) {
     return <InfoCard raised className="dashboard-achievements-card animate-pulse"><div className="h-full min-h-36" /></InfoCard>;
   }
-  const recent = (trail?.nodes ?? [])
-    .filter((node) => node.status === 'unlocked')
-    .sort((a, b) => (Date.parse(b.unlockedAt ?? '') || 0) - (Date.parse(a.unlockedAt ?? '') || 0) || b.id - a.id)
-    .slice(0, 3);
+  const recent = trail?.nodes ?? [];
 
   return (
     <InfoCard raised className="dashboard-achievements-card">
@@ -31,9 +28,13 @@ export function Achievements() {
         </div>
       ) : (
         <div className="academy-achievements-items">
-          {recent.map((node) => (
+          {recent.map((node, index) => (
             <div className="dashboard-achievement-item" key={node.id} title={node.description}>
-              <div className="dashboard-achievement-icon is-purple"><AchievementIcon icon={node.icon} size={32} /></div>
+              <span className="academy-achievement-new">{index === 0 ? 'Mais recente' : 'Conquistada'}</span>
+              <div className="academy-achievement-showcase">
+                <i aria-hidden="true" />
+                <div className="dashboard-achievement-icon is-purple"><AchievementIcon icon={node.iconName ?? node.icon} artworkUrl={node.artworkUrl} size={32} /></div>
+              </div>
               <div>
                 <strong>{node.name}</strong>
                 {node.rewardPrestige !== null && <p>+{node.rewardPrestige} Prestígio</p>}

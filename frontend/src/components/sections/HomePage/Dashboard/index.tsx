@@ -1,130 +1,104 @@
+import { useEffect, useMemo } from 'react';
 import { PageTransition } from '@/components/shared/PageTransition';
-import { InfoCard } from '@/components/ui/visuals/InfoCard';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
-import { useDashboardStats } from '@/hooks/useDashboard';
-import { ActiveTraining } from '@/components/sections/HomePage/Dashboard/ActiveTraining';
-import { DailyChallenge } from './DailyChallenge';
-import { useEffect } from 'react';
+import {
+  useDashboardJourney,
+  useDashboardStats,
+  useWeeklyStreak,
+} from '@/hooks/useDashboard';
 import { useSectionContext } from '@/contexts/SectionContext';
-import { DailyStreak } from './DailyStreak';
+import { ActiveTraining } from './ActiveTraining';
+import { DailyChallenge } from './DailyChallenge';
 import { RankingWidget } from './RankingWidget';
-import { Map } from 'lucide-react';
 import { Achievements } from './Achievements';
-import { AppSectionHeader } from '@/components/ui/visuals/AppSectionHeader';
-import { useAchievementShop } from '@/hooks/useAchievements';
-import { cn } from '@/lib/utils';
-import journeyMap from '@/assets/dashboard/journey-map-pixel-v2.png';
-import heroArt from '@/assets/dashboard/welcome-adventurer-pixel-v3.png';
-
+import { AdventureHero } from './AdventureHero';
+import { JourneyPreview } from './JourneyPreview';
+import type { JourneyNodeData } from '@/services/dashboard';
+import '@/styles/hall-dashboard.css';
 
 export function Dashboard() {
   const { user, loading: userLoading } = useCurrentUser();
   const { stats, loading: statsLoading } = useDashboardStats();
-  const { setLoading, registerBootstrap, navigateToSection } = useSectionContext();
-  const { data: cosmeticShop } = useAchievementShop();
-  const equippedBackground = cosmeticShop?.equipped.find((item) => item.type === 'background')?.visualValue ?? '';
+  const { streak } = useWeeklyStreak();
+  const {
+    journey,
+    loading: journeyLoading,
+    error: journeyError,
+    refetch,
+  } = useDashboardJourney();
+  const {
+    setLoading,
+    registerBootstrap,
+    navigateToSection,
+    navigateToContent,
+  } = useSectionContext();
 
-  useEffect(() => {
-    registerBootstrap('dashboard');
-  }, [registerBootstrap]);
-
+  useEffect(() => registerBootstrap('dashboard'), [registerBootstrap]);
   useEffect(() => {
     setLoading('dashboard', userLoading || statsLoading);
     return () => setLoading('dashboard', false);
   }, [userLoading, statsLoading, setLoading]);
 
-  const totalPoints = stats?.totalPoints ?? 0;
-  const xpMax = totalPoints + (stats?.xpToNextLevel ?? 0);
-  const xpPercent = xpMax > 0 ? Math.round((totalPoints / xpMax) * 100) : 0;
-  const completedMissions = stats?.completedChallenges ?? 0;
-  const totalMissions = stats?.totalActiveChallenges ?? 0;
+  const allNodes = useMemo(
+    () => journey?.stages.flatMap((stage) => stage.nodes) ?? [],
+    [journey],
+  );
+  const currentModule = allNodes.find(
+    (node) => node.id === journey?.currentModuleId,
+  );
+
+  const openNode = (node: JourneyNodeData) => {
+    navigateToContent({
+      moduloId: node.id,
+      ...(node.nextAulaId && node.hasStarted
+        ? { aulaId: node.nextAulaId }
+        : {}),
+    });
+  };
+  const continueAdventure = () => {
+    if (currentModule) openNode(currentModule);
+    else navigateToSection('conteudos');
+  };
 
   return (
     <PageTransition>
-      <div className="dashboard-real academy-dashboard flex flex-col gap-4 min-h-0 px-1 py-2">
+      <main className="hall-dashboard">
+        <AdventureHero
+          user={user}
+          stats={stats}
+          streak={streak}
+          currentModule={currentModule}
+          onContinue={continueAdventure}
+        />
 
-        <InfoCard variant="primary" raised className={cn('dashboard-welcome academy-welcome cosmetic-background-host', equippedBackground)}>
-          <img className="academy-welcome-art" src={heroArt} alt="Ilustração da Academia de Missões" />
-          <div className="dashboard-welcome-content">
-            <div className="dashboard-welcome-left">
-              <div className="dashboard-welcome-info">
-                <span className="academy-kicker">Academia de Missões</span>
-                <h2>Olá, {user?.name?.split(' ')[0] ?? 'Agente'}!</h2>
-                <p>Pronta para sua próxima descoberta?</p>
+        <JourneyPreview
+          journey={journey}
+          loading={journeyLoading}
+          error={journeyError}
+          onOpenNode={openNode}
+          onOpenAll={() => navigateToSection('conteudos')}
+          onRetry={refetch}
+        />
 
-                <div className="dashboard-welcome-metrics">
-                  <div>
-                    <span>Rank</span>
-                    <strong>#{stats?.globalRanking ?? '—'}</strong>
-                  </div>
-                  <div>
-                    <span>Nível</span>
-                    <strong>{stats?.level ?? '—'}</strong>
-                  </div>
-                  <div className="dashboard-welcome-xp">
-                    <span>XP</span>
-                    <strong>{stats ? totalPoints.toLocaleString('pt-BR') : '—'} <small>/ {xpMax.toLocaleString('pt-BR')}</small></strong>
-                    <div className="dashboard-welcome-progress" aria-label={`${xpPercent}% do progresso de XP`}>
-                      <i style={{ width: `${xpPercent}%` }} />
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-          </div>
-        </InfoCard>
-
-        <div className="academy-dashboard-grid">
-          <section className="dashboard-panel academy-journey-panel">
-            <AppSectionHeader title="Sua jornada" />
-            <div className="academy-journey-card">
-              <img src={journeyMap} alt="Mapa em pixel art com o caminho da jornada" />
-              <div className="academy-journey-footer">
-                <div className="academy-journey-progress">
-                  <div><span>Missões concluídas</span><strong>{completedMissions} / {totalMissions || '—'}</strong></div>
-                  <div className="academy-progress-track"><i style={{ width: `${totalMissions ? Math.min(100, Math.round((completedMissions / totalMissions) * 100)) : 0}%` }} /></div>
-                </div>
-                <button className="academy-journey-map-button" type="button" aria-label="Abrir mapa da jornada" title="Abrir mapa da jornada" onClick={() => navigateToSection('conteudos')}>
-                  <Map size={23} aria-hidden="true" />
-                </button>
-              </div>
-            </div>
+        <div className="hall-support-grid">
+          <section className="hall-panel hall-training-panel" aria-labelledby="training-title">
+            <header className="hall-section-heading"><div><span>PRÓXIMO PASSO</span><h2 id="training-title">Próximas aulas</h2></div></header>
+            <ActiveTraining />
           </section>
-
-          <section className="dashboard-panel dashboard-daily-panel academy-daily-panel">
-            <AppSectionHeader title="Missão do dia" />
+          <section className="hall-panel hall-daily-panel" aria-labelledby="daily-title">
+            <header className="hall-section-heading"><div><span>DESAFIO RÁPIDO</span><h2 id="daily-title">Missão do dia</h2></div></header>
             <DailyChallenge />
           </section>
-
-          <section className="dashboard-panel dashboard-streak-panel academy-streak-panel">
-            <AppSectionHeader title="Sequência semanal" />
-            <DailyStreak />
-          </section>
-
-          <div className="dashboard-left-column academy-training-area">
-            <section className="dashboard-panel dashboard-training-panel">
-              <AppSectionHeader
-                title="Próximas aulas"
-              />
-              <ActiveTraining />
-            </section>
-          </div>
-
-          <section className="dashboard-panel dashboard-achievements-panel academy-achievements-area">
-            <AppSectionHeader
-              title="Conquistas recentes"
-            />
+          <section className="hall-panel hall-achievements-panel" aria-labelledby="achievements-title">
+            <header className="hall-section-heading"><div><span>COLEÇÃO</span><h2 id="achievements-title">Conquistas recentes</h2></div></header>
             <Achievements />
           </section>
-
-          <section className="dashboard-panel dashboard-ranking-panel academy-ranking-area">
-            <AppSectionHeader title="Ranking da turma" />
+          <section className="hall-panel hall-ranking-panel" aria-labelledby="ranking-title">
+            <header className="hall-section-heading"><div><span>PLACAR</span><h2 id="ranking-title">Ranking</h2></div></header>
             <RankingWidget />
           </section>
         </div>
-
-      </div>
+      </main>
     </PageTransition>
   );
 }

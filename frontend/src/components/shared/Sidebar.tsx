@@ -1,7 +1,7 @@
 import type { Section } from "@/pages/Home"
 import { Award, BookOpen, ChevronLeft, Gamepad2, LayoutDashboard, Menu, MoreHorizontal, Settings, ShieldCheck, ShieldIcon, Trophy, UserRound } from "lucide-react"
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react"
-import academyCastle from '@/assets/dashboard/academy-castle-pixel-v3.png'
+import academyCastle from '@/assets/dashboard/academy-castle-pixel-v5.png'
 
 interface SidebarContextProps {
   expanded: boolean

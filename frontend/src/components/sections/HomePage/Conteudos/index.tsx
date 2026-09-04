@@ -1,10 +1,11 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import '@/styles/learning-ui.css';
 import { PageTransition } from '@/components/shared/PageTransition';
 import { ModuloList } from './ModuloList';
 import { ModuloDetalhes } from './ModuloDetalhes';
 import { AulaVideo } from './AulaVideo';
 import { AulaQuadrinho } from './AulaQuadrinho';
+import { useSectionContext } from '@/contexts/SectionContext';
 
 type View =
   | { type: 'listagem' }
@@ -12,11 +13,24 @@ type View =
   | { type: 'aula'; aulaId: number; moduloId: number };
 
 export function Conteudos() {
-  const [view, setView] = useState<View>({ type: 'listagem' });
+  const { contentTarget, setContentTarget } = useSectionContext();
+  const [view, setView] = useState<View>(() => contentTarget
+    ? contentTarget.aulaId
+      ? { type: 'aula', aulaId: contentTarget.aulaId, moduloId: contentTarget.moduloId }
+      : { type: 'modulo', moduloId: contentTarget.moduloId }
+    : { type: 'listagem' });
 
-  const goToListagem = () => setView({ type: 'listagem' });
-  const goToModulo = (moduloId: number) => setView({ type: 'modulo', moduloId });
-  const goToAula = (aulaId: number, moduloId: number) => setView({ type: 'aula', aulaId, moduloId });
+  useEffect(() => {
+    setView(contentTarget
+      ? contentTarget.aulaId
+        ? { type: 'aula', aulaId: contentTarget.aulaId, moduloId: contentTarget.moduloId }
+        : { type: 'modulo', moduloId: contentTarget.moduloId }
+      : { type: 'listagem' });
+  }, [contentTarget]);
+
+  const goToListagem = () => setContentTarget(null);
+  const goToModulo = (moduloId: number) => setContentTarget({ moduloId });
+  const goToAula = (aulaId: number, moduloId: number) => setContentTarget({ moduloId, aulaId });
 
   return (
     <PageTransition>

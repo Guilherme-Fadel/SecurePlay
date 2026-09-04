@@ -19,6 +19,11 @@ export class AchievementsController {
     return this.achievementsService.getTrail(req.user.userId);
   }
 
+  @Get('recent')
+  getRecent(@Request() req: any) {
+    return this.achievementsService.getRecent(req.user.userId, 3);
+  }
+
   @Get('shop')
   getShop(@Request() req: any) {
     return this.achievementsService.getShop(req.user.userId);

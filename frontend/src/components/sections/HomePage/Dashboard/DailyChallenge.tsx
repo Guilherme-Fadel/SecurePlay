@@ -7,6 +7,7 @@ import { useState, useEffect } from 'react';
 import { getChallengeStatus, getChallengeQuestions, QuestionResponse } from '@/services/challenge';
 import { getCached, setCache } from '@/lib/queryCache';
 import { getChallengeArtwork } from '@/lib/challengeArtwork';
+import { Sparkles } from 'lucide-react';
 
 export function DailyChallenge() {
   const { challenge, loading } = useDailyChallenge();
@@ -107,12 +108,14 @@ export function DailyChallenge() {
   return (
     <InfoCard variant="primary" raised className="dashboard-daily-card flex flex-col h-full min-h-0">
       <div className="dashboard-daily-body flex-1 min-h-0 flex flex-col gap-2 p-2.5 overflow-hidden">
+        <span className="academy-daily-sparkles" aria-hidden="true"><Sparkles /><i /><i /></span>
         <img className="academy-daily-illustration" src={getChallengeArtwork(challenge.image, 'caca-phishing')} alt="" aria-hidden="true" onError={(event) => {
           const fallback = getChallengeArtwork(null, 'caca-phishing');
           if (event.currentTarget.getAttribute('src') !== fallback) event.currentTarget.src = fallback;
         }} />
         <div className="dashboard-daily-summary shrink-0">
           <h3>{challenge.title}</h3>
+          <p>Complete hoje e mantenha sua aventura em movimento.</p>
         </div>
         {doneObjectives > 0 && totalObjectives > 0 && (
           <div className="academy-mission-completion">

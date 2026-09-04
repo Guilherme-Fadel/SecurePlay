@@ -5,6 +5,7 @@ import {
   equipCosmetic,
   getAchievementShop,
   getAchievementTrail,
+  getRecentAchievements,
   purchaseCosmetic,
   unequipCosmetic,
   type AchievementShop,
@@ -15,7 +16,11 @@ const TRAIL_KEY = 'achievementTrail';
 const SHOP_KEY = 'achievementShop';
 
 export function useAchievementTrail() {
-  return useCachedQuery(TRAIL_KEY, getAchievementTrail, { staleTime: 50 * 60 * 1000 });
+  return useCachedQuery(TRAIL_KEY, getAchievementTrail, { staleTime: 45 * 60 * 1000 });
+}
+
+export function useRecentAchievements() {
+  return useCachedQuery('achievementRecent', getRecentAchievements, { staleTime: 45 * 60 * 1000 });
 }
 
 export function useAchievementShop() {

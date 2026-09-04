@@ -14,6 +14,9 @@ export function useAulaProgress() {
       const result = await concluirAula(aulaId);
       invalidate('conteudoModulos');
       invalidate('dashboardStats');
+      invalidate('dashboardJourney');
+      invalidate('achievementRecent');
+      invalidate('achievementTrail');
       return result;
     } catch (err: any) {
       const message = err?.response?.data?.message || 'Erro ao concluir aula';
@@ -32,6 +35,9 @@ export function useAulaProgress() {
       const result = await submitQuiz(aulaId, answers);
       invalidate('conteudoModulos');
       invalidate('dashboardStats');
+      invalidate('dashboardJourney');
+      invalidate('achievementRecent');
+      invalidate('achievementTrail');
       return result;
     } catch (err: any) {
       const message = err?.response?.data?.message || 'Erro ao enviar quiz';
@@ -46,6 +52,7 @@ export function useAulaProgress() {
     try {
       const result = await updateAulaProgress(aulaId, progress);
       invalidate('conteudoModulos');
+      invalidate('dashboardJourney');
       return result;
     } catch {
       return null;

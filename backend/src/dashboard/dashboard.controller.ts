@@ -22,6 +22,11 @@ export class DashboardController {
     return this.dashboardService.getStats(req.user.userId);
   }
 
+  @Get('journey')
+  async getJourney(@Request() req: any) {
+    return this.dashboardService.getJourney(req.user.userId);
+  }
+
   @Get('streak')
   async getStreak(@Request() req: any) {
     return this.dashboardService.getWeeklyStreak(req.user.userId);

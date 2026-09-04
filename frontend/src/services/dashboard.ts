@@ -57,6 +57,7 @@ export async function performCheckin(): Promise<CheckinResponse> {
 }
 
 export interface RankingEntry {
+  id: number;
   position: number;
   name: string;
   points: number;
@@ -68,7 +69,6 @@ export interface RankingEntry {
 
 export interface RankingData {
   scope: 'global' | 'company';
-  scopeLabel: string;
   companyAvailable: boolean;
   company: { id: number; name: string } | null;
   totalParticipants: number;
@@ -86,5 +86,48 @@ export async function getDashboardRanking(
   scope: 'global' | 'company' = 'global',
 ): Promise<RankingData> {
   const response = await api.get('/dashboard/ranking', { params: { scope } });
+  return response.data;
+}
+
+export interface JourneyNodeData {
+  id: number;
+  order: number;
+  globalPosition: number;
+  title: string;
+  progress: number;
+  totalAulas: number;
+  completedAulas: number;
+  hasStarted: boolean;
+  lastAccessedAt: string | null;
+  artworkUrl: string | null;
+  nextAulaId: number | null;
+  xpTotal: number;
+  xpBonus: number;
+  availability: 'available' | 'locked';
+}
+
+export interface JourneyStageData {
+  key: string;
+  title: string;
+  order: number;
+  theme: string;
+  artworkUrl: string | null;
+  nodes: JourneyNodeData[];
+}
+
+export interface JourneyData {
+  summary: {
+    totalModules: number;
+    completedModules: number;
+    totalLessons: number;
+    completedLessons: number;
+    progressPercent: number;
+  };
+  currentModuleId: number | null;
+  stages: JourneyStageData[];
+}
+
+export async function getDashboardJourney(): Promise<JourneyData> {
+  const response = await api.get('/dashboard/journey');
   return response.data;
 }
