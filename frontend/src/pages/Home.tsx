@@ -37,7 +37,7 @@ function readNavigationState(): { section: Section | null; target: ContentTarget
     };
 }
 
-function writeNavigationState(section: Section, target: ContentTarget | null) {
+function writeNavigationState(section: Section, target: ContentTarget | null, replace = false) {
     const url = new URL(window.location.href);
     url.searchParams.set('section', section);
     url.searchParams.delete('modulo');
@@ -46,11 +46,26 @@ function writeNavigationState(section: Section, target: ContentTarget | null) {
         url.searchParams.set('modulo', String(target.moduloId));
         if (target.aulaId) url.searchParams.set('aula', String(target.aulaId));
     }
-    window.history.pushState({}, '', url);
+    if (replace) window.history.replaceState({}, '', url);
+    else window.history.pushState({}, '', url);
 }
+
+/**
+ * Secoes que exigem role. Isso e conveniencia de interface, nao seguranca: quem
+ * garante o acesso e o RolesGuard no backend. Serve para nao montar a tela nem
+ * disparar as chamadas dela para quem vai receber 403.
+ */
+const restrictedSections: Partial<Record<Section, string>> = { admin: 'platform_admin' };
 function HomeContent() {
     const location = useLocation();
-    const { user } = useCurrentUser();
+    const { user, loading: userLoading } = useCurrentUser();
+    const canOpenSection = useCallback(
+        (section: Section) => {
+            const requiredRole = restrictedSections[section];
+            return !requiredRole || user?.role === requiredRole;
+        },
+        [user?.role],
+    );
     const sections: Record<Section, React.ReactNode> = {
         dashboard: <Dashboard />,
         desafios: <Challenges />,
@@ -73,19 +88,21 @@ function HomeContent() {
     const [previousSection, setPreviousSection] = useState<Section | null>(null);
     const { isLoading, setLoading, bootstrapReady, registerBootstrap } = useHomeLoading();
     const setActiveSection = useCallback((section: Section) => {
+        const target = canOpenSection(section) ? section : 'dashboard';
         setPreviousSection(null);
-        setActiveSectionState(section);
+        setActiveSectionState(target);
         setContentTargetState(null);
-        writeNavigationState(section, null);
-    }, []);
+        writeNavigationState(target, null);
+    }, [canOpenSection]);
     const navigateToSection = useCallback((section: Section) => {
+        const target = canOpenSection(section) ? section : 'dashboard';
         setActiveSectionState((current) => {
             setPreviousSection(current);
-            return section;
+            return target;
         });
         setContentTargetState(null);
-        writeNavigationState(section, null);
-    }, []);
+        writeNavigationState(target, null);
+    }, [canOpenSection]);
     const navigateToContent = useCallback((target: ContentTarget) => {
         setActiveSectionState((current) => {
             setPreviousSection(current === 'conteudos' ? null : current);
@@ -109,13 +126,24 @@ function HomeContent() {
     useEffect(() => {
         const handlePopState = () => {
             const navigation = readNavigationState();
-            setActiveSectionState(navigation.section ?? 'dashboard');
+            const section = navigation.section ?? 'dashboard';
+            setActiveSectionState(canOpenSection(section) ? section : 'dashboard');
             setContentTargetState(navigation.target);
             setPreviousSection(null);
         };
         window.addEventListener('popstate', handlePopState);
         return () => window.removeEventListener('popstate', handlePopState);
-    }, []);
+    }, [canOpenSection]);
+    // A secao inicial vem da URL, antes de o usuario estar carregado. Quando ele
+    // resolve sem a role, volta para o dashboard e corrige a URL com replace, para
+    // nao deixar no historico uma entrada que reabre a secao negada.
+    useEffect(() => {
+        if (userLoading || canOpenSection(activeSection)) return;
+        setActiveSectionState('dashboard');
+        setContentTargetState(null);
+        setPreviousSection(null);
+        writeNavigationState('dashboard', null, true);
+    }, [userLoading, canOpenSection, activeSection]);
     return (<>
         <SectionContext.Provider value={{ activeSection, setActiveSection, navigateToSection, navigateToContent, contentTarget, setContentTarget, previousSection, goBack, setLoading, registerBootstrap }}>
         <LoadingScreen ready={bootstrapReady}/>
@@ -130,7 +158,7 @@ function HomeContent() {
             <SidebarItem id="ranking" icon={<TrophyIcon />} text="Ranking" active={activeSection === 'ranking'} onSelect={setActiveSection}/>
             <SidebarItem id="conquistas" icon={<AwardIcon />} text="Conquistas" active={activeSection === 'conquistas'} onSelect={setActiveSection}/>
             <SidebarItem id="configuracoes" icon={<SettingsIcon />} text="Configurações" active={activeSection === 'configuracoes'} onSelect={setActiveSection}/>
-            {user?.role === 'platform_admin' && <SidebarItem id="admin" icon={<ShieldIcon />} text="Administrador" active={activeSection === 'admin'} onSelect={setActiveSection}/>}
+            {canOpenSection('admin') && <SidebarItem id="admin" icon={<ShieldIcon />} text="Administrador" active={activeSection === 'admin'} onSelect={setActiveSection}/>}
           </Sidebar>
 
           <div className="flex flex-col flex-1 min-w-0 min-h-0">
@@ -140,12 +168,12 @@ function HomeContent() {
               {previousSection && (<AppButton onClick={goBack} variant="ghost" size="sm" icon={<ArrowLeft size={16}/>} className="mb-4">
                   Voltar
                 </AppButton>)}
-              {sections[activeSection]}
+              {canOpenSection(activeSection) ? sections[activeSection] : null}
             </main>
           </div>
 
         </div>
-        <MobileNavigation activeSection={activeSection} onSelect={setActiveSection} showAdmin={user?.role === 'platform_admin'} />
+        <MobileNavigation activeSection={activeSection} onSelect={setActiveSection} showAdmin={canOpenSection('admin')} />
         </SectionContext.Provider>
     </>);
 }

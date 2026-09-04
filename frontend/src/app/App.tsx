@@ -2,6 +2,7 @@ import { Navigate, Routes, Route, useLocation, useParams } from 'react-router-do
 import { AnimatePresence } from 'framer-motion';
 import { lazy, Suspense } from 'react';
 import { PrivateRoute, PublicRoute } from '@/routes/PrivateRoute';
+import { useCurrentUser } from '@/hooks/useCurrentUser';
 const Landing = lazy(() => import('@/pages/Landing'));
 const Start = lazy(() => import('@/pages/Start'));
 const Login = lazy(() => import('@/pages/Login'));
@@ -20,7 +21,7 @@ export default function App() {
         <Route path="/start" element={<Suspense fallback={null}><Start /></Suspense>}/>
         <Route path="/login" element={<PublicRoute><Suspense fallback={null}><Login /></Suspense></PublicRoute>}/>
         <Route path="/home" element={<PrivateRoute><Suspense fallback={null}><Home /></Suspense></PrivateRoute>}/>
-        <Route path="/admin" element={<PrivateRoute><Navigate to="/home" state={{ initialSection: 'admin' }} replace /></PrivateRoute>}/>
+        <Route path="/admin" element={<PrivateRoute><AdminEntry /></PrivateRoute>}/>
         <Route path="/cadastro" element={<Suspense fallback={null}>
             <InviteRegister />
           </Suspense>}/>
@@ -45,4 +46,16 @@ export default function App() {
 function LegacyInviteRedirect() {
   const { token } = useParams();
   return <Navigate to={`/cadastro#${token ?? ''}`} replace />;
+}
+
+/**
+ * /admin nao renderiza tela propria, so aponta a secao dentro da Home. So pede a
+ * secao admin quem tem a role; os demais caem no dashboard sem disparar as
+ * chamadas administrativas. Roda dentro de PrivateRoute, entao o usuario ja esta
+ * resolvido aqui. A autorizacao de verdade continua no backend.
+ */
+function AdminEntry() {
+  const { user } = useCurrentUser();
+  const allowed = user?.role === 'platform_admin';
+  return <Navigate to="/home" replace state={allowed ? { initialSection: 'admin' } : undefined} />;
 }
