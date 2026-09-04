@@ -10,6 +10,7 @@ import { AulaQuiz } from '../aula-quiz/aula-quiz.entity';
 import { UsuarioAula } from '../usuario-aula/usuario-aula.entity';
 import { UsuarioStats } from '../../usuario-stats/usuario-stats.entity';
 import { Modulo } from '../modulo/modulo.entity';
+import { ModuloService } from '../modulo/modulo.service';
 import { RedisService } from '../../redis/redis.service';
 import { S3Service } from '../s3/s3.service';
 import { ttlUntilEndOfDay } from '../../common/utils/date.utils';
@@ -44,6 +45,7 @@ export class AulaService {
     private s3Service: S3Service,
     private notificationService: NotificationService,
     private eventEmitter: EventEmitter2,
+    private moduloService: ModuloService,
   ) {}
 
   async findOne(id: number, usuario_id: number) {
@@ -361,6 +363,12 @@ export class AulaService {
     aula: Aula,
     usuario_id: number,
   ): Promise<void> {
+    // bloqueio de modulo tem precedencia sobre o bloqueio sequencial de aula
+    await this.moduloService.assertModuloDesbloqueado(
+      aula.modulo_id,
+      usuario_id,
+    );
+
     const previousAula = await this.aulaRepository.findOne({
       where: {
         modulo_id: aula.modulo_id,

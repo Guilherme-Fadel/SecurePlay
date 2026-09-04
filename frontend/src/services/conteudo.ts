@@ -18,6 +18,7 @@ export interface Modulo {
   hasStarted: boolean;
   lastAccessedAt: string | null;
   nextAulaId?: number | null;
+  locked?: boolean;
 }
 
 export interface AulaResumo {

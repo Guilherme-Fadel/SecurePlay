@@ -44,18 +44,6 @@ export async function getWeeklyStreak(): Promise<WeeklyStreak> {
   return response.data;
 }
 
-export interface CheckinResponse {
-  message: string;
-  checkedDays: boolean[];
-  streak: number;
-  bonusXp?: number;
-}
-
-export async function performCheckin(): Promise<CheckinResponse> {
-  const response = await api.post('/dashboard/checkin');
-  return response.data;
-}
-
 export interface RankingEntry {
   id: number;
   position: number;

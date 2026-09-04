@@ -114,6 +114,126 @@ describe('ModuloService journey summary', () => {
   });
 });
 
+describe('ModuloService bloqueio sequencial de modulo', () => {
+  let service: ModuloService;
+
+  beforeEach(() => {
+    service = new ModuloService(
+      {} as never,
+      {} as never,
+      {} as never,
+      { resolveImageUrl: jest.fn() } as never,
+    );
+  });
+
+  const moduloResumo = (
+    id: number,
+    overrides: Record<string, unknown> = {},
+  ) => ({
+    id,
+    order: id,
+    totalAulas: 4,
+    completedAulas: 0,
+    progress: 0,
+    locked: false,
+    ...overrides,
+  });
+
+  it('libera o primeiro modulo mesmo sem progresso', async () => {
+    jest
+      .spyOn(service, 'findAll')
+      .mockResolvedValue([
+        moduloResumo(1, { locked: false }),
+        moduloResumo(2, { locked: true }),
+      ] as never);
+
+    await expect(
+      service.assertModuloDesbloqueado(1, 7),
+    ).resolves.toBeUndefined();
+  });
+
+  it('bloqueia o proximo modulo enquanto o anterior nao esta 100%', async () => {
+    jest
+      .spyOn(service, 'findAll')
+      .mockResolvedValue([
+        moduloResumo(1, { progress: 50, locked: false }),
+        moduloResumo(2, { locked: true }),
+      ] as never);
+
+    await expect(service.assertModuloDesbloqueado(2, 7)).rejects.toThrow(
+      /bloqueado/i,
+    );
+  });
+
+  it('libera o proximo modulo quando o anterior esta 100%', async () => {
+    jest
+      .spyOn(service, 'findAll')
+      .mockResolvedValue([
+        moduloResumo(1, { progress: 100, completedAulas: 4, locked: false }),
+        moduloResumo(2, { locked: false }),
+      ] as never);
+
+    await expect(
+      service.assertModuloDesbloqueado(2, 7),
+    ).resolves.toBeUndefined();
+  });
+});
+
+describe('ModuloService findAll calcula locked', () => {
+  const buildService = (
+    modulos: Array<Record<string, unknown>>,
+    aulas: Array<Record<string, unknown>>,
+    progresso: Array<Record<string, unknown>>,
+  ) =>
+    new ModuloService(
+      { find: jest.fn().mockResolvedValue(modulos) } as never,
+      { find: jest.fn().mockResolvedValue(aulas) } as never,
+      {
+        createQueryBuilder: jest.fn(() => ({
+          innerJoinAndSelect: jest.fn().mockReturnThis(),
+          where: jest.fn().mockReturnThis(),
+          getMany: jest.fn().mockResolvedValue(progresso),
+        })),
+      } as never,
+      { resolveImageUrl: jest.fn().mockResolvedValue(null) } as never,
+    );
+
+  it('marca o segundo modulo como locked quando o primeiro nao esta completo', async () => {
+    const service = buildService(
+      [
+        { id: 1, order: 1, thumbnail: null, difficulty: 'iniciante' },
+        { id: 2, order: 2, thumbnail: null, difficulty: 'iniciante' },
+      ],
+      [
+        { id: 10, modulo_id: 1, order: 1 },
+        { id: 20, modulo_id: 2, order: 1 },
+      ],
+      [],
+    );
+
+    const result = await service.findAll(7);
+
+    expect(result.find((m) => m.id === 1)?.locked).toBe(false);
+    expect(result.find((m) => m.id === 2)?.locked).toBe(true);
+  });
+
+  it('libera o segundo modulo quando o primeiro esta 100%', async () => {
+    const service = buildService(
+      [
+        { id: 1, order: 1, thumbnail: null, difficulty: 'iniciante' },
+        { id: 2, order: 2, thumbnail: null, difficulty: 'iniciante' },
+      ],
+      [{ id: 10, modulo_id: 1, order: 1 }],
+      [{ aula_id: 10, completed: true, last_accessed_at: null }],
+    );
+
+    const result = await service.findAll(7);
+
+    expect(result.find((m) => m.id === 1)?.locked).toBe(false);
+    expect(result.find((m) => m.id === 2)?.locked).toBe(false);
+  });
+});
+
 describe('ModuloService thumbnail resolution', () => {
   const modulo = {
     id: 5,
@@ -124,9 +244,20 @@ describe('ModuloService thumbnail resolution', () => {
 
   const buildService = (resolveImageUrl: jest.Mock) =>
     new ModuloService(
-      { findOne: jest.fn().mockResolvedValue({ ...modulo }) } as never,
+      {
+        findOne: jest.fn().mockResolvedValue({ ...modulo }),
+        // findAll (chamado por assertModuloDesbloqueado) ve o modulo alvo como primeiro da lista => liberado
+        find: jest.fn().mockResolvedValue([{ ...modulo, order: 1 }]),
+      } as never,
       { find: jest.fn().mockResolvedValue([]) } as never,
-      { find: jest.fn().mockResolvedValue([]) } as never,
+      {
+        find: jest.fn().mockResolvedValue([]),
+        createQueryBuilder: jest.fn(() => ({
+          innerJoinAndSelect: jest.fn().mockReturnThis(),
+          where: jest.fn().mockReturnThis(),
+          getMany: jest.fn().mockResolvedValue([]),
+        })),
+      } as never,
       { resolveImageUrl } as never,
     );
 

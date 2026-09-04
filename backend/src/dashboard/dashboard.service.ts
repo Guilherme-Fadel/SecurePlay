@@ -1,4 +1,4 @@
-import { Injectable, Inject } from '@nestjs/common';
+import { Injectable, Inject, Logger } from '@nestjs/common';
 import { Repository, SelectQueryBuilder } from 'typeorm';
 import { UsuarioStats } from '../usuario-stats/usuario-stats.entity';
 import { ChallengeService } from '../challenge/challenge.service';
@@ -12,11 +12,13 @@ import {
   getTodayWeekIndex,
   now,
 } from '../common/utils/date.utils';
-import { EventEmitter2 } from '@nestjs/event-emitter';
+import { EventEmitter2, OnEvent } from '@nestjs/event-emitter';
 import { S3Service } from '../conteudo/s3/s3.service';
 import { ModuloService } from '../conteudo/modulo/modulo.service';
 @Injectable()
 export class DashboardService {
+  private readonly logger = new Logger(DashboardService.name);
+
   constructor(
     @Inject('USUARIO_STATS_REPOSITORY')
     private statsRepository: Repository<UsuarioStats>,
@@ -104,8 +106,12 @@ export class DashboardService {
           position: previousPosition,
           name:
             entry.usuario_id === usuario_id
-              ? (currentEntry?.usuario?.nickname ?? currentEntry?.usuario?.name ?? 'Você')
-              : (entry.usuario?.nickname ?? entry.usuario?.name ?? `Aventureiro ${index + 1}`),
+              ? (currentEntry?.usuario?.nickname ??
+                currentEntry?.usuario?.name ??
+                'Você')
+              : (entry.usuario?.nickname ??
+                entry.usuario?.name ??
+                `Aventureiro ${index + 1}`),
           points: entry.total_points,
           level: calcLevel(entry.total_points),
           companyName: null,
@@ -159,7 +165,9 @@ export class DashboardService {
       id: usuario_id,
       position: currentPosition,
       name:
-        currentEntry?.usuario?.nickname ?? currentEntry?.usuario?.name ?? 'Você',
+        currentEntry?.usuario?.nickname ??
+        currentEntry?.usuario?.name ??
+        'Você',
       points: currentStats.total_points,
       level: calcLevel(currentStats.total_points),
       companyName: company?.nome ?? null,
@@ -238,7 +246,16 @@ export class DashboardService {
       checkedToday: checkedDays[todayIndex],
     };
   }
-  async performCheckin(usuario_id: number) {
+  /**
+   * Marca o check-in do dia e atualiza a sequencia (streak).
+   * Concede o bonus de XP (streak * 5) e recarrega as fichas do arcade.
+   * Idempotente por dia: se ja houve check-in hoje, apenas retorna o estado atual.
+   *
+   * @param emitBonusEvent quando false, credita o XP do bonus sem re-emitir
+   * progress.changed. Usado pelo check-in automatico, que ja e disparado
+   * DENTRO do handler de progress.changed, evitando reentrada do evento.
+   */
+  private async registrarCheckin(usuario_id: number, emitBonusEvent: boolean) {
     const key = `streak:${usuario_id}:${getMondayOfWeek()}`;
     const raw = await this.redisService.get(key);
     const checkedDays: boolean[] = raw
@@ -248,9 +265,11 @@ export class DashboardService {
     if (checkedDays[todayIndex]) {
       const stats = await this.getOrCreateStats(usuario_id);
       return {
+        alreadyChecked: true,
         message: 'Você já fez check-in hoje!',
         checkedDays,
         streak: stats.current_streak,
+        bonusXp: 0,
       };
     }
     checkedDays[todayIndex] = true;
@@ -277,13 +296,37 @@ export class DashboardService {
     await this.statsRepository.save(stats);
     const streak = stats.current_streak;
     const bonusXp = streak * 5;
-    await this.addPoints(usuario_id, bonusXp);
+    if (emitBonusEvent) {
+      await this.addPoints(usuario_id, bonusXp);
+    } else {
+      // credita direto (sem emitir progress.changed) para nao reentrar no handler
+      stats.total_points += bonusXp;
+      await this.statsRepository.save(stats);
+      await this.incrementRedisXpToday(usuario_id, bonusXp);
+    }
     await this.tokenService.refillToCap(usuario_id);
     return {
+      alreadyChecked: false,
       message: `Check-in realizado! +${bonusXp} XP (${streak === 1 ? 'dia consecutivo' : 'dias consecutivos'}!)`,
       checkedDays,
       streak,
       bonusXp,
     };
+  }
+
+  /**
+   * Check-in automatico: disparado quando o usuario finaliza qualquer atividade
+   * que gera progresso (aula, quiz, desafio diario ou jogo do arcade).
+   * Escuta progress.changed e marca o check-in do dia uma unica vez.
+   */
+  @OnEvent('progress.changed')
+  async handleProgressChanged(payload: { usuarioId: number }): Promise<void> {
+    try {
+      await this.registrarCheckin(payload.usuarioId, false);
+    } catch (error) {
+      this.logger.error(
+        `Falha no check-in automatico do usuario ${payload?.usuarioId}: ${error?.message}`,
+      );
+    }
   }
 }

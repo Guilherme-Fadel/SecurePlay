@@ -1,6 +1,5 @@
-import { Controller, Get, Post, Query, Request } from '@nestjs/common';
+import { Controller, Get, Query, Request } from '@nestjs/common';
 import { DashboardService } from './dashboard.service';
-import { Throttle } from '@nestjs/throttler';
 
 @Controller('dashboard')
 export class DashboardController {
@@ -30,11 +29,5 @@ export class DashboardController {
   @Get('streak')
   async getStreak(@Request() req: any) {
     return this.dashboardService.getWeeklyStreak(req.user.userId);
-  }
-
-  @Post('checkin')
-  @Throttle({ short: { limit: 3, ttl: 60000 } })
-  async checkin(@Request() req: any) {
-    return this.dashboardService.performCheckin(req.user.userId);
   }
 }

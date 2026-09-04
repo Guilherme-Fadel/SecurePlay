@@ -257,6 +257,9 @@
 .mission-card-status { display: flex; width: calc(100% + 26px); min-height: 36px; margin-top: auto; align-items: center; justify-content: center; gap: 5px; background: var(--primary); color: #fff; font-size: 10px; font-weight: 850; text-transform: uppercase; }
 .mission-card.is-complete .mission-card-status { background: #1d9e8d; }
 .mission-card.is-progress { border-color: #8660ee; box-shadow: 0 0 0 3px rgba(var(--primary-rgb),.16),0 5px 0 #6845bf,0 9px 14px rgba(33,15,5,.25); }
+.mission-card.is-locked { cursor: not-allowed; filter: grayscale(.85); opacity: .6; }
+.mission-card.is-locked .mission-card-art img { filter: grayscale(1) drop-shadow(0 7px 5px rgba(63,34,91,.15)); }
+.mission-card.is-locked .mission-card-status { background: #6f6577; }
 .missions-carousel-arrow { position: absolute; z-index: 5; top: 50%; display: grid; width: 42px; height: 42px; padding: 0; place-items: center; border: 3px solid #f0bc50; border-radius: 50%; background: #6530ca; box-shadow: 0 4px 0 #3a196f,0 7px 14px rgba(24,10,51,.3); color: #fff; cursor: pointer; transform: translateY(-50%); }
 .missions-carousel-arrow.is-prev { left: -18px; }
 .missions-carousel-arrow.is-next { right: -18px; }

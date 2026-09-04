@@ -6,7 +6,7 @@ import { Check, Star } from 'lucide-react';
 const weekDays = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'];
 
 export function DailyStreak() {
-  const { streak, loading, doCheckin, checkinLoading, checkinMessage } = useWeeklyStreak();
+  const { streak, loading } = useWeeklyStreak();
 
   if (loading) {
     return (
@@ -51,29 +51,16 @@ export function DailyStreak() {
         </div>
         <div className="academy-streak-encouragement">
           <strong>{activeDays}/7 dias ativos nesta semana</strong>
-          <small>{activeDays === 7 ? 'Semana completa. Muito bem!' : checkedToday ? 'Hoje já conta. Continue amanhã!' : 'Um dia de cada vez. Você consegue!'}</small>
+          <small>{activeDays === 7 ? 'Semana completa. Muito bem!' : checkedToday ? 'Hoje já conta. Continue amanhã!' : 'Conclua uma aula, desafio ou jogo para marcar o dia.'}</small>
         </div>
-        {checkinMessage && (
-          <p className="text-sm text-center text-[var(--success)]">{checkinMessage}</p>
-        )}
       </div>
 
       <InfoCard.Footer className="academy-streak-action flex justify-center">
-        <button
-          onClick={doCheckin}
-          disabled={checkedToday || checkinLoading}
-          className={`app-button app-button--primary app-button--md dashboard-primary-button w-full ${
-            checkedToday
-              ? 'is-completed'
-              : ''
-          }`}
-        >
-          {checkinLoading
-            ? 'Realizando...'
-            : checkedToday
-              ? 'Check-in realizado'
-              : 'Realizar Check-in'}
-        </button>
+        <p className={`academy-streak-hint text-sm text-center ${checkedToday ? 'text-[var(--success)]' : 'text-[var(--text-secondary)]'}`}>
+          {checkedToday
+            ? 'Check-in de hoje concluído'
+            : 'Complete uma atividade hoje para registrar o dia'}
+        </p>
       </InfoCard.Footer>
     </InfoCard>
   );

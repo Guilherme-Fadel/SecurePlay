@@ -136,18 +136,21 @@ export function JourneyPreview({
                 const slot = activeSlots[index];
                 const isCurrent = node.id === journey?.currentModuleId;
                 const isComplete = node.progress === 100;
+                const isLocked = node.availability === 'locked';
                 return (
                   <li
                     key={node.id}
                     style={{ left: `${slot.x}%`, top: `${slot.y}%` }}
-                    className={isCurrent ? 'is-current' : isComplete ? 'is-complete' : ''}
+                    className={isLocked ? 'is-locked' : isCurrent ? 'is-current' : isComplete ? 'is-complete' : ''}
                   >
                     <button
                       type="button"
                       className="hall-journey-node"
-                      onClick={() => onOpenNode(node)}
+                      onClick={isLocked ? undefined : () => onOpenNode(node)}
+                      disabled={isLocked}
+                      aria-disabled={isLocked}
                       aria-current={isCurrent ? 'step' : undefined}
-                      aria-label={`${node.title}, ${node.completedAulas} de ${node.totalAulas} aulas concluídas`}
+                      aria-label={isLocked ? `${node.title}, bloqueado. Conclua o módulo anterior para desbloquear.` : `${node.title}, ${node.completedAulas} de ${node.totalAulas} aulas concluídas`}
                     >
                       <span className="hall-node-orbit" aria-hidden="true">
                         <i style={{ '--node-progress': `${node.progress * 3.6}deg` } as React.CSSProperties} />

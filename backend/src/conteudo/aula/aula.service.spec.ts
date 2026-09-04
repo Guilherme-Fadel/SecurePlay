@@ -9,6 +9,7 @@ describe('AulaService (progresso parcial)', () => {
     create: jest.Mock;
     save: jest.Mock;
   };
+  let moduloService: { assertModuloDesbloqueado: jest.Mock };
 
   beforeEach(() => {
     aulaRepository = { findOne: jest.fn() };
@@ -16,6 +17,10 @@ describe('AulaService (progresso parcial)', () => {
       findOne: jest.fn(),
       create: jest.fn((value) => value),
       save: jest.fn(async (value) => value),
+    };
+    // por padrao o modulo esta liberado; os testes de aula validam o bloqueio sequencial de aula
+    moduloService = {
+      assertModuloDesbloqueado: jest.fn().mockResolvedValue(undefined),
     };
 
     service = new AulaService(
@@ -28,6 +33,7 @@ describe('AulaService (progresso parcial)', () => {
       {} as never,
       {} as never,
       {} as never,
+      moduloService as never,
     );
   });
 

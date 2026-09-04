@@ -1,4 +1,9 @@
-import { Injectable, Inject, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  Inject,
+  NotFoundException,
+  ForbiddenException,
+} from '@nestjs/common';
 import { Repository } from 'typeorm';
 import { Modulo } from './modulo.entity';
 import { Aula } from '../aula/aula.entity';
@@ -64,6 +69,10 @@ export class ModuloService {
       progressRows.map((row) => [row.aula_id, row]),
     );
 
+    // Bloqueio sequencial de modulo: o proximo modulo (pela ordem) so libera
+    // quando o modulo anterior estiver 100% concluido. O primeiro sempre libera.
+    let previousModuloCompleted = true;
+
     return Promise.all(
       modulos.map(async (modulo) => {
         const moduloAulas = aulasByModulo.get(modulo.id) ?? [];
@@ -90,6 +99,11 @@ export class ModuloService {
         );
         const thumbnail = await this.resolveThumbnail(modulo.thumbnail);
 
+        const locked = !previousModuloCompleted;
+        // um modulo sem aulas ativas nao trava a cadeia
+        const isModuloCompleted = totalAulas === 0 || progress === 100;
+        previousModuloCompleted = previousModuloCompleted && isModuloCompleted;
+
         return {
           ...modulo,
           thumbnail,
@@ -100,14 +114,37 @@ export class ModuloService {
           hasStarted: moduloProgress.length > 0,
           lastAccessedAt,
           nextAulaId: nextAula?.id ?? null,
+          locked,
         };
       }),
     );
   }
 
+  /**
+   * Verifica se o modulo esta liberado para o usuario.
+   * Regra: o primeiro modulo (menor order) sempre libera; os demais so
+   * liberam quando o modulo imediatamente anterior estiver 100% concluido.
+   * Modulos anteriores sem aulas ativas nao travam a cadeia.
+   * Lanca ForbiddenException quando o modulo esta bloqueado.
+   */
+  async assertModuloDesbloqueado(
+    modulo_id: number,
+    usuario_id: number,
+  ): Promise<void> {
+    const modulos = await this.findAll(usuario_id);
+    const alvo = modulos.find((modulo) => modulo.id === modulo_id);
+    if (alvo?.locked) {
+      throw new ForbiddenException(
+        'Módulo bloqueado. Conclua o módulo anterior para liberá-lo.',
+      );
+    }
+  }
+
   async getJourneySummary(usuario_id: number) {
     const modules = await this.findAll(usuario_id);
-    const incomplete = modules.filter((modulo) => modulo.progress < 100);
+    const incomplete = modules.filter(
+      (modulo) => modulo.progress < 100 && !modulo.locked,
+    );
     const current =
       [...incomplete]
         .filter((modulo) => modulo.hasStarted)
@@ -169,7 +206,8 @@ export class ModuloService {
         nextAulaId: modulo.nextAulaId,
         xpTotal: modulo.xp_total,
         xpBonus: modulo.xp_bonus,
-        availability: 'available',
+        locked: modulo.locked,
+        availability: modulo.locked ? 'locked' : 'available',
       });
     });
 
@@ -207,6 +245,8 @@ export class ModuloService {
     if (!modulo) {
       throw new NotFoundException('Módulo não encontrado');
     }
+
+    await this.assertModuloDesbloqueado(id, usuario_id);
 
     const aulas = await this.aulaRepository.find({
       where: { modulo_id: id, active: true },
