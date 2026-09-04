@@ -11,8 +11,17 @@ import { extensionForUpload } from './upload-policy';
 
 @Injectable()
 export class S3Service {
+  private static readonly UPLOAD_CACHE_CONTROL =
+    'private, max-age=3600, stale-while-revalidate=86400';
+  private static readonly MAX_CACHED_SIGNED_URLS = 2_000;
   private s3Client: S3Client;
   private bucketName: string;
+  private readonly signedGetUrlCache = new Map<
+    string,
+    { url: string; refreshAt: number }
+  >();
+  private readonly pendingSignedGetUrls = new Map<string, Promise<string>>();
+  private readonly signedGetUrlGenerations = new Map<string, number>();
 
   constructor(private configService: ConfigService) {
     this.bucketName = this.configService.get<string>(
@@ -70,13 +79,21 @@ export class S3Service {
     contentType: string,
     maxBytes: number,
   ) {
+    // O mesmo caminho pode ser sobrescrito por uploads de conteúdo. Remover a
+    // assinatura anterior garante que a próxima leitura use uma URL nova.
+    this.invalidateSignedGetUrl(key);
+
     return createPresignedPost(this.s3Client, {
       Bucket: this.bucketName,
       Key: key,
       Expires: 300,
-      Fields: { 'Content-Type': contentType },
+      Fields: {
+        'Content-Type': contentType,
+        'Cache-Control': S3Service.UPLOAD_CACHE_CONTROL,
+      },
       Conditions: [
         ['eq', '$Content-Type', contentType],
+        ['eq', '$Cache-Control', S3Service.UPLOAD_CACHE_CONTROL],
         ['content-length-range', 1, maxBytes],
       ],
     });
@@ -86,12 +103,82 @@ export class S3Service {
     key: string,
     expiresIn = 3600,
   ): Promise<string> {
+    const cacheKey = `${key}\u0000${expiresIn}`;
+    const cached = this.signedGetUrlCache.get(cacheKey);
+    if (cached && cached.refreshAt > Date.now()) return cached.url;
+
+    const pending = this.pendingSignedGetUrls.get(cacheKey);
+    if (pending) return pending;
+
+    const generation = this.signedGetUrlGenerations.get(key) ?? 0;
+    const request = this.signGetUrl(key, expiresIn)
+      .then((url) => {
+        const refreshMarginSeconds = Math.min(
+          300,
+          Math.max(1, Math.floor(expiresIn * 0.1)),
+        );
+        const cacheSeconds = Math.max(1, expiresIn - refreshMarginSeconds);
+        if ((this.signedGetUrlGenerations.get(key) ?? 0) === generation) {
+          this.rememberSignedGetUrl(cacheKey, url, cacheSeconds);
+        }
+        return url;
+      })
+      .finally(() => {
+        if (this.pendingSignedGetUrls.get(cacheKey) === request) {
+          this.pendingSignedGetUrls.delete(cacheKey);
+        }
+      });
+
+    this.pendingSignedGetUrls.set(cacheKey, request);
+    return request;
+  }
+
+  private async signGetUrl(key: string, expiresIn: number): Promise<string> {
     const command = new GetObjectCommand({
       Bucket: this.bucketName,
       Key: key,
+      // Também cobre objetos antigos, enviados antes de Cache-Control passar a
+      // fazer parte do formulário de upload.
+      ResponseCacheControl: S3Service.UPLOAD_CACHE_CONTROL,
     });
 
     return getSignedUrl(this.s3Client, command, { expiresIn });
+  }
+
+  private rememberSignedGetUrl(
+    cacheKey: string,
+    url: string,
+    cacheSeconds: number,
+  ) {
+    if (
+      !this.signedGetUrlCache.has(cacheKey) &&
+      this.signedGetUrlCache.size >= S3Service.MAX_CACHED_SIGNED_URLS
+    ) {
+      const oldestKey = this.signedGetUrlCache.keys().next().value as
+        | string
+        | undefined;
+      if (oldestKey) this.signedGetUrlCache.delete(oldestKey);
+    }
+    this.signedGetUrlCache.delete(cacheKey);
+    this.signedGetUrlCache.set(cacheKey, {
+      url,
+      refreshAt: Date.now() + cacheSeconds * 1000,
+    });
+  }
+
+  private invalidateSignedGetUrl(key: string) {
+    const prefix = `${key}\u0000`;
+    this.signedGetUrlGenerations.set(
+      key,
+      (this.signedGetUrlGenerations.get(key) ?? 0) + 1,
+    );
+    for (const cacheKey of this.signedGetUrlCache.keys()) {
+      if (cacheKey.startsWith(prefix)) this.signedGetUrlCache.delete(cacheKey);
+    }
+    for (const cacheKey of this.pendingSignedGetUrls.keys()) {
+      if (cacheKey.startsWith(prefix))
+        this.pendingSignedGetUrls.delete(cacheKey);
+    }
   }
 
   buildKey(

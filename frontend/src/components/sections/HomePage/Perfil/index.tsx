@@ -28,6 +28,8 @@ import { useDashboardStats } from '@/hooks/useDashboard';
 import { useSectionContext } from '@/contexts/SectionContext';
 import { changePassword, presignProfileImage, requestNickname, saveProfileImage } from '@/services/profile';
 import { passwordValidationMessage } from '@/lib/password-policy';
+import { preloadImages } from '@/lib/imageCache';
+import { optimizeImageUpload } from '@/lib/optimizeImageUpload';
 
 function initials(name?: string) {
   const parts = name?.trim().split(/\s+/).filter(Boolean) ?? [];
@@ -57,7 +59,9 @@ export function Perfil() {
   const [nicknameDraft, setNicknameDraft] = useState('');
   const [nicknameSaving, setNicknameSaving] = useState(false);
   const [photoUploading, setPhotoUploading] = useState(false);
+  const [photoPreviewUrl, setPhotoPreviewUrl] = useState<string | null>(null);
   const photoInputRef = useRef<HTMLInputElement>(null);
+  const photoPreviewObjectUrlRef = useRef<string | null>(null);
 
   const points = stats?.totalPoints ?? 0;
   const xpToNextLevel = stats?.xpToNextLevel ?? 0;
@@ -71,6 +75,12 @@ export function Perfil() {
   useEffect(() => {
     setNicknameDraft(user?.nickname ?? '');
   }, [user?.nickname]);
+
+  useEffect(() => () => {
+    if (photoPreviewObjectUrlRef.current) {
+      URL.revokeObjectURL(photoPreviewObjectUrlRef.current);
+    }
+  }, []);
 
   const handleNicknameRequest = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -108,19 +118,31 @@ export function Perfil() {
     }
 
     setPhotoUploading(true);
+    let nextPreviewUrl: string | null = null;
     try {
-      const { uploadUrl, fields, key } = await presignProfileImage(file.type);
+      const uploadFile = await optimizeImageUpload(file, {
+        maxWidth: 512,
+        maxHeight: 512,
+      });
+      nextPreviewUrl = URL.createObjectURL(uploadFile);
+      const { uploadUrl, fields, key } = await presignProfileImage(uploadFile.type);
       const formData = new FormData();
       Object.entries(fields).forEach(([name, value]) => formData.append(name, value));
-      formData.append('file', file);
+      formData.append('file', uploadFile);
       const uploadResponse = await fetch(uploadUrl, { method: 'POST', body: formData });
       if (!uploadResponse.ok) throw new Error('Falha ao enviar a imagem');
       const result = await saveProfileImage(key);
+      if (photoPreviewObjectUrlRef.current) URL.revokeObjectURL(photoPreviewObjectUrlRef.current);
+      photoPreviewObjectUrlRef.current = nextPreviewUrl;
+      setPhotoPreviewUrl(nextPreviewUrl);
+      nextPreviewUrl = null;
+      preloadImages([result.profile_image_url]);
       await refreshSession();
       toast.success(result.message);
     } catch {
       toast.error('Não foi possível atualizar sua foto agora.');
     } finally {
+      if (nextPreviewUrl) URL.revokeObjectURL(nextPreviewUrl);
       setPhotoUploading(false);
       if (photoInputRef.current) photoInputRef.current.value = '';
     }
@@ -216,7 +238,7 @@ export function Perfil() {
               aria-label={photoUploading ? 'Enviando nova foto de perfil' : 'Alterar foto de perfil'}
               title={photoUploading ? 'Enviando nova foto...' : 'Clique para alterar sua foto'}
             >
-              {user?.profile_image_url ? <img src={user.profile_image_url} alt="" /> : initials(displayName)}
+              {photoPreviewUrl || user?.profile_image_url ? <img src={photoPreviewUrl || user?.profile_image_url || ''} alt="" /> : initials(displayName)}
               <span className="profile-avatar-upload-action" aria-hidden="true">
                 <Camera size={18} />
               </span>

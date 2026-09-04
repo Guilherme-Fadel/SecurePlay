@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import {
@@ -20,6 +20,7 @@ import { UserManagementTab } from '@/components/admin/UserManagementTab';
 import { CompanyManagementTab } from '@/components/admin/CompanyManagementTab';
 import { AdminThemePreview } from '@/components/admin/AdminThemePreview';
 import { derivePalette } from '@/lib/palette';
+import { optimizeImageUpload } from '@/lib/optimizeImageUpload';
 import { AlertCircle, ArrowLeft, Building2, CheckCircle2, LayoutTemplate, Palette, RotateCcw, Save, SlidersHorizontal, Upload, UsersRound, WandSparkles, } from 'lucide-react';
 import '@/styles/app-ui.css';
 import './admin-ui.css';
@@ -44,6 +45,7 @@ export default function Admin({
     const [saving, setSaving] = useState(false);
     const [message, setMessage] = useState<string | null>(null);
     const [uploading, setUploading] = useState(false);
+    const logoPreviewObjectUrlRef = useRef<string | null>(null);
     const [activeTab, setActiveTab] = useState<'empresas' | 'usuarios' | 'layout'>(initialTab);
     const [empresas, setEmpresas] = useState<EmpresaAdministravel[]>([]);
     const [empresaSelecionadaId, setEmpresaSelecionadaId] = useState<number | null>(null);
@@ -58,6 +60,12 @@ export default function Admin({
     useEffect(() => {
         setActiveTab(initialTab);
     }, [initialTab]);
+
+    useEffect(() => () => {
+        if (logoPreviewObjectUrlRef.current) {
+            URL.revokeObjectURL(logoPreviewObjectUrlRef.current);
+        }
+    }, []);
 
     useEffect(() => {
         if (!platformMode)
@@ -117,21 +125,31 @@ export default function Admin({
             return;
         }
         setUploading(true);
+        let nextPreviewUrl: string | null = null;
         try {
-            const { uploadUrl, fields, key } = await presignLogo(file.type, empresaAlvoId);
+            const uploadFile = await optimizeImageUpload(file, {
+                maxWidth: 1024,
+                maxHeight: 512,
+            });
+            nextPreviewUrl = URL.createObjectURL(uploadFile);
+            const { uploadUrl, fields, key } = await presignLogo(uploadFile.type, empresaAlvoId);
             const formData = new FormData();
             Object.entries(fields).forEach(([name, value]) => formData.append(name, value));
-            formData.append('file', file);
+            formData.append('file', uploadFile);
             const response = await fetch(uploadUrl, { method: 'POST', body: formData });
             if (!response.ok) throw new Error('Falha no upload do logo');
+            if (logoPreviewObjectUrlRef.current) URL.revokeObjectURL(logoPreviewObjectUrlRef.current);
+            logoPreviewObjectUrlRef.current = nextPreviewUrl;
             setLogoUrl(key);
-            setLogoPreview(URL.createObjectURL(file));
+            setLogoPreview(nextPreviewUrl);
+            nextPreviewUrl = null;
             setMessage('Logo enviado com sucesso');
         }
         catch {
             setMessage('Erro ao enviar logo');
         }
         finally {
+            if (nextPreviewUrl) URL.revokeObjectURL(nextPreviewUrl);
             setUploading(false);
             setTimeout(() => setMessage(null), 3000);
         }

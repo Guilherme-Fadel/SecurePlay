@@ -61,7 +61,7 @@ function HomeContent() {
         admin: <Suspense fallback={null}><Admin platformMode /></Suspense>,
     };
     useEmpresaTema();
-    useVisualPreload();
+    useVisualPreload(user);
 
     // A URL e a fonte de verdade da navegacao. O router cuida do historico, entao
     // nao ha pushState manual nem listener de popstate: o botao voltar do navegador
