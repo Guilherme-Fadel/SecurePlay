@@ -175,19 +175,6 @@
   margin-bottom: 22px;
 }
 
-.app-filter-bar {
-  align-items: center;
-  justify-content: space-between;
-  padding: 12px;
-  border: 1px solid var(--dashboard-border);
-  border-radius: 14px;
-  background: var(--dashboard-surface);
-}
-
-.app-filter-group {
-  flex-wrap: wrap;
-}
-
 .app-empty-card {
   min-height: 360px;
 }
@@ -326,8 +313,7 @@
   padding: 4px 16px 24px !important;
 }
 
-.secure-sidebar-item,
-.secure-sidebar-admin {
+.secure-sidebar-item {
   height: 48px;
   margin: 3px 0 !important;
   gap: 12px;
@@ -341,8 +327,7 @@
 .secure-sidebar-item { border: 0; background: transparent; text-align: left; }
 .secure-sidebar-item:focus-visible { outline: 3px solid var(--primary); outline-offset: 2px; }
 
-.secure-sidebar-item:hover,
-.secure-sidebar-admin:hover {
+.secure-sidebar-item:hover {
   background: var(--dashboard-surface-soft) !important;
   color: var(--dashboard-text) !important;
 }
@@ -353,15 +338,13 @@
   font-weight: 700;
 }
 
-.secure-sidebar-item > svg,
-.secure-sidebar-admin > svg {
+.secure-sidebar-item > svg {
   width: 20px;
   height: 20px;
   flex: 0 0 20px;
 }
 
-.secure-sidebar-item-label,
-.secure-sidebar-admin span {
+.secure-sidebar-item-label {
   margin-left: 0 !important;
   color: inherit;
   font-size: 14px !important;
@@ -379,16 +362,9 @@
   padding-left: 10px !important;
 }
 
-.secure-sidebar.is-collapsed .secure-sidebar-item,
-.secure-sidebar.is-collapsed .secure-sidebar-admin {
+.secure-sidebar.is-collapsed .secure-sidebar-item {
   justify-content: center;
   padding: 0 !important;
-}
-
-.secure-sidebar.is-collapsed .secure-sidebar-admin span {
-  width: 0;
-  overflow: hidden;
-  opacity: 0;
 }
 
 .secure-header {
@@ -999,4 +975,5 @@
 .progressive-image { background:linear-gradient(110deg,rgba(148,163,184,.12) 8%,rgba(148,163,184,.24) 18%,rgba(148,163,184,.12) 33%); background-size:200% 100%; filter:blur(10px); opacity:.7; transform:scale(1.025); animation:progressive-image-shimmer 1.25s linear infinite; transition:filter 320ms ease,opacity 320ms ease,transform 320ms ease; }
 .progressive-image.is-loaded { background:transparent; filter:blur(0); opacity:1; transform:scale(1); animation:none; }
 @keyframes progressive-image-shimmer { to { background-position-x:-200%; } }
-@media (prefers-reduced-motion:reduce) { .progressive-image { animation:none; transition:none; } }
+@media (prefers-reduced-motion:reduce) { .progressive-image { animation:none; transition:none; }
+}

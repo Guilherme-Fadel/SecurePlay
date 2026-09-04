@@ -19,7 +19,6 @@ import '@/styles/settings-ui.css';
 import '@/styles/profile-ui.css';
 import '@/styles/dashboard-ui.css';
 import '@/styles/academy-dashboard.css';
-import '@/styles/dashboard-overrides.css';
 import { AppButton } from '@/components/ui/buttons/AppButton';
 const Admin = lazy(() => import('@/pages/Admin'));
 export type Section = 'dashboard' | 'desafios' | 'ranking' | 'conquistas' | 'conteudos' | 'configuracoes' | 'perfil' | 'admin';

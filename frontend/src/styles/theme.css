@@ -243,9 +243,7 @@ h6 {
 
 .text-xs { font-size: var(--font-xs); }
 .text-sm { font-size: var(--font-sm); }
-.text-base { font-size: var(--font-base); }
 .text-lg { font-size: var(--font-lg); }
 .text-xl { font-size: var(--font-xl); }
 .text-2xl { font-size: var(--font-2xl); }
-.text-3xl { font-size: var(--font-3xl); }
 .text-4xl { font-size: var(--font-4xl); }
