@@ -20,6 +20,21 @@ export class ModuloService {
     private readonly s3Service: S3Service,
   ) {}
 
+  /**
+   * Converte a referencia gravada em modulo.thumbnail na URL que o cliente usa.
+   * Aceita 's3://bucket/chave' (vira presigned GET) ou uma URL http ja publica.
+   * Referencia invalida devolve null: a listagem nao deve quebrar por causa da capa.
+   */
+  private async resolveThumbnail(
+    source: string | null,
+  ): Promise<string | null> {
+    try {
+      return await this.s3Service.resolveImageUrl(source);
+    } catch {
+      return null;
+    }
+  }
+
   async findAll(usuario_id: number) {
     const [modulos, aulas, progressRows] = await Promise.all([
       this.moduloRepository.find({
@@ -73,12 +88,7 @@ export class ModuloService {
         const nextAula = moduloAulas.find(
           (aula) => !progressByAula.get(aula.id)?.completed,
         );
-        let thumbnail: string | null = modulo.thumbnail;
-        try {
-          thumbnail = await this.s3Service.resolveImageUrl(modulo.thumbnail);
-        } catch {
-          thumbnail = null;
-        }
+        const thumbnail = await this.resolveThumbnail(modulo.thumbnail);
 
         return {
           ...modulo,
@@ -245,9 +255,12 @@ export class ModuloService {
     ).length;
     const progress =
       totalAulas > 0 ? Math.round((completedCount / totalAulas) * 100) : 0;
+    const thumbnail = await this.resolveThumbnail(modulo.thumbnail);
 
     return {
       ...modulo,
+      thumbnail,
+      artworkUrl: thumbnail,
       aulas: aulasWithStatus,
       totalAulas,
       completedAulas: completedCount,
