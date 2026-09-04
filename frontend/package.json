@@ -5,6 +5,8 @@
   "type": "module",
   "scripts": {
     "build": "vite build",
+    "prebuild": "node scripts/check-assets.cjs",
+    "check:assets": "node scripts/check-assets.cjs",
     "dev": "vite"
   },
   "dependencies": {
