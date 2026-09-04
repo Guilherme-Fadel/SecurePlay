@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { ChevronLeft, ChevronRight, Play } from 'lucide-react';
+import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import { useConteudos } from '@/hooks/useConteudos';
 import { Modulo } from '@/services/conteudo';
 import { ModuloCard } from './ModuloCard';
@@ -11,6 +12,13 @@ import { ProgressiveImage } from '@/components/ui/visuals/ProgressiveImage';
 
 interface ModuloListProps { onSelectModulo: (moduloId: number) => void; }
 type Difficulty = Modulo['difficulty'];
+type SlideDirection = 'next' | 'prev';
+
+const moduleCardVariants = {
+  enter: (direction: SlideDirection) => ({ opacity: 0, x: direction === 'next' ? 72 : -72 }),
+  center: { opacity: 1, x: 0 },
+  exit: (direction: SlideDirection) => ({ opacity: 0, x: direction === 'next' ? -72 : 72 }),
+};
 
 const levels: Array<{ key: Difficulty; name: string; eyebrow: string; description: string; artKey: string }> = [
   { key: 'iniciante', name: 'Nível Fácil', eyebrow: 'COMECE SUA JORNADA', description: 'Aprenda os primeiros poderes para explorar a internet com segurança.', artKey: 'level-easy' },
@@ -27,9 +35,11 @@ const statusFilters = [
 export function ModuloList({ onSelectModulo }: ModuloListProps) {
   const { modulos, allModulos: queriedModulos, loading, filterStatus, setFilterStatus } = useConteudos();
   const assets = useMissionRoomAssets();
+  const prefersReducedMotion = useReducedMotion();
   const [levelIndex, setLevelIndex] = useState(0);
   const [carouselStart, setCarouselStart] = useState(0);
-  const [slideDirection, setSlideDirection] = useState<'next' | 'prev'>('next');
+  const [levelSlideDirection, setLevelSlideDirection] = useState<SlideDirection>('next');
+  const [carouselDirection, setCarouselDirection] = useState<SlideDirection>('next');
   const level = levels[levelIndex];
   const allModulos = queriedModulos ?? [];
   const levelAllModules = useMemo(() => allModulos.filter((modulo) => modulo.difficulty === level.key), [allModulos, level.key]);
@@ -42,18 +52,23 @@ export function ModuloList({ onSelectModulo }: ModuloListProps) {
     ?? levelAllModules.find((modulo) => modulo.progress < 100)
     ?? levelAllModules[0];
   const changeLevel = (direction: number) => {
-    setSlideDirection(direction > 0 ? 'next' : 'prev');
+    setLevelSlideDirection(direction > 0 ? 'next' : 'prev');
+    setCarouselStart(0);
     setLevelIndex((current) => (current + direction + levels.length) % levels.length);
   };
   const selectLevel = (index: number) => {
     if (index === levelIndex) return;
-    setSlideDirection(index > levelIndex ? 'next' : 'prev');
+    setLevelSlideDirection(index > levelIndex ? 'next' : 'prev');
+    setCarouselStart(0);
     setLevelIndex(index);
   };
-  const visibleModules = levelModules.slice(carouselStart, carouselStart + 3);
-  const carouselMax = Math.max(0, levelModules.length - 3);
+  const visibleModules = Array.from({ length: Math.min(3, levelModules.length) }, (_, offset) => {
+    const logicalIndex = carouselStart + offset;
+    const moduleIndex = ((logicalIndex % levelModules.length) + levelModules.length) % levelModules.length;
+    return { modulo: levelModules[moduleIndex], logicalIndex, moduleIndex };
+  });
 
-  useEffect(() => setCarouselStart(0), [levelIndex, filterStatus]);
+  useEffect(() => setCarouselStart(0), [filterStatus]);
 
   if (loading || !assets['missions-room-emblem']) return <div className="app-page flex flex-col gap-6"><SkeletonList /></div>;
 
@@ -67,7 +82,7 @@ export function ModuloList({ onSelectModulo }: ModuloListProps) {
 
       <section className="missions-room-stage" style={{ '--missions-room-bg': `url(${assets['castle-library-bg']})` } as React.CSSProperties}>
         <button className="missions-level-arrow is-left" type="button" onClick={() => changeLevel(-1)} aria-label="Ver nível anterior"><ChevronLeft size={30} /></button>
-        <div className={`missions-level-board slide-${slideDirection}`} key={level.key}>
+        <div className={`missions-level-board slide-${levelSlideDirection}`} key={level.key}>
           <div className="missions-level-art"><ProgressiveImage src={assets[level.artKey]} alt="" /></div>
           <div className="missions-level-copy">
             <span>{level.eyebrow}</span><h2>{level.name}</h2><p>{level.description}</p>
@@ -91,9 +106,27 @@ export function ModuloList({ onSelectModulo }: ModuloListProps) {
         </div>
         {levelModules.length === 0 ? <InfoCard><InfoCard.Section className="missions-empty-state"><ProgressiveImage src={assets[level.artKey]} alt="" /><h3>Nenhuma missão por aqui ainda</h3><p>Novas aventuras podem chegar a este nível em breve.</p></InfoCard.Section></InfoCard> : (
           <div className="missions-carousel">
-            {levelModules.length > 3 && <button type="button" className="missions-carousel-arrow is-prev" disabled={carouselStart === 0} onClick={() => { setSlideDirection('prev'); setCarouselStart((current) => Math.max(0, current - 1)); }} aria-label="Ver missão anterior"><ChevronLeft size={24} /></button>}
-            <div className={`missions-module-grid slide-${slideDirection}`} key={`${level.key}-${filterStatus}-${carouselStart}`}>{visibleModules.map((modulo, index) => <ModuloCard key={modulo.id} modulo={modulo} assets={assets} index={carouselStart + index} onClick={() => onSelectModulo(modulo.id)} />)}</div>
-            {levelModules.length > 3 && <button type="button" className="missions-carousel-arrow is-next" disabled={carouselStart >= carouselMax} onClick={() => { setSlideDirection('next'); setCarouselStart((current) => Math.min(carouselMax, current + 1)); }} aria-label="Ver próxima missão"><ChevronRight size={24} /></button>}
+            {levelModules.length > 1 && <button type="button" className="missions-carousel-arrow is-prev" onClick={() => { setCarouselDirection('prev'); setCarouselStart((current) => current - 1); }} aria-label="Ver missão anterior"><ChevronLeft size={24} /></button>}
+            <div className="missions-module-grid">
+              <AnimatePresence initial={false} custom={carouselDirection} mode="popLayout">
+                {visibleModules.map(({ modulo, logicalIndex, moduleIndex }) => (
+                  <motion.div
+                    key={`${modulo.id}-${logicalIndex}`}
+                    className="missions-module-card-motion"
+                    layout="position"
+                    custom={carouselDirection}
+                    variants={moduleCardVariants}
+                    initial="enter"
+                    animate="center"
+                    exit="exit"
+                    transition={{ duration: prefersReducedMotion ? 0 : 0.3, ease: [0.22, 1, 0.36, 1] }}
+                  >
+                    <ModuloCard modulo={modulo} assets={assets} index={moduleIndex} onClick={() => onSelectModulo(modulo.id)} />
+                  </motion.div>
+                ))}
+              </AnimatePresence>
+            </div>
+            {levelModules.length > 1 && <button type="button" className="missions-carousel-arrow is-next" onClick={() => { setCarouselDirection('next'); setCarouselStart((current) => current + 1); }} aria-label="Ver próxima missão"><ChevronRight size={24} /></button>}
           </div>
         )}
       </section>

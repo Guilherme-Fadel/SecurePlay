@@ -243,6 +243,8 @@
 .missions-filter-bar .app-button { min-height: 27px; padding-top: 3px; padding-bottom: 3px; }
 .missions-carousel { position: relative; min-height: 0; flex: 1; }
 .missions-module-grid { position: relative; display: grid; height: 100%; min-height: 220px; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 12px; padding: 15px 18px 20px; border: 1px solid #8b5026; border-radius: 16px; background: linear-gradient(180deg,#8a522d 0 12px,#5a2f18 12px 18px,#7a421f 18px 100%); box-shadow: inset 0 -8px 0 #4a2513,0 8px 19px rgba(48,25,11,.16); }
+.missions-module-card-motion { min-width: 0; height: 100%; }
+.missions-module-card-motion .mission-card { width: 100%; height: 100%; }
 .mission-card { position: relative; display: flex; min-width: 0; min-height: 218px; align-items: center; flex-direction: column; padding: 14px 13px 0; overflow: hidden; border: 2px solid #d5ae6b; border-radius: 12px 12px 7px 7px; background: linear-gradient(180deg,#fff9e9,#f3e2bd); box-shadow: 0 5px 0 #b77b39,0 9px 14px rgba(33,15,5,.25); color: #251541; cursor: pointer; text-align: center; transition: transform 150ms ease,box-shadow 150ms ease; }
 .mission-card:hover { transform: translateY(-5px); box-shadow: 0 9px 0 #b77b39,0 15px 20px rgba(33,15,5,.3); }
 .mission-card-number { position: absolute; top: 9px; left: 10px; display: grid; width: 30px; height: 30px; place-items: center; border-radius: 8px; background: #5d2bb8; color: #fff; font-size: 11px; font-weight: 850; }
@@ -264,10 +266,8 @@
 .missions-carousel-arrow.is-prev { left: -18px; }
 .missions-carousel-arrow.is-next { right: -18px; }
 .missions-carousel-arrow:disabled { opacity: .35; cursor: default; }
-.missions-level-board.slide-next,
-.missions-module-grid.slide-next { animation: missions-slide-next 430ms cubic-bezier(.22,.8,.25,1); }
-.missions-level-board.slide-prev,
-.missions-module-grid.slide-prev { animation: missions-slide-prev 430ms cubic-bezier(.22,.8,.25,1); }
+.missions-level-board.slide-next { animation: missions-slide-next 430ms cubic-bezier(.22,.8,.25,1); }
+.missions-level-board.slide-prev { animation: missions-slide-prev 430ms cubic-bezier(.22,.8,.25,1); }
 
 @keyframes missions-slide-next {
   from { transform: translateX(46px); }
@@ -345,8 +345,7 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .missions-level-board,
-  .missions-module-grid { animation: none; }
+  .missions-level-board { animation: none; }
 }
 
 /* Livro da missão — conteúdo dinâmico sobre moldura fixa */
