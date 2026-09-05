@@ -3,9 +3,10 @@ import { useState, useCallback, useEffect } from 'react';
 interface UsePageNavigationOptions {
   totalPages: number;
   onLastPage?: () => void;
+  enabled?: boolean;
 }
 
-export function usePageNavigation({ totalPages, onLastPage }: UsePageNavigationOptions) {
+export function usePageNavigation({ totalPages, onLastPage, enabled = true }: UsePageNavigationOptions) {
   const [currentPage, setCurrentPage] = useState(0);
   const [direction, setDirection] = useState<1 | -1>(1);
   const [touchStart, setTouchStart] = useState<number | null>(null);
@@ -35,13 +36,17 @@ export function usePageNavigation({ totalPages, onLastPage }: UsePageNavigationO
   }, [totalPages]);
 
   useEffect(() => {
+    if (!enabled) return;
     const handleKey = (e: KeyboardEvent) => {
+      const target = e.target;
+      if (e.altKey || e.ctrlKey || e.metaKey || (target instanceof HTMLElement && target.closest('input, textarea, select, video, [contenteditable="true"]'))) return;
+      if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') e.preventDefault();
       if (e.key === 'ArrowRight') goNext();
       if (e.key === 'ArrowLeft') goPrev();
     };
     window.addEventListener('keydown', handleKey);
     return () => window.removeEventListener('keydown', handleKey);
-  }, [goNext, goPrev]);
+  }, [goNext, goPrev, enabled]);
 
   const handleTouchStart = (e: React.TouchEvent) => {
     setTouchStart(e.touches[0].clientX);

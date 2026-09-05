@@ -6,6 +6,7 @@ import { AppButton } from '@/components/ui/buttons/AppButton';
 import { MissionRoomAssets, useMissionRoomAssets } from '@/hooks/useMissionRoomAssets';
 import { ProgressiveImage } from '@/components/ui/visuals/ProgressiveImage';
 import { getModuleArtwork } from '@/lib/staticArtwork';
+import '@/styles/module-library-room.css';
 
 interface ModuloDetalhesProps { moduloId: number; onBack: () => void; onSelectAula: (aulaId: number) => void; }
 

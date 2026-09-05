@@ -163,7 +163,7 @@ function HomeContent() {
 
           <div className="flex flex-col flex-1 min-w-0 min-h-0">
             <Header />
-            <main className="secure-home-main relative flex-1 min-h-0 overflow-y-auto p-6 bg-[var(--background)]">
+            <main className={`secure-home-main relative flex-1 min-h-0 overflow-y-auto p-6 bg-[var(--background)] ${activeSection === 'conteudos' && contentTarget?.aulaId ? 'is-classroom-view' : ''}`}>
               <HomeLoadingOverlay isLoading={isLoading}/>
               {previousSection && (<AppButton onClick={goBack} variant="ghost" size="sm" icon={<ArrowLeft size={16}/>} className="mb-4">
                   Voltar

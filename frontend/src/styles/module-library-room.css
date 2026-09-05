@@ -1,0 +1,28 @@
+/* Keep the illustrated book intact and place it in the same library as lessons. */
+.secure-home-main:has(.module-book-page) {
+  background: radial-gradient(ellipse at 50% 28%, #eac98726, transparent 65%), linear-gradient(#20102e55, #160c25a6), url('../assets/static/mission-room/castle-library-bg.webp') center / cover !important;
+}
+.app-page.module-book-page {
+  position: relative;
+  isolation: isolate;
+  padding: 14px 18px 18px;
+  border: 1px solid #c098564d;
+  border-radius: 18px;
+  background: radial-gradient(ellipse at 50% 44%, #ffdc9821, transparent 72%), linear-gradient(180deg, #2714394d 0%, #39223930 62%, #382119b0 100%);
+  box-shadow: inset 0 1px 0 #ffe3a42b, 0 14px 40px #10091940;
+}
+.module-book-page > .app-button {
+  position: relative;
+  z-index: 1;
+  flex-shrink: 0;
+  border-color: #d2ab65;
+  background: #29173ee8;
+  color: #fff2d0;
+  box-shadow: 0 3px 8px #12091d40;
+}
+.module-book-page > .app-button:hover:not(:disabled) { border-color: #efc987; background: #1c0e2f; color: #fff8e8; }
+.module-book-page > .app-button:focus-visible { outline: 3px solid #f5c96e; outline-offset: 3px; }
+.module-book-page .module-book { filter: drop-shadow(0 14px 12px #0e071d80); }
+@media (max-width: 900px) {
+  .app-page.module-book-page { padding: 12px 6px; border-radius: 12px; }
+}

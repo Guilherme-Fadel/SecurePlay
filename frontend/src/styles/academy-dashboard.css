@@ -7,7 +7,7 @@
 .secure-sidebar-nav { position: relative; overflow: hidden !important; background: linear-gradient(180deg, #fffdf7 0%, #fff8ed 100%) !important; }
 .secure-sidebar-castle { position: absolute; bottom: -3px; left: -16px; width: 175px; max-height: 195px; object-fit: contain; object-position: bottom left; pointer-events: none; }
 .secure-sidebar-list { position: relative; z-index: 1; }
-.secure-sidebar-item.is-active { background: linear-gradient(135deg, #5f3ac3, #452b9d) !important; color: #fff !important; box-shadow: 0 7px 13px rgba(75, 44, 169, .2); }
+.secure-sidebar-item.is-active { background: linear-gradient(135deg, var(--primary), var(--primary-dark)) !important; color: #fff !important; box-shadow: 0 7px 13px rgba(var(--primary-rgb), .2); }
 
 @media (max-width: 480px) {
   .profile-password-actions { flex-direction: column-reverse; }
@@ -160,7 +160,7 @@
 .academy-achievement-new { color: #9b6a09; font-size: 6px; font-weight: 900; letter-spacing: .07em; text-transform: uppercase; }
 .academy-achievement-showcase { position: relative; display: grid; min-height: 53px; place-items: center; }
 .academy-achievement-showcase::before { content: ''; position: absolute; width: 55px; height: 55px; border-radius: 50%; background: radial-gradient(circle, rgba(255, 208, 76, .26), transparent 68%); }
-.academy-achievement-showcase > i { position: absolute; bottom: 0; width: 52px; height: 8px; border-radius: 50%; background: rgba(98, 54, 232, .11); box-shadow: 0 3px 0 rgba(98, 54, 232, .05); }
+.academy-achievement-showcase > i { position: absolute; bottom: 0; width: 52px; height: 8px; border-radius: 50%; background: rgba(var(--primary-rgb), .11); box-shadow: 0 3px 0 rgba(var(--primary-rgb), .05); }
 .academy-achievement-date { display: inline-flex; margin-top: 3px; padding: 2px 5px; border-radius: 999px; background: rgba(var(--primary-rgb), .07); }
 :root:not([data-theme='light']) .academy-achievement-new { color: #e5bd61; }
 
