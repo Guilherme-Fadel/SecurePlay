@@ -255,6 +255,11 @@
     justify-content: center;
   }
 
+  .secure-sidebar.is-expanded .secure-sidebar-item {
+    gap: 0;
+    padding: 0 !important;
+  }
+
   .secure-sidebar.is-expanded .secure-sidebar-item-label {
     width: 0;
     margin: 0 !important;
