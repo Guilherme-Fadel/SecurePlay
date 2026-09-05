@@ -1,9 +1,10 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Binary, CalendarDays, CornerDownLeft, Delete, Keyboard, Target } from 'lucide-react';
 import { getWordOfTheDayDetails, isValidWord } from './termoWords';
 import { evaluateGuess, mergeKeyStates, type LetterState, } from './termoLogic';
 import { ChallengeGameShell } from '../ChallengeGameShell';
+import { validateTermoWord } from '@/services/arcade';
 interface TermoTechProps {
     onExit: () => void;
     onWin?: (attempts: number) => void;
@@ -37,6 +38,8 @@ export function TermoTech({ onExit, onWin }: TermoTechProps) {
     const [status, setStatus] = useState<'playing' | 'won' | 'lost'>(saved?.status ?? 'playing');
     const [shake, setShake] = useState(false);
     const [toast, setToast] = useState<string | null>(null);
+    const [isChecking, setIsChecking] = useState(false);
+    const checkingRef = useRef(false);
     useEffect(() => {
         try {
             localStorage.setItem(dayKey(), JSON.stringify({ guesses, status }));
@@ -55,8 +58,8 @@ export function TermoTech({ onExit, onWin }: TermoTechProps) {
         setToast(msg);
         setTimeout(() => setToast(null), 1600);
     };
-    const submit = useCallback(() => {
-        if (status !== 'playing')
+    const submit = useCallback(async () => {
+        if (status !== 'playing' || checkingRef.current)
             return;
         if (current.length !== WORD_LEN) {
             showToast('Use cinco letras para tentar.');
@@ -64,16 +67,34 @@ export function TermoTech({ onExit, onWin }: TermoTechProps) {
             setTimeout(() => setShake(false), 400);
             return;
         }
-        if (!isValidWord(current)) {
-            showToast('Essa palavra não faz parte do jogo. Tente outra!');
-            setShake(true);
-            setTimeout(() => setShake(false), 400);
-            return;
+        const candidate = current.toUpperCase();
+        if (!isValidWord(candidate)) {
+            checkingRef.current = true;
+            setIsChecking(true);
+            try {
+                const validation = await validateTermoWord(candidate);
+                if (!validation.valid) {
+                    showToast(validation.reason === 'blocked'
+                        ? 'Essa palavra não pode ser usada no jogo.'
+                        : 'Palavra não encontrada em português ou inglês.');
+                    setShake(true);
+                    setTimeout(() => setShake(false), 400);
+                    return;
+                }
+            }
+            catch {
+                showToast('Não foi possível consultar o dicionário. Tente novamente.');
+                return;
+            }
+            finally {
+                checkingRef.current = false;
+                setIsChecking(false);
+            }
         }
-        const next = [...guesses, current.toUpperCase()];
+        const next = [...guesses, candidate];
         setGuesses(next);
         setCurrent('');
-        if (current.toUpperCase() === answer) {
+        if (candidate === answer) {
             setStatus('won');
             onWin?.(next.length);
         }
@@ -82,10 +103,12 @@ export function TermoTech({ onExit, onWin }: TermoTechProps) {
         }
     }, [current, guesses, status, answer, onWin]);
     const press = useCallback((key: string) => {
-        if (status !== 'playing')
+        if (status !== 'playing' || checkingRef.current)
             return;
-        if (key === 'ENTER')
-            return submit();
+        if (key === 'ENTER') {
+            void submit();
+            return;
+        }
         if (key === 'BACK')
             return setCurrent((c) => c.slice(0, -1));
         if (/^[A-Z]$/.test(key) && current.length < WORD_LEN) {
@@ -128,8 +151,8 @@ export function TermoTech({ onExit, onWin }: TermoTechProps) {
           </div>
         </aside>
 
-        <section className="termotech-board" aria-label="Tabuleiro do Termo Tech">
-          {toast && <div className="termotech-toast" role="status">{toast}</div>}
+        <section className="termotech-board" aria-label="Tabuleiro do Termo Tech" aria-busy={isChecking}>
+          {(toast || isChecking) && <div className="termotech-toast" role="status">{toast ?? 'Consultando os dicionários...'}</div>}
 
           <motion.div className="termotech-grid" role="grid" aria-label="Tentativas da palavra secreta" animate={shake ? { x: [0, -8, 8, -6, 6, 0] } : {}} transition={{ duration: 0.4 }}>
             {rows.map((_, r) => {
@@ -158,9 +181,9 @@ export function TermoTech({ onExit, onWin }: TermoTechProps) {
 
           <div className="termotech-keyboard" aria-label="Teclado virtual">
             {KEYS.map((row, i) => (<div key={i}>
-                {i === 2 && <KeyCap wide label="ENTER" onClick={() => press('ENTER')} icon={CornerDownLeft}/>}
-                {row.split('').map((ch) => (<KeyCap key={ch} label={ch} state={keyStates[ch]} onClick={() => press(ch)}/>))}
-                {i === 2 && <KeyCap wide label="APAGAR" onClick={() => press('BACK')} icon={Delete}/>}
+                {i === 2 && <KeyCap wide label="ENTER" onClick={() => press('ENTER')} icon={CornerDownLeft} disabled={isChecking}/>}
+                {row.split('').map((ch) => (<KeyCap key={ch} label={ch} state={keyStates[ch]} onClick={() => press(ch)} disabled={isChecking}/>))}
+                {i === 2 && <KeyCap wide label="APAGAR" onClick={() => press('BACK')} icon={Delete} disabled={isChecking}/>}
               </div>))}
           </div>
         </section>
@@ -204,11 +227,12 @@ interface KeyCapProps {
     wide?: boolean;
     icon?: React.ElementType;
     onClick: () => void;
+    disabled?: boolean;
 }
-function KeyCap({ label, state, wide, icon: Icon, onClick }: KeyCapProps) {
+function KeyCap({ label, state, wide, icon: Icon, onClick, disabled }: KeyCapProps) {
     const look = state ? stateClass[state] : '';
     const labelWithState = state ? `${label}: ${stateDescription[state]}` : label;
-    return (<button type="button" onClick={onClick} aria-label={labelWithState} className={`termotech-key ${wide ? 'is-wide' : ''} ${look}`}>
+    return (<button type="button" onClick={onClick} aria-label={labelWithState} className={`termotech-key ${wide ? 'is-wide' : ''} ${look}`} disabled={disabled}>
       {Icon ? <Icon size={16}/> : label}
     </button>);
 }

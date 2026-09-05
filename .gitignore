@@ -23,3 +23,6 @@ dist
 !frontend/src/assets/dashboard/
 !frontend/public/challenges/*-pixel.png
 /tmp/
+backend/eslint.config.mjs
+docs/security-audit/relatorio-auditoria-seguranca.pdf
+docs/security-audit/relatorio-auditoria-seguranca.pdf

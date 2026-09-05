@@ -601,6 +601,7 @@
 .termotech-key:hover { border-color: var(--primary); }
 .termotech-key:active { transform: translateY(2px); }
 .termotech-key:focus-visible { outline: 3px solid var(--primary); outline-offset: 2px; }
+.termotech-key:disabled { cursor: wait; opacity: .65; }
 
 
 .phishing-mission-workspace {

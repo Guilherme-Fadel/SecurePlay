@@ -10,6 +10,7 @@ import { questionProviders } from '../question/question.providers';
 import { QuizRelampagoHandler } from './games/quiz-relampago.handler';
 import { PhishingHandler } from './games/phishing.handler';
 import { DataClassifyHandler } from './games/data-classify.handler';
+import { TermoDictionaryService } from './termotech-dictionary.service';
 
 @Module({
   imports: [DatabaseModule, RedisModule, GamificationModule],
@@ -21,6 +22,7 @@ import { DataClassifyHandler } from './games/data-classify.handler';
     QuizRelampagoHandler,
     PhishingHandler,
     DataClassifyHandler,
+    TermoDictionaryService,
     ArcadeService,
   ],
   exports: [TokenService],

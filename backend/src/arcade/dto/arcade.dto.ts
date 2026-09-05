@@ -19,6 +19,13 @@ export class StartRunParamsDto {
   })
   slug: string;
 }
+export class TermoWordParamsDto {
+  @IsString()
+  @Matches(/^[a-zA-Z]{5}$/, {
+    message: 'word deve conter exatamente cinco letras sem acentos.',
+  })
+  word: string;
+}
 export class QuizAnswerDto {
   @IsInt()
   questionId: number;

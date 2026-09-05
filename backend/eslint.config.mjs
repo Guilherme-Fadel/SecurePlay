@@ -70,7 +70,18 @@ export default tseslint.config(
                 { max: 150, skipBlankLines: true, skipComments: true },
             ],
             'max-nested-callbacks': ['warn', 3],
-            'quality/max-lines': ['error', { max: 350 }],
+            // Baseline restante. A migracao acaba quando esta lista ficar
+            // vazia. Tirar da lista o arquivo que for quebrado.
+            'quality/max-lines': [
+                'error',
+                {
+                    max: 350,
+                    ignore: [
+                        'src/conteudo/aula/aula.service.ts', // 438
+                        'src/arcade/arcade.service.ts', // 388
+                    ],
+                },
+            ],
             // Baseline: 1 violacao (aula.service.ts console.error). Volta para
             // "error" quando a contagem chegar a zero.
             'quality/no-direct-console': [

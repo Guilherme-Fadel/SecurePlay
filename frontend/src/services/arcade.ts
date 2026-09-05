@@ -43,6 +43,13 @@ export interface SubmitRunResponse {
   tokens: TokenState;
 }
 
+export interface TermoWordValidation {
+  valid: boolean;
+  languages: Array<'pt' | 'en'>;
+  verified: boolean;
+  reason?: 'blocked' | 'not_found';
+}
+
 export interface QuizAnswer {
   questionId: number;
   selectedIndex: number;
@@ -80,6 +87,11 @@ export const getArcadeGames = () =>
 
 export const getTokens = () =>
   api.get<TokenState>('/arcade/tokens').then((r) => r.data);
+
+export const validateTermoWord = (word: string) =>
+  api
+    .get<TermoWordValidation>(`/arcade/termotech/words/${encodeURIComponent(word)}`)
+    .then((r) => r.data);
 
 export const startRun = (slug: string) =>
   api.post<StartRunResponse>(`/arcade/games/${slug}/start`).then((r) => r.data);
