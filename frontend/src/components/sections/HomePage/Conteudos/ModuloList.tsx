@@ -5,7 +5,6 @@ import { useConteudos } from '@/hooks/useConteudos';
 import { Modulo } from '@/services/conteudo';
 import { ModuloCard } from './ModuloCard';
 import { SkeletonList } from './SkeletonCard';
-import { InfoCard } from '@/components/ui/visuals/InfoCard';
 import { AppButton } from '@/components/ui/buttons/AppButton';
 import { useMissionRoomAssets } from '@/hooks/useMissionRoomAssets';
 import { ProgressiveImage } from '@/components/ui/visuals/ProgressiveImage';
@@ -13,6 +12,7 @@ import { ProgressiveImage } from '@/components/ui/visuals/ProgressiveImage';
 interface ModuloListProps { onSelectModulo: (moduloId: number) => void; }
 type Difficulty = Modulo['difficulty'];
 type SlideDirection = 'next' | 'prev';
+const MODULES_PER_PAGE = 3;
 
 const moduleCardVariants = {
   enter: (direction: SlideDirection) => ({ opacity: 0, x: direction === 'next' ? 72 : -72 }),
@@ -62,8 +62,8 @@ export function ModuloList({ onSelectModulo }: ModuloListProps) {
     setCarouselStart(0);
     setLevelIndex(index);
   };
-  const visibleModules = levelModules.slice(carouselStart, carouselStart + 3);
-  const carouselMax = Math.max(0, levelModules.length - 3);
+  const visibleModules = levelModules.slice(carouselStart, carouselStart + MODULES_PER_PAGE);
+  const carouselMax = Math.max(0, Math.floor((levelModules.length - 1) / MODULES_PER_PAGE) * MODULES_PER_PAGE);
 
   useEffect(() => setCarouselStart(0), [filterStatus]);
 
@@ -101,10 +101,17 @@ export function ModuloList({ onSelectModulo }: ModuloListProps) {
         <div className="missions-filter-bar">
           <div>{statusFilters.map((filter) => <AppButton key={filter.key} onClick={() => setFilterStatus(filter.key)} variant={filterStatus === filter.key ? 'secondary' : 'ghost'} size="sm">{filter.label}</AppButton>)}</div>
         </div>
-        {levelModules.length === 0 ? <InfoCard><InfoCard.Section className="missions-empty-state"><ProgressiveImage src={assets[level.artKey]} alt="" /><h3>Nenhuma missão por aqui ainda</h3><p>Novas aventuras podem chegar a este nível em breve.</p></InfoCard.Section></InfoCard> : (
-          <div className="missions-carousel">
-            <div className="missions-module-grid">
-              {levelModules.length > 3 && <button type="button" className="missions-carousel-arrow is-prev" disabled={carouselStart === 0} onClick={() => { setCarouselDirection('prev'); setCarouselStart((current) => Math.max(0, current - 1)); }} aria-label="Ver missão anterior"><ChevronLeft size={24} /></button>}
+        <div className="missions-carousel">
+          <div className={`missions-module-grid ${levelModules.length === 0 ? 'is-empty' : ''}`}>
+            {levelModules.length === 0 ? (
+              <div className="missions-empty-state">
+                <ProgressiveImage src={assets[level.artKey]} alt="" />
+                <h3>Nenhuma missão por aqui</h3>
+                <p>{filterStatus === 'em_progresso' ? 'Você ainda não possui missões em andamento neste nível.' : filterStatus === 'concluidos' ? 'Você ainda não concluiu missões neste nível.' : 'Novas aventuras podem chegar a este nível em breve.'}</p>
+              </div>
+            ) : (
+              <>
+              {levelModules.length > MODULES_PER_PAGE && <button type="button" className="missions-carousel-arrow is-prev" disabled={carouselStart === 0} onClick={() => { setCarouselDirection('prev'); setCarouselStart((current) => Math.max(0, current - MODULES_PER_PAGE)); }} aria-label="Ver página anterior de missões"><ChevronLeft size={24} /></button>}
               <AnimatePresence initial={false} custom={carouselDirection} mode="popLayout">
                 {visibleModules.map((modulo, index) => (
                   <motion.div
@@ -122,10 +129,11 @@ export function ModuloList({ onSelectModulo }: ModuloListProps) {
                   </motion.div>
                 ))}
               </AnimatePresence>
-              {levelModules.length > 3 && <button type="button" className="missions-carousel-arrow is-next" disabled={carouselStart >= carouselMax} onClick={() => { setCarouselDirection('next'); setCarouselStart((current) => Math.min(carouselMax, current + 1)); }} aria-label="Ver próxima missão"><ChevronRight size={24} /></button>}
-            </div>
+              {levelModules.length > MODULES_PER_PAGE && <button type="button" className="missions-carousel-arrow is-next" disabled={carouselStart >= carouselMax} onClick={() => { setCarouselDirection('next'); setCarouselStart((current) => Math.min(carouselMax, current + MODULES_PER_PAGE)); }} aria-label="Ver próxima página de missões"><ChevronRight size={24} /></button>}
+              </>
+            )}
           </div>
-        )}
+        </div>
       </section>
     </div>
   );

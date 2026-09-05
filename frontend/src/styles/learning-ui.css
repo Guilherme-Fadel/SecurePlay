@@ -277,10 +277,11 @@
   from { transform: translateX(-46px); }
   to { transform: translateX(0); }
 }
-.missions-empty-state { display: flex; min-height: 260px; align-items: center; justify-content: center; flex-direction: column; text-align: center; }
-.missions-empty-state img { width: 115px; height: 115px; object-fit: contain;  opacity: .65; }
-.missions-empty-state h3 { margin: 4px 0; color: var(--dashboard-text); font-size: 17px; }
-.missions-empty-state p { margin: 0; color: var(--dashboard-muted); font-size: 12px; }
+.missions-module-grid.is-empty { grid-template-columns: 1fr; }
+.missions-empty-state { display: flex; min-height: 218px; align-items: center; justify-content: center; grid-column: 1 / -1; flex-direction: column; border: 1px solid rgba(255,241,207,.2); border-radius: 12px; background: rgba(55,25,10,.18); color: #fff8e8; text-align: center; }
+.missions-empty-state img { width: 96px; height: 96px; object-fit: contain; opacity: .9; filter: drop-shadow(0 7px 9px rgba(32,13,4,.3)); }
+.missions-empty-state h3 { margin: 3px 0; color: inherit; font-size: 17px; }
+.missions-empty-state p { margin: 0; color: rgba(255,248,232,.82); font-size: 12px; }
 
 @media (max-height: 800px) and (min-width: 761px) {
   .missions-room-page { gap: 6px; }
@@ -304,6 +305,7 @@
   .missions-shelf-heading h2 { font-size: 16px; }
   .missions-filter-bar { min-height: 33px; padding: 3px 9px; }
   .missions-module-grid { min-height: 178px; padding-top: 13px; padding-bottom: 15px; }
+  .missions-empty-state { min-height: 174px; }
   .mission-card { min-height: 174px; padding-top: 10px; }
   .mission-card-number { top: 7px; width: 27px; height: 27px; }
   .mission-card-type { top: 10px; }
