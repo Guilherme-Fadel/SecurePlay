@@ -8,9 +8,9 @@ import { calcLevel, calcXpToNextLevel } from '../common/utils/xp.utils';
 import {
   ttlUntilEndOfDay,
   ttlUntilEndOfWeek,
+  getLocalDateKey,
   getMondayOfWeek,
   getTodayWeekIndex,
-  now,
 } from '../common/utils/date.utils';
 import { EventEmitter2, OnEvent } from '@nestjs/event-emitter';
 import { S3Service } from '../conteudo/s3/s3.service';
@@ -276,8 +276,7 @@ export class DashboardService {
     const ttl = ttlUntilEndOfWeek();
     await this.redisService.set(key, JSON.stringify(checkedDays), ttl);
     const stats = await this.getOrCreateStats(usuario_id);
-    const today = now();
-    const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+    const todayStr = getLocalDateKey();
     if (stats.last_checkin_date) {
       const lastDate = new Date(stats.last_checkin_date + 'T00:00:00');
       const todayDate = new Date(todayStr + 'T00:00:00');
