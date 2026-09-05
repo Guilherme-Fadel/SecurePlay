@@ -1,6 +1,7 @@
 import { ChevronRight, Award } from 'lucide-react';
 import { InfoCard } from '@/components/ui/visuals/InfoCard';
 import { AchievementIcon } from '@/components/ui/visuals/AchievementIcon';
+import { DigitalKeyIcon } from '@/components/ui/visuals/DigitalKeyIcon';
 import { useRecentAchievements } from '@/hooks/useAchievements';
 import { useSectionContext } from '@/contexts/SectionContext';
 
@@ -33,11 +34,11 @@ export function Achievements() {
               <span className="academy-achievement-new">{index === 0 ? 'Mais recente' : 'Conquistada'}</span>
               <div className="academy-achievement-showcase">
                 <i aria-hidden="true" />
-                <div className="dashboard-achievement-icon is-purple"><AchievementIcon icon={node.iconName ?? node.icon} artworkUrl={node.artworkUrl} size={32} /></div>
+                <div className="dashboard-achievement-icon is-purple"><AchievementIcon slug={node.slug} icon={node.iconName ?? node.icon} artworkUrl={node.artworkUrl} size={32} /></div>
               </div>
               <div>
                 <strong>{node.name}</strong>
-                {node.rewardPrestige !== null && <p>+{node.rewardPrestige} Prestígio</p>}
+                {node.rewardPrestige !== null && <p className="dashboard-digital-key-reward"><DigitalKeyIcon size={20} /> +{node.rewardPrestige} Chaves Digitais</p>}
                 {node.unlockedAt && <time className="academy-achievement-date" dateTime={node.unlockedAt}>
                   {new Date(node.unlockedAt).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })}
                 </time>}

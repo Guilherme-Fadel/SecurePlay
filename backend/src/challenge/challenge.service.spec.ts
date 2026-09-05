@@ -20,17 +20,19 @@ describe('ChallengeService daily authorization', () => {
       { findOne: jest.fn(), create: jest.fn(), save: jest.fn() } as never,
       { get: jest.fn(), set: jest.fn() } as never,
       { emitAsync: jest.fn() } as never,
-      { resolveImageUrl: jest.fn(async (source) => source) } as never,
     );
 
-  it('resolves the current image after retrieving a cached daily challenge', async () => {
+  it('does not expose an S3 reference after retrieving a cached daily challenge', async () => {
     const service = buildService();
     const internals = service as any;
-    internals.redisService.get.mockResolvedValue(JSON.stringify({ id: 5, image: '/old.svg' }));
-    internals.challengeRepository.findOne.mockResolvedValue({ id: 5, image: 's3://test/new.png' });
-    internals.s3Service.resolveImageUrl.mockResolvedValue('https://signed.example/new.png');
-    expect(await service.getDailyChallenge(11)).toEqual({ id: 5, image: 'https://signed.example/new.png' });
-    expect(internals.s3Service.resolveImageUrl).toHaveBeenCalledWith('s3://test/new.png');
+    internals.redisService.get.mockResolvedValue(
+      JSON.stringify({ id: 5, image: '/old.svg' }),
+    );
+    internals.challengeRepository.findOne.mockResolvedValue({
+      id: 5,
+      image: 's3://test/new.png',
+    });
+    expect(await service.getDailyChallenge(11)).toEqual({ id: 5, image: null });
     expect(internals.redisService.set).not.toHaveBeenCalled();
   });
 

@@ -30,7 +30,7 @@ export async function executeCosmeticPurchase(
     lock: { mode: 'pessimistic_write' },
   });
   if (!wallet || wallet.balance < item.price) {
-    throw new BadRequestException('Prestígio insuficiente');
+    throw new BadRequestException('Chaves Digitais insuficientes');
   }
   wallet.balance -= item.price;
   await walletRepository.save(wallet);

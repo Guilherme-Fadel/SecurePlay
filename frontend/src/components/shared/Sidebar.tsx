@@ -1,5 +1,5 @@
 import type { Section } from "@/pages/Home"
-import { Award, BookOpen, ChevronLeft, Gamepad2, LayoutDashboard, Menu, MoreHorizontal, Settings, ShieldCheck, ShieldIcon, Trophy, UserRound } from "lucide-react"
+import { Award, BookOpen, ChevronLeft, Gamepad2, LayoutDashboard, Menu, Settings, ShieldCheck, ShieldIcon, Trophy, UserRound, X } from "lucide-react"
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react"
 import academyCastle from '@/assets/dashboard/academy-castle-pixel-v5.png'
 
@@ -109,29 +109,25 @@ type MobileNavigationProps = {
   showAdmin: boolean
 }
 
-const mobilePrimaryItems: Array<{ id: Section; label: string; icon: ReactNode }> = [
+const mobileNavigationItems: Array<{ id: Section; label: string; icon: ReactNode }> = [
   { id: 'dashboard', label: 'Início', icon: <LayoutDashboard /> },
   { id: 'conteudos', label: 'Aprender', icon: <BookOpen /> },
   { id: 'desafios', label: 'Jogar', icon: <Gamepad2 /> },
   { id: 'ranking', label: 'Ranking', icon: <Trophy /> },
-]
-
-const mobileMoreItems: Array<{ id: Section; label: string; icon: ReactNode }> = [
   { id: 'conquistas', label: 'Conquistas', icon: <Award /> },
   { id: 'perfil', label: 'Meu perfil', icon: <UserRound /> },
   { id: 'configuracoes', label: 'Configurações', icon: <Settings /> },
 ]
 
 export function MobileNavigation({ activeSection, onSelect, showAdmin }: MobileNavigationProps) {
-  const [moreOpen, setMoreOpen] = useState(false)
-  const isMoreActive = mobileMoreItems.some((item) => item.id === activeSection) || (showAdmin && activeSection === 'admin')
-  const moreItems = showAdmin
-    ? [...mobileMoreItems, { id: 'admin' as Section, label: 'Administrador', icon: <ShieldIcon /> }]
-    : mobileMoreItems
+  const [menuOpen, setMenuOpen] = useState(false)
+  const items = showAdmin
+    ? [...mobileNavigationItems, { id: 'admin' as Section, label: 'Administrador', icon: <ShieldIcon /> }]
+    : mobileNavigationItems
 
   useEffect(() => {
     const closeOnEscape = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') setMoreOpen(false)
+      if (event.key === 'Escape') setMenuOpen(false)
     }
     window.addEventListener('keydown', closeOnEscape)
     return () => window.removeEventListener('keydown', closeOnEscape)
@@ -139,32 +135,48 @@ export function MobileNavigation({ activeSection, onSelect, showAdmin }: MobileN
 
   const choose = (section: Section) => {
     onSelect(section)
-    setMoreOpen(false)
+    setMenuOpen(false)
   }
 
   return (
-    <nav className="secure-mobile-nav" aria-label="Navegação principal">
-      <div className="secure-mobile-nav-list">
-        {mobilePrimaryItems.map((item) => (
-          <button key={item.id} type="button" onClick={() => choose(item.id)} aria-current={activeSection === item.id ? 'page' : undefined} className={`secure-mobile-nav-button ${activeSection === item.id ? 'is-active' : ''}`}>
-            {item.icon}<span>{item.label}</span>
-          </button>
-        ))}
-        <div className="secure-mobile-nav-more">
-          <button type="button" onClick={() => setMoreOpen((current) => !current)} aria-expanded={moreOpen} aria-controls="secure-mobile-more-menu" className={`secure-mobile-nav-button ${isMoreActive ? 'is-active' : ''}`}>
-            <MoreHorizontal /><span>Mais</span>
-          </button>
-          {moreOpen && (
-            <div id="secure-mobile-more-menu" className="secure-mobile-more-menu" aria-label="Mais seções">
-              {moreItems.map((item) => (
-                <button key={item.id} type="button" onClick={() => choose(item.id)} aria-current={activeSection === item.id ? 'page' : undefined}>
+    <div className={`secure-mobile-navigation ${menuOpen ? 'is-open' : ''}`}>
+      <button
+        type="button"
+        className="secure-mobile-menu-trigger"
+        onClick={() => setMenuOpen((current) => !current)}
+        aria-label={menuOpen ? 'Fechar menu de navegação' : 'Abrir menu de navegação'}
+        aria-expanded={menuOpen}
+        aria-controls="secure-mobile-navigation-menu"
+      >
+        {menuOpen ? <X /> : <Menu />}
+      </button>
+
+      {menuOpen && (
+        <>
+          <button
+            type="button"
+            className="secure-mobile-menu-backdrop"
+            onClick={() => setMenuOpen(false)}
+            aria-label="Fechar menu de navegação"
+          />
+          <nav id="secure-mobile-navigation-menu" className="secure-mobile-nav" aria-label="Navegação principal">
+            <strong className="secure-mobile-nav-title">Navegação</strong>
+            <div className="secure-mobile-nav-list">
+              {items.map((item) => (
+                <button
+                  key={item.id}
+                  type="button"
+                  onClick={() => choose(item.id)}
+                  aria-current={activeSection === item.id ? 'page' : undefined}
+                  className={`secure-mobile-nav-button ${activeSection === item.id ? 'is-active' : ''}`}
+                >
                   {item.icon}<span>{item.label}</span>
                 </button>
               ))}
             </div>
-          )}
-        </div>
-      </div>
-    </nav>
+          </nav>
+        </>
+      )}
+    </div>
   )
 }

@@ -8,6 +8,7 @@ import {
   Crown,
   Flame,
   Gamepad2,
+  Gem,
   GraduationCap,
   Loader2,
   LockKeyhole,
@@ -16,9 +17,7 @@ import {
   RotateCcw,
   Search,
   ShieldCheck,
-  ShoppingCart,
   Sparkles,
-  Store,
   Target,
   type LucideProps,
 } from 'lucide-react';
@@ -28,6 +27,7 @@ import { AppButton } from '@/components/ui/buttons/AppButton';
 import { AppSectionHeader } from '@/components/ui/visuals/AppSectionHeader';
 import { InfoCard } from '@/components/ui/visuals/InfoCard';
 import { AchievementIcon } from '@/components/ui/visuals/AchievementIcon';
+import { DigitalKeyIcon } from '@/components/ui/visuals/DigitalKeyIcon';
 import { useAchievementShop, useAchievementTrail } from '@/hooks/useAchievements';
 import type {
   AchievementCategory,
@@ -75,22 +75,22 @@ export function Awards() {
       <div className="app-page achievements-page">
         <AppSectionHeader
           title="Conquistas"
-          subtitle="Evolua pelas trilhas, conquiste Prestígio e personalize sua presença no SecurePlay."
+          subtitle="Evolua pelas trilhas, conquiste Chaves Digitais e personalize sua presença no SecurePlay."
           action={trail ? (
             <div className="achievements-prestige-pill">
-              <Sparkles size={16} />
+              <DigitalKeyIcon size={32} />
               <span>{trail.summary.prestigeBalance}</span>
-              <small>Prestígio</small>
+              <small>Chaves Digitais</small>
             </div>
           ) : undefined}
         />
 
         <div className="achievements-view-switch" role="tablist" aria-label="Áreas de conquistas">
           <button type="button" role="tab" aria-selected={view === 'trail'} className={view === 'trail' ? 'is-active' : ''} onClick={() => setView('trail')}>
-            <Award size={17} /> Trilha de Conquistas
+            <Award size={17} /> Conquistas
           </button>
           <button type="button" role="tab" aria-selected={view === 'shop'} className={view === 'shop' ? 'is-active' : ''} onClick={() => setView('shop')}>
-            <ShoppingCart size={17} /> Shop
+            <Gem size={17} /> Colecionáveis
           </button>
         </div>
 
@@ -138,7 +138,7 @@ function TrailView({ trail, loading, error, refetch }: {
             <span>completo</span>
           </div>
           <div className="achievements-summary-stat"><ChevronsUp size={18} /><span>Nível<strong>{trail.summary.level}</strong></span></div>
-          <div className="achievements-summary-stat"><Sparkles size={18} /><span>Prestígio total<strong>{trail.summary.prestigeEarned}</strong></span></div>
+          <div className="achievements-summary-stat"><DigitalKeyIcon size={32} /><span>Chaves conquistadas<strong>{trail.summary.prestigeEarned}</strong></span></div>
         </div>
       </InfoCard>
 
@@ -181,7 +181,7 @@ function AchievementBranch({ category, nodes, selectedSlug, onSelect }: {
               {index > 0 && <span className={`achievement-connector ${node.status === 'unlocked' ? 'is-complete' : ''}`} />}
               <button type="button" className={`achievement-node is-${node.status} rarity-${node.rarity} ${selectedSlug === node.slug ? 'is-selected' : ''}`} onClick={() => onSelect(node.slug)} aria-label={node.name}>
                 <span className="achievement-node-progress" style={{ '--node-progress': `${node.progressPercent * 3.6}deg` } as CSSProperties} />
-                <AchievementIcon icon={node.iconName ?? node.icon} artworkUrl={node.artworkUrl} size={22} />
+                <AchievementIcon slug={node.slug} icon={node.iconName ?? node.icon} artworkUrl={node.artworkUrl} size={22} />
                 {node.status === 'unlocked' && <Check className="achievement-node-check" size={12} strokeWidth={3} />}
               </button>
               <span className="achievement-node-tier">Nível {node.tier}</span>
@@ -199,7 +199,7 @@ function AchievementDetail({ node }: { node: AchievementNode | null }) {
   return (
     <aside className={`achievement-detail rarity-${node.rarity}`}>
       <div className="achievement-detail-top">
-        <span className={`achievement-detail-icon is-${node.status}`}><AchievementIcon icon={node.iconName ?? node.icon} artworkUrl={node.artworkUrl} size={28} /></span>
+        <span className={`achievement-detail-icon is-${node.status}`}><AchievementIcon slug={node.slug} icon={node.iconName ?? node.icon} artworkUrl={node.artworkUrl} size={28} /></span>
         <span className="achievement-rarity">{rarityLabels[node.rarity]}</span>
       </div>
       <span className="achievement-detail-path">{category.label} · Nível {node.tier}</span>
@@ -210,8 +210,8 @@ function AchievementDetail({ node }: { node: AchievementNode | null }) {
         <div className="achievement-detail-bar"><span style={{ width: `${node.progressPercent}%` }} /></div>
       </div>
       <div className="achievement-detail-reward">
-        <Sparkles size={18} />
-        <div><span>Recompensa</span><strong>{node.rewardPrestige ?? '?'} Prestígio</strong></div>
+        <DigitalKeyIcon size={36} />
+        <div><span>Recompensa</span><strong>{node.rewardPrestige ?? '?'} Chaves Digitais</strong></div>
       </div>
       <div className={`achievement-status-message is-${node.status}`}>
         {node.status === 'unlocked' ? <><BadgeCheck size={17} /> Desbloqueada</> : node.status === 'in_progress' ? <><Target size={17} /> Continue avançando</> : <><LockKeyhole size={17} /> Complete o marco anterior</>}
@@ -270,10 +270,10 @@ function ShopView() {
           </div>
         </div>
         <div className="achievement-shop-intro">
-          <span className="achievements-eyebrow"><Store size={14} /> Shop SecurePlay</span>
+          <span className="achievements-eyebrow"><Gem size={14} /> Colecionáveis SecurePlay</span>
           <h3>Transforme sua evolução em identidade</h3>
-          <p>Use apenas Prestígio conquistado na plataforma. Os itens são cosméticos e não alteram seu desempenho.</p>
-          <div className="achievement-shop-balance"><Sparkles size={20} /><span>Saldo disponível<strong>{shop.prestigeBalance} Prestígio</strong></span></div>
+          <p>Use apenas Chaves Digitais conquistadas na plataforma. Os itens são cosméticos e não alteram seu desempenho.</p>
+          <div className="achievement-shop-balance"><DigitalKeyIcon size={36} /><span>Saldo disponível<strong>{shop.prestigeBalance} Chaves Digitais</strong></span></div>
         </div>
       </InfoCard>
 
@@ -298,8 +298,8 @@ function ShopView() {
               <p>{item.description}</p>
               {!item.requirementMet && <div className="achievement-shop-lock"><LockKeyhole size={14} /> Conquista necessária</div>}
               <div className="achievement-shop-item-footer">
-                <strong><Sparkles size={15} /> {item.price}</strong>
-                {item.equipped ? <AppButton size="sm" variant="ghost" disabled={changingItem === item.id} icon={changingItem === item.id ? <Loader2 className="animate-spin" size={15} /> : <RotateCcw size={15} />} onClick={() => handleUnequip(item)}>Desequipar</AppButton> : item.owned ? <AppButton size="sm" variant="secondary" disabled={changingItem === item.id} icon={changingItem === item.id ? <Loader2 className="animate-spin" size={15} /> : <Gamepad2 size={15} />} onClick={() => handleEquip(item)}>Equipar</AppButton> : <AppButton size="sm" disabled={!item.requirementMet || !item.affordable || changingItem === item.id} icon={changingItem === item.id ? <Loader2 className="animate-spin" size={15} /> : <ShoppingCart size={15} />} onClick={() => handlePurchase(item)}>Adquirir</AppButton>}
+                <strong title={`${item.price} Chaves Digitais`}><DigitalKeyIcon size={24} /> {item.price}</strong>
+                {item.equipped ? <AppButton size="sm" variant="ghost" disabled={changingItem === item.id} icon={changingItem === item.id ? <Loader2 className="animate-spin" size={15} /> : <RotateCcw size={15} />} onClick={() => handleUnequip(item)}>Desequipar</AppButton> : item.owned ? <AppButton size="sm" variant="secondary" disabled={changingItem === item.id} icon={changingItem === item.id ? <Loader2 className="animate-spin" size={15} /> : <Gamepad2 size={15} />} onClick={() => handleEquip(item)}>Equipar</AppButton> : <AppButton size="sm" disabled={!item.requirementMet || !item.affordable || changingItem === item.id} icon={changingItem === item.id ? <Loader2 className="animate-spin" size={15} /> : undefined} onClick={() => handlePurchase(item)}>Adquirir</AppButton>}
               </div>
             </InfoCard>
           ))}
@@ -322,5 +322,5 @@ function EmptyCatalog() {
 }
 
 function EmptyShop() {
-  return <InfoCard raised className="achievements-empty"><Store size={36} /><h3>Nenhum item nesta categoria</h3><p>Novos cosméticos poderão ser adicionados ao catálogo sem alterar a interface.</p></InfoCard>;
+  return <InfoCard raised className="achievements-empty"><Gem size={36} /><h3>Nenhum item nesta categoria</h3><p>Novos cosméticos poderão ser adicionados ao catálogo sem alterar a interface.</p></InfoCard>;
 }

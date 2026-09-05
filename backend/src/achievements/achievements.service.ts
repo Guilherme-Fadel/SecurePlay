@@ -3,7 +3,6 @@ import {
   Inject,
   Injectable,
   NotFoundException,
-  Optional,
 } from '@nestjs/common';
 import { DataSource, Repository } from 'typeorm';
 import { Achievement } from './entities/achievement.entity';
@@ -20,7 +19,6 @@ import { UsuarioChallenge } from '../usuario-challenge/usuario-challenge.entity'
 import { UsuarioAula } from '../conteudo/usuario-aula/usuario-aula.entity';
 import { UsuarioArcadeStats } from '../arcade/entities/usuario-arcade-stats.entity';
 import { OnEvent } from '@nestjs/event-emitter';
-import { S3Service } from '../conteudo/s3/s3.service';
 import {
   AchievementMetrics,
   AchievementTrailNode,
@@ -64,7 +62,6 @@ export class AchievementsService {
     private arcadeStatsRepository: Repository<UsuarioArcadeStats>,
     @Inject('DATA_SOURCE')
     private dataSource: DataSource,
-    @Optional() private readonly s3Service?: S3Service,
   ) {}
 
   @OnEvent('progress.changed')
@@ -72,18 +69,9 @@ export class AchievementsService {
     await this.getTrail(payload.usuarioId);
   }
 
-  private async resolveArtwork(
-    definition: Achievement,
-  ): Promise<string | null> {
-    const source = definition.image_url;
-    if (!source) return null;
-    if (!source.startsWith('s3://')) return source;
-    if (!this.s3Service) return null;
-    try {
-      return await this.s3Service.resolveImageUrl(source);
-    } catch {
-      return null;
-    }
+  private resolveArtwork(definition: Achievement): string | null {
+    const source = definition.image_url?.trim();
+    return source && !source.startsWith('s3://') ? source : null;
   }
 
   private async getWallet(usuario_id: number): Promise<PrestigeWallet> {
@@ -153,7 +141,7 @@ export class AchievementsService {
         1,
         PrestigeTransactionType.LEVEL,
         `level:${currentLevel}`,
-        `Prestígio recebido ao alcançar o nível ${currentLevel}`,
+        `Chaves Digitais recebidas ao alcançar o nível ${currentLevel}`,
       );
     }
   }
@@ -219,7 +207,7 @@ export class AchievementsService {
           record,
           prerequisiteMet,
           concealed,
-          artworkUrl: concealed ? null : await this.resolveArtwork(definition),
+          artworkUrl: concealed ? null : this.resolveArtwork(definition),
         }),
       );
     }

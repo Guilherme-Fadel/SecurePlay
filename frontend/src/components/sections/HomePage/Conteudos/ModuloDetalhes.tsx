@@ -1,10 +1,11 @@
 import { useModulo } from '@/hooks/useModulo';
 import { AulaListItem } from './AulaListItem';
 import { AulaResumo } from '@/services/conteudo';
-import { ArrowLeft, BookOpenCheck, CheckCircle2, Play, Sparkles, Star, Trophy } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, Play, Sparkles, Star, Trophy } from 'lucide-react';
 import { AppButton } from '@/components/ui/buttons/AppButton';
 import { MissionRoomAssets, useMissionRoomAssets } from '@/hooks/useMissionRoomAssets';
 import { ProgressiveImage } from '@/components/ui/visuals/ProgressiveImage';
+import { getModuleArtwork } from '@/lib/staticArtwork';
 
 interface ModuloDetalhesProps { moduloId: number; onBack: () => void; onSelectAula: (aulaId: number) => void; }
 
@@ -22,7 +23,7 @@ export function ModuloDetalhes({ moduloId, onBack, onSelectAula }: ModuloDetalhe
       <AppButton onClick={onBack} variant="ghost" size="sm" icon={<ArrowLeft size={16} />} className="w-fit">Voltar aos conteúdos</AppButton>
       <main className="module-book" style={{ '--module-book-frame': `url(${assets['module-book-frame-clean']})` } as React.CSSProperties}>
         <section className="module-book-summary">
-          <div className="module-book-cover">{modulo.thumbnail ? <ProgressiveImage src={modulo.thumbnail} alt="" /> : <BookOpenCheck size={54} />}</div>
+          <div className="module-book-cover"><ProgressiveImage src={getModuleArtwork(modulo)} alt="" /></div>
           <span className="module-book-category">{modulo.category}</span>
           <h1>{modulo.title}</h1><p>{modulo.description}</p>
           <div className="module-book-progress-title"><i /><Sparkles size={14} /><strong>PROGRESSO DA MISSÃO</strong><Sparkles size={14} /><i /></div>

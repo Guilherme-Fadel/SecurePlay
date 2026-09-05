@@ -125,7 +125,7 @@ export function ModuloList({ onSelectModulo }: ModuloListProps) {
                     exit="exit"
                     transition={{ duration: prefersReducedMotion ? 0 : 0.3, ease: [0.22, 1, 0.36, 1] }}
                   >
-                    <ModuloCard modulo={modulo} assets={assets} index={carouselStart + index} onClick={() => onSelectModulo(modulo.id)} />
+                    <ModuloCard modulo={modulo} index={carouselStart + index} onClick={() => onSelectModulo(modulo.id)} />
                   </motion.div>
                 ))}
               </AnimatePresence>

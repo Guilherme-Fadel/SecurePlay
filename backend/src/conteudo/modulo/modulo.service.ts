@@ -9,7 +9,6 @@ import { Modulo } from './modulo.entity';
 import { Aula } from '../aula/aula.entity';
 import { UsuarioAula } from '../usuario-aula/usuario-aula.entity';
 import { CreateModuloDto, UpdateModuloDto } from './dto/modulo.dto';
-import { S3Service } from '../s3/s3.service';
 
 @Injectable()
 export class ModuloService {
@@ -22,22 +21,13 @@ export class ModuloService {
 
     @Inject('USUARIO_AULA_REPOSITORY')
     private usuarioAulaRepository: Repository<UsuarioAula>,
-    private readonly s3Service: S3Service,
   ) {}
 
-  /**
-   * Converte a referencia gravada em modulo.thumbnail na URL que o cliente usa.
-   * Aceita 's3://bucket/chave' (vira presigned GET) ou uma URL http ja publica.
-   * Referencia invalida devolve null: a listagem nao deve quebrar por causa da capa.
-   */
-  private async resolveThumbnail(
-    source: string | null,
-  ): Promise<string | null> {
-    try {
-      return await this.s3Service.resolveImageUrl(source);
-    } catch {
-      return null;
-    }
+  /** Assets padronizados são resolvidos no frontend pelo título/chave do módulo. */
+  private resolveThumbnail(source: string | null): string | null {
+    const normalized = source?.trim();
+    if (!normalized || normalized.startsWith('s3://')) return null;
+    return normalized;
   }
 
   async findAll(usuario_id: number) {
@@ -73,51 +63,49 @@ export class ModuloService {
     // quando o modulo anterior estiver 100% concluido. O primeiro sempre libera.
     let previousModuloCompleted = true;
 
-    return Promise.all(
-      modulos.map(async (modulo) => {
-        const moduloAulas = aulasByModulo.get(modulo.id) ?? [];
-        const moduloProgress = moduloAulas
-          .map((aula) => progressByAula.get(aula.id))
-          .filter((row): row is UsuarioAula => Boolean(row));
-        const completedAulas = moduloAulas.filter(
-          (aula) => progressByAula.get(aula.id)?.completed,
-        ).length;
-        const lastAccessedAt = moduloProgress.reduce<Date | null>(
-          (latest, row) => {
-            if (!row.last_accessed_at) return latest;
-            return !latest || row.last_accessed_at > latest
-              ? row.last_accessed_at
-              : latest;
-          },
-          null,
-        );
-        const totalAulas = moduloAulas.length;
-        const progress =
-          totalAulas > 0 ? Math.round((completedAulas / totalAulas) * 100) : 0;
-        const nextAula = moduloAulas.find(
-          (aula) => !progressByAula.get(aula.id)?.completed,
-        );
-        const thumbnail = await this.resolveThumbnail(modulo.thumbnail);
+    return modulos.map((modulo) => {
+      const moduloAulas = aulasByModulo.get(modulo.id) ?? [];
+      const moduloProgress = moduloAulas
+        .map((aula) => progressByAula.get(aula.id))
+        .filter((row): row is UsuarioAula => Boolean(row));
+      const completedAulas = moduloAulas.filter(
+        (aula) => progressByAula.get(aula.id)?.completed,
+      ).length;
+      const lastAccessedAt = moduloProgress.reduce<Date | null>(
+        (latest, row) => {
+          if (!row.last_accessed_at) return latest;
+          return !latest || row.last_accessed_at > latest
+            ? row.last_accessed_at
+            : latest;
+        },
+        null,
+      );
+      const totalAulas = moduloAulas.length;
+      const progress =
+        totalAulas > 0 ? Math.round((completedAulas / totalAulas) * 100) : 0;
+      const nextAula = moduloAulas.find(
+        (aula) => !progressByAula.get(aula.id)?.completed,
+      );
+      const thumbnail = this.resolveThumbnail(modulo.thumbnail);
 
-        const locked = !previousModuloCompleted;
-        // um modulo sem aulas ativas nao trava a cadeia
-        const isModuloCompleted = totalAulas === 0 || progress === 100;
-        previousModuloCompleted = previousModuloCompleted && isModuloCompleted;
+      const locked = !previousModuloCompleted;
+      // um modulo sem aulas ativas nao trava a cadeia
+      const isModuloCompleted = totalAulas === 0 || progress === 100;
+      previousModuloCompleted = previousModuloCompleted && isModuloCompleted;
 
-        return {
-          ...modulo,
-          thumbnail,
-          artworkUrl: thumbnail,
-          totalAulas,
-          completedAulas,
-          progress,
-          hasStarted: moduloProgress.length > 0,
-          lastAccessedAt,
-          nextAulaId: nextAula?.id ?? null,
-          locked,
-        };
-      }),
-    );
+      return {
+        ...modulo,
+        thumbnail,
+        artworkUrl: thumbnail,
+        totalAulas,
+        completedAulas,
+        progress,
+        hasStarted: moduloProgress.length > 0,
+        lastAccessedAt,
+        nextAulaId: nextAula?.id ?? null,
+        locked,
+      };
+    });
   }
 
   /**
@@ -295,7 +283,7 @@ export class ModuloService {
     ).length;
     const progress =
       totalAulas > 0 ? Math.round((completedCount / totalAulas) * 100) : 0;
-    const thumbnail = await this.resolveThumbnail(modulo.thumbnail);
+    const thumbnail = this.resolveThumbnail(modulo.thumbnail);
 
     return {
       ...modulo,

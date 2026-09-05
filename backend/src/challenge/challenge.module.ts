@@ -1,5 +1,4 @@
 import { Module } from '@nestjs/common';
-import { S3Service } from '../conteudo/s3/s3.service';
 import { DatabaseModule } from '../database/database.molule';
 import { ChallengeService } from './challenge.service';
 import { ChallengeController } from './challenge.controller';
@@ -13,7 +12,6 @@ import { RedisModule } from '../redis/redis.module';
   imports: [DatabaseModule, RedisModule],
   controllers: [ChallengeController],
   providers: [
-    S3Service,
     ...challengeProviders,
     ...questionProviders,
     ...usuarioChallengeProviders,

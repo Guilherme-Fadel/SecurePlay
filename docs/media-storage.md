@@ -1,26 +1,36 @@
-# Armazenamento de imagens
+# Armazenamento de mídia
 
-## Convenção
+## Assets públicos e padronizados
 
-- Conquistas: `achievement.image_url` (referência persistente `s3://bucket/key`).
-- Jogos: `arcade_game.image` (mesma referência).
-- Missões diárias: `challenge.image` (mesma referência).
-- A API assina a leitura no bucket privado por uma hora. Nunca persistir URLs assinadas: elas expiram.
-- As ilustrações da Sala de Missões ficam em `ui/missions-room/v1/`. O backend mantém um catálogo de chaves fixas e entrega URLs assinadas em `GET /conteudo/ui-assets/missions-room`; não são persistidas URLs temporárias nem criada tabela apenas para decoração.
-- PNGs antigos, referências e temporários ficam fora do Git. Os cinco PNGs de jogos são fallbacks locais usados também por instalações ainda não migradas.
+As artes fixas da interface acompanham o build do frontend em
+`frontend/src/assets`. O Vite acrescenta hash aos nomes publicados, permitindo
+cache longo sem manter URLs assinadas:
 
-## Publicação
+- conquistas: `frontend/src/assets/static/achievements/<slug>.png`;
+- jogos e desafios: `frontend/src/assets/static/games/<slug>.png`;
+- Sala de Missões: `frontend/src/assets/static/mission-room/`;
+- dashboard, landing page e login: suas pastas existentes em
+  `frontend/src/assets/dashboard` e `frontend/src/assets/kids`.
 
-Na pasta `backend`, com `.env` configurado:
+O catálogo central fica em `frontend/src/lib/staticArtwork.ts`. Módulos são
+associados por chave lógica e título; conquistas e jogos usam seus respectivos
+`slug`s.
 
-```powershell
-node --env-file=.env scripts/inspect-achievement-art.cjs --images
-node --env-file=.env scripts/publish-challenge-art.cjs
-node --env-file=.env scripts/publish-challenge-art.cjs --apply
-```
+## Conteúdo mantido no S3 privado
 
-Sem `--apply`, a publicação dos desafios só mostra as associações planejadas. Com a opção, faz backup dos valores anteriores em `tmp/challenge-art`, publica objetos com hash e verifica os bytes via download antes de atualizar as duas tabelas em transação. Imagens personalizadas e valores nulos não são substituídos. Reexecuções não duplicam registros nem sobrescrevem objetos.
+- vídeos e páginas de quadrinhos;
+- avatares e logos específicos de usuários/organizações;
+- uploads e outros arquivos que exigem autorização.
 
-Para republicar conquistas, disponibilize os PNGs originais em `frontend/public/achievements` e execute `node --env-file=.env scripts/publish-achievement-art.cjs`. Os 20 originais estão no S3; não são necessários no bundle do frontend. O manifesto em `achievement-art-manifest.json` identifica os arquivos. O backup local e as referências no banco permitem localizar as versões publicadas.
+Esses arquivos continuam usando URLs assinadas. Nunca persista uma URL
+assinada no banco, pois ela expira.
 
-Implante o backend com resolução de S3 antes de migrar os campos de jogos/missões. A missão diária resolve a imagem após ler o cache; a URL assinada não é gravada no Redis. Nenhuma política ou ACL pública do bucket é necessária.
+## Banco de dados
+
+Campos de imagens padronizadas devem guardar chaves lógicas, não caminhos do
+computador. Exemplo: `modulo.thumbnail = 'module-foundations'`.
+
+Para migrar as capas atuais, execute
+`backend/database/migrate-static-module-thumbnails.sql` pelo DBeaver. Valores
+antigos `s3://...` já são ignorados pelos serviços públicos durante a transição,
+portanto não geram novas assinaturas.

@@ -152,8 +152,8 @@ function HomeContent() {
         <div className="secure-home flex h-screen overflow-hidden">
 
           <Sidebar>
-            <SidebarItem id="dashboard" icon={<LayoutDashboard />} text="Dashboard" active={activeSection === 'dashboard'} onSelect={setActiveSection}/>
-            <SidebarItem id="conteudos" icon={<BookOpenIcon />} text="Conteúdos" active={activeSection === 'conteudos'} onSelect={setActiveSection}/>
+            <SidebarItem id="dashboard" icon={<LayoutDashboard />} text="Início" active={activeSection === 'dashboard'} onSelect={setActiveSection}/>
+            <SidebarItem id="conteudos" icon={<BookOpenIcon />} text="Aprender" active={activeSection === 'conteudos'} onSelect={setActiveSection}/>
             <SidebarItem id="desafios" icon={<Gamepad2 />} text="Jogos" active={activeSection === 'desafios'} onSelect={setActiveSection}/>
             <SidebarItem id="ranking" icon={<TrophyIcon />} text="Ranking" active={activeSection === 'ranking'} onSelect={setActiveSection}/>
             <SidebarItem id="conquistas" icon={<AwardIcon />} text="Conquistas" active={activeSection === 'conquistas'} onSelect={setActiveSection}/>
@@ -172,8 +172,8 @@ function HomeContent() {
             </main>
           </div>
 
+          <MobileNavigation activeSection={activeSection} onSelect={setActiveSection} showAdmin={canOpenSection('admin')} />
         </div>
-        <MobileNavigation activeSection={activeSection} onSelect={setActiveSection} showAdmin={canOpenSection('admin')} />
         </SectionContext.Provider>
     </>);
 }

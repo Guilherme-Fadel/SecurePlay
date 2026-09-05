@@ -44,6 +44,15 @@
   box-sizing: border-box;
 }
 
+.digital-key-icon {
+  display: inline-block;
+  max-width: none;
+  flex: 0 0 auto;
+  object-fit: contain;
+  image-rendering: auto;
+  user-select: none;
+}
+
 .secure-home :where(h1, h2, h3, h4, h5, h6, p, span, small, strong, button, input, a, li) {
   font-family: inherit;
   letter-spacing: inherit;
@@ -872,6 +881,7 @@
 }
 
 @media (min-width: 561px) {
+  .secure-mobile-navigation,
   .secure-mobile-nav { display: none; }
 }
 

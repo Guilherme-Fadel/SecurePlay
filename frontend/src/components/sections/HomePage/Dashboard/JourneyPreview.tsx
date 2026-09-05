@@ -4,6 +4,7 @@ import type { JourneyData, JourneyNodeData } from '@/services/dashboard';
 import { ProgressiveImage } from '@/components/ui/visuals/ProgressiveImage';
 import journeyWide from '@/assets/dashboard/journey-landscape-panorama-v2.png';
 import journeyCompact from '@/assets/dashboard/journey-landscape-compact-v1.jpg';
+import { getModuleArtwork } from '@/lib/staticArtwork';
 import {
   buildJourneyPath,
   getJourneySlots,
@@ -161,7 +162,7 @@ export function JourneyPreview({
                         ) : node.availability === 'locked' ? (
                           <Lock size={24} />
                         ) : (
-                          <JourneyArtwork source={node.artworkUrl} />
+                          <JourneyArtwork title={node.title} source={node.artworkUrl} />
                         )}
                       </span>
                     </button>
@@ -185,9 +186,9 @@ export function JourneyPreview({
   );
 }
 
-function JourneyArtwork({ source }: { source: string | null }) {
+function JourneyArtwork({ title, source }: { title: string; source: string | null }) {
   const [failed, setFailed] = useState(false);
   useEffect(() => setFailed(false), [source]);
-  if (!source || failed) return <BookOpenCheck size={26} />;
-  return <ProgressiveImage src={source} alt="" onError={() => setFailed(true)} />;
+  if (failed) return <BookOpenCheck size={26} />;
+  return <ProgressiveImage src={getModuleArtwork({ title, thumbnail: source, artworkUrl: source })} alt="" onError={() => setFailed(true)} />;
 }

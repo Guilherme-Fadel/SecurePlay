@@ -4,12 +4,7 @@ describe('ModuloService journey summary', () => {
   let service: ModuloService;
 
   beforeEach(() => {
-    service = new ModuloService(
-      {} as never,
-      {} as never,
-      {} as never,
-      { resolveImageUrl: jest.fn() } as never,
-    );
+    service = new ModuloService({} as never, {} as never, {} as never);
   });
 
   const moduleAt = (id: number, overrides: Record<string, unknown> = {}) => ({
@@ -118,12 +113,7 @@ describe('ModuloService bloqueio sequencial de modulo', () => {
   let service: ModuloService;
 
   beforeEach(() => {
-    service = new ModuloService(
-      {} as never,
-      {} as never,
-      {} as never,
-      { resolveImageUrl: jest.fn() } as never,
-    );
+    service = new ModuloService({} as never, {} as never, {} as never);
   });
 
   const moduloResumo = (
@@ -195,7 +185,6 @@ describe('ModuloService findAll calcula locked', () => {
           getMany: jest.fn().mockResolvedValue(progresso),
         })),
       } as never,
-      { resolveImageUrl: jest.fn().mockResolvedValue(null) } as never,
     );
 
   it('marca o segundo modulo como locked quando o primeiro nao esta completo', async () => {
@@ -242,7 +231,7 @@ describe('ModuloService thumbnail resolution', () => {
     active: true,
   };
 
-  const buildService = (resolveImageUrl: jest.Mock) =>
+  const buildService = () =>
     new ModuloService(
       {
         findOne: jest.fn().mockResolvedValue({ ...modulo }),
@@ -258,31 +247,23 @@ describe('ModuloService thumbnail resolution', () => {
           getMany: jest.fn().mockResolvedValue([]),
         })),
       } as never,
-      { resolveImageUrl } as never,
     );
 
-  it('resolves the stored reference into a usable url on module detail', async () => {
-    const resolveImageUrl = jest
-      .fn()
-      .mockResolvedValue('https://cdn.test/modulos/5/thumbnail.png?signed');
+  it('omits an S3 thumbnail so the frontend can use its bundled asset', async () => {
+    const result = await buildService().findOne(5, 7);
 
-    const result = await buildService(resolveImageUrl).findOne(5, 7);
-
-    expect(resolveImageUrl).toHaveBeenCalledWith(modulo.thumbnail);
-    expect(result.thumbnail).toBe(
-      'https://cdn.test/modulos/5/thumbnail.png?signed',
-    );
+    expect(result.thumbnail).toBeNull();
     expect(result.artworkUrl).toBe(result.thumbnail);
   });
 
-  it('returns a null thumbnail instead of failing when the reference is invalid', async () => {
-    const resolveImageUrl = jest
-      .fn()
-      .mockRejectedValue(new Error('Referência de imagem S3 inválida'));
+  it('keeps a non-S3 thumbnail for externally managed content', async () => {
+    const originalThumbnail = modulo.thumbnail;
+    modulo.thumbnail = 'https://cdn.example/custom-module.png';
 
-    const result = await buildService(resolveImageUrl).findOne(5, 7);
+    const result = await buildService().findOne(5, 7);
 
-    expect(result.thumbnail).toBeNull();
+    expect(result.thumbnail).toBe(modulo.thumbnail);
     expect(result.title).toBe('Fundamentos');
+    modulo.thumbnail = originalThumbnail;
   });
 });

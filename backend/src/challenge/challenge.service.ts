@@ -5,7 +5,6 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { Repository } from 'typeorm';
-import { S3Service } from '../conteudo/s3/s3.service';
 import { Challenge } from './challenge.entity';
 import { Question } from '../question/question.entity';
 import { UsuarioChallenge } from '../usuario-challenge/usuario-challenge.entity';
@@ -32,14 +31,23 @@ export class ChallengeService {
 
     private redisService: RedisService,
     private eventEmitter: EventEmitter2,
-    private readonly s3Service: S3Service,
   ) {}
+
+  private localImageReference(source: string | null | undefined) {
+    const normalized = source?.trim();
+    return normalized && !normalized.startsWith('s3://') ? normalized : null;
+  }
 
   async getDailyChallenge(usuario_id: number): Promise<Challenge | null> {
     const cached = await this.getRedisDailyChallenge(usuario_id);
     if (cached) {
-      const current = await this.challengeRepository.findOne({ where: { id: cached.id } });
-      return { ...cached, image: await this.s3Service.resolveImageUrl(current?.image ?? cached.image) };
+      const current = await this.challengeRepository.findOne({
+        where: { id: cached.id },
+      });
+      return {
+        ...cached,
+        image: this.localImageReference(current?.image ?? cached.image),
+      };
     }
 
     const completedIds = await this.usuarioChallengeRepository
@@ -60,7 +68,9 @@ export class ChallengeService {
       await this.setRedisDailyChallenge(usuario_id, challenge);
     }
 
-    return challenge ? { ...challenge, image: await this.s3Service.resolveImageUrl(challenge.image) } : null;
+    return challenge
+      ? { ...challenge, image: this.localImageReference(challenge.image) }
+      : null;
   }
 
   async countCompleted(usuario_id: number): Promise<number> {

@@ -14,6 +14,8 @@ dist
 !frontend/src/assets/dashboard/streak-calendar-pixel-v1.png
 !frontend/src/assets/dashboard/mission-ribbon-pixel-v1.png
 !frontend/src/assets/dashboard/journey-landscape-panorama-v2.png
+!frontend/src/assets/dashboard/digital-key-pixel-v5.png
+!frontend/src/assets/static/**/*.png
 *.mp4
 !frontend/src/assets/
 !frontend/src/assets/kids/

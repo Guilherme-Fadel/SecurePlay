@@ -1,10 +1,16 @@
 # Artes das conquistas
 
-20 imagens geradas com ImageGen integrado. Arquivos PNG em `frontend/public/achievements/<slug>.png`. Catálogo conferido no banco configurado em backend/.env.
+20 imagens geradas com ImageGen integrado. As versões usadas pela aplicação
+ficam em `frontend/src/assets/static/achievements/<slug>.png` e recebem nomes
+versionados pelo build.
 
-O campo `achievement.image_url` guarda um caminho local, uma URL HTTPS ou uma referência `s3://bucket/key`. Referências S3 são convertidas pela API em URLs assinadas com duração de uma hora. O campo `icon` original continua como alternativa. Conquistas secretas permanecem ocultas até o desbloqueio.
+O `slug` da conquista seleciona a arte local por meio de
+`frontend/src/lib/staticArtwork.ts`. O campo `icon` continua como alternativa e
+conquistas secretas permanecem ocultas até o desbloqueio. Referências antigas
+`s3://...` em `achievement.image_url` não são mais assinadas pela API.
 
-Publicação: executar, a partir de backend, `node --env-file=.env scripts/publish-achievement-art.cjs`. O script usa chaves com hash do conteúdo, verifica o arquivo baixado, salva backup das referências anteriores em `tmp/achievement-art` e atualiza o catálogo em uma transação. Não modifica ACL/política do bucket. `--local` vincula os arquivos servidos pelo frontend; `--slug <slug>` limita a publicação a um item.
+Para substituir uma arte, mantenha o nome igual ao `slug`, atualize o arquivo na
+pasta de assets e publique uma nova versão do frontend.
 
 ## Prompts
 

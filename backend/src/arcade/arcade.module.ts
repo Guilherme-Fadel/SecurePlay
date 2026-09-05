@@ -1,5 +1,4 @@
 import { Module } from '@nestjs/common';
-import { S3Service } from '../conteudo/s3/s3.service';
 import { DatabaseModule } from '../database/database.molule';
 import { RedisModule } from '../redis/redis.module';
 import { GamificationModule } from '../common/gamification/gamification.module';
@@ -16,7 +15,6 @@ import { DataClassifyHandler } from './games/data-classify.handler';
   imports: [DatabaseModule, RedisModule, GamificationModule],
   controllers: [ArcadeController],
   providers: [
-    S3Service,
     ...arcadeProviders,
     ...questionProviders,
     TokenService,

@@ -1,7 +1,8 @@
 import { InfoCard } from "@/components/ui/visuals/InfoCard";
 import { useConteudos } from "@/hooks/useConteudos";
 import { useSectionContext } from "@/contexts/SectionContext";
-import { PlayCircle, CircleDot, ChevronRight, Sparkles } from "lucide-react";
+import { ChevronRight, Sparkles } from "lucide-react";
+import { getModuleArtwork } from "@/lib/staticArtwork";
 
 export function ActiveTraining() {
   const { allModulos, loading } = useConteudos();
@@ -33,9 +34,6 @@ export function ActiveTraining() {
         ) : (
           pendingModulos.map((modulo, index) => {
             const isInProgress = modulo.progress > 0;
-            const Icon = isInProgress ? PlayCircle : CircleDot;
-            const iconColor = isInProgress ? "var(--secondary)" : "var(--text-secondary)";
-
             return (
               <div
                 key={modulo.id}
@@ -48,9 +46,7 @@ export function ActiveTraining() {
                 <span className="academy-training-order" aria-hidden="true">{String(index + 1).padStart(2, '0')}</span>
                 <div className="dashboard-training-main flex min-w-0 items-center gap-3">
                   <div className="dashboard-training-icon w-8 h-8 flex items-center justify-center rounded-lg bg-[var(--surface-alt)] shrink-0">
-                    {modulo.artworkUrl || modulo.thumbnail ? (
-                      <img src={modulo.artworkUrl || modulo.thumbnail || ''} alt="" aria-hidden="true" onError={(event) => { event.currentTarget.style.display = 'none'; }} />
-                    ) : <Icon size={15} color={iconColor} />}
+                    <img src={getModuleArtwork(modulo)} alt="" aria-hidden="true" onError={(event) => { event.currentTarget.style.display = 'none'; }} />
                   </div>
                   <div className="dashboard-training-copy min-w-0">
                     <span className="academy-training-status"><Sparkles size={9} />{isInProgress ? 'Em aventura' : 'Nova missão'}</span>
