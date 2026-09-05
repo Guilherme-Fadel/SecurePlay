@@ -1,19 +1,17 @@
 import { Body, Controller, Get, Param, Post, Request } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
 import { ArcadeService } from './arcade.service';
-import {
-  StartRunParamsDto,
-  SubmitRunDto,
-  TermoWordParamsDto,
-} from './dto/arcade.dto';
-import { TermoDictionaryService } from './termotech-dictionary.service';
+import { StartRunParamsDto, SubmitRunDto } from './dto/arcade.dto';
+
+interface AuthenticatedRequest {
+  user: {
+    userId: number;
+  };
+}
 
 @Controller('arcade')
 export class ArcadeController {
-  constructor(
-    private readonly arcadeService: ArcadeService,
-    private readonly termoDictionaryService: TermoDictionaryService,
-  ) {}
+  constructor(private readonly arcadeService: ArcadeService) {}
 
   @Get('games')
   listGames() {
@@ -21,19 +19,16 @@ export class ArcadeController {
   }
 
   @Get('tokens')
-  getTokens(@Request() req: any) {
+  getTokens(@Request() req: AuthenticatedRequest) {
     return this.arcadeService.getTokens(req.user.userId);
-  }
-
-  @Get('termotech/words/:word')
-  @Throttle({ short: { limit: 30, ttl: 60000 } })
-  validateTermoWord(@Param() params: TermoWordParamsDto) {
-    return this.termoDictionaryService.validate(params.word);
   }
 
   @Post('games/:slug/start')
   @Throttle({ short: { limit: 10, ttl: 60000 } })
-  start(@Param() params: StartRunParamsDto, @Request() req: any) {
+  start(
+    @Param() params: StartRunParamsDto,
+    @Request() req: AuthenticatedRequest,
+  ) {
     return this.arcadeService.start(req.user.userId, params.slug);
   }
 
@@ -42,7 +37,7 @@ export class ArcadeController {
   submit(
     @Param('runId') runId: string,
     @Body() dto: SubmitRunDto,
-    @Request() req: any,
+    @Request() req: AuthenticatedRequest,
   ) {
     return this.arcadeService.submit(req.user.userId, runId, dto);
   }

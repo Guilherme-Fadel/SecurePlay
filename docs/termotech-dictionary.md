@@ -3,17 +3,21 @@
 O jogo mantém dois repertórios separados:
 
 - `termoWords.ts` contém somente as palavras pedagógicas de tecnologia que podem ser sorteadas, junto com suas dicas.
-- Os palpites adicionais são validados pelo backend nos vocabulários português e inglês. Eles nunca passam a ser respostas sorteáveis automaticamente.
+- `frontend/public/dictionaries/termotech-valid-words-5.txt` contém um vocabulário amplo usado apenas para validar palpites. Ele nunca passa a ser repertório sorteável automaticamente.
 
-## Provedores
+## Geração
 
-- Português: [Dicionário Aberto](https://api.dicionario-aberto.net/index.html).
-- Inglês: [Datamuse API](https://www.datamuse.com/api/), usando correspondência exata sobre seu vocabulário inglês.
+O arquivo local é gerado por `npm run build:termotech-dictionary` a partir de:
 
-Somente a palavra de cinco letras é enviada aos provedores. Nenhum identificador do estudante acompanha essas consultas. Resultados válidos ficam em cache por 24 horas; resultados inválidos, por uma hora.
+- `dictionary-pt`, dicionário hunspell de português derivado do LibreOffice.
+- `an-array-of-english-words`, lista ampla de palavras em inglês.
 
-O Datamuse informa que exigirá uma chave de API a partir de 1º de janeiro de 2027. Antes dessa data, a configuração do provedor deve ser revista conforme a documentação atualizada do serviço.
+Durante a geração, as palavras são normalizadas sem acentos, filtradas para exatamente cinco letras e salvas em maiúsculas. A validação normal roda no navegador contra esse arquivo, carregado quando o jogo abre e mantido em cache pelo browser.
 
 ## Proteção infantil
 
-Termos impróprios em português e inglês são bloqueados no backend antes da consulta externa. A interface exibe uma mensagem neutra, não registra a tentativa e não repete o conteúdo bloqueado.
+Termos impróprios em português e inglês são excluídos antes da geração do arquivo público. Como esses termos não entram no vocabulário local, a interface recusa a palavra sem registrar tentativa e exibe a mesma mensagem neutra usada para termos inexistentes.
+
+## Verificação
+
+Use `npm run test:termotech-dictionary` para confirmar que o arquivo contém casos esperados, como `CYBER`, `PRIME` e `PRIDE`, e que sequências inexistentes ou bloqueadas não foram incluídas.

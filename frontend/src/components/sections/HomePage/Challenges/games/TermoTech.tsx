@@ -2,9 +2,9 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Binary, CalendarDays, CornerDownLeft, Delete, Keyboard, Target } from 'lucide-react';
 import { getWordOfTheDayDetails, isValidWord } from './termoWords';
+import { isValidTermoGuess, normalizeTermoWord, preloadTermoDictionary } from './termoDictionary';
 import { evaluateGuess, mergeKeyStates, type LetterState, } from './termoLogic';
 import { ChallengeGameShell } from '../ChallengeGameShell';
-import { validateTermoWord } from '@/services/arcade';
 interface TermoTechProps {
     onExit: () => void;
     onWin?: (attempts: number) => void;
@@ -41,6 +41,9 @@ export function TermoTech({ onExit, onWin }: TermoTechProps) {
     const [isChecking, setIsChecking] = useState(false);
     const checkingRef = useRef(false);
     useEffect(() => {
+        void preloadTermoDictionary().catch(() => undefined);
+    }, []);
+    useEffect(() => {
         try {
             localStorage.setItem(dayKey(), JSON.stringify({ guesses, status }));
         }
@@ -67,23 +70,21 @@ export function TermoTech({ onExit, onWin }: TermoTechProps) {
             setTimeout(() => setShake(false), 400);
             return;
         }
-        const candidate = current.toUpperCase();
+        const candidate = normalizeTermoWord(current);
         if (!isValidWord(candidate)) {
             checkingRef.current = true;
             setIsChecking(true);
             try {
-                const validation = await validateTermoWord(candidate);
-                if (!validation.valid) {
-                    showToast(validation.reason === 'blocked'
-                        ? 'Essa palavra não pode ser usada no jogo.'
-                        : 'Palavra não encontrada em português ou inglês.');
+                const valid = await isValidTermoGuess(candidate);
+                if (!valid) {
+                    showToast('Palavra não encontrada em português ou inglês.');
                     setShake(true);
                     setTimeout(() => setShake(false), 400);
                     return;
                 }
             }
             catch {
-                showToast('Não foi possível consultar o dicionário. Tente novamente.');
+                showToast('Não foi possível carregar o dicionário. Tente novamente.');
                 return;
             }
             finally {
@@ -152,7 +153,7 @@ export function TermoTech({ onExit, onWin }: TermoTechProps) {
         </aside>
 
         <section className="termotech-board" aria-label="Tabuleiro do Termo Tech" aria-busy={isChecking}>
-          {(toast || isChecking) && <div className="termotech-toast" role="status">{toast ?? 'Consultando os dicionários...'}</div>}
+          {(toast || isChecking) && <div className="termotech-toast" role="status">{toast ?? 'Validando palavra...'}</div>}
 
           <motion.div className="termotech-grid" role="grid" aria-label="Tentativas da palavra secreta" animate={shake ? { x: [0, -8, 8, -6, 6, 0] } : {}} transition={{ duration: 0.4 }}>
             {rows.map((_, r) => {

@@ -11,6 +11,8 @@
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "lint:types": "eslint --config eslint.typed.config.mjs .",
+    "build:termotech-dictionary": "node scripts/build-termotech-dictionary.cjs",
+    "test:termotech-dictionary": "node scripts/verify-termotech-dictionary.cjs",
     "dev": "vite"
   },
   "dependencies": {
@@ -35,6 +37,8 @@
     "@types/react": "^18.3.31",
     "@types/react-dom": "^18.3.7",
     "@vitejs/plugin-react": "4.7.0",
+    "an-array-of-english-words": "^2.0.0",
+    "dictionary-pt": "^4.0.0",
     "eslint": "^9.39.5",
     "globals": "^17.12.0",
     "tailwindcss": "4.1.12",
