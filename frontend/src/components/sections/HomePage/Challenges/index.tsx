@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { ArrowLeft, Coins, Gamepad2, RefreshCcw, Sparkles, Trophy, } from 'lucide-react';
+import { ArrowLeft, Gamepad2, RefreshCcw } from 'lucide-react';
 import '@/styles/challenges-ui.css';
 import '@/styles/challenge-games-ui.css';
 import { type GameCardData } from './games';
@@ -12,7 +12,6 @@ import { TokenBar } from './TokenBar';
 import { useArcadeGames, useTokens } from '@/hooks/useArcade';
 import { AppSectionHeader } from '@/components/ui/visuals/AppSectionHeader';
 import { AppButton } from '@/components/ui/buttons/AppButton';
-import { InfoCard } from '@/components/ui/visuals/InfoCard';
 import { getChallengeArtwork } from '@/lib/challengeArtwork';
 export function Challenges() {
     const [active, setActive] = useState<string | null>(null);
@@ -35,9 +34,6 @@ export function Challenges() {
     }, [apiGames]);
     const handlePlay = (game: GameCardData) => setActive(game.id);
     const exit = () => setActive(null);
-    const availableGames = carouselGames.filter((game) => game.status === 'AVAILABLE');
-    const maxXp = availableGames.reduce((highest, game) => Math.max(highest, game.xp), 0);
-    const categories = new Set(carouselGames.map((game) => game.tag)).size;
     const focusedGame = carouselGames.find((game) => game.id === focusedSlug) ?? carouselGames[0];
     if (active === 'termotech') {
         return <TermoTech onExit={exit}/>;
@@ -73,24 +69,6 @@ export function Challenges() {
       <div className="challenges-heading-row">
         <AppSectionHeader title="Jogos" subtitle="Pratique habilidades de segurança em experiências rápidas e interativas." className="app-page-heading"/>
         <TokenBar tokens={tokens} secondsLeft={secondsLeft}/>
-      </div>
-
-      <div className="challenges-overview-grid">
-        <InfoCard raised className="challenge-overview-card">
-          <InfoCard.Section>
-            <InfoCard.Stat label="Jogos disponíveis" value={`${availableGames.length}/${carouselGames.length}`} subtitle="Prontos para jogar" icon={Gamepad2} variant="primary"/>
-          </InfoCard.Section>
-        </InfoCard>
-        <InfoCard raised className="challenge-overview-card">
-          <InfoCard.Section>
-            <InfoCard.Stat label="Maior recompensa" value={`${maxXp} XP`} subtitle="Por rodada concluída" icon={Trophy} variant="accent"/>
-          </InfoCard.Section>
-        </InfoCard>
-        <InfoCard raised className="challenge-overview-card">
-          <InfoCard.Section>
-            <InfoCard.Stat label="Tipos de treinamento" value={categories} subtitle="Habilidades diferentes" icon={Sparkles} variant="secondary"/>
-          </InfoCard.Section>
-        </InfoCard>
       </div>
 
       <section className="challenge-arena-section">
@@ -129,18 +107,5 @@ export function Challenges() {
         </div>
       </section>
 
-      <InfoCard className="challenge-guide-card">
-        <InfoCard.Section className="challenge-guide-content">
-          <div className="challenge-guide-title">
-            <Coins size={18}/>
-            <div><strong>Como funciona</strong><span>A ficha é consumida somente ao finalizar um jogo.</span></div>
-          </div>
-          <div className="challenge-guide-steps">
-            <div><i>1</i><span>Escolha uma missão</span></div>
-            <div><i>2</i><span>Complete o treinamento</span></div>
-            <div><i>3</i><span>Receba sua recompensa</span></div>
-          </div>
-        </InfoCard.Section>
-      </InfoCard>
     </div>);
 }
