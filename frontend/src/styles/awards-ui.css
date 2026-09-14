@@ -9,6 +9,14 @@
   padding: 4px 2px 30px;
 }
 
+.achievements-page > .app-section-header {
+  padding: 16px 20px;
+  border: 1px solid rgba(210, 154, 40, .3);
+  border-radius: 16px;
+  background: linear-gradient(135deg, rgba(255,254,251,.98), rgba(250,247,238,.94));
+  box-shadow: 0 10px 24px rgba(57, 36, 92, .06);
+}
+
 .achievements-prestige-pill,
 .achievement-shop-balance {
   display: inline-flex;
@@ -79,6 +87,9 @@
   gap: 30px;
   overflow: hidden;
   padding: 24px 28px;
+  border-color: rgba(210, 154, 40, .34) !important;
+  background: linear-gradient(135deg, #fffefa, #f6f2e8) !important;
+  box-shadow: 0 14px 30px rgba(57, 36, 92, .09) !important;
 }
 
 .achievements-summary-card::after {
@@ -192,17 +203,21 @@
   overflow: hidden;
   padding: 0;
   grid-template-columns: minmax(0, 1fr) 310px;
+  border-color: rgba(210, 154, 40, .34) !important;
+  background: linear-gradient(135deg, #fffefa, #f6f2e8) !important;
+  box-shadow: 0 14px 30px rgba(57, 36, 92, .09) !important;
 }
 
 .achievement-map-main {
   min-width: 0;
   overflow-x: auto;
   padding: 24px 26px 28px;
+  background: linear-gradient(135deg, rgba(255,254,251,.84), rgba(248,245,237,.66));
 }
 
 .achievement-map-heading {
   display: flex;
-  min-width: 720px;
+  min-width: 0;
   align-items: flex-start;
   justify-content: space-between;
   gap: 16px;
@@ -236,7 +251,7 @@
 
 .achievement-branches {
   display: flex;
-  min-width: 720px;
+  min-width: 0;
   flex-direction: column;
   gap: 10px;
 }
@@ -933,6 +948,48 @@
 }
 
 @media (max-width: 620px) {
+  .achievements-page > .app-section-header {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .achievement-map-main {
+    overflow-x: visible;
+    padding: 18px 14px 22px;
+  }
+
+  .achievement-map-heading,
+  .achievement-branches {
+    min-width: 0;
+  }
+
+  .achievement-map-heading {
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 14px;
+  }
+
+  .achievement-branch {
+    min-height: 0;
+    grid-template-columns: 1fr;
+    gap: 12px;
+    padding: 12px 10px;
+  }
+
+  .achievement-node-track {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .achievement-node {
+    width: 56px;
+    height: 56px;
+  }
+
+  .achievement-connector {
+    top: 27px;
+  }
+
   .achievements-view-switch {
     display: grid;
     width: 100%;
