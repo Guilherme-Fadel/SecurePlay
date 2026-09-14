@@ -1,280 +1,124 @@
-import { useMemo, useState, type ReactNode } from 'react';
-import {
-  Crown,
-  Medal,
-  RefreshCw,
-  ShieldCheck,
-  Sparkles,
-  Target,
-  Trophy,
-  Users,
-  Zap,
-} from 'lucide-react';
+import { useState } from 'react';
 import { PageTransition } from '@/components/shared/PageTransition';
 import { AppButton } from '@/components/ui/buttons/AppButton';
-import { AppSectionHeader } from '@/components/ui/visuals/AppSectionHeader';
-import { InfoCard } from '@/components/ui/visuals/InfoCard';
 import { useDashboardRanking } from '@/hooks/useDashboard';
 import { Avatar } from '@/components/ui/visuals/Avatar';
 import type { RankingEntry } from '@/services/dashboard';
+import championBannersArtwork from '@/assets/static/ranking/ranking-champion-banners-pixel-v1.webp';
+import galleryEmblem from '@/assets/static/mission-room/missions-room-emblem.png';
+import controlEmblems from '@/assets/static/ranking/ranking-controls-emblems-pixel-v1.png';
 import '@/styles/ranking-ui.css';
 
 const formatXp = (value: number) => `${value.toLocaleString('pt-BR')} XP`;
+type RankingScope = 'global' | 'company';
 
 export function Ranking() {
-  const [selectedScope, setSelectedScope] = useState<'global' | 'company'>('global');
-  const { ranking, loading, error, refetch } = useDashboardRanking(selectedScope);
+  const [scope, setScope] = useState<RankingScope>('global');
+  // Isolate pending responses and error state when the selected scope changes.
+  return <RankingContent key={scope} scope={scope} onScopeChange={setScope} />;
+}
 
-  const podium = useMemo(() => {
-    const firstThree = ranking?.top.slice(0, 3) ?? [];
-    return [
-      firstThree[1] ? { entry: firstThree[1], place: 2 } : null,
-      firstThree[0] ? { entry: firstThree[0], place: 1 } : null,
-      firstThree[2] ? { entry: firstThree[2], place: 3 } : null,
-    ].filter(Boolean) as Array<{ entry: RankingEntry; place: number }>;
-  }, [ranking]);
-
-  if (loading && !ranking) {
-    return <RankingSkeleton />;
-  }
-
-  if (error || !ranking) {
-    return (
-      <PageTransition>
-        <div className="app-page ranking-page">
-          <AppSectionHeader title="Ranking" subtitle="Acompanhe sua evolução com segurança." />
-          <InfoCard raised className="ranking-error-state">
-            <Trophy size={32} />
-            <h3>Não foi possível carregar o ranking</h3>
-            <p>Tente novamente para atualizar a classificação.</p>
-            <AppButton icon={<RefreshCw size={16} />} onClick={refetch}>Tentar novamente</AppButton>
-          </InfoCard>
-        </div>
-      </PageTransition>
-    );
-  }
-
-  const { currentUser, summary } = ranking;
-  const nextTarget = currentUser.points + summary.pointsToNextPosition;
-  const nextProgress = currentUser.position === 1
-    ? 100
-    : Math.min(100, Math.round((currentUser.points / Math.max(nextTarget, 1)) * 100));
+function RankingContent({ scope, onScopeChange }: {
+  scope: RankingScope;
+  onScopeChange: (scope: RankingScope) => void;
+}) {
+  const { ranking, loading, error, refetch } = useDashboardRanking(scope);
 
   return (
     <PageTransition>
       <div className="app-page ranking-page">
-        <AppSectionHeader
-          title="Ranking"
-          subtitle="Conquiste XP e acompanhe seu progresso na comunidade SecurePlay."
-          action={(
-            <AppButton variant="ghost" size="sm" icon={<RefreshCw size={15} />} onClick={refetch}>
-              Atualizar
-            </AppButton>
-          )}
-        />
-
-        <InfoCard raised className="ranking-arena">
-          <div className="ranking-arena-accent" aria-hidden="true" />
-          <div className="ranking-arena-header">
-            <div>
-              <span className="ranking-eyebrow"><Sparkles size={14} /> Liga SecurePlay</span>
-              <p>{ranking.totalParticipants} aventureiros juntando XP</p>
-            </div>
-            <div className="ranking-scope-switch" aria-label="Escopo do ranking">
-              <button
-                type="button"
-                className={selectedScope === 'global' ? 'is-active' : ''}
-                onClick={() => setSelectedScope('global')}
-              >
-                Global
-              </button>
-              <button
-                type="button"
-                className={selectedScope === 'company' ? 'is-active' : ''}
-                onClick={() => setSelectedScope('company')}
-                disabled={!ranking.companyAvailable}
-                title={ranking.companyAvailable ? undefined : 'Você ainda não faz parte de uma turma'}
-              >
-                Minha turma
-              </button>
-            </div>
+        <header className="ranking-heading">
+          <img src={galleryEmblem} alt="" width={48} height={48} />
+          <div><h1 className="ranking-page-title">Galeria de Honra</h1><p>Cada aprendizado faz parte da sua conquista.</p></div>
+        </header>
+        {loading && !ranking ? (
+          <div className="ranking-status" role="status">Carregando o mural de honra…</div>
+        ) : error || !ranking ? (
+          <div className="ranking-status" role="alert">
+            <h2>Não foi possível carregar o ranking</h2>
+            <p>Tente novamente para atualizar a classificação.</p>
+            <AppButton onClick={refetch}>Tentar novamente</AppButton>
           </div>
-
-          <div className="ranking-podium" aria-label="Pódio dos três primeiros colocados">
-            {podium.map(({ entry, place }) => (
-              <PodiumPlayer key={`${entry.name}-${place}`} entry={entry} place={place} />
-            ))}
+        ) : (
+          <div className="ranking-art-scroll">
+            <section className="ranking-artboard" aria-label={`Mural de Honra — ${scope === 'global' ? 'Global' : 'Minha turma'}`}>
+              <div className="ranking-gallery" aria-label="Três primeiros colocados">
+                <div className="ranking-gallery-stage">
+                  <div className="ranking-leaders">
+                    <img className="ranking-banners-art" src={championBannersArtwork} width={1080} height={720} alt="" draggable={false} />
+                    {ranking.top.slice(0, 3).map(entry => (
+                      <div key={entry.id} className={`ranking-leader ranking-leader-${entry.position}`} role="group" aria-label={`${entry.position}º lugar`}>
+                        <Avatar name={entry.name} imageUrl={entry.profileImageUrl} className="ranking-leader-avatar" />
+                      </div>
+                    ))}
+                  </div>
+                  <ol className="ranking-leader-legends">
+                    {ranking.top.slice(0, 3).map(entry => (
+                      <li key={entry.id} className={`ranking-leader-legend ranking-legend-${entry.position}`}>
+                        <span className="ranking-sr-only">{entry.position}º lugar: </span>
+                        <strong className="ranking-leader-name" title={entry.name}>{entry.name}</strong>
+                        <strong className="ranking-leader-xp">{formatXp(entry.points)}</strong>
+                      </li>
+                    ))}
+                  </ol>
+                </div>
+              </div>
+              <section className="ranking-classification" aria-label="Classificação">
+                <h2 className="ranking-scope-label">Classificação</h2>
+                <div className="ranking-board-controls" aria-label="Controles do mural">
+                  <div className="ranking-scope-control">
+                    <div className="ranking-scope-switch" role="group" aria-label="Escopo do ranking">
+                      <button type="button" aria-pressed={scope === 'global'} onClick={() => onScopeChange('global')}>
+                        <RankingControlIcon position="global" />
+                        Global
+                      </button>
+                      <button type="button" aria-pressed={scope === 'company'} onClick={() => onScopeChange('company')}
+                        disabled={!ranking.companyAvailable && scope !== 'company'}
+                        aria-describedby={!ranking.companyAvailable ? 'ranking-no-company' : undefined}>
+                        <RankingControlIcon position="classroom" />
+                        Minha turma
+                      </button>
+                    </div>
+                  </div>
+                  <button type="button" className="ranking-refresh-control" onClick={refetch} disabled={loading}>
+                    <RankingControlIcon position="refresh" />
+                    <span>{loading ? 'Atualizando…' : 'Atualizar'}</span>
+                  </button>
+                </div>
+                {!ranking.companyAvailable && <small id="ranking-no-company" className="ranking-scope-hint">Você ainda não faz parte de uma turma.</small>}
+                <div className="ranking-art-list" role="region" aria-label="Classificação completa" tabIndex={0}>
+                  {ranking.top.length ? ranking.top.map(entry => <RankingRow key={entry.id} entry={entry} />) : (
+                    <p className="ranking-empty">O mural está esperando seus primeiros aventureiros.</p>
+                  )}
+                </div>
+                <div className="ranking-art-personal" aria-label="Sua posição">
+                  <span className="ranking-personal-label">Sua posição</span>
+                  <RankingRow entry={ranking.currentUser} personal />
+                </div>
+              </section>
+            </section>
           </div>
-        </InfoCard>
-
-        <div className="ranking-content-grid">
-          <InfoCard raised className="ranking-table-card">
-            <div className="ranking-card-heading">
-              <div>
-                <span><Users size={15} /> Classificação</span>
-                <p>
-                  {ranking.totalParticipants <= 20
-                    ? `${ranking.totalParticipants} aventureiros neste ranking`
-                    : `Os 20 aventureiros com mais XP ${ranking.scope === 'global' ? 'da comunidade' : 'da sua turma'}`}
-                </p>
-              </div>
-            </div>
-
-            <div className="ranking-table-labels" aria-hidden="true">
-              <span>Posição e participante</span>
-              <span>Desempenho</span>
-            </div>
-
-            <div className="ranking-list">
-              {ranking.top.map((entry) => (
-                <RankingRow
-                  key={`${entry.position}-${entry.name}`}
-                  entry={entry}
-                  leaderPoints={summary.leaderPoints}
-                />
-              ))}
-            </div>
-          </InfoCard>
-
-          <aside className="ranking-player-column">
-            <InfoCard raised className="ranking-player-card">
-              <div className="ranking-player-topline">
-                <span>Sua posição</span>
-                <div><ShieldCheck size={15} /> {ranking.scope === 'company' ? 'Sua turma' : 'Global'}</div>
-              </div>
-
-              <div className="ranking-player-identity">
-                <Avatar
-                  name={currentUser.name}
-                  imageUrl={currentUser.profileImageUrl}
-                  className="ranking-player-avatar"
-                />
-                <div>
-                  <strong>{currentUser.name}</strong>
-                  <span>{currentUser.companyName ?? 'Comunidade SecurePlay'}</span>
-                </div>
-                <div className="ranking-player-position">#{currentUser.position}</div>
-              </div>
-
-              <div className="ranking-player-score">
-                <div>
-                  <span>XP acumulado</span>
-                  <strong>{currentUser.points.toLocaleString('pt-BR')}</strong>
-                </div>
-                <div>
-                  <span>Nível</span>
-                  <strong>{currentUser.level}</strong>
-                </div>
-              </div>
-
-              <div className="ranking-next-goal">
-                <div>
-                  <span><Target size={14} /> Próximo objetivo</span>
-                  <strong>
-                    {currentUser.position === 1
-                      ? 'Você lidera este ranking'
-                      : `${summary.pointsToNextPosition.toLocaleString('pt-BR')} XP para subir`}
-                  </strong>
-                </div>
-                <div className="ranking-next-progress"><i style={{ width: `${nextProgress}%` }} /></div>
-              </div>
-
-              <div className="ranking-player-insights">
-                <div><TrendingMetric icon={<Zap size={15} />} value={`${summary.percentile}%`} label="à frente dos participantes" /></div>
-                <div><TrendingMetric icon={<Crown size={15} />} value={formatXp(summary.pointsBehindLeader)} label="distância para a liderança" /></div>
-              </div>
-            </InfoCard>
-
-            <div className="ranking-scope-callout">
-              <div className="ranking-callout-icon">
-                <ShieldCheck size={20} />
-              </div>
-              <div>
-                <strong>Ranking feito para aprender com segurança</strong>
-                <p>Os colegas aparecem com apelidos de aventura. Assim, todos podem se divertir sem expor dados pessoais.</p>
-              </div>
-            </div>
-          </aside>
-        </div>
+        )}
       </div>
     </PageTransition>
   );
 }
 
-function PodiumPlayer({ entry, place }: { entry: RankingEntry; place: number }) {
-  const medalLabel = place === 1 ? 'Ouro' : place === 2 ? 'Prata' : 'Bronze';
+function RankingControlIcon({ position }: { position: 'global' | 'classroom' | 'refresh' }) {
   return (
-    <div className={`ranking-podium-player place-${place}`}>
-      <div className="ranking-podium-avatar-wrap">
-        {place === 1 && <Crown className="ranking-podium-crown" size={22} />}
-        <Avatar
-          name={entry.name}
-          imageUrl={entry.profileImageUrl}
-          className="ranking-podium-avatar"
-        />
-        <span className="ranking-podium-place">{place}</span>
-      </div>
-      <strong>{entry.name}</strong>
-      <span>Nível {entry.level} · {formatXp(entry.points)}</span>
-      <div className="ranking-podium-platform">
-        <Medal size={18} />
-        <small>{medalLabel}</small>
-      </div>
+    <span className={`ranking-control-icon ranking-control-icon-${position}`} aria-hidden="true">
+      <img src={controlEmblems} alt="" draggable={false} />
+    </span>
+  );
+}
+
+function RankingRow({ entry, personal = false }: { entry: RankingEntry; personal?: boolean }) {
+  return (
+    <div className={`ranking-art-row${personal ? ' is-personal' : ''}`}>
+      <span className="ranking-art-position" aria-label={`${entry.position}º lugar`}>#{entry.position}</span>
+      <Avatar name={entry.name} imageUrl={entry.profileImageUrl} className="ranking-art-avatar" />
+      <strong className="ranking-art-name" title={entry.name}>{(entry.isCurrentUser || personal) && <span className="ranking-sr-only">Você: </span>}{entry.name}</strong>
+      <strong className="ranking-art-xp">{formatXp(entry.points)}</strong>
     </div>
-  );
-}
-
-function RankingRow({
-  entry,
-  leaderPoints,
-}: {
-  entry: RankingEntry;
-  leaderPoints: number;
-}) {
-  const progress = leaderPoints > 0 ? Math.max(4, Math.round((entry.points / leaderPoints) * 100)) : 0;
-  return (
-    <div className={`ranking-row ${entry.isCurrentUser ? 'is-current' : ''}`}>
-      <div className={`ranking-row-position rank-${entry.position}`}>
-        {entry.position <= 3 ? <Trophy size={14} /> : entry.position}
-      </div>
-      <Avatar
-        name={entry.name}
-        imageUrl={entry.profileImageUrl}
-        className="ranking-row-avatar"
-      />
-      <div className="ranking-row-person">
-        <strong>{entry.name}{entry.isCurrentUser && <em>Você</em>}</strong>
-        <span>Nível {entry.level}</span>
-      </div>
-      <div className="ranking-row-performance">
-        <strong>{entry.points.toLocaleString('pt-BR')} XP</strong>
-        <div><i style={{ width: `${progress}%` }} /></div>
-      </div>
-    </div>
-  );
-}
-
-function TrendingMetric({ icon, value, label }: { icon: ReactNode; value: string; label: string }) {
-  return (
-    <>
-      <span>{icon}</span>
-      <strong>{value}</strong>
-      <small>{label}</small>
-    </>
-  );
-}
-
-function RankingSkeleton() {
-  return (
-    <PageTransition>
-      <div className="app-page ranking-page ranking-skeleton" aria-label="Carregando ranking">
-        <div className="ranking-skeleton-line is-title" />
-        <div className="ranking-skeleton-arena" />
-        <div className="ranking-skeleton-grid">
-          <div />
-          <div />
-        </div>
-      </div>
-    </PageTransition>
   );
 }
