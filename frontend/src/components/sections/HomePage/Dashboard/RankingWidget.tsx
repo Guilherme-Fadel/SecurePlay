@@ -1,10 +1,8 @@
 import { InfoCard } from '@/components/ui/visuals/InfoCard';
-import { ChevronRight, Crown } from 'lucide-react';
+import { ChevronRight } from 'lucide-react';
 import { useDashboardRanking } from '@/hooks/useDashboard';
 import { Avatar } from '@/components/ui/visuals/Avatar';
-import type { RankingEntry } from '@/services/dashboard';
 import { useSectionContext } from '@/contexts/SectionContext';
-import podiumAsset from '@/assets/dashboard/ranking-podium-pixel-v1.png';
 
 const formatPoints = (value: number) => value.toLocaleString('pt-BR');
 
@@ -24,24 +22,20 @@ export function RankingWidget() {
     return <InfoCard variant="accent" raised className="dashboard-ranking-card academy-widget-state"><p>Não foi possível carregar o ranking.</p><button type="button" className="academy-footer-action" onClick={refetch}>Tentar novamente</button></InfoCard>;
   }
 
-  // Ordem de classificacao no DOM (1, 2, 3). A disposicao visual do podio
-  // (2, 1, 3) e responsabilidade do CSS, que ancora cada rank no seu degrau.
-  const podium = ranking.top.slice(0, 3);
+  const leaders = ranking.top.slice(0, 3);
   const currentUser = ranking.currentUser;
+  const scopeLabel = ranking.scope === 'company' ? 'Minha turma' : 'Global';
 
   return (
     <InfoCard variant="accent" raised className="dashboard-ranking-card flex flex-col h-full min-h-0 overflow-hidden">
       <div className="dashboard-ranking-body">
-        <div className="academy-ranking-podium">
-          <img className="academy-podium-base" src={podiumAsset} alt="" aria-hidden="true" />
-          {podium.map((entry) => (
-            <PodiumPlace key={entry.id} entry={entry} />
-          ))}
-        </div>
-        <ol className="academy-podium-legend">
-          {podium.map((entry) => (
-            <li key={entry.id} className={`academy-podium-legend-item rank-${entry.position}`}>
-              <span className="academy-ranking-name" title={entry.name}><b>{entry.name}</b></span>
+        <span className="academy-ranking-preview-scope"><i aria-hidden="true" />{scopeLabel}</span>
+        <ol className="academy-ranking-preview" aria-label="Três primeiros colocados">
+          {leaders.map((entry) => (
+            <li key={entry.id} className={`academy-ranking-preview-row rank-${entry.position}`}>
+              <span className="academy-ranking-preview-position">#{entry.position}</span>
+              <Avatar name={entry.name} imageUrl={entry.profileImageUrl} className="academy-ranking-avatar" />
+              <strong title={entry.name}>{entry.name}</strong>
               <b>{formatPoints(entry.points)} XP</b>
             </li>
           ))}
@@ -60,17 +54,5 @@ export function RankingWidget() {
         <button type="button" className="academy-footer-action" onClick={() => navigateToSection('ranking')}>Ver ranking completo <ChevronRight size={11} /></button>
       </InfoCard.Footer>
     </InfoCard>
-  );
-}
-
-function PodiumPlace({ entry }: { entry: RankingEntry }) {
-  return (
-    <div
-      className={`academy-podium-place rank-${entry.position}`}
-      title={`${entry.position}o lugar: ${entry.name}`}
-    >
-      {entry.position === 1 && <Crown className="academy-podium-crown" size={15} aria-hidden="true" />}
-      <Avatar name={entry.name} imageUrl={entry.profileImageUrl} className="academy-ranking-avatar" />
-    </div>
   );
 }

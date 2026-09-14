@@ -82,19 +82,19 @@ export function Dashboard() {
 
         <div className="hall-support-grid">
           <section className="hall-panel hall-training-panel" aria-labelledby="training-title">
-            <header className="hall-section-heading"><div><span>PRÓXIMO PASSO</span><h2 id="training-title">Próximas aulas</h2></div></header>
+            <header className="hall-section-heading"><div><h2 id="training-title">Próximas aulas</h2></div></header>
             <ActiveTraining />
           </section>
           <section className="hall-panel hall-daily-panel" aria-labelledby="daily-title">
-            <header className="hall-section-heading"><div><span>DESAFIO RÁPIDO</span><h2 id="daily-title">Missão do dia</h2></div></header>
+            <header className="hall-section-heading"><div><h2 id="daily-title">Missão do dia</h2></div></header>
             <DailyChallenge />
           </section>
           <section className="hall-panel hall-achievements-panel" aria-labelledby="achievements-title">
-            <header className="hall-section-heading"><div><span>COLEÇÃO</span><h2 id="achievements-title">Conquistas recentes</h2></div></header>
+            <header className="hall-section-heading"><div><h2 id="achievements-title">Conquistas recentes</h2></div></header>
             <Achievements />
           </section>
           <section className="hall-panel hall-ranking-panel" aria-labelledby="ranking-title">
-            <header className="hall-section-heading"><div><span>PLACAR</span><h2 id="ranking-title">Ranking</h2></div></header>
+            <header className="hall-section-heading"><div><h2 id="ranking-title">Ranking</h2></div></header>
             <RankingWidget />
           </section>
         </div>

@@ -119,7 +119,7 @@
 .hall-progress-track i { display: block; height: 100%; border-radius: inherit; background: linear-gradient(90deg, var(--accent), var(--primary) 72%); transition: width 320ms ease; }
 
 .hall-panel { min-width: 0; }
-.hall-section-heading { display: flex; min-height: 54px; align-items: end; gap: 15px; padding: 12px 2px 8px; }
+.hall-section-heading { display: flex; min-height: 38px; align-items: end; gap: 15px; padding: 8px 2px 6px; }
 .hall-section-heading > div:first-child { margin-right: auto; }
 .hall-section-heading span { display: block; margin-bottom: 1px; color: var(--hall-brand); font-size: 8px; font-weight: 900; letter-spacing: .13em; }
 .hall-section-heading h2 { margin: 0; color: var(--hall-ink); font-size: 19px; font-weight: 900; letter-spacing: -.025em; }
@@ -220,54 +220,17 @@
 .hall-achievements-panel .dashboard-achievement-item p { margin-top: 2px; color: #dc9200; font-size: 8px; }
 .hall-achievements-panel .academy-achievement-date { display: none; }
 
-/*
- * Card de ranking. Toda a geometria vem da arte ranking-podium-pixel-v1.png (600x400),
- * cujos degraus ocupam y 118..346. O container recorta a faixa transparente inferior
- * (aspect-ratio 600/346) e as posicoes sao percentuais, entao avatar e coroa acompanham
- * a arte em qualquer largura de painel. Centros dos degraus na arte: 17.8% / 50.3% / 80.5%.
- */
-/* Trava a largura do podio: como a altura vem do aspect-ratio, sem isso o painel
-   em largura cheia (breakpoint <=1260px) faria a arte estourar o card de 250px. */
-.hall-ranking-panel .dashboard-ranking-body { --hall-podium-width: min(100%, 236px); display: flex; flex: 1; min-height: 0; flex-direction: column; justify-content: center; gap: 7px; padding: 6px 10px 4px !important; }
-
-/* overflow visivel para o avatar e a coroa poderem passar do topo do container.
-   O que sobra da arte para baixo do container e faixa 100% transparente (o
-   conteudo termina em y=346), entao nada vaza sobre a legenda. */
-.hall-ranking-panel .academy-ranking-podium { position: relative; display: block; width: var(--hall-podium-width); min-height: 0; margin-inline: auto; aspect-ratio: 600 / 346; flex: 0 0 auto; overflow: visible; }
-.hall-ranking-panel .academy-podium-base { position: absolute; z-index: 0; top: 0; left: 0; width: 100%; height: auto; image-rendering: pixelated; pointer-events: none; }
-
-/* Cada lugar e so a marca do jogador (avatar + coroa) ancorada no topo do seu degrau. */
-/* translateY de -86% deixa so a barriga do avatar encostando no degrau. Com -50%
-   ele ficava centrado na borda e cobria metade da tampa do bau. */
-.hall-ranking-panel .academy-podium-place { position: absolute; z-index: 2; display: flex; width: 26%; height: auto; align-items: center; justify-content: center; flex-direction: column; transform: translate(-50%, -86%); }
-/* left = eixo da face frontal de cada bau, nao o centro da silhueta: a arte tem
-   perspectiva e os degraus se sobrepoem, entao a face fica deslocada da silhueta.
-   Medido pela tampa plana e pelo numero gravado na arte. */
-.hall-ranking-panel .academy-podium-place.rank-1 { top: 34.4%; left: 50%; width: 30%; }
-.hall-ranking-panel .academy-podium-place.rank-2 { top: 48.3%; left: 19.6%; }
-.hall-ranking-panel .academy-podium-place.rank-3 { top: 56.1%; left: 81%; }
-
-.hall-ranking-panel .academy-podium-place .academy-ranking-avatar { width: 60%; height: auto; aspect-ratio: 1; min-width: 26px; overflow: hidden; border: 2px solid #fff; border-radius: 50%; background: var(--dashboard-surface-soft); box-shadow: 0 2px 6px rgba(35,25,69,.28); font-size: 9px; font-weight: 800; }
-.hall-ranking-panel .academy-podium-place.rank-1 .academy-ranking-avatar { border-color: #ffd359; box-shadow: 0 2px 8px rgba(174,116,0,.34); }
-/* Offset em % da altura do avatar (o place tem a altura dele), para a coroa
-   acompanhar a escala em vez de descolar quando o painel muda de largura. */
-.hall-ranking-panel .academy-podium-crown { position: absolute; top: -24%; left: 50%; color: #e9a300; fill: #ffd344; filter: drop-shadow(0 1px 1px rgba(156,96,0,.28)); transform: translateX(-50%) rotate(-8deg); }
-
-/* Nome e XP saem de cima da arte e ganham uma faixa propria, alinhada com os degraus. */
-.hall-ranking-panel .academy-podium-legend { display: grid; width: var(--hall-podium-width); margin: 0 auto; padding: 0; grid-template-columns: repeat(3, minmax(0, 1fr)); grid-template-rows: auto; gap: 0 4px; flex: 0 0 auto; list-style: none; }
-.hall-ranking-panel .academy-podium-legend-item { display: flex; min-width: 0; align-items: center; flex-direction: column; gap: 1px; }
-/* Linha e coluna explicitas: a posicao vem do rank, nao da ordem do DOM. Sem fixar
-   grid-row o auto-placement joga o 2o lugar para uma segunda linha, porque o 1o
-   ja ocupou a coluna do meio e o algoritmo nao retrocede. */
-.hall-ranking-panel .academy-podium-legend-item { grid-row: 1; }
-/* Colunas iguais (o nome precisa de largura), mas cada item desloca para bater com
-   o eixo do seu degrau, que nao cai no centro da coluna: 19.6% / 50% / 81%. */
-.hall-ranking-panel .academy-podium-legend-item.rank-2 { grid-column: 1; transform: translateX(8.8%); }
-.hall-ranking-panel .academy-podium-legend-item.rank-1 { grid-column: 2; }
-.hall-ranking-panel .academy-podium-legend-item.rank-3 { grid-column: 3; transform: translateX(-7%); }
-.hall-ranking-panel .academy-podium-legend .academy-ranking-name { display: block; max-width: 100%; overflow: hidden; color: var(--hall-ink); font-size: 9px; font-weight: 800; line-height: 12px; text-align: center; text-overflow: ellipsis; white-space: nowrap; }
-.hall-ranking-panel .academy-podium-legend b { color: var(--hall-brand); font-size: 8px; font-weight: 800; font-variant-numeric: tabular-nums; line-height: 11px; white-space: nowrap; }
-.hall-ranking-panel .academy-podium-legend-item.rank-1 .academy-ranking-name { color: #9a6b00; }
+.hall-ranking-panel .dashboard-ranking-body { display:flex; flex:1; min-height:0; flex-direction:column; justify-content:center; gap:7px; padding:7px 10px 5px !important; }
+.hall-ranking-panel .academy-ranking-preview-scope { display:inline-flex; width:fit-content; min-height:18px; align-items:center; gap:5px; padding:2px 7px; border:1px solid rgba(var(--primary-rgb),.16); border-radius:999px; background:rgba(var(--primary-rgb),.06); color:var(--hall-brand); font-size:7px; font-weight:900; letter-spacing:.06em; line-height:1; text-transform:uppercase; }
+.hall-ranking-panel .academy-ranking-preview-scope i { width:5px; height:5px; border-radius:50%; background:var(--hall-brand); }
+.hall-ranking-panel .academy-ranking-preview { display:flex; min-height:0; flex:1; flex-direction:column; justify-content:center; gap:3px; margin:0; padding:0; list-style:none; }
+.hall-ranking-panel .academy-ranking-preview-row { display:grid; min-width:0; min-height:43px; align-items:center; grid-template-columns:28px 30px minmax(0,1fr) auto; gap:7px; padding:4px 7px; border:1px solid rgba(var(--primary-rgb),.1); border-radius:8px; background:linear-gradient(90deg,rgba(var(--primary-rgb),.055),transparent); }
+.hall-ranking-panel .academy-ranking-preview-position { color:var(--hall-brand); font-size:11px; font-weight:900; font-variant-numeric:tabular-nums; }
+.hall-ranking-panel .academy-ranking-preview-row .academy-ranking-avatar { width:30px; height:30px; overflow:hidden; border:1px solid rgba(var(--primary-rgb),.18); border-radius:50%; background:var(--dashboard-surface-soft); font-size:8px; }
+.hall-ranking-panel .academy-ranking-preview-row strong { overflow:hidden; color:var(--hall-ink); font-size:9px; font-weight:800; text-overflow:ellipsis; white-space:nowrap; }
+.hall-ranking-panel .academy-ranking-preview-row > b { color:var(--hall-brand); font-size:8px; font-weight:800; font-variant-numeric:tabular-nums; white-space:nowrap; }
+.hall-ranking-panel .academy-ranking-preview-row.rank-1 { border-color:rgba(var(--accent-rgb),.28); background:linear-gradient(90deg,rgba(var(--accent-rgb),.1),transparent); }
+.hall-ranking-panel .academy-ranking-preview-row.rank-1 .academy-ranking-preview-position { color:var(--accent-dark); }
 
 .hall-ranking-panel .academy-ranking-you { display: grid; min-height: 36px; align-items: center; grid-template-columns: auto 24px minmax(0, 1fr) auto; gap: 7px; padding: 4px 8px; border: 1px dashed rgba(var(--primary-rgb),.35); border-radius: 9px; background: rgba(var(--primary-rgb),.055); flex: 0 0 auto; }
 .hall-ranking-panel .academy-ranking-you-position { color: var(--hall-brand); font-size: 12px; font-weight: 900; font-variant-numeric: tabular-nums; }
@@ -291,17 +254,8 @@
   .hall-ranking-panel .dashboard-ranking-card { height: 230px; }
 }
 
-/* Em largura cheia o card fica baixo e largo: o podio vai para a esquerda e a
-   linha "sua posicao" ocupa a coluna da direita, em vez de empilhar e estourar. */
 @media (max-width: 1260px) and (min-width: 901px) {
-  .hall-ranking-panel .dashboard-ranking-body { --hall-podium-width: min(100%, 268px); display: grid; align-items: center; grid-template-columns: minmax(0, 268px) minmax(0, 1fr); grid-template-rows: auto auto; gap: 4px 18px; }
-  .hall-ranking-panel .academy-ranking-podium { grid-area: 1 / 1; }
-  .hall-ranking-panel .academy-podium-legend { grid-area: 2 / 1; }
-  .hall-ranking-panel .academy-ranking-you { grid-area: 1 / 2 / 3 / 3; }
-}
-
-@media (max-width: 900px) {
-  .hall-ranking-panel .dashboard-ranking-body { --hall-podium-width: min(100%, 192px); }
+  .hall-ranking-panel .dashboard-ranking-body { display:grid; align-items:center; grid-template-columns:minmax(0,1fr) minmax(220px,.7fr); gap:12px; }
 }
 
 @media (max-width: 900px) {
