@@ -95,15 +95,10 @@ export function buildBrandVars(paleta: {
         '--primary-hover': hslToHex(ph, ps, Math.max(pl - 8, 20)),
         '--secondary': paleta.secondary,
         '--secondary-rgb': hexToRgb(paleta.secondary),
-        '--secondary-light': hslToHex(sh, ss, Math.min(sl + 15, 85)),
-        '--secondary-light-rgb': hexToRgb(hslToHex(sh, ss, Math.min(sl + 15, 85))),
         '--secondary-dark': hslToHex(sh, ss, Math.max(sl - 15, 15)),
-        '--secondary-hover': hslToHex(sh, ss, Math.max(sl - 8, 20)),
         '--accent': paleta.accent,
         '--accent-rgb': hexToRgb(paleta.accent),
-        '--accent-light': hslToHex(ah, as, Math.min(al + 15, 85)),
         '--accent-dark': hslToHex(ah, as, Math.max(al - 15, 15)),
-        '--accent-hover': hslToHex(ah, as, Math.max(al - 8, 20)),
     };
 }
 export function useEmpresaTema() {

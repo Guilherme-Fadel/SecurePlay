@@ -3,9 +3,9 @@
  * Imported only by Home.tsx because these selectors are page-specific.
  */
 /* Academia de Missões: visual exclusivo do painel principal */
-.academy-dashboard { max-width: 1240px; margin: 0 auto; }
+.academy-dashboard { max-width: 1180px; margin: 0 auto; }
 .secure-sidebar-nav { position: relative; overflow: hidden !important; background: linear-gradient(180deg, #fffdf7 0%, #fff8ed 100%) !important; }
-.secure-sidebar-castle { position: absolute; bottom: -3px; left: -16px; width: 175px; max-height: 195px; object-fit: contain; object-position: bottom left; pointer-events: none; }
+.secure-sidebar-castle { position: absolute; bottom: 0; left: 0; width: 100%; max-height: 280px; object-fit: cover; object-position: center bottom; pointer-events: none; }
 .secure-sidebar-list { position: relative; z-index: 1; }
 .secure-sidebar-item.is-active { background: linear-gradient(135deg, var(--primary), var(--primary-dark)) !important; color: #fff !important; box-shadow: 0 7px 13px rgba(var(--primary-rgb), .2); }
 
@@ -14,27 +14,24 @@
   .profile-password-actions .app-button { width: 100%; }
 }
 
-/* Dashboard Academia v2 — composição fiel ao conceito pixel-art */
-.academy-dashboard { max-width: 1180px; }
+/* Composição pixel-art do dashboard Academia. */
 .academy-daily-illustration { width: 94px; height: 76px; object-fit: contain;  }
-.academy-streak-body { display: flex; flex: 1; flex-direction: column; justify-content: center; gap: 16px; padding: 16px; }
+.academy-streak-body { position: relative; display: flex; flex: 1; flex-direction: column; justify-content: flex-start; gap: 13px; padding: 8px 2px 5px; }
 .academy-streak-action { display: none !important; }
 .dashboard-ranking-card > .dashboard-ranking-body { padding: 5px 8px; }
 
-.secure-sidebar-castle { left: 0; bottom: 0; width: 100%; max-height: 280px; object-fit: cover; object-position: center bottom; }
 :root:not([data-theme='light']) .secure-sidebar-nav { background: linear-gradient(180deg,#121126 0%,#18142e 100%) !important; }
 :root:not([data-theme='light']) .secure-sidebar-castle { opacity: .86; filter: saturate(.86) brightness(.7); }
 [data-theme='light'] .secure-sidebar-nav { background: linear-gradient(180deg,#fffdf7 0%,#fff8ed 100%) !important; }
 
-.academy-streak-body { position: relative; justify-content: flex-start; gap: 13px; padding: 8px 2px 5px; }
 .academy-streak-pixels { position: absolute; top: -25px; right: 0; width: 54px; height: 40px; pointer-events: none; }
 .academy-streak-pixels i { position: absolute; display: block; width: 5px; height: 5px; background: #51b8b2;  }
 .academy-streak-pixels i:nth-child(1) { top: 2px; right: 5px; }
 .academy-streak-pixels i:nth-child(2) { top: 17px; right: 28px; width: 4px; height: 4px; background: #ff866f; }
 .academy-streak-pixels i:nth-child(3) { top: 29px; right: 10px; width: 3px; height: 3px; background: #b699e8; }
 .academy-card-footer-link {
-  min-height: 31px;
-  flex: 0 0 31px;
+  min-height: 34px;
+  flex: 0 0 34px;
   justify-content: center !important;
   padding: 3px 8px 6px !important;
   border-top: 0 !important;
@@ -43,19 +40,19 @@
 .academy-card-footer-link .app-button:hover { background: rgba(var(--primary-rgb),.07); }
 .academy-footer-action {
   display: inline-flex;
-  min-height: 20px;
+  min-height: 24px;
   align-items: center;
   justify-content: center;
   gap: 4px;
-  padding: 2px 5px;
+  padding: 3px 7px;
   border: 0;
   border-radius: 5px;
   background: transparent;
   color: var(--primary);
   cursor: pointer;
   font-family: var(--font-family-ui);
-  font-size: 9px;
-  font-weight: 650;
+  font-size: 10.5px;
+  font-weight: 700;
   line-height: 1;
   white-space: nowrap;
   transition: color 140ms ease, background-color 140ms ease;
@@ -63,25 +60,23 @@
 .academy-footer-action svg { flex: 0 0 auto; }
 .academy-footer-action:hover { background: rgba(var(--primary-rgb),.06); color: var(--primary-hover); }
 .academy-footer-action:focus-visible { outline: 2px solid rgba(var(--primary-rgb),.4); outline-offset: 2px; }
-.academy-achievements-items { display: grid; min-height: 0; flex: 1; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); align-content: center; align-items: stretch; gap: 4px; padding: 10px 7px 2px; }
+.academy-achievements-items { position: relative; display: grid; min-height: 0; flex: 1; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); align-content: center; align-items: stretch; gap: 7px; padding: 10px 8px 2px; }
 .academy-achievements-state { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; padding: 16px; text-align: center; color: var(--dashboard-muted); }
 .academy-achievements-state p { font-size: 12px; margin: 0; }
 .academy-achievements-state small { font-size: 11px; }
-.academy-achievement-date { display: block; margin-top: 3px; font-size: 9px; color: var(--dashboard-muted); }
+.academy-achievement-date { display: inline-flex; margin-top: 3px; padding: 2px 5px; border-radius: 999px; background: rgba(var(--primary-rgb), .07); color: var(--dashboard-muted); font-size: 9px; }
 .achievement-node .achievement-artwork { width: 56px !important; height: 56px !important; }
 .achievement-detail-icon .achievement-artwork { width: 84px !important; height: 84px !important; }
 .dashboard-achievement-icon .achievement-artwork { width: 40px !important; height: 40px !important; }
 .achievement-node.is-locked .achievement-artwork { filter: grayscale(.65); opacity: .8; }
 
-/* Dashboard Academia v5 — densidade para viewport desktop sem rolagem */
+/* Densidade para viewport desktop sem rolagem. */
 @media (min-width: 1101px) {
   .secure-home-main { padding: 16px 24px 18px !important; }
-  .academy-achievements-items { padding-top: 5px; }
+  .academy-achievements-items { padding-top: 4px; }
   .academy-ranking-avatar { width: 24px; height: 24px; }
+  .academy-achievement-showcase { min-height: 48px; }
 }
-
-.academy-card-footer-link { min-height: 34px; flex-basis: 34px; }
-.academy-footer-action { min-height: 24px; padding: 3px 7px; font-size: 10.5px; font-weight: 700; }
 
 /* Avatar reutilizavel: garante que a foto preencha qualquer container de avatar */
 .sp-avatar-img {
@@ -153,21 +148,11 @@
 .academy-daily-sparkles i:first-of-type { top: 27px; right: 2px; }
 .academy-daily-sparkles i:last-of-type { top: 18px; left: 4px; width: 3px; height: 3px; background: #ff765f; }
 .academy-training-order { flex: 0 0 20px; color: rgba(var(--primary-rgb), .7); font-family: ui-monospace, monospace; font-size: 9px; font-weight: 900; text-align: center; }
-.academy-training-status { display: flex; align-items: center; gap: 3px; margin-bottom: 2px; color: var(--primary); font-size: 7px; font-weight: 850; letter-spacing: .08em; text-transform: uppercase; }
+.academy-training-status { display: flex; min-height: 11px; align-items: center; gap: 3px; margin-bottom: 2px; color: var(--primary); font-size: 7px; font-weight: 850; letter-spacing: .08em; line-height: 11px; text-transform: uppercase; }
 
 /* Conquistas: vitrine com pedestal e selo de novidade. */
-.academy-achievements-items { position: relative; gap: 7px; padding-inline: 8px; }
 .academy-achievement-new { color: #9b6a09; font-size: 6px; font-weight: 900; letter-spacing: .07em; text-transform: uppercase; }
 .academy-achievement-showcase { position: relative; display: grid; min-height: 53px; place-items: center; }
 .academy-achievement-showcase::before { content: ''; position: absolute; width: 55px; height: 55px; border-radius: 50%; background: radial-gradient(circle, rgba(255, 208, 76, .26), transparent 68%); }
 .academy-achievement-showcase > i { position: absolute; bottom: 0; width: 52px; height: 8px; border-radius: 50%; background: rgba(var(--primary-rgb), .11); box-shadow: 0 3px 0 rgba(var(--primary-rgb), .05); }
-.academy-achievement-date { display: inline-flex; margin-top: 3px; padding: 2px 5px; border-radius: 999px; background: rgba(var(--primary-rgb), .07); }
 :root:not([data-theme='light']) .academy-achievement-new { color: #e5bd61; }
-
-@media (min-width: 1101px) {
-  .academy-achievements-items { padding-top: 4px; }
-  .academy-achievement-showcase { min-height: 48px; }
-}
-
-/* Ajuste de legibilidade das quests: o selo não disputa mais a altura com o título. */
-.academy-training-status { min-height: 11px; line-height: 11px; }

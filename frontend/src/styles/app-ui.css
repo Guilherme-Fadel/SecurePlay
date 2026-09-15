@@ -694,7 +694,6 @@
 .app-loading-screen {
   --loading-bg: #0f172a;
   --loading-surface: #172236;
-  --loading-surface-soft: #202d43;
   --loading-text: #f8fafc;
   --loading-muted: #94a3b8;
   --loading-border: rgba(148, 163, 184, 0.22);
@@ -709,7 +708,6 @@
 [data-theme='light'] .app-loading-screen {
   --loading-bg: #f8fafc;
   --loading-surface: #ffffff;
-  --loading-surface-soft: #f8fafc;
   --loading-text: #1e293b;
   --loading-muted: #64748b;
   --loading-border: #e2e8f0;

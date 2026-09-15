@@ -45,24 +45,17 @@ body,
   --secondary: #00C2CB;
   --secondary-rgb: 0, 194, 203;
 
-  --secondary-light: #33d4dc;
-  --secondary-light-rgb: 51, 212, 220;
   --secondary-dark: #009ba3;
-  --secondary-hover: #00a9b1;
 
 
   --accent: #FFC82E;
   --accent-rgb: 255, 200, 46;
 
-  --accent-light: #ffd75e;
   --accent-dark: #cc9f24;
-  --accent-hover: #e6b428;
   --accent-text: #b8930a;
 
   --background-primary: #FFFFFF;
   --background: #1E293B;
-  --background-2: #162032;
-  --background-rgb: 30, 41, 59;
 
   --surface: #273449;
   --surface-alt: #314054;
@@ -70,7 +63,6 @@ body,
   --text-primary: #ECECEC;
   --text-secondary: #94a3b8;
 
-  --text-inverse: #1E293B;
 
   --border-primary: #d8d8dc;
   --border: #334155;
@@ -79,21 +71,15 @@ body,
   --danger: #d4183d;
   --success: #00C2CB;
 
-  --overlay-dark: rgba(0,0,0,0.5);
   --overlay-light: rgba(255,255,255,0.1);
 
   --primary-30: rgba(var(--primary-rgb), 0.3);
   --primary-60: rgba(var(--primary-rgb), 0.6);
-  --primary-10: rgba(var(--primary-rgb), 0.1);
   --primary-15: rgba(var(--primary-rgb), 0.15);
 
   --secondary-30: rgba(var(--secondary-rgb), 0.3);
-  --secondary-60: rgba(var(--secondary-rgb), 0.6);
-  --secondary-light-60: rgba(var(--secondary-light-rgb), 0.6);
-  --secondary-10: rgba(var(--secondary-rgb), 0.1);
   --secondary-15: rgba(var(--secondary-rgb), 0.15);
 
-  --accent-10: rgba(var(--accent-rgb), 0.1);
   --accent-15: rgba(var(--accent-rgb), 0.15);
   --accent-30: rgba(var(--accent-rgb), 0.3);
 
@@ -127,21 +113,17 @@ body,
 [data-theme='light'] {
   --background-primary: #ffffff;
   --background: #ffffff;
-  --background-2: #f1f5f9;
-  --background-rgb: 255, 255, 255;
 
   --surface: #ffffff;
   --surface-alt: #f8fafc;
 
   --text-primary: #1E293B;
   --text-secondary: #475569;
-  --text-inverse: #ffffff;
 
   --border-primary: #cbd5e1;
   --border: #e2e8f0;
   --border-light: #cbd5e1;
 
-  --overlay-dark: rgba(30, 41, 59, 0.4);
   --overlay-light: rgba(30, 41, 59, 0.06);
 
   --primary: #6935F2;
@@ -152,16 +134,11 @@ body,
 
   --secondary: #00C2CB;
   --secondary-rgb: 0, 194, 203;
-  --secondary-light: #33d4dc;
-  --secondary-light-rgb: 51, 212, 220;
   --secondary-dark: #009ba3;
-  --secondary-hover: #00a9b1;
 
   --accent: #FFC82E;
   --accent-rgb: 255, 200, 46;
-  --accent-light: #ffd75e;
   --accent-dark: #cc9f24;
-  --accent-hover: #e6b428;
   --accent-text: #9a7400;
 
   --success: #00C2CB;

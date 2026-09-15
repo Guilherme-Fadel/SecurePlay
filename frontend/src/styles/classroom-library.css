@@ -1,9 +1,6 @@
 /* Academia dos Guardiões: artwork decorates the room; all controls stay native. */
 .learning-shell.classroom-library {
   --classroom-ink: #281a40;
-  --classroom-muted: #756047;
-  --classroom-paper: #fff8e9;
-  --classroom-gold: #ca933c;
   --dashboard-text: #281a40;
   --dashboard-muted: #756047;
   --dashboard-surface: #fffaf0;
@@ -64,15 +61,12 @@
 }
 .classroom-reader-tools { display: flex; align-items: center; justify-content: flex-end; flex-wrap: wrap; gap: 12px; margin-bottom: 4px; }
 .classroom-reader-tools > span { padding: 6px 10px; border-radius: 5px; background: #f1dfb961; color: #574026; font-size: 12px; }
-.classroom-reader-tools button, .classroom-library .comic-reader-toolbar button { display: inline-flex; min-height: 38px; align-items: center; justify-content: center; gap: 8px; padding: 7px 12px; border: 1px solid #cfaa6a; border-radius: 7px; background: #fffaf0; color: #422169; font-size: 12px; font-weight: 650; cursor: pointer; }
+.classroom-reader-tools button { display: inline-flex; min-height: 38px; align-items: center; justify-content: center; gap: 8px; padding: 7px 12px; border: 1px solid #cfaa6a; border-radius: 7px; background: #fffaf0; color: #422169; font-size: 12px; font-weight: 650; cursor: pointer; }
 .classroom-lesson-tools { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; margin-right: auto; }
 .classroom-lesson-tools .comic-reader-demo-label { color: #78664e; font-size: 9px; }
 .classroom-lesson-tools button { border-color: transparent; background: transparent; font-size: 11px; }
 .classroom-library button:focus-visible { outline: 3px solid #7135ff; outline-offset: 3px; }
 .classroom-library .comic-learning-stage { max-width: none; min-height: 0; }
-.classroom-library .comic-reader-toolbar { min-height: 30px; justify-content: flex-end; gap: 10px; padding: 0 0 8px; }
-.classroom-library .comic-reader-toolbar .comic-reader-demo-label { margin-right: auto; margin-left: 0; color: #78664e; font-size: 8px; }
-.classroom-library .comic-reader-toolbar button { min-height: 28px; padding: 3px 7px; border-color: transparent; background: transparent; font-size: 10px; }
 .classroom-library .comic-reader-briefing { top: 32px; border-color: #cfa660; background: #fffaf0; }
 .classroom-library .comic-reader-briefing p { color: #574b61; font-size: 13px; }
 .classroom-library .comic-book { min-height: 0; height: clamp(360px, 53dvh, 720px); flex: none; border: 0; border-radius: 3px; background: transparent; box-shadow: none; }
@@ -173,7 +167,6 @@
   .is-classroom-view .classroom-library .comic-reader-navigation { padding-top: 6px; }
   .is-classroom-view .classroom-reader-tools { flex-shrink: 0; }
   .is-classroom-view .classroom-library .comic-learning-stage { width: 100%; min-height: 0; flex: 1; }
-  .is-classroom-view .classroom-library .comic-reader-toolbar,
   .is-classroom-view .classroom-library .comic-reader-navigation { flex-shrink: 0; }
   .is-classroom-view .classroom-library .comic-book { height: auto; min-height: 0; flex: 1; }
   .is-classroom-view .classroom-library .comic-page-sheet { min-height: 0; grid-template-rows: minmax(0, 1fr); }

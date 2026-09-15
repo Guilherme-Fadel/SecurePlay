@@ -31,10 +31,10 @@
 }
 
 .dashboard-training-item {
-  min-height: 92px;
-  flex: 1 1 0;
+  min-height: 72px;
+  flex: 0 0 auto;
   gap: 12px;
-  padding: 14px 18px !important;
+  padding: 11px 16px !important;
   border-color: var(--dashboard-border) !important;
 }
 
@@ -47,8 +47,8 @@
 }
 
 .dashboard-training-icon {
-  width: 38px !important;
-  height: 38px !important;
+  width: 36px !important;
+  height: 36px !important;
   border: 1px solid var(--dashboard-border);
   border-radius: 11px !important;
   background: var(--dashboard-surface-soft) !important;
@@ -71,7 +71,7 @@
 
 .dashboard-training-progress {
   height: 5px;
-  margin-top: 8px;
+  margin-top: 6px;
   overflow: hidden;
   border-radius: 999px;
   background: rgba(var(--primary-rgb), 0.1);
@@ -98,28 +98,13 @@
   font-weight: 700;
 }
 
-.dashboard-daily-card,
-.dashboard-streak-card,
-.dashboard-ranking-card {
-  min-height: 0;
-}
-
-.dashboard-daily-card,
 .dashboard-streak-card {
+  min-height: 0;
   overflow: hidden;
 }
 
-.dashboard-daily-body {
-  gap: 13px !important;
-  padding: 22px 24px !important;
-}
-
-.dashboard-daily-summary {
-  padding: 0 0 14px !important;
-  border: 0 !important;
-  border-bottom: 1px solid var(--dashboard-border) !important;
-  border-radius: 0 !important;
-  background: transparent !important;
+.dashboard-ranking-card {
+  min-height: 0;
 }
 
 .dashboard-daily-summary > div.absolute {
@@ -172,7 +157,6 @@
 }
 
 
-.dashboard-streak-card > div:first-child,
 .dashboard-ranking-card > div:first-child {
   min-height: 58px;
   padding: 13px 20px !important;
@@ -250,12 +234,12 @@
     display: none;
   }
 
-  .secure-sidebar.is-expanded .secure-sidebar-brand,
-  .secure-sidebar.is-expanded .secure-sidebar-item {
+  .secure-sidebar.is-expanded .secure-sidebar-brand {
     justify-content: center;
   }
 
   .secure-sidebar.is-expanded .secure-sidebar-item {
+    justify-content: center;
     gap: 0;
     padding: 0 !important;
   }
@@ -416,21 +400,6 @@
   padding: 4px 0 !important;
 }
 
-.dashboard-training-item {
-  min-height: 72px;
-  flex: 0 0 auto;
-  padding: 11px 16px !important;
-}
-
-.dashboard-training-icon {
-  width: 36px !important;
-  height: 36px !important;
-}
-
-.dashboard-training-progress {
-  margin-top: 6px;
-}
-
 .dashboard-achievements-card {
   display: flex;
   min-height: 0;
@@ -487,6 +456,7 @@
 
 .dashboard-daily-card {
   position: relative;
+  min-height: 0;
   gap: 12px;
   overflow: hidden;
   padding: 14px;
@@ -519,7 +489,10 @@
 
 .dashboard-daily-summary {
   padding: 0 0 14px !important;
+  border: 0 !important;
   border-bottom: 1px solid var(--dashboard-border) !important;
+  border-radius: 0 !important;
+  background: transparent !important;
 }
 
 .dashboard-daily-summary h3 {
@@ -551,7 +524,7 @@
   flex: 1;
   flex-direction: column;
   justify-content: center;
-  padding: 18px 18px 20px;
+  padding: 18px 18px 25px;
 }
 
 .dashboard-ranking-body > p {
@@ -561,13 +534,10 @@
 }
 
 
-.dashboard-streak-card {
-  overflow: hidden;
-}
-
 .dashboard-streak-card > div:first-child {
   min-height: 0;
   padding: 16px 18px 12px !important;
+  border-color: var(--dashboard-border) !important;
 }
 
 .dashboard-streak-card > .sp-card-footer {
