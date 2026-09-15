@@ -6,6 +6,7 @@ import { AppButton } from '@/components/ui/buttons/AppButton';
 import { MissionRoomAssets, useMissionRoomAssets } from '@/hooks/useMissionRoomAssets';
 import { ProgressiveImage } from '@/components/ui/visuals/ProgressiveImage';
 import { getModuleArtwork } from '@/lib/staticArtwork';
+import { groupAulasBySections, sortAulasByModuleSequence } from '@/lib/lessonOrder';
 import '@/styles/module-library-room.css';
 
 interface ModuloDetalhesProps { moduloId: number; onBack: () => void; onSelectAula: (aulaId: number) => void; }
@@ -15,8 +16,9 @@ export function ModuloDetalhes({ moduloId, onBack, onSelectAula }: ModuloDetalhe
   const assets = useMissionRoomAssets();
   if (loading || !modulo || !assets['module-book-frame-clean']) return <div className="flex items-center justify-center h-64"><p className="text-[var(--text-secondary)]">Abrindo o livro da missão...</p></div>;
 
-  const sections = groupBySections(modulo.aulas);
-  const nextAula = modulo.aulas.find((aula) => aula.status === 'unlocked');
+  const orderedAulas = sortAulasByModuleSequence(modulo.aulas);
+  const sections = groupAulasBySections(orderedAulas);
+  const nextAula = orderedAulas.find((aula) => aula.status === 'unlocked');
   const stars = modulo.difficulty === 'iniciante' ? 1 : modulo.difficulty === 'intermediario' ? 2 : 3;
 
   return (
@@ -52,10 +54,4 @@ function getLessonIcon(aula: AulaResumo, index: number, assets: MissionRoomAsset
     ? aula.artworkKey
     : lessonKeys[index % lessonKeys.length];
   return assets[key];
-}
-
-function groupBySections(aulas: AulaResumo[]): { name: string; aulas: AulaResumo[] }[] {
-  const map = new Map<string, AulaResumo[]>();
-  for (const aula of aulas) { const key = aula.section_name || ''; const group = map.get(key) ?? []; if (!map.has(key)) map.set(key, group); group.push(aula); }
-  return Array.from(map.entries()).map(([name, groupedAulas]) => ({ name, aulas: [...groupedAulas].sort((a, b) => a.order - b.order) }));
 }

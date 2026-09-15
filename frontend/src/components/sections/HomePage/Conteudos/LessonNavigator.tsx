@@ -1,6 +1,7 @@
 import { BookOpen, Check, CheckCircle2, Lock, Video } from 'lucide-react';
 import type { ModuloDetalhes } from '@/services/conteudo';
 import { getModuleArtwork, missionRoomAssets } from '@/lib/staticArtwork';
+import { sortAulasByModuleSequence } from '@/lib/lessonOrder';
 
 interface LessonNavigatorProps {
   modulo: ModuloDetalhes | null;
@@ -13,6 +14,8 @@ export function LessonNavigator({ modulo, activeAulaId, onSelectAula }: LessonNa
     return <div className="lesson-navigator-loading">Carregando roteiro...</div>;
   }
 
+  const orderedAulas = sortAulasByModuleSequence(modulo.aulas);
+
   return (
     <div className="lesson-navigator">
       <header>
@@ -21,7 +24,7 @@ export function LessonNavigator({ modulo, activeAulaId, onSelectAula }: LessonNa
       <progress className="classroom-module-progress" aria-label="Aulas concluídas no módulo" value={modulo.completedAulas} max={Math.max(1, modulo.totalAulas)} />
       <p className="classroom-module-count">{modulo.completedAulas} de {modulo.totalAulas} concluídas</p>
       <ol className="classroom-lesson-trail">
-        {modulo.aulas.map((aula, index) => (
+        {orderedAulas.map((aula, index) => (
           <li key={aula.id} className={aula.id === activeAulaId ? 'is-active' : ''}>
             <span className="classroom-lesson-number" aria-hidden="true">{aula.status === 'completed' ? <Check size={14} /> : index + 1}</span>
             <button type="button" disabled={aula.status === 'locked'} aria-current={aula.id === activeAulaId ? 'step' : undefined}
