@@ -25,3 +25,6 @@ dist
 /tmp/
 backend/eslint.config.mjs
 docs/security-audit/relatorio-auditoria-seguranca.pdf
+
+# Documentação local de análise e acompanhamento
+/docs/
