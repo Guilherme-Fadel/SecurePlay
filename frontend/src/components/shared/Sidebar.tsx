@@ -107,6 +107,8 @@ type MobileNavigationProps = {
   activeSection: Section
   onSelect: (section: Section) => void
   showAdmin: boolean
+  showAchievements: boolean
+  showRanking: boolean
 }
 
 const mobileNavigationItems: Array<{ id: Section; label: string; icon: ReactNode }> = [
@@ -119,11 +121,13 @@ const mobileNavigationItems: Array<{ id: Section; label: string; icon: ReactNode
   { id: 'configuracoes', label: 'Configurações', icon: <Settings /> },
 ]
 
-export function MobileNavigation({ activeSection, onSelect, showAdmin }: MobileNavigationProps) {
+export function MobileNavigation({ activeSection, onSelect, showAdmin, showAchievements, showRanking }: MobileNavigationProps) {
   const [menuOpen, setMenuOpen] = useState(false)
+  const visibleItems = mobileNavigationItems.filter((item) =>
+    (item.id !== 'conquistas' || showAchievements) && (item.id !== 'ranking' || showRanking))
   const items = showAdmin
-    ? [...mobileNavigationItems, { id: 'admin' as Section, label: 'Administrador', icon: <ShieldIcon /> }]
-    : mobileNavigationItems
+    ? [...visibleItems, { id: 'admin' as Section, label: 'Administrador', icon: <ShieldIcon /> }]
+    : visibleItems
 
   useEffect(() => {
     const closeOnEscape = (event: KeyboardEvent) => {

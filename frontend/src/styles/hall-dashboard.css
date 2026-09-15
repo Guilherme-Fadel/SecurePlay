@@ -178,6 +178,10 @@
 .hall-daily-panel { grid-column: 2; }
 .hall-achievements-panel { grid-column: 3; }
 .hall-ranking-panel { grid-column: 4; }
+.hall-support-grid.is-without-achievements,
+.hall-support-grid.is-without-ranking { grid-template-columns: minmax(0,2fr) minmax(0,.8fr) minmax(0,1.1fr); }
+.hall-support-grid.is-without-achievements .hall-ranking-panel { grid-column: 3; }
+.hall-support-grid.is-without-achievements.is-without-ranking { grid-template-columns: minmax(0,2fr) minmax(0,1fr); }
 .hall-support-grid .sp-card { flex: 1; height: 250px; border-color: rgba(var(--primary-rgb),.15) !important; background: radial-gradient(ellipse at 50% 0,rgba(255,196,68,.08),transparent 72%),var(--surface) !important; box-shadow: 0 8px 20px rgba(48,35,91,.075) !important; }
 .hall-support-grid .academy-card-footer-link { min-height: 35px; flex-basis: 35px; padding: 3px 8px !important; }
 .hall-support-grid .academy-footer-action { display: inline-flex; min-height: 29px; align-items: center; justify-content: center; gap: 4px; border: 0; border-radius: 7px; background: transparent; color: var(--hall-brand); font-size: 9px; font-weight: 800; cursor: pointer; }
@@ -251,6 +255,8 @@
   .hall-achievements-panel { grid-column: 3; }
   .hall-ranking-panel { grid-column: 1 / -1; }
   .hall-ranking-panel .dashboard-ranking-card { height: 230px; }
+  .hall-support-grid.is-without-achievements { grid-template-columns: minmax(0,1.6fr) minmax(0,1fr); }
+  .hall-support-grid.is-without-achievements .hall-ranking-panel { grid-column: 1 / -1; }
 }
 
 @media (max-width: 1260px) and (min-width: 901px) {
@@ -263,6 +269,9 @@
   .hall-player-card { min-height: 245px; }
   .hall-player-card { min-height: 225px; }
   .hall-support-grid { grid-template-columns: 1.4fr 1fr; }
+  .hall-support-grid.is-without-achievements,
+  .hall-support-grid.is-without-ranking,
+  .hall-support-grid.is-without-achievements.is-without-ranking { grid-template-columns: 1.4fr 1fr; }
   .hall-training-panel,
   .hall-daily-panel,
   .hall-achievements-panel,

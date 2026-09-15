@@ -4,8 +4,8 @@ export interface DashboardStats {
   totalPoints: number;
   completedChallenges: number;
   totalActiveChallenges: number;
-  globalRanking: number;
-  totalUsers: number;
+  globalRanking: number | null;
+  totalUsers: number | null;
   xpToday: number;
   xpToNextLevel: number;
   level: number;

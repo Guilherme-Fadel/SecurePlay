@@ -1,6 +1,9 @@
 import { useState } from 'react';
 import { useCachedQuery } from './useCachedQuery';
 import { invalidate, setCache } from '@/lib/queryCache';
+import { useCurrentUser } from './useCurrentUser';
+import { useCompanyFeatures } from './useCompanyFeatures';
+import { companyCacheKey } from '@/config/features';
 import {
   equipCosmetic,
   getAchievementShop,
@@ -15,23 +18,28 @@ import {
 const TRAIL_KEY = 'achievementTrail';
 const SHOP_KEY = 'achievementShop';
 
-export function useAchievementTrail() {
-  return useCachedQuery(TRAIL_KEY, getAchievementTrail, { staleTime: 45 * 60 * 1000 });
+export function useAchievementTrail(enabled = true) {
+  const features = useCompanyFeatures();
+  return useCachedQuery(TRAIL_KEY, getAchievementTrail, { staleTime: 45 * 60 * 1000, enabled: enabled && features.achievements });
 }
 
-export function useRecentAchievements() {
-  return useCachedQuery('achievementRecent', getRecentAchievements, { staleTime: 45 * 60 * 1000 });
+export function useRecentAchievements(enabled = true) {
+  const features = useCompanyFeatures();
+  return useCachedQuery('achievementRecent', getRecentAchievements, { staleTime: 45 * 60 * 1000, enabled: enabled && features.achievements });
 }
 
-export function useAchievementShop() {
-  const query = useCachedQuery(SHOP_KEY, getAchievementShop, { staleTime: 15_000 });
+export function useAchievementShop(enabled = true) {
+  const { user } = useCurrentUser();
+  const features = useCompanyFeatures();
+  const shopCacheKey = companyCacheKey(SHOP_KEY, user);
+  const query = useCachedQuery(SHOP_KEY, getAchievementShop, { staleTime: 15_000, enabled: enabled && features.achievements });
   const [changingItem, setChangingItem] = useState<number | null>(null);
 
   const purchase = async (itemId: number) => {
     setChangingItem(itemId);
     try {
       const updated = await purchaseCosmetic(itemId);
-      setCache<AchievementShop>(SHOP_KEY, updated);
+      setCache<AchievementShop>(shopCacheKey, updated);
       invalidate(TRAIL_KEY);
       return updated;
     } finally {
@@ -43,7 +51,7 @@ export function useAchievementShop() {
     setChangingItem(itemId);
     try {
       const updated = await equipCosmetic(itemId);
-      setCache<AchievementShop>(SHOP_KEY, updated);
+      setCache<AchievementShop>(shopCacheKey, updated);
       return updated;
     } finally {
       setChangingItem(null);
@@ -54,7 +62,7 @@ export function useAchievementShop() {
     setChangingItem(itemId);
     try {
       const updated = await unequipCosmetic(type);
-      setCache<AchievementShop>(SHOP_KEY, updated);
+      setCache<AchievementShop>(shopCacheKey, updated);
       return updated;
     } finally {
       setChangingItem(null);

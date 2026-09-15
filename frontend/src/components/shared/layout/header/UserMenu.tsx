@@ -8,6 +8,7 @@ import { useSectionContext } from '@/contexts/SectionContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useAchievementShop } from '@/hooks/useAchievements';
 import { Avatar } from '@/components/ui/visuals/Avatar';
+import { useCompanyFeatures } from '@/hooks/useCompanyFeatures';
 
 interface UserMenuProps {
   open: boolean;
@@ -21,7 +22,8 @@ export function UserMenu({ open, onToggle, onClose }: UserMenuProps) {
   const navigate = useNavigate();
   const { setActiveSection } = useSectionContext();
   const { theme, toggleTheme } = useTheme();
-  const { data: cosmeticShop } = useAchievementShop();
+  const features = useCompanyFeatures();
+  const { data: cosmeticShop } = useAchievementShop(features.achievements);
   const equippedFrame = cosmeticShop?.equipped.find((item) => item.type === 'frame')?.visualValue ?? '';
   const equippedBackground = cosmeticShop?.equipped.find((item) => item.type === 'background')?.visualValue ?? '';
 

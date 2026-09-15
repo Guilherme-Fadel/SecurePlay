@@ -56,10 +56,14 @@ export function fetchCached<T>(key: string, fetcher: () => Promise<T>): Promise<
 }
 
 export function invalidate(key: string): void {
-  cache.delete(key);
-  inFlight.delete(key);
-  keyGenerations.set(key, (keyGenerations.get(key) ?? 0) + 1);
-  notifyListeners(key);
+  const keys = new Set([key, ...cache.keys(), ...inFlight.keys(), ...listeners.keys()]);
+  for (const candidate of keys) {
+    if (candidate !== key && !candidate.startsWith(`${key}::company-session=`)) continue;
+    cache.delete(candidate);
+    inFlight.delete(candidate);
+    keyGenerations.set(candidate, (keyGenerations.get(candidate) ?? 0) + 1);
+    notifyListeners(candidate);
+  }
 }
 
 export function clearQueryCache(): void {

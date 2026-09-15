@@ -30,6 +30,7 @@ import { changePassword, presignProfileImage, requestNickname, saveProfileImage 
 import { passwordValidationMessage } from '@/lib/password-policy';
 import { preloadImages } from '@/lib/imageCache';
 import { optimizeImageUpload } from '@/lib/optimizeImageUpload';
+import { useCompanyFeatures } from '@/hooks/useCompanyFeatures';
 
 function initials(name?: string) {
   const parts = name?.trim().split(/\s+/).filter(Boolean) ?? [];
@@ -47,6 +48,7 @@ function formatNumber(value: number) {
 }
 
 export function Perfil() {
+  const features = useCompanyFeatures();
   const { user, loading: userLoading, refreshSession } = useCurrentUser();
   const { stats, loading: statsLoading } = useDashboardStats();
   const { navigateToSection } = useSectionContext();
@@ -324,12 +326,12 @@ export function Perfil() {
                   {displayLevel !== undefined && <span>Nível {displayLevel}</span>}
                 </div>
               </InfoCard.Section>
-              <InfoCard.Footer>
+              {features.achievements && <InfoCard.Footer>
                 <span className="profile-card-footnote">Conquistas e itens cosméticos acompanham seu perfil.</span>
                 <AppButton size="sm" variant="soft" icon={<Sparkles size={14} />} onClick={() => navigateToSection('conquistas')}>
                   Ver conquistas
                 </AppButton>
-              </InfoCard.Footer>
+              </InfoCard.Footer>}
             </InfoCard>
 
             <InfoCard raised className="profile-account-card">
@@ -361,9 +363,9 @@ export function Perfil() {
                 <div><Trophy size={16} /><span>Resumo da jornada</span></div>
                 <small>{statsLoading ? 'Sincronizando' : 'Atualizado agora'}</small>
               </div>
-              <div className="profile-stats-grid">
+              <div className={`profile-stats-grid${features.globalRanking ? '' : ' has-no-global-ranking'}`}>
                 <ProfileStat icon={Zap} label="XP total" value={stats ? formatNumber(points) : '—'} variant="primary" />
-                <ProfileStat icon={Trophy} label="Ranking" value={stats ? `#${stats.globalRanking}` : '—'} variant="accent" />
+                {features.globalRanking && <ProfileStat icon={Trophy} label="Ranking global" value={stats?.globalRanking != null ? `#${stats.globalRanking}` : '—'} variant="accent" />}
                 <ProfileStat icon={Medal} label="Desafios" value={stats ? `${stats.completedChallenges}/${stats.totalActiveChallenges}` : '—'} variant="secondary" />
               </div>
             </InfoCard>

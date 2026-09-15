@@ -1,4 +1,5 @@
 import { api } from '@/services/api'
+import type { CompanyParameters } from '@/config/features';
 
 export interface EmpresaPaleta {
   primary: string;
@@ -18,6 +19,7 @@ export interface CurrentUser {
   empresa_paleta: EmpresaPaleta | null;
   empresa_logo: string | null;
   empresa_nome: string | null;
+  empresa_parametros: CompanyParameters;
   nickname: string | null;
   nickname_pending: string | null;
   nickname_request_status: 'none' | 'pending' | 'approved' | 'rejected';

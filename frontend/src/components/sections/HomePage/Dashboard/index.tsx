@@ -15,8 +15,10 @@ import { AdventureHero } from './AdventureHero';
 import { JourneyPreview } from './JourneyPreview';
 import type { JourneyNodeData } from '@/services/dashboard';
 import '@/styles/hall-dashboard.css';
+import { useCompanyFeatures } from '@/hooks/useCompanyFeatures';
 
 export function Dashboard() {
+  const features = useCompanyFeatures();
   const { user, loading: userLoading } = useCurrentUser();
   const { stats, loading: statsLoading } = useDashboardStats();
   const { streak } = useWeeklyStreak();
@@ -80,7 +82,7 @@ export function Dashboard() {
           onRetry={refetch}
         />
 
-        <div className="hall-support-grid">
+        <div className={`hall-support-grid${features.achievements ? '' : ' is-without-achievements'}${features.ranking ? '' : ' is-without-ranking'}`}>
           <section className="hall-panel hall-training-panel" aria-labelledby="training-title">
             <header className="hall-section-heading"><div><h2 id="training-title">Próximas aulas</h2></div></header>
             <ActiveTraining />
@@ -89,14 +91,16 @@ export function Dashboard() {
             <header className="hall-section-heading"><div><h2 id="daily-title">Missão do dia</h2></div></header>
             <DailyChallenge />
           </section>
-          <section className="hall-panel hall-achievements-panel" aria-labelledby="achievements-title">
-            <header className="hall-section-heading"><div><h2 id="achievements-title">Conquistas recentes</h2></div></header>
-            <Achievements />
-          </section>
-          <section className="hall-panel hall-ranking-panel" aria-labelledby="ranking-title">
+          {features.achievements && (
+            <section className="hall-panel hall-achievements-panel" aria-labelledby="achievements-title">
+              <header className="hall-section-heading"><div><h2 id="achievements-title">Conquistas recentes</h2></div></header>
+              <Achievements />
+            </section>
+          )}
+          {features.ranking && <section className="hall-panel hall-ranking-panel" aria-labelledby="ranking-title">
             <header className="hall-section-heading"><div><h2 id="ranking-title">Ranking</h2></div></header>
             <RankingWidget />
-          </section>
+          </section>}
         </div>
       </main>
     </PageTransition>

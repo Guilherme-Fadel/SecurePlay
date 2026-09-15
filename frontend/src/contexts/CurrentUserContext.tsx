@@ -1,6 +1,7 @@
 import {
   createContext,
   useCallback,
+  useEffect,
   useContext,
   useMemo,
   useRef,
@@ -8,6 +9,7 @@ import {
 } from 'react';
 import { getMe, type CurrentUser } from '@/services/me';
 import { clearQueryCache } from '@/lib/queryCache';
+import { companySessionKey } from '@/config/features';
 
 export type SessionStatus =
   | 'idle'
@@ -78,6 +80,7 @@ export function CurrentUserProvider({ children }: { children: React.ReactNode })
     const request = getMe()
       .then((nextUser) => {
         if (requestVersion !== requestVersionRef.current) return userRef.current;
+        if (companySessionKey(userRef.current) !== companySessionKey(nextUser)) clearQueryCache();
         userRef.current = nextUser;
         setUser(nextUser);
         updateStatus('authenticated');
@@ -104,6 +107,38 @@ export function CurrentUserProvider({ children }: { children: React.ReactNode })
 
   const ensureSession = useCallback(() => loadSession(false), [loadSession]);
   const refreshSession = useCallback(() => loadSession(true), [loadSession]);
+
+  // Atualiza parâmetros sem interromper a leitura a cada consulta de sessão.
+  useEffect(() => {
+    if (status !== 'authenticated') return;
+    let cancelled = false;
+    let busy = false;
+    const refreshParameters = async () => {
+      if (busy || document.visibilityState === 'hidden') return;
+      busy = true;
+      const version = requestVersionRef.current;
+      try {
+        const nextUser = await getMe();
+        if (cancelled || version !== requestVersionRef.current || !userRef.current) return;
+        if (companySessionKey(userRef.current) !== companySessionKey(nextUser)) {
+          clearQueryCache();
+          userRef.current = nextUser;
+          setUser(nextUser);
+        }
+      } catch {
+        // Falha transitória não encerra a sessão; o backend mantém a autorização.
+      } finally {
+        busy = false;
+      }
+    };
+    const timer = window.setInterval(() => void refreshParameters(), 30_000);
+    window.addEventListener('focus', refreshParameters);
+    return () => {
+      cancelled = true;
+      window.clearInterval(timer);
+      window.removeEventListener('focus', refreshParameters);
+    };
+  }, [status]);
 
   const value = useMemo<CurrentUserContextValue>(() => ({
     user,

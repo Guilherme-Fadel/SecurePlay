@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { ArrowLeft, Gamepad2, RefreshCcw } from 'lucide-react';
 import '@/styles/challenges-ui.css';
 import '@/styles/challenge-games-ui.css';
@@ -13,13 +13,21 @@ import { useArcadeGames, useTokens } from '@/hooks/useArcade';
 import { AppSectionHeader } from '@/components/ui/visuals/AppSectionHeader';
 import { AppButton } from '@/components/ui/buttons/AppButton';
 import { getChallengeArtwork } from '@/lib/challengeArtwork';
+import { useCompanyFeatures } from '@/hooks/useCompanyFeatures';
+
 export function Challenges() {
+    const features = useCompanyFeatures();
     const [active, setActive] = useState<string | null>(null);
+    useEffect(() => {
+      if (active && !features.games.some((slug) => slug === active)) setActive(null);
+    }, [active, features.games]);
     const [focusedSlug, setFocusedSlug] = useState<string | null>(null);
     const { games: apiGames, loading: gamesLoading, error: gamesError, refetch } = useArcadeGames();
     const { tokens, secondsLeft, reload, setFromServer } = useTokens();
     const carouselGames = useMemo<GameCardData[]>(() => {
-        return apiGames.map((g) => ({
+        return apiGames
+          .filter((game) => features.games.some((slug) => slug === game.slug))
+          .map((g) => ({
             id: g.slug,
             title: g.title,
             description: g.description,
@@ -30,15 +38,16 @@ export function Challenges() {
             color: g.color,
             colorDark: g.colorDark,
             gameType: g.gameType,
-        }));
-    }, [apiGames]);
+          }));
+    }, [apiGames, features.games]);
     const handlePlay = (game: GameCardData) => setActive(game.id);
     const exit = () => setActive(null);
     const focusedGame = carouselGames.find((game) => game.id === focusedSlug) ?? carouselGames[0];
-    if (active === 'termotech') {
+    const activeGame = features.games.some((slug) => slug === active) ? active : null;
+    if (activeGame === 'termotech') {
         return <TermoTech onExit={exit}/>;
     }
-    if (active === 'quiz-relampago') {
+    if (activeGame === 'quiz-relampago') {
         return (<QuizBlitz onExit={() => {
                 reload();
                 exit();
@@ -47,7 +56,7 @@ export function Challenges() {
                     setFromServer(t);
             }}/>);
     }
-    if (active === 'caca-phishing') {
+    if (activeGame === 'caca-phishing') {
         return (<PhishingHunt onExit={() => {
                 reload();
                 exit();
@@ -56,7 +65,7 @@ export function Challenges() {
                     setFromServer(t);
             }}/>);
     }
-    if (active === 'classificacao-dados') {
+    if (activeGame === 'classificacao-dados') {
         return (<DataClassify onExit={() => {
                 reload();
                 exit();

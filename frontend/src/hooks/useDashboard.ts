@@ -1,5 +1,6 @@
 import { DashboardStats, getDashboardStats, DashboardDailyChallenge, getDashboardDailyChallenge, WeeklyStreak, getWeeklyStreak, getDashboardRanking, getDashboardJourney, JourneyData, } from '@/services/dashboard';
 import { useCachedQuery } from './useCachedQuery';
+import { useCompanyFeatures } from './useCompanyFeatures';
 export function useDashboardStats() {
     const { data: stats, loading, error } = useCachedQuery<DashboardStats>('dashboardStats', getDashboardStats);
     return { stats, loading, error };
@@ -13,7 +14,9 @@ export function useWeeklyStreak() {
     return { streak, loading, error };
 }
 export function useDashboardRanking(scope: 'global' | 'company' = 'global') {
-    const { data, loading, error, refetch } = useCachedQuery(`dashboardRanking:${scope}`, () => getDashboardRanking(scope), { staleTime: 45 * 60 * 1000 });
+    const features = useCompanyFeatures();
+    const effectiveScope = features.globalRanking ? scope : 'company';
+    const { data, loading, error, refetch } = useCachedQuery(`dashboardRanking:${effectiveScope}`, () => getDashboardRanking(effectiveScope), { staleTime: 45 * 60 * 1000, enabled: features.ranking });
     return { ranking: data, loading, error, refetch };
 }
 export function useDashboardJourney() {

@@ -8,20 +8,24 @@ import championBannersArtwork from '@/assets/static/ranking/ranking-champion-ban
 import galleryEmblem from '@/assets/static/mission-room/missions-room-emblem.png';
 import controlEmblems from '@/assets/static/ranking/ranking-controls-emblems-pixel-v1.png';
 import '@/styles/ranking-ui.css';
+import { useCompanyFeatures } from '@/hooks/useCompanyFeatures';
 
 const formatXp = (value: number) => `${value.toLocaleString('pt-BR')} XP`;
 type RankingScope = 'global' | 'company';
 
 export function Ranking() {
-  const [scope, setScope] = useState<RankingScope>('global');
+  const features = useCompanyFeatures();
+  const [scope, setScope] = useState<RankingScope>(features.globalRanking ? 'global' : 'company');
   // Isolate pending responses and error state when the selected scope changes.
-  return <RankingContent key={scope} scope={scope} onScopeChange={setScope} />;
+  const effectiveScope = features.globalRanking ? scope : 'company';
+  return <RankingContent key={effectiveScope} scope={effectiveScope} onScopeChange={setScope} />;
 }
 
 function RankingContent({ scope, onScopeChange }: {
   scope: RankingScope;
   onScopeChange: (scope: RankingScope) => void;
 }) {
+  const features = useCompanyFeatures();
   const { ranking, loading, error, refetch } = useDashboardRanking(scope);
 
   return (
@@ -41,7 +45,7 @@ function RankingContent({ scope, onScopeChange }: {
           </div>
         ) : (
           <div className="ranking-art-scroll">
-            <section className="ranking-artboard" aria-label={`Mural de Honra — ${scope === 'global' ? 'Global' : 'Minha turma'}`}>
+            <section className="ranking-artboard" aria-label={`Mural de Honra — ${scope === 'global' ? 'Global' : 'Minha instituição'}`}>
               <div className="ranking-gallery" aria-label="Três primeiros colocados">
                 <div className="ranking-gallery-stage">
                   <div className="ranking-leaders">
@@ -68,15 +72,17 @@ function RankingContent({ scope, onScopeChange }: {
                 <div className="ranking-board-controls" aria-label="Controles do mural">
                   <div className="ranking-scope-control">
                     <div className="ranking-scope-switch" role="group" aria-label="Escopo do ranking">
-                      <button type="button" aria-pressed={scope === 'global'} onClick={() => onScopeChange('global')}>
-                        <RankingControlIcon position="global" />
-                        Global
-                      </button>
+                      {features.globalRanking && (
+                        <button type="button" aria-pressed={scope === 'global'} onClick={() => onScopeChange('global')}>
+                          <RankingControlIcon position="global" />
+                          Global
+                        </button>
+                      )}
                       <button type="button" aria-pressed={scope === 'company'} onClick={() => onScopeChange('company')}
                         disabled={!ranking.companyAvailable && scope !== 'company'}
                         aria-describedby={!ranking.companyAvailable ? 'ranking-no-company' : undefined}>
                         <RankingControlIcon position="classroom" />
-                        Minha turma
+                        Minha instituição
                       </button>
                     </div>
                   </div>
@@ -85,7 +91,7 @@ function RankingContent({ scope, onScopeChange }: {
                     <span>{loading ? 'Atualizando…' : 'Atualizar'}</span>
                   </button>
                 </div>
-                {!ranking.companyAvailable && <small id="ranking-no-company" className="ranking-scope-hint">Você ainda não faz parte de uma turma.</small>}
+                {!ranking.companyAvailable && <small id="ranking-no-company" className="ranking-scope-hint">Você ainda não faz parte de uma instituição.</small>}
                 <div className="ranking-art-list" role="region" aria-label="Classificação completa" tabIndex={0}>
                   {ranking.top.length ? ranking.top.map(entry => <RankingRow key={entry.id} entry={entry} />) : (
                     <p className="ranking-empty">O mural está esperando seus primeiros aventureiros.</p>

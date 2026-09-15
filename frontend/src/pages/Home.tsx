@@ -20,6 +20,8 @@ import '@/styles/profile-ui.css';
 import '@/styles/dashboard-ui.css';
 import '@/styles/academy-dashboard.css';
 import { AppButton } from '@/components/ui/buttons/AppButton';
+import { useCompanyFeatures } from '@/hooks/useCompanyFeatures';
+import { companyIdentityKey } from '@/config/features';
 const Admin = lazy(() => import('@/pages/Admin'));
 export type Section = 'dashboard' | 'desafios' | 'ranking' | 'conquistas' | 'conteudos' | 'configuracoes' | 'perfil' | 'admin';
 const validSections: Section[] = ['dashboard', 'desafios', 'ranking', 'conquistas', 'conteudos', 'configuracoes', 'perfil', 'admin'];
@@ -40,15 +42,18 @@ function sectionPath(section: Section, target: ContentTarget | null): string {
  */
 const restrictedSections: Partial<Record<Section, string>> = { admin: 'platform_admin' };
 function HomeContent() {
+    const features = useCompanyFeatures();
     const navigate = useNavigate();
     const params = useParams();
     const { user, loading: userLoading } = useCurrentUser();
     const canOpenSection = useCallback(
         (section: Section) => {
+            if (section === 'conquistas' && !features.achievements) return false;
+            if (section === 'ranking' && !features.ranking) return false;
             const requiredRole = restrictedSections[section];
             return !requiredRole || user?.role === requiredRole;
         },
-        [user?.role],
+        [user?.role, features.achievements, features.ranking],
     );
     const sections: Record<Section, React.ReactNode> = {
         dashboard: <Dashboard />,
@@ -155,8 +160,8 @@ function HomeContent() {
             <SidebarItem id="dashboard" icon={<LayoutDashboard />} text="Início" active={activeSection === 'dashboard'} onSelect={setActiveSection}/>
             <SidebarItem id="conteudos" icon={<BookOpenIcon />} text="Aprender" active={activeSection === 'conteudos'} onSelect={setActiveSection}/>
             <SidebarItem id="desafios" icon={<Gamepad2 />} text="Jogos" active={activeSection === 'desafios'} onSelect={setActiveSection}/>
-            <SidebarItem id="ranking" icon={<TrophyIcon />} text="Ranking" active={activeSection === 'ranking'} onSelect={setActiveSection}/>
-            <SidebarItem id="conquistas" icon={<AwardIcon />} text="Conquistas" active={activeSection === 'conquistas'} onSelect={setActiveSection}/>
+            {features.ranking && <SidebarItem id="ranking" icon={<TrophyIcon />} text="Ranking" active={activeSection === 'ranking'} onSelect={setActiveSection}/>}
+            {features.achievements && <SidebarItem id="conquistas" icon={<AwardIcon />} text="Conquistas" active={activeSection === 'conquistas'} onSelect={setActiveSection}/>}
             <SidebarItem id="configuracoes" icon={<SettingsIcon />} text="Configurações" active={activeSection === 'configuracoes'} onSelect={setActiveSection}/>
             {canOpenSection('admin') && <SidebarItem id="admin" icon={<ShieldIcon />} text="Administrador" active={activeSection === 'admin'} onSelect={setActiveSection}/>}
           </Sidebar>
@@ -172,15 +177,16 @@ function HomeContent() {
             </main>
           </div>
 
-          <MobileNavigation activeSection={activeSection} onSelect={setActiveSection} showAdmin={canOpenSection('admin')} />
+          <MobileNavigation activeSection={activeSection} onSelect={setActiveSection} showAdmin={canOpenSection('admin')} showAchievements={features.achievements} showRanking={features.ranking} />
         </div>
         </SectionContext.Provider>
     </>);
 }
 export default function Home() {
+    const { user } = useCurrentUser();
     return (<PageTransition>
       <ThemeProvider>
-        <HomeContent />
+        <HomeContent key={companyIdentityKey(user)} />
       </ThemeProvider>
     </PageTransition>);
 }

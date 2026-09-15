@@ -454,6 +454,10 @@
   gap: 7px;
 }
 
+.profile-stats-grid.has-no-global-ranking {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
 .profile-stat {
   display: grid;
   min-width: 0;

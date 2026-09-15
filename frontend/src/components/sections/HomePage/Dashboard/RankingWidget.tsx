@@ -24,7 +24,7 @@ export function RankingWidget() {
 
   const leaders = ranking.top.slice(0, 3);
   const currentUser = ranking.currentUser;
-  const scopeLabel = ranking.scope === 'company' ? 'Minha turma' : 'Global';
+  const scopeLabel = ranking.scope === 'company' ? 'Minha instituição' : 'Global';
 
   return (
     <InfoCard variant="accent" raised className="dashboard-ranking-card flex flex-col h-full min-h-0 overflow-hidden">

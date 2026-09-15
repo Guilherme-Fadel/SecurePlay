@@ -13,6 +13,7 @@
     "lint:types": "eslint --config eslint.typed.config.mjs .",
     "build:termotech-dictionary": "node scripts/build-termotech-dictionary.cjs",
     "test:termotech-dictionary": "node scripts/verify-termotech-dictionary.cjs",
+    "test:company-parameters": "node scripts/test-company-parameters.cjs",
     "dev": "vite"
   },
   "dependencies": {
