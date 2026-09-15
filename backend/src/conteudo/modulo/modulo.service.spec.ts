@@ -267,3 +267,71 @@ describe('ModuloService thumbnail resolution', () => {
     modulo.thumbnail = originalThumbnail;
   });
 });
+
+describe('ModuloService sequencia de aulas por capitulo', () => {
+  it('conclui o capitulo atual antes de liberar o seguinte', async () => {
+    const aulas = [
+      {
+        id: 10,
+        modulo_id: 1,
+        order: 1,
+        section_name: 'Capitulo 1',
+        active: true,
+      },
+      {
+        id: 20,
+        modulo_id: 1,
+        order: 1,
+        section_name: 'Capitulo 2',
+        active: true,
+      },
+      {
+        id: 11,
+        modulo_id: 1,
+        order: 2,
+        section_name: 'Capitulo 1',
+        active: true,
+      },
+      {
+        id: 21,
+        modulo_id: 1,
+        order: 2,
+        section_name: 'Capitulo 2',
+        active: true,
+      },
+    ];
+    const aulaRepository = {
+      find: jest.fn().mockResolvedValue(aulas),
+    };
+    const usuarioAulaRepository = {
+      find: jest.fn().mockResolvedValue([
+        { aula_id: 10, completed: true, progress_percent: 100 },
+        { aula_id: 20, completed: true, progress_percent: 100 },
+      ]),
+    };
+    const service = new ModuloService(
+      {
+        findOne: jest.fn().mockResolvedValue({
+          id: 1,
+          active: true,
+          thumbnail: null,
+        }),
+      } as never,
+      aulaRepository as never,
+      usuarioAulaRepository as never,
+    );
+    jest
+      .spyOn(service, 'assertModuloDesbloqueado')
+      .mockResolvedValue(undefined);
+
+    const result = await service.findOne(1, 7);
+
+    expect(result.aulas.map((aula) => aula.id)).toEqual([10, 11, 20, 21]);
+    expect(result.aulas.map((aula) => aula.status)).toEqual([
+      'completed',
+      'unlocked',
+      'completed',
+      'locked',
+    ]);
+  });
+});

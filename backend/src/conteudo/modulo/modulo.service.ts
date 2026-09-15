@@ -9,6 +9,7 @@ import { Modulo } from './modulo.entity';
 import { Aula } from '../aula/aula.entity';
 import { UsuarioAula } from '../usuario-aula/usuario-aula.entity';
 import { CreateModuloDto, UpdateModuloDto } from './dto/modulo.dto';
+import { sortAulasByModuleSequence } from '../aula/aula-order';
 
 @Injectable()
 export class ModuloService {
@@ -54,6 +55,9 @@ export class ModuloService {
       const grouped = aulasByModulo.get(aula.modulo_id) ?? [];
       grouped.push(aula);
       aulasByModulo.set(aula.modulo_id, grouped);
+    }
+    for (const [moduloId, moduloAulas] of aulasByModulo) {
+      aulasByModulo.set(moduloId, sortAulasByModuleSequence(moduloAulas));
     }
     const progressByAula = new Map(
       progressRows.map((row) => [row.aula_id, row]),
@@ -236,10 +240,12 @@ export class ModuloService {
 
     await this.assertModuloDesbloqueado(id, usuario_id);
 
-    const aulas = await this.aulaRepository.find({
-      where: { modulo_id: id, active: true },
-      order: { order: 'ASC' },
-    });
+    const aulas = sortAulasByModuleSequence(
+      await this.aulaRepository.find({
+        where: { modulo_id: id, active: true },
+        order: { order: 'ASC', id: 'ASC' },
+      }),
+    );
 
     const userProgress = await this.usuarioAulaRepository.find({
       where: { usuario_id },
@@ -251,11 +257,12 @@ export class ModuloService {
       .filter((row) => row.completed)
       .map((row) => row.aula_id);
 
+    const firstIncompleteIndex = aulas.findIndex(
+      (aula) => !completedAulaIds.includes(aula.id),
+    );
     const aulasWithStatus = aulas.map((aula, index) => {
       const isCompleted = completedAulaIds.includes(aula.id);
-      const previousCompleted =
-        index === 0 || completedAulaIds.includes(aulas[index - 1].id);
-      const isUnlocked = index === 0 || previousCompleted;
+      const isUnlocked = index === firstIncompleteIndex;
       const progress = progressByAula.get(aula.id);
 
       return {

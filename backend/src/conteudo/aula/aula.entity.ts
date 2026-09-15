@@ -4,6 +4,7 @@ import {
   PrimaryGeneratedColumn,
   ManyToOne,
   JoinColumn,
+  Index,
 } from 'typeorm';
 import { Modulo } from '../modulo/modulo.entity';
 
@@ -13,6 +14,7 @@ export enum AulaType {
 }
 
 @Entity()
+@Index('uq_aula_modulo_order', ['modulo_id', 'order'], { unique: true })
 export class Aula {
   @PrimaryGeneratedColumn()
   id: number;

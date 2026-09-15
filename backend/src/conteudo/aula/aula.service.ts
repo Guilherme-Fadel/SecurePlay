@@ -4,7 +4,7 @@ import {
   NotFoundException,
   BadRequestException,
 } from '@nestjs/common';
-import { LessThan, Repository } from 'typeorm';
+import { Not, Repository } from 'typeorm';
 import { Aula } from './aula.entity';
 import { AulaQuiz } from '../aula-quiz/aula-quiz.entity';
 import { UsuarioAula } from '../usuario-aula/usuario-aula.entity';
@@ -22,6 +22,7 @@ import {
 import { SubmitQuizDto } from '../aula-quiz/dto/aula-quiz.dto';
 import { NotificationService } from '../../notification/notification.service';
 import { EventEmitter2 } from '@nestjs/event-emitter';
+import { sortAulasByModuleSequence } from './aula-order';
 
 @Injectable()
 export class AulaService {
@@ -128,6 +129,8 @@ export class AulaService {
       throw new NotFoundException('Módulo não encontrado');
     }
 
+    await this.assertOrderAvailable(dto.modulo_id, dto.order ?? 0);
+
     const aula = this.aulaRepository.create(dto);
     return this.aulaRepository.save(aula);
   }
@@ -137,6 +140,10 @@ export class AulaService {
 
     if (!aula) {
       throw new NotFoundException('Aula não encontrada');
+    }
+
+    if (dto.order !== undefined && dto.order !== aula.order) {
+      await this.assertOrderAvailable(aula.modulo_id, dto.order, aula.id);
     }
 
     Object.assign(aula, dto);
@@ -369,24 +376,50 @@ export class AulaService {
       usuario_id,
     );
 
-    const previousAula = await this.aulaRepository.findOne({
-      where: {
-        modulo_id: aula.modulo_id,
-        order: LessThan(aula.order),
-        active: true,
-      },
-      order: { order: 'DESC' },
+    const aulas = sortAulasByModuleSequence(
+      await this.aulaRepository.find({
+        where: { modulo_id: aula.modulo_id, active: true },
+        order: { order: 'ASC', id: 'ASC' },
+      }),
+    );
+    const aulaIndex = aulas.findIndex((candidate) => candidate.id === aula.id);
+    const previousAulas = aulaIndex > 0 ? aulas.slice(0, aulaIndex) : [];
+
+    if (previousAulas.length === 0) return;
+
+    const completedProgress = await this.usuarioAulaRepository.find({
+      where: { usuario_id, completed: true },
     });
+    const completedAulaIds = new Set(
+      completedProgress.map((progress) => progress.aula_id),
+    );
+    const hasIncompletePreviousAula = previousAulas.some(
+      (previousAula) => !completedAulaIds.has(previousAula.id),
+    );
 
-    if (!previousAula) return;
-
-    const previousCompleted = await this.usuarioAulaRepository.findOne({
-      where: { usuario_id, aula_id: previousAula.id, completed: true },
-    });
-
-    if (!previousCompleted) {
+    if (hasIncompletePreviousAula) {
       throw new BadRequestException(
         'Aula anterior não foi concluída. Complete a aula anterior primeiro.',
+      );
+    }
+  }
+
+  private async assertOrderAvailable(
+    modulo_id: number,
+    order: number,
+    ignoredAulaId?: number,
+  ): Promise<void> {
+    const duplicate = await this.aulaRepository.findOne({
+      where: {
+        modulo_id,
+        order,
+        ...(ignoredAulaId === undefined ? {} : { id: Not(ignoredAulaId) }),
+      },
+    });
+
+    if (duplicate) {
+      throw new BadRequestException(
+        `Já existe uma aula na posição ${order} deste módulo.`,
       );
     }
   }
