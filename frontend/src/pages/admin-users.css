@@ -1,4 +1,4 @@
-.admin-console { width: 100%; max-width: 1440px; margin: 0 auto; }.admin-console.is-platform { display: grid; grid-template-columns: 196px minmax(0, 1fr); column-gap: 28px; row-gap: 18px; }
+.admin-console { width: 100%; max-width: 1440px; margin: 0 auto; }.admin-console.is-platform { display: flex; flex-direction: column; gap: 18px; }
 .admin-workspace { display: grid; grid-template-columns: 196px minmax(0, 1fr); align-items: start; gap: 28px; }
 .admin-console.is-platform .admin-platform-context { grid-column: 2; width: auto; max-width: none; margin: 0; }.admin-console.is-platform .admin-workspace { grid-column: 1 / -1; }
 .admin-workspace.is-single-column { display: block; }

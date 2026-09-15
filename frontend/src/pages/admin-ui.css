@@ -735,3 +735,75 @@
     display: none;
   }
 }
+.admin-global-save {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  margin-left: auto;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.admin-company-toolbar {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 12px 16px;
+  border: 1px solid var(--dashboard-border);
+  border-radius: 14px;
+  background: var(--dashboard-surface);
+  box-shadow: var(--dashboard-shadow);
+}
+
+.admin-company-toolbar .admin-platform-context {
+  flex: 1;
+  flex-wrap: wrap;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  margin: 0 !important;
+}
+
+.admin-save-status {
+  color: var(--dashboard-muted);
+  font-size: var(--font-xs);
+}
+
+.admin-company-form-card > .settings-select-field {
+  display: grid;
+  gap: 8px;
+  margin-top: 18px;
+  color: var(--dashboard-text);
+  font-size: var(--font-xs);
+  font-weight: 700;
+}
+
+.admin-company-form-card > .settings-select-field input {
+  width: 100%;
+  min-width: 0;
+  padding: 10px 12px;
+  border: 1px solid var(--dashboard-border);
+  border-radius: 10px;
+  background: var(--dashboard-bg);
+  color: var(--dashboard-text);
+  font: inherit;
+}
+
+@media (max-width: 780px) {
+  .admin-company-toolbar { padding: 12px; }
+  .admin-company-toolbar .admin-platform-context { flex-basis: 100%; }
+  .admin-company-toolbar .admin-platform-context select { min-width: 0; }
+  .admin-global-save { width: 100%; justify-content: space-between; }
+  .admin-global-save .app-button { margin-left: auto; }
+  .admin-tabs { flex-wrap: wrap; }
+  .admin-tab { flex-basis: calc(50% - 4px); }
+}
+
+.admin-global-save .app-button {
+  flex-shrink: 0;
+}
