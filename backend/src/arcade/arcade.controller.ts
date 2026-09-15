@@ -14,8 +14,8 @@ export class ArcadeController {
   constructor(private readonly arcadeService: ArcadeService) {}
 
   @Get('games')
-  listGames() {
-    return this.arcadeService.listGames();
+  listGames(@Request() req: AuthenticatedRequest) {
+    return this.arcadeService.listGames(req.user.userId);
   }
 
   @Get('tokens')

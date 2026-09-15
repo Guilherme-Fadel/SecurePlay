@@ -23,7 +23,9 @@ describe('DashboardService check-in automatico', () => {
         redisStore[key] = value;
       }),
     };
-    const tokenService = { refillToCap: jest.fn().mockResolvedValue(undefined) };
+    const tokenService = {
+      refillToCap: jest.fn().mockResolvedValue(undefined),
+    };
     const eventEmitter = { emitAsync: jest.fn().mockResolvedValue(undefined) };
 
     const service = new DashboardService(
@@ -32,6 +34,7 @@ describe('DashboardService check-in automatico', () => {
       redisService as never,
       tokenService as never,
       eventEmitter as never,
+      {} as never,
       {} as never,
       {} as never,
     );

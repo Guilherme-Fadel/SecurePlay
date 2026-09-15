@@ -5,6 +5,7 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
 } from 'typeorm';
+import type { CompanyParameters } from '../config/features';
 
 @Entity()
 export class Empresa {
@@ -13,6 +14,9 @@ export class Empresa {
 
   @Column({ length: 100 })
   nome: string;
+
+  @Column({ type: 'json', nullable: true })
+  parametros_funcionalidades: CompanyParameters | null;
 
   @Column({ length: 500, nullable: true })
   logo_url: string;

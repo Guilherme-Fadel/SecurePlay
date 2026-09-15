@@ -16,6 +16,12 @@ import {
   MAX_UPLOAD_BYTES,
 } from '../conteudo/s3/upload-policy';
 import { randomUUID } from 'crypto';
+import { Role } from '../auth/roles.enum';
+import {
+  noCompanyParameters,
+  platformAdminParameters,
+  resolveCompanyParameters,
+} from '../config/features';
 @Injectable()
 export class UsuarioService {
   constructor(
@@ -46,6 +52,14 @@ export class UsuarioService {
       empresa_paleta: usuario.empresa?.paleta || null,
       empresa_logo: usuario.empresa?.logo_url || null,
       empresa_nome: usuario.empresa?.nome || null,
+      empresa_parametros:
+        usuario.role === Role.PLATFORM_ADMIN
+          ? platformAdminParameters()
+          : usuario.empresa
+            ? resolveCompanyParameters(
+                usuario.empresa.parametros_funcionalidades,
+              )
+            : noCompanyParameters(),
       nickname: usuario.nickname,
       nickname_pending: usuario.nickname_pending,
       nickname_request_status: usuario.nickname_request_status,

@@ -21,6 +21,8 @@ import { RedisThrottlerStorage } from './redis/redis-throttler.storage';
 import { AchievementsModule } from './achievements/achievements.module';
 import { AppThrottlerGuard } from './common/security/app-throttler.guard';
 import { CsrfGuard } from './auth/csrf.guard';
+import { FeatureGuard } from './common/features/feature.guard';
+import { CompanyFeaturesModule } from './common/features/company-features.module';
 
 @Module({
   imports: [
@@ -47,6 +49,7 @@ import { CsrfGuard } from './auth/csrf.guard';
     DashboardModule,
     ArcadeModule,
     AdminModule,
+    CompanyFeaturesModule,
     AchievementsModule,
     ConfigModule.forRoot({
       isGlobal: true,
@@ -69,6 +72,10 @@ import { CsrfGuard } from './auth/csrf.guard';
     {
       provide: APP_GUARD,
       useClass: AppThrottlerGuard,
+    },
+    {
+      provide: APP_GUARD,
+      useClass: FeatureGuard,
     },
     AppGateway,
   ],

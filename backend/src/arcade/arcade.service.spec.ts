@@ -12,8 +12,11 @@ import { QuizRelampagoHandler } from './games/quiz-relampago.handler';
 import { PhishingHandler } from './games/phishing.handler';
 import { DataClassifyHandler } from './games/data-classify.handler';
 import { ArcadeGameType } from './entities/arcade-game.entity';
+import { CompanyFeaturesService } from '../common/features/company-features.service';
+import { resolveCompanyParameters } from '../config/features';
 
 describe('ArcadeService (ciclo start/submit e XP)', () => {
+  let companyFeatures: { forUser: jest.Mock; requireGame: jest.Mock };
   let service: ArcadeService;
   let store: Map<string, string>;
   let gameRepository: { findOne: jest.Mock; find: jest.Mock };
@@ -49,6 +52,10 @@ describe('ArcadeService (ciclo start/submit e XP)', () => {
   };
 
   beforeEach(async () => {
+    companyFeatures = {
+      forUser: jest.fn().mockResolvedValue(resolveCompanyParameters()),
+      requireGame: jest.fn().mockResolvedValue(undefined),
+    };
     store = new Map();
     gameRepository = {
       findOne: jest.fn().mockResolvedValue(quizGame),
@@ -124,6 +131,7 @@ describe('ArcadeService (ciclo start/submit e XP)', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         ArcadeService,
+        { provide: CompanyFeaturesService, useValue: companyFeatures },
         { provide: 'ARCADE_GAME_REPOSITORY', useValue: gameRepository },
         { provide: RedisService, useValue: redis },
         { provide: XpService, useValue: xpService },
@@ -141,6 +149,40 @@ describe('ArcadeService (ciclo start/submit e XP)', () => {
     }).compile();
 
     service = module.get<ArcadeService>(ArcadeService);
+  });
+
+  it('filters advanced games when disabled but keeps Quiz Relâmpago', async () => {
+    companyFeatures.forUser.mockResolvedValue(
+      resolveCompanyParameters({ enabledGames: ['quiz-relampago'] }),
+    );
+    gameRepository.find.mockResolvedValue([
+      quizGame,
+      { ...quizGame, slug: 'termotech' },
+    ]);
+
+    expect((await service.listGames(1)).map((game) => game.slug)).toEqual([
+      'quiz-relampago',
+    ]);
+  });
+
+  it('refuses advanced games before consuming tokens when disabled', async () => {
+    companyFeatures.requireGame.mockRejectedValue(new NotFoundException());
+
+    await expect(service.start(1, 'caca-phishing')).rejects.toThrow(
+      NotFoundException,
+    );
+    expect(gameRepository.findOne).not.toHaveBeenCalled();
+    expect(tokenService.consume).not.toHaveBeenCalled();
+  });
+
+  it('checks company permission again at submit before consuming tokens or crediting XP', async () => {
+    const start = await service.start(1, 'quiz-relampago');
+    companyFeatures.requireGame.mockRejectedValue(new NotFoundException());
+    await expect(
+      service.submit(1, start.runId, { quizAnswers: [] }),
+    ).rejects.toThrow(NotFoundException);
+    expect(tokenService.consume).not.toHaveBeenCalled();
+    expect(xpService.creditXp).not.toHaveBeenCalled();
   });
 
   it('recusa start de jogo inexistente/inativo', async () => {

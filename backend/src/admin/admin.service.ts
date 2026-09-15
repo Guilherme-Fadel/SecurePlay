@@ -16,6 +16,10 @@ import {
 } from '../conteudo/s3/upload-policy';
 import { Usuario } from '../usuario/usuario.entity';
 import { Convite } from './entities/convite.entity';
+import { resolveCompanyParameters } from '../config/features';
+import { EmpresaParametrosAudit } from '../empresa/empresa-parametros-audit.entity';
+import { UpdateCompanySettingsDto } from './dto/update-company-settings.dto';
+import { UpdateCompanyParametersDto } from './dto/update-company-parameters.dto';
 
 @Injectable()
 export class AdminService {
@@ -81,7 +85,10 @@ export class AdminService {
       }
 
       const novaEmpresa = await empresaRepository.save(
-        empresaRepository.create({ nome }),
+        empresaRepository.create({
+          nome,
+          parametros_funcionalidades: resolveCompanyParameters(),
+        }),
       );
       await conviteRepository.save(
         conviteRepository.create({
@@ -123,6 +130,43 @@ export class AdminService {
     return this.toTema(await this.getEmpresa(empresaId));
   }
 
+  async getParametros(userId: number) {
+    const empresa = await this.getEmpresaDoUsuario(userId);
+    return resolveCompanyParameters(empresa.parametros_funcionalidades);
+  }
+
+  async getParametrosDaEmpresa(empresaId: number) {
+    const empresa = await this.getEmpresa(empresaId);
+    return resolveCompanyParameters(empresa.parametros_funcionalidades);
+  }
+
+  async updateParametrosDaEmpresa(
+    empresaId: number,
+    userId: number,
+    dto: UpdateCompanyParametersDto,
+  ) {
+    return this.dataSource.transaction(async (manager) => {
+      const empresa = await manager.findOne(Empresa, {
+        where: { id: empresaId },
+        lock: { mode: 'pessimistic_write' },
+      });
+      if (!empresa) throw new NotFoundException('Empresa não encontrada');
+      const anterior = resolveCompanyParameters(
+        empresa.parametros_funcionalidades,
+      );
+      const atual = resolveCompanyParameters(dto);
+      empresa.parametros_funcionalidades = atual;
+      await manager.save(Empresa, empresa);
+      await manager.save(EmpresaParametrosAudit, {
+        empresa_id: empresaId,
+        alterado_por_id: userId,
+        anterior,
+        atual,
+      });
+      return atual;
+    });
+  }
+
   async updateTemaDaEmpresa(empresaId: number, dto: UpdateTemaDto) {
     const empresa = await this.getEmpresa(empresaId);
     if (dto.paleta) empresa.paleta = dto.paleta;
@@ -131,9 +175,51 @@ export class AdminService {
     return this.toTema(empresa);
   }
 
+  async updateConfiguracoesDaEmpresa(
+    empresaId: number,
+    userId: number,
+    dto: UpdateCompanySettingsDto,
+  ) {
+    const empresa = await this.dataSource.transaction(async (manager) => {
+      const target = await manager.findOne(Empresa, {
+        where: { id: empresaId },
+        lock: { mode: 'pessimistic_write' },
+      });
+      if (!target) throw new NotFoundException('Empresa não encontrada');
+      const anterior = resolveCompanyParameters(
+        target.parametros_funcionalidades,
+      );
+      if (dto.nome !== undefined) target.nome = dto.nome.trim();
+      if (dto.paleta) target.paleta = dto.paleta;
+      if (dto.logo_url !== undefined) target.logo_url = dto.logo_url;
+      if (dto.parametros)
+        target.parametros_funcionalidades = resolveCompanyParameters(
+          dto.parametros,
+        );
+      await manager.save(Empresa, target);
+      if (
+        dto.parametros &&
+        JSON.stringify(anterior) !==
+          JSON.stringify(target.parametros_funcionalidades)
+      ) {
+        await manager.save(EmpresaParametrosAudit, {
+          empresa_id: empresaId,
+          alterado_por_id: userId,
+          anterior,
+          atual: resolveCompanyParameters(target.parametros_funcionalidades),
+        });
+      }
+      return target;
+    });
+    return {
+      tema: await this.toTema(empresa),
+      parametros: resolveCompanyParameters(empresa.parametros_funcionalidades),
+    };
+  }
+
   async presignLogoDaEmpresa(empresaId: number, contentType: string) {
     const empresa = await this.getEmpresa(empresaId);
-    const key = `empresas/${empresa.id}/logo.${extensionForLogo(contentType)}`;
+    const key = `empresas/${empresa.id}/logo-${randomBytes(12).toString('hex')}.${extensionForLogo(contentType)}`;
     const { url: uploadUrl, fields } =
       await this.s3Service.generatePresignedUploadPost(
         key,

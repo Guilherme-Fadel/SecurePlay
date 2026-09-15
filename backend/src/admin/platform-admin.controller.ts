@@ -17,6 +17,8 @@ import { CreateConviteDto } from './dto/create-convite.dto';
 import { CreateEmpresaDto } from './dto/create-empresa.dto';
 import { PresignLogoDto } from './dto/presign-logo.dto';
 import { UpdateTemaDto } from './dto/update-tema.dto';
+import { UpdateCompanyParametersDto } from './dto/update-company-parameters.dto';
+import { UpdateCompanySettingsDto } from './dto/update-company-settings.dto';
 
 @Controller('platform/admin')
 @Roles(Role.PLATFORM_ADMIN)
@@ -51,12 +53,43 @@ export class PlatformAdminController {
     return this.adminService.getTemaDaEmpresa(empresaId);
   }
 
+  @Get('empresas/:empresaId/parametros')
+  async getParametros(@Param('empresaId', ParseIntPipe) empresaId: number) {
+    return this.adminService.getParametrosDaEmpresa(empresaId);
+  }
+
+  @Put('empresas/:empresaId/parametros')
+  async updateParametros(
+    @Param('empresaId', ParseIntPipe) empresaId: number,
+    @Request() req: any,
+    @Body() dto: UpdateCompanyParametersDto,
+  ) {
+    return this.adminService.updateParametrosDaEmpresa(
+      empresaId,
+      req.user.userId,
+      dto,
+    );
+  }
+
   @Put('empresas/:empresaId/tema')
   async updateTema(
     @Param('empresaId', ParseIntPipe) empresaId: number,
     @Body() dto: UpdateTemaDto,
   ) {
     return this.adminService.updateTemaDaEmpresa(empresaId, dto);
+  }
+
+  @Put('empresas/:empresaId/configuracoes')
+  async updateConfiguracoes(
+    @Param('empresaId', ParseIntPipe) empresaId: number,
+    @Request() req: any,
+    @Body() dto: UpdateCompanySettingsDto,
+  ) {
+    return this.adminService.updateConfiguracoesDaEmpresa(
+      empresaId,
+      req.user.userId,
+      dto,
+    );
   }
 
   @Post('empresas/:empresaId/logo/presign')

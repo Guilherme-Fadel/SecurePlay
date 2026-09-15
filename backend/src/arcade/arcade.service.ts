@@ -24,6 +24,7 @@ import { PhishingHandler } from './games/phishing.handler';
 import { DataClassifyHandler } from './games/data-classify.handler';
 import { SubmitRunDto } from './dto/arcade.dto';
 import { UsuarioArcadeStats } from './entities/usuario-arcade-stats.entity';
+import { CompanyFeaturesService } from '../common/features/company-features.service';
 const RUN_TTL_SECONDS = 30 * 60;
 const XP_FLOOR = 10;
 interface StoredRun {
@@ -50,6 +51,7 @@ export class ArcadeService implements OnModuleInit {
     private readonly dataItemRepository: Repository<DataItem>,
     @Inject('USUARIO_ARCADE_STATS_REPOSITORY')
     private readonly usuarioArcadeStatsRepository: Repository<UsuarioArcadeStats>,
+    private readonly companyFeatures: CompanyFeaturesService,
   ) {}
   async onModuleInit() {
     const seeds: Partial<ArcadeGame>[] = [
@@ -253,20 +255,25 @@ export class ArcadeService implements OnModuleInit {
         throw new BadRequestException('Jogo ainda nao disponivel.');
     }
   }
-  async listGames() {
+  async listGames(usuario_id: number) {
+    const parameters = await this.companyFeatures.forUser(usuario_id);
     const games = await this.gameRepository.find({ where: { active: true } });
-    return games.map((g) => ({
-      slug: g.slug,
-      title: g.title,
-      description: g.description,
-      tag: g.tag,
-      xp: g.xp_base,
-      status: 'AVAILABLE' as const,
-      color: g.color,
-      colorDark: g.color_dark,
-      image: g.image?.startsWith('s3://') ? null : g.image,
-      gameType: g.game_type,
-    }));
+    return games
+      .filter((game) =>
+        parameters.enabledGames.some((slug) => slug === game.slug),
+      )
+      .map((g) => ({
+        slug: g.slug,
+        title: g.title,
+        description: g.description,
+        tag: g.tag,
+        xp: g.xp_base,
+        status: 'AVAILABLE' as const,
+        color: g.color,
+        colorDark: g.color_dark,
+        image: g.image?.startsWith('s3://') ? null : g.image,
+        gameType: g.game_type,
+      }));
   }
   getTokens(usuario_id: number) {
     return this.tokenService.getState(usuario_id);
@@ -275,6 +282,7 @@ export class ArcadeService implements OnModuleInit {
     return `arcade-run:${usuario_id}:${runId}`;
   }
   async start(usuario_id: number, slug: string) {
+    await this.companyFeatures.requireGame(usuario_id, slug);
     const game = await this.gameRepository.findOne({
       where: { slug, active: true },
     });
@@ -320,6 +328,7 @@ export class ArcadeService implements OnModuleInit {
       throw new BadRequestException('Partida invalida ou ja finalizada.');
     }
     const stored = JSON.parse(raw) as StoredRun;
+    await this.companyFeatures.requireGame(usuario_id, stored.slug);
     const consumed = await this.tokenService.consume(usuario_id);
     if (!consumed.ok) {
       const secs = consumed.state.nextRegenInSeconds;

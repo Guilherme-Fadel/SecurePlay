@@ -9,8 +9,10 @@ import {
 } from '@nestjs/common';
 import { AchievementsService } from './achievements.service';
 import { CosmeticType } from './entities/cosmetic-item.entity';
+import { RequiresFeature } from '../common/features/feature.decorator';
 
 @Controller('achievements')
+@RequiresFeature('achievements')
 export class AchievementsController {
   constructor(private readonly achievementsService: AchievementsService) {}
 

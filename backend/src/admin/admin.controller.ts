@@ -29,6 +29,11 @@ export class AdminController {
     return this.adminService.getTema(req.user.userId);
   }
 
+  @Get('parametros')
+  async getParametros(@Request() req: any) {
+    return this.adminService.getParametros(req.user.userId);
+  }
+
   @Put('tema')
   async updateTema(@Request() req: any, @Body() dto: UpdateTemaDto) {
     return this.adminService.updateTema(req.user.userId, dto);

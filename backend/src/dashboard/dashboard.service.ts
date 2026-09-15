@@ -15,6 +15,9 @@ import {
 import { EventEmitter2, OnEvent } from '@nestjs/event-emitter';
 import { S3Service } from '../conteudo/s3/s3.service';
 import { ModuloService } from '../conteudo/modulo/modulo.service';
+import { isFeatureEnabled } from '../config/features';
+import { CompanyFeaturesService } from '../common/features/company-features.service';
+import { Role } from '../auth/roles.enum';
 @Injectable()
 export class DashboardService {
   private readonly logger = new Logger(DashboardService.name);
@@ -28,6 +31,7 @@ export class DashboardService {
     private eventEmitter: EventEmitter2,
     private s3Service: S3Service,
     private moduloService: ModuloService,
+    private readonly companyFeatures: CompanyFeaturesService,
   ) {}
   private async resolveProfileImageUrl(
     key: string | null | undefined,
@@ -65,6 +69,10 @@ export class DashboardService {
     usuario_id: number,
     requestedScope: 'global' | 'company' = 'global',
   ) {
+    const parameters = await this.companyFeatures.requireFeature(
+      usuario_id,
+      'ranking',
+    );
     const currentStats = await this.getOrCreateStats(usuario_id);
     const currentEntry = await this.statsRepository
       .createQueryBuilder('s')
@@ -74,13 +82,28 @@ export class DashboardService {
       .getOne();
     const company = currentEntry?.usuario?.empresa ?? null;
     const companyAvailable = !!company;
+    const isPlatformAdmin = currentEntry?.usuario?.role === Role.PLATFORM_ADMIN;
+    const globalRankingEnabled = isFeatureEnabled(parameters, 'globalRanking');
     const scope =
-      requestedScope === 'company' && companyAvailable ? 'company' : 'global';
+      requestedScope === 'company' && companyAvailable
+        ? 'company'
+        : globalRankingEnabled
+          ? 'global'
+          : 'company';
     const applyScope = (
       query: SelectQueryBuilder<UsuarioStats>,
     ): SelectQueryBuilder<UsuarioStats> => {
       if (scope === 'company' && company) {
         query.andWhere('u.empresa_id = :empresaId', { empresaId: company.id });
+      } else if (scope === 'company') {
+        query.andWhere('1 = 0');
+      } else if (!isPlatformAdmin) {
+        query.andWhere(`EXISTS (
+          SELECT 1 FROM empresa ranking_empresa
+          WHERE ranking_empresa.id = u.empresa_id
+          AND JSON_UNQUOTE(JSON_EXTRACT(ranking_empresa.parametros_funcionalidades, '$.globalRankingEnabled')) = 'true'
+          AND COALESCE(JSON_UNQUOTE(JSON_EXTRACT(ranking_empresa.parametros_funcionalidades, '$.rankingEnabled')), 'true') = 'true'
+        )`);
       }
       return query;
     };
@@ -204,12 +227,13 @@ export class DashboardService {
       await this.challengeService.countCompleted(usuario_id);
     const totalActiveChallenges =
       await this.challengeService.countTotalActive();
-    const totalUsers = await this.statsRepository.count();
-    const globalRanking = await this.statsRepository
-      .createQueryBuilder('s')
-      .where('s.total_points > :pts', { pts: stats.total_points })
-      .getCount()
-      .then((count) => count + 1);
+    const parameters = await this.companyFeatures.forUser(usuario_id);
+    const globalRankingEnabled = isFeatureEnabled(parameters, 'globalRanking');
+    const ranking = globalRankingEnabled
+      ? await this.getRanking(usuario_id, 'global')
+      : null;
+    const totalUsers = ranking?.totalParticipants ?? null;
+    const globalRanking = ranking?.currentUser.position ?? null;
     const xpToday = await this.getRedisXpToday(usuario_id);
     return {
       totalPoints: stats.total_points,
