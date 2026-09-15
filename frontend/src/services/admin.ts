@@ -1,5 +1,6 @@
-import { api } from '@/services/api';
-import { EmpresaPaleta } from './me';
+import { api } from "@/services/api";
+import { EmpresaPaleta } from "./me";
+import type { CompanyParameters } from "@/config/features";
 
 export interface TemaEmpresa {
   nome: string;
@@ -17,13 +18,11 @@ export interface EmpresaCriadaComAdministrador {
 }
 
 function empresaPath(empresaId?: number) {
-  return empresaId
-    ? `/platform/admin/empresas/${empresaId}`
-    : '/admin/empresa';
+  return empresaId ? `/platform/admin/empresas/${empresaId}` : "/admin/empresa";
 }
 
 export async function listarEmpresas(): Promise<EmpresaAdministravel[]> {
-  const response = await api.get('/platform/admin/empresas');
+  const response = await api.get("/platform/admin/empresas");
   return response.data;
 }
 
@@ -31,12 +30,43 @@ export async function criarEmpresa(data: {
   nome: string;
   email_administrador: string;
 }): Promise<EmpresaCriadaComAdministrador> {
-  const response = await api.post('/platform/admin/empresas', data);
+  const response = await api.post("/platform/admin/empresas", data);
   return response.data;
 }
 
 export async function getTema(empresaId?: number): Promise<TemaEmpresa> {
   const response = await api.get(`${empresaPath(empresaId)}/tema`);
+  return response.data;
+}
+
+export async function getCompanyParameters(
+  empresaId?: number,
+): Promise<CompanyParameters> {
+  const response = await api.get(`${empresaPath(empresaId)}/parametros`);
+  return response.data;
+}
+
+export async function updateCompanyParameters(
+  data: CompanyParameters,
+  empresaId?: number,
+): Promise<CompanyParameters> {
+  const response = await api.put(`${empresaPath(empresaId)}/parametros`, data);
+  return response.data;
+}
+
+export async function updateCompanySettings(
+  empresaId: number,
+  data: {
+    nome: string;
+    paleta: EmpresaPaleta;
+    logo_url?: string;
+    parametros: CompanyParameters;
+  },
+): Promise<{ tema: TemaEmpresa; parametros: CompanyParameters }> {
+  const response = await api.put(
+    `/platform/admin/empresas/${empresaId}/configuracoes`,
+    data,
+  );
   return response.data;
 }
 
@@ -52,6 +82,8 @@ export async function presignLogo(
   contentType: string,
   empresaId?: number,
 ): Promise<{ uploadUrl: string; fields: Record<string, string>; key: string }> {
-  const response = await api.post(`${empresaPath(empresaId)}/logo/presign`, { contentType });
+  const response = await api.post(`${empresaPath(empresaId)}/logo/presign`, {
+    contentType,
+  });
   return response.data;
 }
