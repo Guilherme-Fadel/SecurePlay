@@ -267,6 +267,21 @@
 
 }
 
+:root:not([data-theme='light']) .challenges-heading-row,
+:root:not([data-theme='light']) .challenge-arena-section {
+  border-color: var(--dashboard-border);
+  background: var(--dashboard-surface);
+  box-shadow: var(--dashboard-shadow);
+}
+
+:root:not([data-theme='light']) .challenge-arena-body {
+  background: linear-gradient(135deg, var(--dashboard-surface-soft), #1a2435);
+}
+
+:root:not([data-theme='light']) .challenge-arena-heading > div:first-child > span {
+  color: #55d9df;
+}
+
 @media (max-width: 520px) {
   .challenge-carousel > div:first-child > .app-button {
     display: none;
