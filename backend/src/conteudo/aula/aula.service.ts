@@ -431,8 +431,10 @@ export class AulaService {
       stats = this.statsRepository.create({ usuario_id, total_points: 0 });
     }
 
+    const previousPoints = stats.total_points;
     stats.total_points += xp;
     await this.statsRepository.save(stats);
+    await this.redisService.recordRankingXp(usuario_id, previousPoints, xp);
 
     const xpKey = `xp-today:${usuario_id}`;
     const currentXp = await this.redisService.get(xpKey);

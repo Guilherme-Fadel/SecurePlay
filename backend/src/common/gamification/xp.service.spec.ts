@@ -10,7 +10,7 @@ describe('XpService', () => {
     create: jest.Mock;
     save: jest.Mock;
   };
-  let redisService: { incrBy: jest.Mock };
+  let redisService: { incrBy: jest.Mock; recordRankingXp: jest.Mock };
   let eventEmitter: { emitAsync: jest.Mock };
 
   beforeEach(async () => {
@@ -19,7 +19,7 @@ describe('XpService', () => {
       create: jest.fn(),
       save: jest.fn(),
     };
-    redisService = { incrBy: jest.fn() };
+    redisService = { incrBy: jest.fn(), recordRankingXp: jest.fn() };
     eventEmitter = { emitAsync: jest.fn().mockResolvedValue([]) };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -42,6 +42,7 @@ describe('XpService', () => {
 
     expect(stats.total_points).toBe(150);
     expect(statsRepository.save).toHaveBeenCalledWith(stats);
+    expect(redisService.recordRankingXp).toHaveBeenCalledWith(1, 100, 50);
   });
 
   it('acumula o XP do dia no Redis (xp-today) com TTL', async () => {

@@ -18,8 +18,10 @@ export class XpService {
     if (!stats) {
       stats = this.statsRepository.create({ usuario_id });
     }
+    const previousPoints = stats.total_points;
     stats.total_points += amount;
     await this.statsRepository.save(stats);
+    await this.redisService.recordRankingXp(usuario_id, previousPoints, amount);
     const key = `xp-today:${usuario_id}`;
     await this.redisService.incrBy(key, amount, ttlUntilEndOfDay());
     await this.eventEmitter.emitAsync('progress.changed', {

@@ -22,6 +22,7 @@ describe('DashboardService check-in automatico', () => {
       set: jest.fn(async (key: string, value: string) => {
         redisStore[key] = value;
       }),
+      recordRankingXp: jest.fn().mockResolvedValue(undefined),
     };
     const tokenService = {
       refillToCap: jest.fn().mockResolvedValue(undefined),

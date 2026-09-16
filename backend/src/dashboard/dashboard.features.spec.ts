@@ -1,6 +1,7 @@
 import { DashboardService } from './dashboard.service';
 import { NotFoundException } from '@nestjs/common';
 import { Role } from '../auth/roles.enum';
+import { getRankingWeekStart } from './ranking-season';
 import {
   CompanyParameters,
   isFeatureEnabled,
@@ -23,10 +24,10 @@ describe('DashboardService company parameters', () => {
           : noCompanyParameters();
     const companyFeatures = {
       forUser: jest.fn().mockResolvedValue(parameters),
-      requireFeature: jest.fn(async () => {
+      requireFeature: jest.fn(() => {
         if (!isFeatureEnabled(parameters, 'ranking'))
           throw new NotFoundException();
-        return parameters;
+        return Promise.resolve(parameters);
       }),
     };
     const query = {
@@ -51,20 +52,24 @@ describe('DashboardService company parameters', () => {
       createQueryBuilder: jest.fn().mockReturnValue(query),
       count: jest.fn(),
     };
+    const redisService = {
+      get: jest.fn().mockResolvedValue(null),
+      mget: jest.fn((keys: string[]) => Promise.resolve(keys.map(() => null))),
+    };
     const service = new DashboardService(
       repository as never,
       {
-        countCompleted: async () => 0,
-        countTotalActive: async () => 0,
+        countCompleted: () => Promise.resolve(0),
+        countTotalActive: () => Promise.resolve(0),
       } as never,
-      { get: async () => null } as never,
+      redisService as never,
       {} as never,
       {} as never,
       {} as never,
       {} as never,
       companyFeatures as never,
     );
-    return { service, query, repository };
+    return { service, query, repository, redisService };
   }
 
   it('forces institutional scope even for a global request when disabled', async () => {
@@ -104,6 +109,63 @@ describe('DashboardService company parameters', () => {
     expect(query.andWhere).toHaveBeenCalledWith(
       expect.stringContaining('$.globalRankingEnabled'),
     );
+  });
+
+  it('keeps the Top 3 and returns later players for the classification', async () => {
+    const { service, query, redisService } = buildService({
+      id: 3,
+      nome: 'Escola',
+    });
+    query.getMany.mockResolvedValue(
+      [500, 400, 300, 200, 100].map((points, index) => ({
+        usuario_id: index + 1,
+        total_points: points,
+        usuario: { name: `Jogador ${index + 1}` },
+      })),
+    );
+    redisService.mget.mockImplementation((keys: string[]) =>
+      Promise.resolve(
+        keys.map((key) =>
+          key.includes(`ranking:week:${getRankingWeekStart()}:xp:`)
+            ? String(
+                [500, 400, 300, 200, 100][Number(key.split(':').at(-1)) - 1] ??
+                  0,
+              )
+            : null,
+        ),
+      ),
+    );
+
+    const ranking = await service.getRanking(7, 'company');
+    expect(ranking.top.map((entry) => entry.position)).toEqual([1, 2, 3]);
+    expect(ranking.leaderboard.map((entry) => entry.position)).toEqual([
+      1, 2, 3, 4, 5,
+    ]);
+  });
+
+  it('orders the season by recorded monthly XP instead of lifetime XP', async () => {
+    const { service, query, redisService } = buildService({
+      id: 3,
+      nome: 'Escola',
+    });
+    query.getMany.mockResolvedValue([
+      { usuario_id: 1, total_points: 5000, usuario: { name: 'Antigo' } },
+      { usuario_id: 7, total_points: 100, usuario: { name: 'Atual' } },
+    ]);
+    redisService.mget.mockImplementation((keys: string[]) =>
+      Promise.resolve(
+        keys.map((key) =>
+          key.includes(`ranking:week:${getRankingWeekStart()}:xp:7`)
+            ? '100'
+            : null,
+        ),
+      ),
+    );
+
+    const ranking = await service.getRanking(7, 'company');
+    expect(ranking.top[0]).toMatchObject({ id: 7, position: 1, points: 100 });
+    expect(ranking.currentUser.points).toBe(100);
+    expect(ranking.top[1]).toMatchObject({ id: 1, points: 0 });
   });
 
   it('does not calculate global statistics when disabled', async () => {

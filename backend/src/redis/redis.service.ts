@@ -1,6 +1,11 @@
 import { Injectable, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import Redis from 'ioredis';
+import { getLocalDateKey } from '../common/utils/date.utils';
+import { getRankingWeekStart } from '../dashboard/ranking-season';
+
+// Mantém métricas semanais por um trimestre para permitir consultas futuras sem crescimento ilimitado.
+const RANKING_HISTORY_TTL_SECONDS = 13 * 7 * 24 * 60 * 60;
 @Injectable()
 export class RedisService implements OnModuleInit, OnModuleDestroy {
   private client: Redis;
@@ -41,6 +46,34 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
   }
   async get(key: string): Promise<string | null> {
     return this.client.get(key);
+  }
+  async mget(keys: string[]): Promise<(string | null)[]> {
+    return keys.length ? this.client.mget(...keys) : [];
+  }
+  async recordRankingXp(
+    usuarioId: number,
+    previousPoints: number,
+    amount: number,
+  ): Promise<void> {
+    if (amount <= 0) return;
+    const week = getRankingWeekStart();
+    const ttl = RANKING_HISTORY_TTL_SECONDS;
+    const baselineKey = `ranking:week:${week}:baseline:${usuarioId}`;
+    const xpKey = `ranking:week:${week}:xp:${usuarioId}`;
+    await this.eval(
+      "if redis.call('SETNX', KEYS[1], ARGV[1]) == 1 then redis.call('EXPIRE', KEYS[1], ARGV[3]) end; local value = redis.call('INCRBY', KEYS[2], ARGV[2]); if value == tonumber(ARGV[2]) then redis.call('EXPIRE', KEYS[2], ARGV[3]) end; redis.call('SETNX', KEYS[3], ARGV[4]); return value",
+      [baselineKey, xpKey, 'ranking:tracking-start'],
+      [previousPoints, amount, ttl, getLocalDateKey()],
+    );
+  }
+  async recordRankingChallenge(usuarioId: number): Promise<void> {
+    const week = getRankingWeekStart();
+    await this.incrBy(
+      `ranking:week:${week}:challenges:${usuarioId}`,
+      1,
+      RANKING_HISTORY_TTL_SECONDS,
+    );
+    await this.client.set('ranking:tracking-start', getLocalDateKey(), 'NX');
   }
   async del(key: string): Promise<number> {
     return this.client.del(key);

@@ -18,6 +18,8 @@ import { ModuloService } from '../conteudo/modulo/modulo.service';
 import { isFeatureEnabled } from '../config/features';
 import { CompanyFeaturesService } from '../common/features/company-features.service';
 import { Role } from '../auth/roles.enum';
+import { loadRankingWeek, unavailableRankingWeek } from './ranking-weekly';
+import { getRankingSeason, getSeasonXpByUser } from './ranking-season';
 @Injectable()
 export class DashboardService {
   private readonly logger = new Logger(DashboardService.name);
@@ -68,6 +70,7 @@ export class DashboardService {
   async getRanking(
     usuario_id: number,
     requestedScope: 'global' | 'company' = 'global',
+    includeWeekly = true,
   ) {
     const parameters = await this.companyFeatures.requireFeature(
       usuario_id,
@@ -107,22 +110,32 @@ export class DashboardService {
       }
       return query;
     };
-    const topEntriesQuery = this.statsRepository
-      .createQueryBuilder('s')
-      .leftJoinAndSelect('s.usuario', 'u')
-      .leftJoinAndSelect('u.empresa', 'e')
-      .orderBy('s.total_points', 'DESC')
-      .addOrderBy('s.updated_at', 'ASC')
-      .addOrderBy('s.usuario_id', 'ASC')
-      .take(3);
-    const topEntries = await applyScope(topEntriesQuery).getMany();
+    const allStats = await applyScope(
+      this.statsRepository
+        .createQueryBuilder('s')
+        .leftJoinAndSelect('s.usuario', 'u')
+        .leftJoinAndSelect('u.empresa', 'e'),
+    ).getMany();
+    const seasonPoints = await getSeasonXpByUser(
+      this.redisService,
+      allStats.map((entry) => entry.usuario_id),
+    );
+    const leaderboardEntries = [...allStats]
+      .sort(
+        (a, b) =>
+          (seasonPoints.get(b.usuario_id) ?? 0) -
+            (seasonPoints.get(a.usuario_id) ?? 0) ||
+          a.usuario_id - b.usuario_id,
+      )
+      .slice(0, 50);
     let previousPoints: number | null = null;
     let previousPosition = 0;
-    const top = await Promise.all(
-      topEntries.map(async (entry, index) => {
-        if (previousPoints === null || entry.total_points < previousPoints) {
+    const leaderboard = await Promise.all(
+      leaderboardEntries.map(async (entry, index) => {
+        const points = seasonPoints.get(entry.usuario_id) ?? 0;
+        if (previousPoints === null || points < previousPoints) {
           previousPosition = index + 1;
-          previousPoints = entry.total_points;
+          previousPoints = points;
         }
         return {
           id: entry.usuario_id,
@@ -135,7 +148,7 @@ export class DashboardService {
               : (entry.usuario?.nickname ??
                 entry.usuario?.name ??
                 `Aventureiro ${index + 1}`),
-          points: entry.total_points,
+          points,
           level: calcLevel(entry.total_points),
           companyName: null,
           isCurrentUser: entry.usuario_id === usuario_id,
@@ -145,34 +158,22 @@ export class DashboardService {
         };
       }),
     );
-    const higherCountQuery = this.statsRepository
-      .createQueryBuilder('s')
-      .innerJoin('s.usuario', 'u')
-      .where('s.total_points > :pts', { pts: currentStats.total_points });
-    const higherCount = await applyScope(higherCountQuery).getCount();
-    const currentPosition = higherCount + 1;
-    const totalParticipantsQuery = this.statsRepository
-      .createQueryBuilder('s')
-      .innerJoin('s.usuario', 'u');
-    const totalParticipants = await applyScope(
-      totalParticipantsQuery,
-    ).getCount();
-    const nextEntryQuery = this.statsRepository
-      .createQueryBuilder('s')
-      .innerJoin('s.usuario', 'u')
-      .select('s.total_points', 'points')
-      .where('s.total_points > :pts', { pts: currentStats.total_points })
-      .orderBy('s.total_points', 'ASC')
-      .limit(1);
-    const nextEntry = await applyScope(nextEntryQuery).getRawOne<{
-      points: number | string;
-    }>();
-    const leaderPoints = top[0]?.points ?? currentStats.total_points;
-    const nextPoints = nextEntry ? Number(nextEntry.points) : null;
-    const pointsToNextPosition =
-      nextPoints === null
-        ? 0
-        : Math.max(1, nextPoints - currentStats.total_points + 1);
+    const currentSeasonPoints = seasonPoints.get(usuario_id) ?? 0;
+    const currentPosition =
+      allStats.filter(
+        (entry) =>
+          (seasonPoints.get(entry.usuario_id) ?? 0) > currentSeasonPoints,
+      ).length + 1;
+    const totalParticipants = allStats.length;
+    const nextPoints = allStats.reduce((next, entry) => {
+      const points = seasonPoints.get(entry.usuario_id) ?? 0;
+      return points > currentSeasonPoints && points < next ? points : next;
+    }, Infinity);
+    const top = leaderboard.slice(0, 3);
+    const leaderPoints = top[0]?.points ?? currentSeasonPoints;
+    const pointsToNextPosition = !Number.isFinite(nextPoints)
+      ? 0
+      : Math.max(1, nextPoints - currentSeasonPoints + 1);
     const percentile =
       totalParticipants <= 1
         ? 100
@@ -191,7 +192,7 @@ export class DashboardService {
         currentEntry?.usuario?.nickname ??
         currentEntry?.usuario?.name ??
         'Você',
-      points: currentStats.total_points,
+      points: currentSeasonPoints,
       level: calcLevel(currentStats.total_points),
       companyName: company?.nome ?? null,
       isCurrentUser: true,
@@ -199,19 +200,44 @@ export class DashboardService {
         currentEntry?.usuario?.profile_image_key,
       ),
     };
+    let weekly = unavailableRankingWeek();
+    if (includeWeekly) {
+      try {
+        weekly = await loadRankingWeek({
+          redis: this.redisService,
+          getScopedStats: () => Promise.resolve(allStats),
+          seasonPoints,
+          currentUserId: usuario_id,
+          resolveProfileImageUrl: (key) => this.resolveProfileImageUrl(key),
+        });
+      } catch (error) {
+        this.logger.warn(
+          'Não foi possível calcular o histórico semanal do ranking',
+          error,
+        );
+      }
+    }
     return {
       scope,
       companyAvailable,
       company: company ? { id: company.id, name: company.nome } : null,
       totalParticipants,
-      top,
+      season: getRankingSeason(),
+      top: top.map((entry) => ({
+        ...entry,
+        weeklyChange: weekly.changes?.get(entry.id) ?? null,
+      })),
+      leaderboard: leaderboard.map((entry) => ({
+        ...entry,
+        weeklyChange: weekly.changes?.get(entry.id) ?? null,
+      })),
       currentUser,
+      weeklyPositionChange: weekly.changes?.get(usuario_id) ?? null,
+      weeklyDataAvailable: weekly.available,
+      weeklyHighlights: weekly.highlights,
       summary: {
         leaderPoints,
-        pointsBehindLeader: Math.max(
-          0,
-          leaderPoints - currentStats.total_points,
-        ),
+        pointsBehindLeader: Math.max(0, leaderPoints - currentSeasonPoints),
         pointsToNextPosition,
         percentile,
       },
@@ -230,7 +256,7 @@ export class DashboardService {
     const parameters = await this.companyFeatures.forUser(usuario_id);
     const globalRankingEnabled = isFeatureEnabled(parameters, 'globalRanking');
     const ranking = globalRankingEnabled
-      ? await this.getRanking(usuario_id, 'global')
+      ? await this.getRanking(usuario_id, 'global', false)
       : null;
     const totalUsers = ranking?.totalParticipants ?? null;
     const globalRanking = ranking?.currentUser.position ?? null;
@@ -248,8 +274,10 @@ export class DashboardService {
   }
   async addPoints(usuario_id: number, points: number): Promise<void> {
     const stats = await this.getOrCreateStats(usuario_id);
+    const previousPoints = stats.total_points;
     stats.total_points += points;
     await this.statsRepository.save(stats);
+    await this.redisService.recordRankingXp(usuario_id, previousPoints, points);
     await this.incrementRedisXpToday(usuario_id, points);
     await this.eventEmitter.emitAsync('progress.changed', {
       usuarioId: usuario_id,
@@ -323,8 +351,14 @@ export class DashboardService {
       await this.addPoints(usuario_id, bonusXp);
     } else {
       // credita direto (sem emitir progress.changed) para nao reentrar no handler
+      const previousPoints = stats.total_points;
       stats.total_points += bonusXp;
       await this.statsRepository.save(stats);
+      await this.redisService.recordRankingXp(
+        usuario_id,
+        previousPoints,
+        bonusXp,
+      );
       await this.incrementRedisXpToday(usuario_id, bonusXp);
     }
     await this.tokenService.refillToCap(usuario_id);

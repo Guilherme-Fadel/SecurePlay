@@ -301,14 +301,17 @@ export class ChallengeService {
     usuarioChallenge.completed_at = new Date();
 
     await this.usuarioChallengeRepository.save(usuarioChallenge);
+    await this.redisService.recordRankingChallenge(usuario_id);
 
     if (pointsEarned > 0) {
       let stats = await this.statsRepository.findOne({ where: { usuario_id } });
       if (!stats) {
         stats = this.statsRepository.create({ usuario_id });
       }
+      const before = stats.total_points;
       stats.total_points += pointsEarned;
       await this.statsRepository.save(stats);
+      await this.redisService.recordRankingXp(usuario_id, before, pointsEarned);
 
       const xpKey = `xp-today:${usuario_id}`;
       const currentXp = await this.redisService.get(xpKey);
