@@ -2,10 +2,9 @@ import { BookOpen, Check, Play, Star } from 'lucide-react';
 import { AppButton } from '@/components/ui/buttons/AppButton';
 import type { CurrentUser } from '@/services/me';
 import type { DashboardStats, JourneyNodeData, WeeklyStreak } from '@/services/dashboard';
-import heroArt from '@/assets/dashboard/welcome-adventurer-pixel-v5.png';
-import levelShield from '@/assets/dashboard/level-shield-pixel-v1.png';
+import bookPortalArt from '@/assets/dashboard/book-portal-pixel-v1.png';
 import streakCalendar from '@/assets/dashboard/streak-calendar-pixel-v1.png';
-import missionRibbon from '@/assets/dashboard/mission-ribbon-pixel-v1.png';
+import missionPageTab from '@/assets/dashboard/mission-page-tab-pixel-v1.png';
 
 const weekDays = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'];
 
@@ -31,7 +30,7 @@ export function AdventureHero({ user, stats, streak, currentModule, onContinue }
         <span className="hall-mission-frame" aria-hidden="true" />
         <div className="hall-mission-copy">
           <div className="hall-ribbon">
-            <img src={missionRibbon} alt="" aria-hidden="true" />
+            <img src={missionPageTab} alt="" aria-hidden="true" />
             <span>Continue sua aventura</span>
           </div>
           <p className="hall-hero-greeting">Olá, {firstName}!</p>
@@ -53,21 +52,15 @@ export function AdventureHero({ user, stats, streak, currentModule, onContinue }
             <AppButton className="hall-hero-cta" icon={<Play size={16} />} onClick={onContinue}>Continuar missão</AppButton>
           </div>
         </div>
-        <img className="hall-hero-art" src={heroArt} alt="" aria-hidden="true" />
+        <img className="hall-hero-art" src={bookPortalArt} alt="" aria-hidden="true" />
       </article>
 
       <aside className="hall-player-card" aria-label="Nível e sequência semanal">
         <span className="hall-pixel-corner" aria-hidden="true" />
-        <div className="hall-level-row">
-          <div className="hall-level-asset">
-            <img src={levelShield} alt="" aria-hidden="true" />
-            <strong>{stats?.level ?? '—'}</strong>
-          </div>
-          <div className="hall-level-copy">
-            <h2>Nível {stats?.level ?? '—'}</h2>
-            <div><Star size={19} /><strong>{totalPoints.toLocaleString('pt-BR')}</strong><span>/ {levelTarget.toLocaleString('pt-BR')} XP</span></div>
-            <div className="hall-progress-track" role="progressbar" aria-label="Progresso de experiência" aria-valuemin={0} aria-valuemax={100} aria-valuenow={xpPercent}><i style={{ width: `${xpPercent}%` }} /></div>
-          </div>
+        <div className="hall-level-copy">
+          <h2>Nível {stats?.level ?? '—'}</h2>
+          <div><Star size={19} /><strong>{totalPoints.toLocaleString('pt-BR')}</strong><span>/ {levelTarget.toLocaleString('pt-BR')} XP</span></div>
+          <div className="hall-progress-track" role="progressbar" aria-label="Progresso de experiência" aria-valuemin={0} aria-valuemax={100} aria-valuenow={xpPercent}><i style={{ width: `${xpPercent}%` }} /></div>
         </div>
         <div className="hall-player-separator" />
         <div className="hall-streak-summary">
