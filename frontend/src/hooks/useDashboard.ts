@@ -16,7 +16,7 @@ export function useWeeklyStreak() {
 export function useDashboardRanking(scope: 'global' | 'company' = 'global') {
     const features = useCompanyFeatures();
     const effectiveScope = features.globalRanking ? scope : 'company';
-    const { data, loading, error, refetch } = useCachedQuery(`dashboardRanking:${effectiveScope}`, () => getDashboardRanking(effectiveScope), { staleTime: 45 * 60 * 1000, enabled: features.ranking });
+    const { data, loading, error, refetch } = useCachedQuery(`dashboardRanking:${effectiveScope}`, () => getDashboardRanking(effectiveScope), { staleTime: 0, enabled: features.ranking });
     return { ranking: data, loading, error, refetch };
 }
 export function useDashboardJourney() {

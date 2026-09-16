@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 264" fill="none">
+  <defs>
+    <linearGradient id="cloth" x1="22" y1="22" x2="178" y2="239" gradientUnits="userSpaceOnUse"><stop stop-color="#9146dd"/><stop offset=".52" stop-color="#55209c"/><stop offset="1" stop-color="#2f145c"/></linearGradient>
+    <linearGradient id="trim" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#fff1b1"/><stop offset=".5" stop-color="#d9a63a"/><stop offset="1" stop-color="#9e6424"/></linearGradient>
+    <filter id="shadow"><feDropShadow dx="0" dy="7" stdDeviation="5" flood-color="#160b30" flood-opacity=".55"/></filter>
+  </defs>
+  <g filter="url(#shadow)">
+    <path d="M15 27H185V38H15z" fill="url(#trim)" stroke="#6a431f" stroke-width="3"/>
+    <circle cx="15" cy="32" r="8" fill="url(#trim)" stroke="#6a431f" stroke-width="3"/>
+    <circle cx="185" cy="32" r="8" fill="url(#trim)" stroke="#6a431f" stroke-width="3"/>
+    <path d="M30 35H170V211L100 256L30 211V35Z" fill="url(#cloth)" stroke="#8d5525" stroke-width="5"/>
+    <path d="M37 43H163V206L100 245L37 206V43Z" stroke="url(#trim)" stroke-width="4"/>
+    <path d="M42 47H158V201L100 237L42 201V47Z" stroke="#fff0b0" stroke-opacity=".35" stroke-width="2"/>
+    <path d="M30 211L100 256L170 211" stroke="url(#trim)" stroke-width="7" stroke-linejoin="round"/>
+    <path d="M49 55H151M55 203H145" stroke="#f4ce78" stroke-opacity=".5" stroke-width="2"/>
+    <path d="M100 235L106 223L100 213L94 223L100 235Z" fill="url(#trim)"/>
+  </g>
+</svg>

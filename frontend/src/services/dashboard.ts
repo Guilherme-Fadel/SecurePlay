@@ -53,6 +53,7 @@ export interface RankingEntry {
   companyName?: string | null;
   isCurrentUser?: boolean;
   profileImageUrl?: string | null;
+  weeklyChange?: number | null;
 }
 
 export interface RankingData {
@@ -61,7 +62,18 @@ export interface RankingData {
   company: { id: number; name: string } | null;
   totalParticipants: number;
   top: RankingEntry[];
+  leaderboard: RankingEntry[];
   currentUser: RankingEntry;
+  season?: { name: string; startsAt: string; endsAt: string; status: 'upcoming' | 'active' } | null;
+  weeklyPositionChange?: number | null;
+  weeklyDataAvailable?: boolean;
+  weeklyHighlights?: Array<{
+    kind: 'streak' | 'xp' | 'challenges';
+    label: string;
+    user: RankingEntry;
+    value: number;
+    unit: string;
+  }>;
   summary: {
     leaderPoints: number;
     pointsBehindLeader: number;
