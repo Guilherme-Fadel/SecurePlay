@@ -73,7 +73,12 @@ Crie um projeto Pages conectado ao mesmo repositório:
 - Root directory: `frontend`
 - Build command: `npm run build`
 - Build output directory: `dist`
-- Variável de build: `VITE_API_URL=https://<API>.onrender.com`
+- Variável de build: `VITE_API_URL=/api`
+- Variável de runtime das Functions: `API_ORIGIN=https://<API>.onrender.com`
+
+A pasta `frontend/functions` deve ser publicada pela integração Git ou Wrangler.
+O proxy atende `/api/*`, incluindo Socket.IO, e evita cookies de terceiros na guia
+anônima. Siga o passo a passo em [configuracao-proxy-hml.md](configuracao-proxy-hml.md).
 
 O diretório `frontend/public` contém regras de SPA, cache e cabeçalhos de segurança que serão incluídas no build.
 
@@ -83,8 +88,11 @@ Depois que o Pages gerar a URL definitiva, atualize no Render:
 
 ```env
 CORS_ORIGIN=https://<PROJETO>.pages.dev
-COOKIE_SAME_SITE=none
+COOKIE_SAME_SITE=lax
 ```
+
+Deixe `COOKIE_DOMAIN` vazio. Em um ambiente já publicado, altere para `lax` somente
+depois de publicar o proxy e o frontend com `VITE_API_URL=/api`.
 
 Se houver domínio próprio, inclua todas as origens permitidas separadas por vírgula. Não use `*` porque a aplicação envia cookie de autenticação com credenciais.
 
