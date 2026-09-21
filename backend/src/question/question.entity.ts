@@ -4,10 +4,12 @@ import {
   JoinColumn,
   ManyToOne,
   PrimaryGeneratedColumn,
+  Index,
 } from 'typeorm';
 import { Challenge } from '../challenge/challenge.entity';
 
 @Entity()
+@Index('ix_question_challenge_order', ['challenge_id', 'order'])
 export class Question {
   @PrimaryGeneratedColumn()
   id: number;

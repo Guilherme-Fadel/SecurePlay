@@ -5,11 +5,14 @@ import {
   ManyToOne,
   JoinColumn,
   CreateDateColumn,
+  Index,
 } from 'typeorm';
 import { Usuario } from '../usuario/usuario.entity';
 import { Challenge } from '../challenge/challenge.entity';
 
 @Entity()
+@Index('ix_usuario_challenge_usuario_completed', ['usuario_id', 'completed'])
+@Index('ix_usuario_challenge_usuario_challenge', ['usuario_id', 'challenge_id'])
 export class UsuarioChallenge {
   @PrimaryGeneratedColumn()
   id: number;

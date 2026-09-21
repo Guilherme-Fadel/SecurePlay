@@ -5,12 +5,14 @@ import {
   ManyToOne,
   JoinColumn,
   Unique,
+  Index,
 } from 'typeorm';
 import { Usuario } from '../../usuario/usuario.entity';
 import { Aula } from '../aula/aula.entity';
 
 @Entity()
 @Unique('UQ_usuario_aula_usuario_aula', ['usuario_id', 'aula_id'])
+@Index('ix_usuario_aula_usuario_completed', ['usuario_id', 'completed'])
 export class UsuarioAula {
   @PrimaryGeneratedColumn()
   id: number;
