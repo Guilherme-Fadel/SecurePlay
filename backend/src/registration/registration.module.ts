@@ -8,6 +8,6 @@ import { RegistrationService } from './registration.service';
   imports: [DatabaseModule],
   providers: [EmailService, RegistrationService],
   controllers: [RegistrationController],
-  exports: [RegistrationService],
+  exports: [RegistrationService, EmailService],
 })
 export class RegistrationModule {}

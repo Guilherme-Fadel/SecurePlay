@@ -11,6 +11,13 @@ class ConfirmEmailDto {
   @Matches(/^[A-Za-z0-9_-]{43}$/)
   token: string;
 
+}
+
+class SetPasswordDto {
+  @IsString()
+  @Matches(/^[A-Za-z0-9_-]{43}$/)
+  token: string;
+
   @IsSecurePassword()
   password: string;
 }
@@ -35,7 +42,14 @@ export class RegistrationController {
   @Post('confirm-email')
   @Throttle({ short: { limit: 5, ttl: 60000 } })
   confirm(@Body() dto: ConfirmEmailDto) {
-    return this.registrationService.confirm(dto.token, dto.password);
+    return this.registrationService.confirm(dto.token);
+  }
+
+  @Public()
+  @Post('set-password')
+  @Throttle({ short: { limit: 5, ttl: 60000 } })
+  setPassword(@Body() dto: SetPasswordDto) {
+    return this.registrationService.setPassword(dto.token, dto.password);
   }
 
   @Public()

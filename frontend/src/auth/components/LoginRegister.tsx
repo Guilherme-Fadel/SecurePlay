@@ -25,6 +25,12 @@ export function LoginRegister() {
     try {
       const result = await loginService(email, password);
 
+      if (result.requiresEmailVerification) {
+        toast.info(result.mensagem);
+        navigate(`/verifique-email?email=${encodeURIComponent(result.email ?? email)}`);
+        return;
+      }
+
       if (!result.sucesso) {
         toast.error(result.mensagem);
         setPassword('');

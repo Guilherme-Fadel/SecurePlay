@@ -34,10 +34,14 @@ export class AuthController {
   ) {
     const result = await this.authService.signIn(dto);
 
+    if (result.requiresEmailVerification) {
+      return result;
+    }
+
     res.setCookie('token', result.token, this.authService.cookieOptions);
     res.header('Cache-Control', 'private, no-store');
 
-    const user = await this.usuarioService.getUsuarioDados(result.userId);
+    const user = await this.usuarioService.getUsuarioDados(result.userId!);
 
     return {
       message: result.message,

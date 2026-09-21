@@ -137,7 +137,7 @@ describe('Cadastro com confirmação por e-mail', () => {
     ).rejects.toThrow('Data de nascimento inválida');
   });
 
-  it('inicia sete dias de acesso de aluno na confirmação do teste', async () => {
+  it('inicia sete dias de acesso de aluno e exige senha após a confirmação', async () => {
     const pending = {
       email: 'teste@example.com',
       name: 'Pessoa',
@@ -178,7 +178,7 @@ describe('Cadastro com confirmação por e-mail', () => {
       {} as never,
     );
 
-    await service.confirm('valid-token', 'segredo123');
+    await service.confirm('valid-token');
 
     expect(companyRepository.findOne).toHaveBeenCalledWith({
       where: { system_key: 'free_trial' },
@@ -191,6 +191,42 @@ describe('Cadastro com confirmação por e-mail', () => {
     expect(
       created.trial_ends_at!.getTime() - created.trial_started_at!.getTime(),
     ).toBe(7 * 86400000);
-    expect(await bcrypt.compare('segredo123', created.password!)).toBe(true);
+    expect(created.password_change_required).toBe(true);
+    expect(created.password_setup_token_hash).toEqual(expect.any(String));
+    expect(created.password_setup_expires_at).toBeInstanceOf(Date);
+  });
+
+  it('consome o token temporário ao definir a senha', async () => {
+    const user = {
+      id: 11,
+      password: 'senha-aleatoria',
+      password_change_required: true,
+      password_setup_token_hash: 'hash',
+      password_setup_expires_at: new Date(Date.now() + 3600000),
+    };
+    const userRepository = {
+      createQueryBuilder: () => ({
+        setLock: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        getOne: jest.fn().mockResolvedValue(user),
+      }),
+      save: jest.fn(),
+    };
+    const service = new RegistrationService(
+      {
+        transaction: (callback: (manager: unknown) => Promise<unknown>) =>
+          callback({ getRepository: () => userRepository }),
+      } as never,
+      {} as never,
+    );
+    jest.spyOn(service as never, 'hash').mockReturnValue('hash');
+
+    await expect(service.setPassword('token', 'nova-senha-segura')).resolves.toEqual(
+      expect.objectContaining({ sucesso: true }),
+    );
+    expect(await bcrypt.compare('nova-senha-segura', user.password)).toBe(true);
+    expect(user.password_change_required).toBe(false);
+    expect(user.password_setup_token_hash).toBeNull();
+    expect(userRepository.save).toHaveBeenCalledWith(user);
   });
 });

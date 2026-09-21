@@ -6,6 +6,8 @@ import { LoginDto } from 'src/usuario/dto/login.dto';
 import { RedisService } from 'src/redis/redis.service';
 import { calcTokenTtl } from 'src/common/utils/token.utils';
 import { ConfigService } from '@nestjs/config';
+import { RegistrationService } from '../registration/registration.service';
+import { Role } from './roles.enum';
 
 @Injectable()
 export class AuthService {
@@ -14,6 +16,7 @@ export class AuthService {
     private readonly jwtService: JwtService,
     private readonly redisService: RedisService,
     private readonly configService: ConfigService,
+    private readonly registrationService: RegistrationService,
   ) {}
 
   get cookieOptions() {
@@ -65,6 +68,19 @@ export class AuthService {
 
     if (!senhaValida) {
       throw new UnauthorizedException('Usuário ou senha inválidos');
+    }
+
+    if (
+      user.role === Role.PLATFORM_ADMIN &&
+      user.email_verification_required &&
+      !user.email_verified_at
+    ) {
+      await this.registrationService.startPlatformAdminVerification(user);
+      return {
+        requiresEmailVerification: true,
+        email: user.email,
+        message: 'Confira seu e-mail para confirmar o acesso administrativo.',
+      };
     }
 
     const token = this.jwtService.sign({

@@ -52,8 +52,8 @@ async function run() {
 
     await connection.query(
       `INSERT INTO usuario
-        (name, email, password, level, role, empresa_id, nickname_request_status, email_verified_at)
-       VALUES (?, ?, ?, 1, 'platform_admin', ?, 'none', NOW(6))`,
+        (name, email, password, level, role, empresa_id, nickname_request_status, email_verification_required)
+       VALUES (?, ?, ?, 1, 'platform_admin', ?, 'none', 1)`,
       [name, email, passwordHash, companyId],
     );
     process.stdout.write(`Administrador inicial criado: ${email}\n`);

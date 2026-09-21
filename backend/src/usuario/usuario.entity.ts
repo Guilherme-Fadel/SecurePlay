@@ -39,6 +39,24 @@ export class Usuario {
   @Column({ type: 'datetime', nullable: true })
   email_verified_at: Date | null;
 
+  @Column({ default: false })
+  email_verification_required: boolean;
+
+  @Column({ type: 'varchar', length: 64, nullable: true })
+  email_verification_token_hash: string | null;
+
+  @Column({ type: 'datetime', nullable: true })
+  email_verification_expires_at: Date | null;
+
+  @Column({ default: false })
+  password_change_required: boolean;
+
+  @Column({ type: 'varchar', length: 64, nullable: true })
+  password_setup_token_hash: string | null;
+
+  @Column({ type: 'datetime', nullable: true })
+  password_setup_expires_at: Date | null;
+
   @Column({ type: 'datetime', nullable: true })
   trial_started_at: Date | null;
 

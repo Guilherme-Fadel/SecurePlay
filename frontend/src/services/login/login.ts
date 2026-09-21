@@ -6,6 +6,8 @@ export interface LoginResult {
   mensagem: string;
   nome?: string;
   user?: CurrentUser;
+  requiresEmailVerification?: boolean;
+  email?: string;
 }
 
 export async function loginService(
@@ -20,6 +22,14 @@ export async function loginService(
   try {
 
     const response = await api.post('/auth/login', { email, password });
+    if (response.data.requiresEmailVerification) {
+      return {
+        sucesso: false,
+        requiresEmailVerification: true,
+        email: response.data.email,
+        mensagem: response.data.message,
+      };
+    }
     let user: CurrentUser;
     try {
       user = await getMe();

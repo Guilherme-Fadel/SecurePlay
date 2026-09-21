@@ -8,10 +8,12 @@ import { PassportModule } from '@nestjs/passport';
 import { JwtStrategy } from './jwt.strategy';
 import { ConfigService } from '@nestjs/config';
 import { RedisModule } from 'src/redis/redis.module';
+import { RegistrationModule } from '../registration/registration.module';
 
 @Module({
   imports: [
     RedisModule,
+    RegistrationModule,
     UsuarioModule,
     PassportModule.register({ defaultStrategy: 'jwt' }),
     JwtModule.registerAsync({

@@ -1,7 +1,7 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { PageTransition } from '@/components/shared/PageTransition';
-import { confirmEmail, resendEmail } from '@/services/registration';
+import { confirmEmail, resendEmail, setPassword as setRegistrationPassword } from '@/services/registration';
 import { passwordValidationMessage } from '@/lib/password-policy';
 import './invite-register.css';
 
@@ -29,11 +29,23 @@ export function CheckEmail() {
 
 export function ConfirmEmail() {
   const token = window.location.hash.slice(1);
+  const [hasConfirmationLink] = useState(Boolean(token));
   const [password, setPassword] = useState('');
   const [repeatPassword, setRepeatPassword] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [confirming, setConfirming] = useState(Boolean(token));
+  const [passwordSetupToken, setPasswordSetupToken] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState('');
+  useEffect(() => {
+    if (!token) return;
+    void confirmEmail(token).then((nextToken) => {
+      window.history.replaceState(null, '', '/confirmar-email');
+      setPasswordSetupToken(nextToken);
+    }).catch(() => {
+      setError('O link expirou, já foi usado ou não está disponível. Peça outro link.');
+    }).finally(() => setConfirming(false));
+  }, [token]);
   const submit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const validation = passwordValidationMessage(password);
@@ -42,8 +54,8 @@ export function ConfirmEmail() {
     setSubmitting(true);
     setError('');
     try {
-      await confirmEmail(token, password);
-      window.history.replaceState(null, '', '/confirmar-email');
+      if (!passwordSetupToken) return;
+      await setRegistrationPassword(passwordSetupToken, password);
       setSuccess(true);
     } catch {
       setError('O link expirou, já foi usado ou não está disponível. Peça outro link.');
@@ -53,9 +65,9 @@ export function ConfirmEmail() {
   };
   return <PageTransition><div className="invite-page"><main className="invite-card">
     <div className="invite-brand">secure<em>play</em></div>
-    {success ? <><h1>E-mail confirmado</h1><p className="invite-intro">Sua conta está pronta.</p><Link className="invite-primary-link" to="/login">Entrar na SecurePlay</Link></> :
-      !token ? <><h1>Link indisponível</h1><p className="invite-intro">Abra o link recebido por e-mail para continuar.</p><Link className="invite-primary-link" to="/verifique-email">Pedir outro link</Link></> :
-      <><h1>Confirme seu acesso</h1><p className="invite-intro">Crie sua senha para validar o e-mail e ativar a conta.</p>
+    {success ? <><h1>Acesso ativado</h1><p className="invite-intro">E-mail confirmado e senha definida.</p><Link className="invite-primary-link" to="/login">Entrar na SecurePlay</Link></> :
+      !hasConfirmationLink ? <><h1>Link indisponível</h1><p className="invite-intro">Abra o link recebido por e-mail para continuar.</p><Link className="invite-primary-link" to="/verifique-email">Pedir outro link</Link></> :
+      confirming ? <><h1>Validando e-mail</h1><p className="invite-intro">Estamos validando seu link seguro.</p></> : !passwordSetupToken ? <><h1>Link indisponível</h1><p className="invite-intro">Peça um novo link de confirmação para continuar.</p><Link className="invite-primary-link" to="/verifique-email">Pedir outro link</Link></> : <><h1>Defina sua senha</h1><p className="invite-intro">E-mail confirmado. Defina uma nova senha para ativar o acesso.</p>
         <form className="invite-form" onSubmit={submit}>
           <label>Crie uma senha<input type="password" value={password} onChange={(event) => setPassword(event.target.value)} minLength={6} maxLength={72} required autoComplete="new-password" /></label>
           <label>Repita a senha<input type="password" value={repeatPassword} onChange={(event) => setRepeatPassword(event.target.value)} minLength={6} maxLength={72} required autoComplete="new-password" /></label>

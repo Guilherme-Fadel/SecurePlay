@@ -121,11 +121,22 @@ export class RegistrationService {
     const email = emailInput.trim().toLowerCase();
     const repository = this.dataSource.getRepository(PendingRegistration);
     const pending = await repository.findOne({ where: { email } });
-    if (!pending)
+    if (!pending) {
+      const user = await this.dataSource
+        .getRepository(Usuario)
+        .findOne({ where: { email } });
+      if (
+        user?.role === Role.PLATFORM_ADMIN &&
+        user.email_verification_required &&
+        !user.email_verified_at
+      ) {
+        await this.startPlatformAdminVerification(user);
+      }
       return {
         sucesso: true,
         mensagem: 'Se houver um cadastro pendente, enviaremos um novo link.',
       };
+    }
     if (
       pending.last_sent_at &&
       Date.now() - new Date(pending.last_sent_at).getTime() < RESEND_COOLDOWN_MS
@@ -165,7 +176,7 @@ export class RegistrationService {
     };
   }
 
-  async confirm(token: string, password: string) {
+  async confirm(token: string) {
     return this.dataSource.transaction(async (manager) => {
       const pending = await manager
         .getRepository(PendingRegistration)
@@ -174,7 +185,7 @@ export class RegistrationService {
         .where('registration.token_hash = :hash', { hash: this.hash(token) })
         .getOne();
       if (!pending || pending.expires_at <= new Date()) {
-        throw new NotFoundException('Link de confirmação inválido ou expirado');
+        return this.confirmPlatformAdmin(token, manager);
       }
       if (
         await manager
@@ -209,12 +220,18 @@ export class RegistrationService {
         companyId = await this.trialCompanyId(manager);
       }
       const now = new Date();
+      const passwordSetupToken = randomBytes(32).toString('base64url');
       const user = manager.getRepository(Usuario).create({
         name: pending.name,
         email: pending.email,
-        password: await bcrypt.hash(password, 10),
+        password: await bcrypt.hash(randomBytes(32).toString('base64url'), 10),
         birth_date: pending.birth_date,
         email_verified_at: now,
+        password_change_required: true,
+        password_setup_token_hash: this.hash(passwordSetupToken),
+        password_setup_expires_at: new Date(
+          now.getTime() + CONFIRMATION_HOURS * 60 * 60 * 1000,
+        ),
         trial_started_at: pending.kind === 'trial' ? now : null,
         trial_ends_at:
           pending.kind === 'trial'
@@ -229,9 +246,79 @@ export class RegistrationService {
       await manager.getRepository(PendingRegistration).remove(pending);
       return {
         sucesso: true,
-        mensagem: 'E-mail confirmado. Você já pode entrar na plataforma.',
+        mensagem: 'E-mail confirmado. Defina sua senha para ativar o acesso.',
+        password_setup_token: passwordSetupToken,
       };
     });
+  }
+
+  async setPassword(token: string, password: string) {
+    const tokenHash = this.hash(token);
+    return this.dataSource.transaction(async (manager) => {
+      const user = await manager
+        .getRepository(Usuario)
+        .createQueryBuilder('user')
+        .setLock('pessimistic_write')
+        .where('user.password_setup_token_hash = :tokenHash', { tokenHash })
+        .getOne();
+      if (
+        !user ||
+        !user.password_change_required ||
+        !user.password_setup_expires_at ||
+        user.password_setup_expires_at <= new Date()
+      ) {
+        throw new NotFoundException('Link para definir senha inválido ou expirado');
+      }
+
+      user.password = await bcrypt.hash(password, 10);
+      user.password_change_required = false;
+      user.password_setup_token_hash = null;
+      user.password_setup_expires_at = null;
+      await manager.getRepository(Usuario).save(user);
+      return { sucesso: true, mensagem: 'Senha definida com sucesso.' };
+    });
+  }
+
+  async startPlatformAdminVerification(user: Usuario) {
+    const token = randomBytes(32).toString('base64url');
+    user.email_verification_token_hash = this.hash(token);
+    user.email_verification_expires_at = new Date(
+      Date.now() + CONFIRMATION_HOURS * 60 * 60 * 1000,
+    );
+    await this.dataSource.getRepository(Usuario).save(user);
+    await this.emailService.sendVerification(user.email, token);
+  }
+
+  private async confirmPlatformAdmin(token: string, manager: EntityManager) {
+    const now = new Date();
+    const user = await manager.getRepository(Usuario).findOne({
+      where: { email_verification_token_hash: this.hash(token) },
+    });
+    if (
+      !user ||
+      user.role !== Role.PLATFORM_ADMIN ||
+      !user.email_verification_required ||
+      !user.email_verification_expires_at ||
+      user.email_verification_expires_at <= now
+    ) {
+      throw new NotFoundException('Link de confirmação inválido ou expirado');
+    }
+
+    const passwordSetupToken = randomBytes(32).toString('base64url');
+    user.email_verified_at = now;
+    user.email_verification_token_hash = null;
+    user.email_verification_expires_at = null;
+    user.password_change_required = true;
+    user.password_setup_token_hash = this.hash(passwordSetupToken);
+    user.password_setup_expires_at = new Date(
+      now.getTime() + CONFIRMATION_HOURS * 60 * 60 * 1000,
+    );
+    await manager.getRepository(Usuario).save(user);
+    return {
+      sucesso: true,
+      mensagem: 'E-mail confirmado. Altere sua senha para ativar o acesso.',
+      password_setup_token: passwordSetupToken,
+    };
   }
 
   private async trialCompanyId(manager: EntityManager): Promise<number> {
