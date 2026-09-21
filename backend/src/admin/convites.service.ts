@@ -14,6 +14,13 @@ import { CreateConviteDto } from './dto/create-convite.dto';
 import { Convite } from './entities/convite.entity';
 import { RegistrationService } from '../registration/registration.service';
 
+type UsuarioFiltros = {
+  page?: number;
+  pageSize?: number;
+  search?: string;
+  status?: 'active' | 'inactive' | 'management';
+};
+
 @Injectable()
 export class ConvitesService {
   constructor(
@@ -40,6 +47,56 @@ export class ConvitesService {
     return usuarios.map((usuario) => this.toUsuarioResumo(usuario));
   }
 
+  async listarUsuariosPaginados(
+    userId: number,
+    filtros: UsuarioFiltros,
+  ) {
+    const empresa = await this.getEmpresaDoAdministrador(userId);
+    return this.listarUsuariosPaginadosDaEmpresa(empresa.id, filtros);
+  }
+
+  async listarUsuariosPaginadosDaEmpresa(
+    empresaId: number,
+    filtros: UsuarioFiltros,
+  ) {
+    const { page, pageSize, search } = this.normalizarFiltrosPaginados(filtros);
+    const query = this.usuarioRepository
+      .createQueryBuilder('usuario')
+      .where('usuario.empresa_id = :empresaId', { empresaId });
+
+    if (filtros.status === 'active') {
+      query.andWhere('usuario.active = :active', { active: true });
+    } else if (filtros.status === 'inactive') {
+      query.andWhere('usuario.active = :active', { active: false });
+    } else if (filtros.status === 'management') {
+      query.andWhere('usuario.role IN (:...roles)', {
+        roles: [Role.ADMIN, Role.PLATFORM_ADMIN],
+      });
+    }
+
+    if (search) {
+      query.andWhere(
+        '(usuario.name LIKE :search OR usuario.email LIKE :search OR usuario.nickname LIKE :search)',
+        { search: `%${search}%` },
+      );
+    }
+
+    const [usuarios, total] = await query
+      .orderBy('usuario.name', 'ASC')
+      .addOrderBy('usuario.id', 'ASC')
+      .skip((page - 1) * pageSize)
+      .take(pageSize)
+      .getManyAndCount();
+
+    return {
+      items: usuarios.map((usuario) => this.toUsuarioResumo(usuario)),
+      page,
+      pageSize,
+      total,
+      totalPages: Math.ceil(total / pageSize),
+    };
+  }
+
   async listarApelidosPendentes(
     userId: number,
     filtros: { page?: number; pageSize?: number; search?: string },
@@ -52,13 +109,7 @@ export class ConvitesService {
     empresaId: number,
     filtros: { page?: number; pageSize?: number; search?: string },
   ) {
-    const page = Number.isFinite(filtros.page)
-      ? Math.max(1, Math.floor(filtros.page as number))
-      : 1;
-    const pageSize = Number.isFinite(filtros.pageSize)
-      ? Math.min(100, Math.max(10, Math.floor(filtros.pageSize as number)))
-      : 25;
-    const search = filtros.search?.trim().slice(0, 100);
+    const { page, pageSize, search } = this.normalizarFiltrosPaginados(filtros);
     const query = this.usuarioRepository
       .createQueryBuilder('usuario')
       .where('usuario.empresa_id = :empresaId', { empresaId })
@@ -264,6 +315,22 @@ export class ConvitesService {
     }
 
     return this.getEmpresa(usuario.empresa_id);
+  }
+
+  private normalizarFiltrosPaginados(filtros: {
+    page?: number;
+    pageSize?: number;
+    search?: string;
+  }) {
+    return {
+      page: Number.isFinite(filtros.page)
+        ? Math.max(1, Math.floor(filtros.page as number))
+        : 1,
+      pageSize: Number.isFinite(filtros.pageSize)
+        ? Math.min(100, Math.max(10, Math.floor(filtros.pageSize as number)))
+        : 25,
+      search: filtros.search?.trim().slice(0, 100),
+    };
   }
 
   private async getEmpresa(empresaId: number) {

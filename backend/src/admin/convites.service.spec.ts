@@ -119,3 +119,33 @@ describe('ConvitesService.listarApelidosPendentesDaEmpresa', () => {
     expect(query.take).toHaveBeenCalledWith(25);
   });
 });
+
+describe('ConvitesService.listarUsuariosPaginadosDaEmpresa', () => {
+  it('filtra gerência e pagina a listagem de usuários', async () => {
+    const query = {
+      where: jest.fn().mockReturnThis(),
+      andWhere: jest.fn().mockReturnThis(),
+      orderBy: jest.fn().mockReturnThis(),
+      addOrderBy: jest.fn().mockReturnThis(),
+      skip: jest.fn().mockReturnThis(),
+      take: jest.fn().mockReturnThis(),
+      getManyAndCount: jest.fn().mockResolvedValue([[], 1]),
+    };
+    const service = new ConvitesService(
+      {} as never,
+      { createQueryBuilder: jest.fn().mockReturnValue(query) } as never,
+      {} as never,
+      {} as never,
+    );
+
+    await expect(service.listarUsuariosPaginadosDaEmpresa(7, {
+      page: 1,
+      pageSize: 25,
+      status: 'management',
+    })).resolves.toMatchObject({ total: 1, totalPages: 1, items: [] });
+    expect(query.andWhere).toHaveBeenCalledWith('usuario.role IN (:...roles)', {
+      roles: [Role.ADMIN, Role.PLATFORM_ADMIN],
+    });
+    expect(query.addOrderBy).toHaveBeenCalledWith('usuario.id', 'ASC');
+  });
+});

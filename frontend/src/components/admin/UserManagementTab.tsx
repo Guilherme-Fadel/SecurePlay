@@ -1,9 +1,9 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useDeferredValue, useEffect, useMemo, useRef, useState } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
-import { AlertCircle, Ban, CheckCircle2, Copy, Link2, Plus, QrCode, Trash2, UsersRound } from 'lucide-react';
+import { AlertCircle, Ban, CheckCircle2, Copy, Link2, Plus, QrCode, Search, Trash2, UsersRound } from 'lucide-react';
 import { AppButton } from '@/components/ui/buttons/AppButton';
 import { cn } from '@/lib/utils';
-import { criarConvite, inativarUsuario, listarConvites, listarUsuarios, revogarConvite, type Convite, type UsuarioEmpresa } from '@/services/convites';
+import { criarConvite, inativarUsuario, listarConvites, listarUsuarios, revogarConvite, type Convite, type UsuarioEmpresa, type UsuariosPaginados } from '@/services/convites';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 
 function formatDate(value: string) {
@@ -18,8 +18,13 @@ interface UserManagementTabProps {
 
 export function UserManagementTab({ empresaId, empresaNome, podeCriarAdministrador = false }: UserManagementTabProps) {
   const { user } = useCurrentUser();
-  const [usuarios, setUsuarios] = useState<UsuarioEmpresa[]>([]);
+  const [usuarios, setUsuarios] = useState<UsuariosPaginados>({ items: [], page: 1, pageSize: 25, total: 0, totalPages: 0 });
   const [convites, setConvites] = useState<Convite[]>([]);
+  const [search, setSearch] = useState('');
+  const deferredSearch = useDeferredValue(search);
+  const [status, setStatus] = useState<'active' | 'inactive' | 'management' | ''>('');
+  const [page, setPage] = useState(1);
+  const [loadingUsers, setLoadingUsers] = useState(true);
   const [email, setEmail] = useState('');
   const [validade, setValidade] = useState(7);
   const [maxUses, setMaxUses] = useState(1);
@@ -64,20 +69,25 @@ export function UserManagementTab({ empresaId, empresaNome, podeCriarAdministrad
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [linkGerado]);
 
-  const carregar = async () => {
+  const carregarConvites = async () => {
     try {
-      const [nextUsuarios, nextConvites] = await Promise.all([
-        listarUsuarios(empresaId),
-        listarConvites(empresaId),
-      ]);
-      setUsuarios(nextUsuarios);
-      setConvites(nextConvites);
+      setConvites(await listarConvites(empresaId));
     } catch {
-      setFeedback('Não foi possível carregar os usuários e convites.');
+      setFeedback('Não foi possível carregar os convites.');
     }
   };
 
-  useEffect(() => { void carregar(); }, [empresaId]);
+  useEffect(() => { setPage(1); }, [deferredSearch, status, empresaId]);
+  useEffect(() => { void carregarConvites(); }, [empresaId]);
+  useEffect(() => {
+    let cancelled = false;
+    setLoadingUsers(true);
+    void listarUsuarios({ page, search: deferredSearch, status: status || undefined }, empresaId)
+      .then((next) => { if (!cancelled) setUsuarios(next); })
+      .catch(() => { if (!cancelled) setFeedback('Não foi possível carregar os usuários.'); })
+      .finally(() => { if (!cancelled) setLoadingUsers(false); });
+    return () => { cancelled = true; };
+  }, [deferredSearch, empresaId, page, status]);
 
   const criar = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -119,7 +129,7 @@ export function UserManagementTab({ empresaId, empresaNome, podeCriarAdministrad
     setDeactivatingUser(usuario.id);
     try {
       const updated = await inativarUsuario(usuario.id, empresaId);
-      setUsuarios((current) => current.map((item) => item.id === usuario.id ? updated : item));
+      setUsuarios((current) => ({ ...current, items: current.items.map((item) => item.id === usuario.id ? updated : item) }));
       setFeedback('Acesso inativado. As sessões ativas foram revogadas.');
     } catch (error: any) {
       setFeedback(error.response?.data?.message ?? 'Não foi possível inativar o usuário.');
@@ -138,7 +148,7 @@ export function UserManagementTab({ empresaId, empresaNome, podeCriarAdministrad
   return <div className="admin-users-content">
     <div className="admin-users-heading">
       <div><span className="admin-page-eyebrow">Acessos {empresaNome ? `· ${empresaNome}` : 'da empresa'}</span><h1>Usuários e convites</h1><p>Crie acessos seguros e acompanhe quem já entrou na plataforma.</p></div>
-      <div className="admin-users-stat"><UsersRound size={18} /><span><strong>{usuarios.length}</strong> usuários</span><i /><span><strong>{ativos}</strong> convites ativos</span></div>
+      <div className="admin-users-stat"><UsersRound size={18} /><span><strong>{usuarios.total}</strong> usuários</span><i /><span><strong>{ativos}</strong> convites ativos</span></div>
     </div>
 
     {feedback && <div className={cn('admin-feedback', feedback.startsWith('Não foi') && 'is-error')} role="status"><span>{feedback.startsWith('Não foi') ? <AlertCircle size={17} /> : <CheckCircle2 size={17} />}</span>{feedback}</div>}
@@ -159,7 +169,9 @@ export function UserManagementTab({ empresaId, empresaNome, podeCriarAdministrad
 
       <section className="admin-users-card admin-users-list-card">
         <div className="admin-users-card-heading"><span className="admin-users-heading-icon is-secondary"><UsersRound size={19} /></span><div><h2>Usuários cadastrados</h2><p>Usuários que concluíram o cadastro.</p></div></div>
-        <div className="admin-users-list">{usuarios.length === 0 ? <p className="admin-users-empty">Ainda não há usuários cadastrados.</p> : usuarios.map((usuario) => <div key={usuario.id} className={`admin-user-row${usuario.active ? '' : ' is-inactive'}`}><span>{(usuario.nickname ?? usuario.name).charAt(0).toUpperCase()}</span><div><strong>{usuario.nickname ?? usuario.name}</strong><small>{usuario.nickname ? `${usuario.name} · ` : ''}{usuario.email}{usuario.role === 'admin' ? ' · Administrador' : ''}{!usuario.active ? ' · Acesso inativo' : ''}</small></div><em>Nível {usuario.level}</em>{usuario.active && usuario.id !== user?.userId && usuario.role !== 'platform_admin' && <AppButton variant="ghost" size="sm" icon={<Ban size={14} />} disabled={deactivatingUser === usuario.id} onClick={() => void inativar(usuario)}>{deactivatingUser === usuario.id ? 'Inativando...' : 'Inativar'}</AppButton>}</div>)}</div>
+        <div className="admin-user-toolbar"><label><span className="sr-only">Buscar usuários</span><Search size={16} aria-hidden="true" /><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Buscar nome, e-mail ou apelido" /></label><select aria-label="Filtrar usuários" value={status} onChange={(event) => setStatus(event.target.value as typeof status)}><option value="">Todos</option><option value="active">Ativos</option><option value="inactive">Inativos</option><option value="management">Gerência</option></select></div>
+        <div className="admin-users-list">{usuarios.items.length === 0 && !loadingUsers ? <p className="admin-users-empty">Nenhum usuário corresponde aos filtros.</p> : <table className="admin-user-table"><thead><tr><th>Usuário</th><th>Nível</th><th>Status</th><th><span className="sr-only">Ações</span></th></tr></thead><tbody>{usuarios.items.map((usuario) => <tr key={usuario.id} className={usuario.active ? '' : 'is-inactive'}><td data-label="Usuário"><strong>{usuario.nickname ?? usuario.name}</strong><small>{usuario.nickname ? `${usuario.name} · ` : ''}{usuario.email}{usuario.role === 'admin' ? ' · Administrador' : usuario.role === 'platform_admin' ? ' · Gestão da plataforma' : ''}</small></td><td data-label="Nível">{usuario.level}</td><td data-label="Status"><span className={`admin-user-status ${usuario.active ? 'is-active' : 'is-inactive'}`}>{usuario.active ? 'Ativo' : 'Inativo'}</span></td><td data-label="Ações">{usuario.active && usuario.id !== user?.userId && usuario.role !== 'platform_admin' && <AppButton variant="ghost" size="sm" icon={<Ban size={14} />} disabled={deactivatingUser === usuario.id} onClick={() => void inativar(usuario)}>{deactivatingUser === usuario.id ? 'Inativando...' : 'Inativar'}</AppButton>}</td></tr>)}</tbody></table>}</div>
+        {usuarios.totalPages > 1 && <nav className="admin-table-pagination" aria-label="Paginação de usuários"><AppButton variant="ghost" size="sm" disabled={page === 1 || loadingUsers} onClick={() => setPage((current) => current - 1)}>Anterior</AppButton><span>Página {page} de {Math.max(1, usuarios.totalPages)}</span><AppButton variant="ghost" size="sm" disabled={page >= usuarios.totalPages || loadingUsers} onClick={() => setPage((current) => current + 1)}>Próxima</AppButton></nav>}
       </section>
     </div>
 

@@ -37,14 +37,25 @@ export interface ApelidosPendentesPaginados {
   totalPages: number;
 }
 
+export interface UsuariosPaginados extends ApelidosPendentesPaginados {}
+
 function empresaPath(empresaId?: number) {
   return empresaId
     ? `/platform/admin/empresas/${empresaId}`
     : '/admin/empresa';
 }
 
-export async function listarUsuarios(empresaId?: number): Promise<UsuarioEmpresa[]> {
-  const response = await api.get(`${empresaPath(empresaId)}/usuarios`);
+export async function listarUsuarios(
+  options: { page: number; pageSize?: number; search?: string; status?: 'active' | 'inactive' | 'management' },
+  empresaId?: number,
+): Promise<UsuariosPaginados> {
+  const params = new URLSearchParams({
+    page: String(options.page),
+    pageSize: String(options.pageSize ?? 25),
+  });
+  if (options.search?.trim()) params.set('search', options.search.trim());
+  if (options.status) params.set('status', options.status);
+  const response = await api.get(`${empresaPath(empresaId)}/usuarios?${params}`);
   return response.data;
 }
 

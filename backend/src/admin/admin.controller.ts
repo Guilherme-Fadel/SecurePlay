@@ -47,8 +47,19 @@ export class AdminController {
   }
 
   @Get('usuarios')
-  async listarUsuarios(@Request() req: any) {
-    return this.convitesService.listarUsuarios(req.user.userId);
+  async listarUsuarios(
+    @Request() req: any,
+    @Query('page') page?: string,
+    @Query('pageSize') pageSize?: string,
+    @Query('search') search?: string,
+    @Query('status') status?: 'active' | 'inactive' | 'management',
+  ) {
+    return this.convitesService.listarUsuariosPaginados(req.user.userId, {
+      page: Number(page),
+      pageSize: Number(pageSize),
+      search,
+      status,
+    });
   }
 
   @Get('apelidos-pendentes')

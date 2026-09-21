@@ -113,8 +113,17 @@ export class PlatformAdminController {
   @Get('empresas/:empresaId/usuarios')
   async listarUsuariosDaEmpresa(
     @Param('empresaId', ParseIntPipe) empresaId: number,
+    @Query('page') page?: string,
+    @Query('pageSize') pageSize?: string,
+    @Query('search') search?: string,
+    @Query('status') status?: 'active' | 'inactive' | 'management',
   ) {
-    return this.convitesService.listarUsuariosDaEmpresa(empresaId);
+    return this.convitesService.listarUsuariosPaginadosDaEmpresa(empresaId, {
+      page: Number(page),
+      pageSize: Number(pageSize),
+      search,
+      status,
+    });
   }
 
   @Get('empresas/:empresaId/apelidos-pendentes')
