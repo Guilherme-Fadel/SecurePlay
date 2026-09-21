@@ -471,17 +471,19 @@ const Admin = forwardRef<AdminSaveHandle, AdminProps>(function Admin(
                   <LayoutTemplate size={17} />
                   <span>Layout</span>
                 </button>
-                <button
-                  type="button"
-                  onClick={() => setActiveTab("funcionalidades")}
-                  className={cn(
-                    "admin-tab",
-                    activeTab === "funcionalidades" && "is-active",
-                  )}
-                >
-                  <SlidersHorizontal size={17} />
-                  <span>Funcionalidades</span>
-                </button>
+                {platformMode && user?.role === "platform_admin" && (
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab("funcionalidades")}
+                    className={cn(
+                      "admin-tab",
+                      activeTab === "funcionalidades" && "is-active",
+                    )}
+                  >
+                    <SlidersHorizontal size={17} />
+                    <span>Funcionalidades</span>
+                  </button>
+                )}
               </aside>
             )}
 
@@ -498,7 +500,7 @@ const Admin = forwardRef<AdminSaveHandle, AdminProps>(function Admin(
                   Selecione uma empresa para administrar usuários, convites,
                   layout e funcionalidades.
                 </div>
-              ) : activeTab === "funcionalidades" ? (
+              ) : activeTab === "funcionalidades" && platformMode && user?.role === "platform_admin" ? (
                 <CompanyParametersTab
                   parameters={parameters}
                   setParameters={setParameters}
