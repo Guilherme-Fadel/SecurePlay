@@ -97,6 +97,43 @@ export class ConvitesService {
     };
   }
 
+  async obterResumoAdministrativo(userId: number) {
+    const empresa = await this.getEmpresaDoAdministrador(userId);
+    return this.obterResumoAdministrativoDaEmpresa(empresa.id);
+  }
+
+  async obterResumoAdministrativoDaEmpresa(empresaId: number) {
+    const usuariosAtivos = await this.usuarioRepository.count({
+      where: { empresa_id: empresaId, active: true },
+    });
+    const usuariosInativos = await this.usuarioRepository.count({
+      where: { empresa_id: empresaId, active: false },
+    });
+    const apelidosPendentes = await this.usuarioRepository
+      .createQueryBuilder('usuario')
+      .where('usuario.empresa_id = :empresaId', { empresaId })
+      .andWhere('usuario.role = :role', { role: Role.USER })
+      .andWhere('usuario.nickname_request_status = :status', {
+        status: 'pending',
+      })
+      .andWhere('usuario.nickname_pending IS NOT NULL')
+      .getCount();
+    const convitesAtivos = await this.conviteRepository
+      .createQueryBuilder('convite')
+      .where('convite.empresa_id = :empresaId', { empresaId })
+      .andWhere('convite.revoked = :revoked', { revoked: false })
+      .andWhere('convite.expires_at > :now', { now: new Date() })
+      .andWhere('convite.uses < convite.max_uses')
+      .getCount();
+
+    return {
+      usuariosAtivos,
+      usuariosInativos,
+      apelidosPendentes,
+      convitesAtivos,
+    };
+  }
+
   async listarApelidosPendentes(
     userId: number,
     filtros: { page?: number; pageSize?: number; search?: string },

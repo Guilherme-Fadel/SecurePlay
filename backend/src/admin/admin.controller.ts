@@ -62,6 +62,11 @@ export class AdminController {
     });
   }
 
+  @Get('resumo')
+  async obterResumo(@Request() req: any) {
+    return this.convitesService.obterResumoAdministrativo(req.user.userId);
+  }
+
   @Get('apelidos-pendentes')
   async listarApelidosPendentes(
     @Request() req: any,

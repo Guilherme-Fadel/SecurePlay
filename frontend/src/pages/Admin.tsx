@@ -28,6 +28,7 @@ import { AppSectionHeader } from "@/components/ui/visuals/AppSectionHeader";
 import { UserManagementTab } from "@/components/admin/UserManagementTab";
 import { PendingNicknamesTab } from "@/components/admin/PendingNicknamesTab";
 import { InvitationManagementTab } from "@/components/admin/InvitationManagementTab";
+import { AdminOverviewTab } from "@/components/admin/AdminOverviewTab";
 import { CompanyManagementTab } from "@/components/admin/CompanyManagementTab";
 import { CompanyParametersTab } from "@/components/admin/CompanyParametersTab";
 import { AdminThemePreview } from "@/components/admin/AdminThemePreview";
@@ -35,6 +36,7 @@ import { derivePalette } from "@/lib/palette";
 import { optimizeImageUpload } from "@/lib/optimizeImageUpload";
 import {
   ArrowLeft,
+  BarChart3,
   Building2,
   CheckCircle2,
   Link2,
@@ -91,7 +93,7 @@ const Admin = forwardRef<AdminSaveHandle, AdminProps>(function Admin(
   const generation = useRef(0);
   const logoPreviewObjectUrlRef = useRef<string | null>(null);
   const [activeTab, setActiveTab] = useState<
-    "empresas" | "usuarios" | "apelidos" | "convites" | "layout" | "funcionalidades"
+    "empresas" | "visao-geral" | "usuarios" | "apelidos" | "convites" | "layout" | "funcionalidades"
   >(initialTab);
   const [empresas, setEmpresas] = useState<EmpresaAdministravel[]>([]);
   const [empresaSelecionadaId, setEmpresaSelecionadaId] = useState<
@@ -440,6 +442,10 @@ const Admin = forwardRef<AdminSaveHandle, AdminProps>(function Admin(
                     <span>Empresas</span>
                   </button>
                 )}
+                <button type="button" onClick={() => setActiveTab("visao-geral")} className={cn("admin-tab", activeTab === "visao-geral" && "is-active")}>
+                  <BarChart3 size={17} />
+                  <span>Visão geral</span>
+                </button>
                 <button
                   type="button"
                   onClick={() => setActiveTab("usuarios")}
@@ -513,6 +519,8 @@ const Admin = forwardRef<AdminSaveHandle, AdminProps>(function Admin(
                   canEdit={platformMode && user.role === "platform_admin"}
                   saving={saving}
                 />
+              ) : activeTab === "visao-geral" ? (
+                <AdminOverviewTab empresaId={empresaAlvoId} empresaNome={platformMode ? empresaSelecionada?.nome : undefined} />
               ) : activeTab === "usuarios" ? (
                 <UserManagementTab
                   empresaId={empresaAlvoId}

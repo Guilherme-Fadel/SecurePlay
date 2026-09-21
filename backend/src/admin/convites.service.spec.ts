@@ -149,3 +149,34 @@ describe('ConvitesService.listarUsuariosPaginadosDaEmpresa', () => {
     expect(query.addOrderBy).toHaveBeenCalledWith('usuario.id', 'ASC');
   });
 });
+
+describe('ConvitesService.obterResumoAdministrativoDaEmpresa', () => {
+  it('retorna somente indicadores administrativos da empresa', async () => {
+    const nicknameQuery = {
+      where: jest.fn().mockReturnThis(),
+      andWhere: jest.fn().mockReturnThis(),
+      getCount: jest.fn().mockResolvedValue(3),
+    };
+    const inviteQuery = {
+      where: jest.fn().mockReturnThis(),
+      andWhere: jest.fn().mockReturnThis(),
+      getCount: jest.fn().mockResolvedValue(4),
+    };
+    const service = new ConvitesService(
+      { createQueryBuilder: jest.fn().mockReturnValue(inviteQuery) } as never,
+      {
+        count: jest.fn().mockResolvedValueOnce(12).mockResolvedValueOnce(2),
+        createQueryBuilder: jest.fn().mockReturnValue(nicknameQuery),
+      } as never,
+      {} as never,
+      {} as never,
+    );
+
+    await expect(service.obterResumoAdministrativoDaEmpresa(7)).resolves.toEqual({
+      usuariosAtivos: 12,
+      usuariosInativos: 2,
+      apelidosPendentes: 3,
+      convitesAtivos: 4,
+    });
+  });
+});

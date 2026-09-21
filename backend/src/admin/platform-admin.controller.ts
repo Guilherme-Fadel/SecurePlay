@@ -126,6 +126,13 @@ export class PlatformAdminController {
     });
   }
 
+  @Get('empresas/:empresaId/resumo')
+  async obterResumoDaEmpresa(
+    @Param('empresaId', ParseIntPipe) empresaId: number,
+  ) {
+    return this.convitesService.obterResumoAdministrativoDaEmpresa(empresaId);
+  }
+
   @Get('empresas/:empresaId/apelidos-pendentes')
   async listarApelidosPendentesDaEmpresa(
     @Param('empresaId', ParseIntPipe) empresaId: number,

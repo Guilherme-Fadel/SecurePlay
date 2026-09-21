@@ -39,6 +39,13 @@ export interface ApelidosPendentesPaginados {
 
 export interface UsuariosPaginados extends ApelidosPendentesPaginados {}
 
+export interface ResumoAdministrativo {
+  usuariosAtivos: number;
+  usuariosInativos: number;
+  apelidosPendentes: number;
+  convitesAtivos: number;
+}
+
 function empresaPath(empresaId?: number) {
   return empresaId
     ? `/platform/admin/empresas/${empresaId}`
@@ -56,6 +63,11 @@ export async function listarUsuarios(
   if (options.search?.trim()) params.set('search', options.search.trim());
   if (options.status) params.set('status', options.status);
   const response = await api.get(`${empresaPath(empresaId)}/usuarios?${params}`);
+  return response.data;
+}
+
+export async function obterResumoAdministrativo(empresaId?: number): Promise<ResumoAdministrativo> {
+  const response = await api.get(`${empresaPath(empresaId)}/resumo`);
   return response.data;
 }
 
