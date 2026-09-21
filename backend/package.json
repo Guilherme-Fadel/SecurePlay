@@ -20,6 +20,7 @@
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.json",
     "db:achievements": "node --env-file=.env scripts/apply-achievements.cjs",
+    "db:lesson-order": "node --env-file=.env scripts/apply-global-lesson-order.cjs",
     "db:company-parameters": "node --env-file=.env -r ts-node/register -r tsconfig-paths/register node_modules/typeorm/cli.js migration:run -d src/database/migration-data-source.ts",
     "s3:cors": "node --env-file=.env scripts/apply-s3-cors.cjs"
   },
