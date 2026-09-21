@@ -8,6 +8,10 @@ const Start = lazy(() => import('@/pages/Start'));
 const Login = lazy(() => import('@/pages/Login'));
 const Home = lazy(() => import('@/pages/Home'));
 const InviteRegister = lazy(() => import('@/pages/InviteRegister'));
+const TrialRegister = lazy(() => import('@/pages/TrialRegister'));
+const TrialExpired = lazy(() => import('@/pages/TrialExpired'));
+const CheckEmail = lazy(() => import('@/pages/EmailVerification').then((module) => ({ default: module.CheckEmail })));
+const ConfirmEmail = lazy(() => import('@/pages/EmailVerification').then((module) => ({ default: module.ConfirmEmail })));
 const PrivacyPage = lazy(() => import('@/pages/LegalPages').then((module) => ({ default: module.PrivacyPage })));
 const TermsPage = lazy(() => import('@/pages/LegalPages').then((module) => ({ default: module.TermsPage })));
 const NotFoundPage = lazy(() => import('@/pages/LegalPages').then((module) => ({ default: module.NotFoundPage })));
@@ -27,6 +31,10 @@ export default function App() {
             <InviteRegister />
           </Suspense>}/>
         <Route path="/cadastro/:token" element={<LegacyInviteRedirect />}/>
+        <Route path="/teste-gratuito" element={<PublicRoute><Suspense fallback={null}><TrialRegister /></Suspense></PublicRoute>}/>
+        <Route path="/verifique-email" element={<Suspense fallback={null}><CheckEmail /></Suspense>}/>
+        <Route path="/confirmar-email" element={<Suspense fallback={null}><ConfirmEmail /></Suspense>}/>
+        <Route path="/teste-encerrado" element={<Suspense fallback={null}><TrialExpired /></Suspense>}/>
         <Route path="/privacidade" element={<Suspense fallback={null}><PrivacyPage /></Suspense>}/>
         <Route path="/termos" element={<Suspense fallback={null}><TermsPage /></Suspense>}/>
         <Route path="*" element={<Suspense fallback={null}><NotFoundPage /></Suspense>}/>

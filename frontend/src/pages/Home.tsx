@@ -169,6 +169,7 @@ function HomeContent() {
           <div className="flex flex-col flex-1 min-w-0 min-h-0">
             <Header />
             <main className={`secure-home-main relative flex-1 min-h-0 overflow-y-auto p-6 bg-[var(--background)] ${activeSection === 'conteudos' && contentTarget?.aulaId ? 'is-classroom-view' : ''}`}>
+              {user?.trial_ends_at && <div role="status" className="mb-4 rounded-xl border border-[var(--border)] bg-[var(--surface)] p-3 text-sm">Teste gratuito de aluno até {new Date(user.trial_ends_at).toLocaleDateString('pt-BR')}. Para continuar depois, <a className="underline" href="mailto:contato@secureplay.com?subject=Planos%20SecurePlay">fale com a SecurePlay</a>.</div>}
               <HomeLoadingOverlay isLoading={isLoading}/>
               {previousSection && (<AppButton onClick={goBack} variant="ghost" size="sm" icon={<ArrowLeft size={16}/>} className="mb-4">
                   Voltar

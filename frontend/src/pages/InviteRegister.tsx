@@ -4,7 +4,7 @@ import { CheckCircle2, LockKeyhole, ShieldCheck, UserRound } from 'lucide-react'
 import { Toaster, toast } from 'sonner';
 import { consultarConvite, concluirCadastroConvite, type ConvitePublico } from '@/services/convites';
 import { PageTransition } from '@/components/shared/PageTransition';
-import { passwordValidationMessage } from '@/lib/password-policy';
+import { BirthDateField } from '@/components/shared/BirthDateField';
 import './invite-register.css';
 
 export default function InviteRegister() {
@@ -16,8 +16,7 @@ export default function InviteRegister() {
   const [name, setName] = useState('');
   const [nickname, setNickname] = useState('');
   const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
+  const [birthDate, setBirthDate] = useState('');
 
   useEffect(() => {
     if (!token) {
@@ -36,21 +35,11 @@ export default function InviteRegister() {
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    const passwordError = passwordValidationMessage(password);
-    if (passwordError) {
-      toast.error(passwordError);
-      return;
-    }
-    if (password !== confirmPassword) {
-      toast.error('As senhas não coincidem.');
-      return;
-    }
-
     setSubmitting(true);
     try {
-      const result = await concluirCadastroConvite(token, { name, nickname: nickname.trim() || undefined, email, password });
+      const result = await concluirCadastroConvite(token, { name, nickname: nickname.trim() || undefined, email, birth_date: birthDate });
       toast.success(result.mensagem);
-      setTimeout(() => navigate('/login', { replace: true }), 800);
+      setTimeout(() => navigate('/verifique-email?email=' + encodeURIComponent(email), { replace: true }), 800);
     } catch (error: any) {
       toast.error(error.response?.data?.message ?? 'Não foi possível concluir o cadastro.');
     } finally {
@@ -85,9 +74,8 @@ export default function InviteRegister() {
                 <label>Seu nome<input value={name} onChange={(event) => setName(event.target.value)} minLength={3} required /></label>
                 <label>Apelido de aventura <small>vai para aprovação</small><input value={nickname} onChange={(event) => setNickname(event.target.value)} minLength={3} maxLength={24} pattern="[A-Za-zÀ-ÿ0-9 _-]+" placeholder="Ex.: Guardiã Estelar" /></label>
                 <label>E-mail da escola<input type="email" value={email} onChange={(event) => setEmail(event.target.value)} disabled={Boolean(convite.email)} required /></label>
-                <label>Crie uma senha secreta<input type="password" value={password} onChange={(event) => setPassword(event.target.value)} minLength={6} maxLength={72} autoComplete="new-password" required /></label>
-                <label>Repita a senha secreta<input type="password" value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} minLength={6} maxLength={72} autoComplete="new-password" required /></label>
-                <button type="submit" disabled={submitting}>{submitting ? 'Criando seu passe...' : 'Começar minha aventura'}</button>
+                <BirthDateField value={birthDate} onChange={setBirthDate} />
+                <button type="submit" disabled={submitting}>{submitting ? 'Enviando confirmação...' : 'Confirmar meu e-mail'}</button>
               </form>
 
               <p className="invite-security"><CheckCircle2 size={14} /> Seu acesso será preparado com segurança.</p>

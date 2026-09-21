@@ -124,6 +124,7 @@ export function KidsLandingContent() {
               <button onClick={() => go('escolas')}>Para escolas</button>
               <button onClick={() => go('faq')}>Dúvidas</button>
               <button onClick={() => { closeMenu(); navigate('/login'); }}>Entrar</button>
+              <button onClick={() => { closeMenu(); navigate('/teste-gratuito'); }}>Teste grátis por 7 dias</button>
             </motion.nav>
           )}
         </AnimatePresence>
@@ -142,11 +143,11 @@ export function KidsLandingContent() {
               A SecurePlay transforma conversas importantes sobre internet em missões criativas, feitas para crianças de 6 a 10 anos.
             </motion.p>
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="kids-actions">
-              <button className="kids-button kids-button-primary" onClick={() => go('missoes')}>
-                Conheça a SecurePlay <ArrowRight size={18} />
+              <button className="kids-button kids-button-primary" onClick={() => navigate('/teste-gratuito')}>
+                Teste grátis por 7 dias <ArrowRight size={18} />
               </button>
-              <button className="kids-button kids-button-secondary" onClick={() => go('como-funciona')}>
-                Ver como funciona
+              <button className="kids-button kids-button-secondary" onClick={() => go('missoes')}>
+                Conheça a SecurePlay <ArrowRight size={18} />
               </button>
             </motion.div>
             <div className="kids-trust" aria-label="Para crianças de 6 a 10 anos e pensado para escolas">

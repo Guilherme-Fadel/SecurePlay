@@ -31,7 +31,7 @@ export function PrivacyPage() {
     <LegalPage eyebrow="PRIVACIDADE" title="Cuidamos dos seus dados">
       <p>O SecurePlay foi criado para ensinar segurança digital de um jeito divertido. Usamos apenas os dados necessários para criar seu acesso, guardar seu progresso e manter a plataforma segura.</p>
       <h2>O que guardamos</h2>
-      <p>Seu nome, e-mail, organização, progresso nas missões e configurações da conta. Esses dados ajudam a plataforma a funcionar e permitem que educadores ou responsáveis acompanhem o uso quando necessário.</p>
+      <p>Seu nome, e-mail, data de nascimento, organização, progresso nas missões e configurações da conta. Esses dados ajudam a plataforma a funcionar, entender as faixas etárias de uso e permitem que educadores ou responsáveis acompanhem o uso quando necessário.</p>
       <h2>Como protegemos você</h2>
       <p>Não mostramos seu nome completo no ranking para outras pessoas. No lugar dele, usamos um apelido de aventura. Também não vendemos dados pessoais.</p>
       <h2>Ajuda de um adulto</h2>

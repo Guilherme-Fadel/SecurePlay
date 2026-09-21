@@ -62,7 +62,7 @@ export async function consultarConvite(token: string): Promise<ConvitePublico> {
   return response.data;
 }
 
-export async function concluirCadastroConvite(token: string, data: { name: string; nickname?: string; email: string; password: string }) {
+export async function concluirCadastroConvite(token: string, data: { name: string; nickname?: string; email: string; birth_date: string }) {
   const response = await api.post('/convites/cadastro', { ...data, token });
   return response.data as { sucesso: boolean; mensagem: string };
 }

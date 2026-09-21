@@ -13,6 +13,9 @@ export interface CurrentUser {
   userId: number;
   name: string;
   email: string;
+  birth_date: string | null;
+  email_verified_at: string | null;
+  trial_ends_at: string | null;
   level: number;
   role: string;
   empresa_id: number | null;

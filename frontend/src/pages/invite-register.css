@@ -18,6 +18,8 @@
 .invite-form button { height: 56px; margin-top: 4px; border: 0; border-radius: 10px; background: var(--primary); box-shadow: 0 9px 18px rgba(var(--primary-rgb),.2); color: #fff; cursor: pointer; font: 800 16px var(--font-family-ui); }
 .invite-form button:hover:not(:disabled) { background: var(--primary-hover); }
 .invite-form button:disabled { opacity: .65; cursor: wait; }
+.invite-primary-link { display: grid; min-height: 52px; place-items: center; border-radius: 10px; background: var(--primary); color: #fff; font: 800 15px var(--font-family-ui); text-align: center; text-decoration: none; }
+.invite-primary-link:hover { background: var(--primary-hover); }
 .invite-security { display: flex; align-items: center; justify-content: center; gap: 6px; margin: 25px 0 0; color: #94a3b8; font: 13px var(--font-family-ui); }
 .invite-legal-note { margin: 13px 0 0; color: #64748b; font: 13px/1.5 var(--font-family-ui); text-align: center; }
 .invite-legal-note a { color: var(--primary); font-weight: 800; }
