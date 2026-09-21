@@ -38,6 +38,7 @@ export function CurrentUserProvider({ children }: { children: React.ReactNode })
   const statusRef = useRef<SessionStatus>('idle');
   const inFlightRef = useRef<Promise<CurrentUser | null> | null>(null);
   const requestVersionRef = useRef(0);
+  const lastParametersRefreshRef = useRef(0);
 
   const updateStatus = useCallback((nextStatus: SessionStatus) => {
     statusRef.current = nextStatus;
@@ -114,8 +115,14 @@ export function CurrentUserProvider({ children }: { children: React.ReactNode })
     let cancelled = false;
     let busy = false;
     const refreshParameters = async () => {
-      if (busy || document.visibilityState === 'hidden') return;
+      const now = Date.now();
+      if (
+        busy ||
+        document.visibilityState === 'hidden' ||
+        now - lastParametersRefreshRef.current < 60_000
+      ) return;
       busy = true;
+      lastParametersRefreshRef.current = now;
       const version = requestVersionRef.current;
       try {
         const nextUser = await getMe();
@@ -131,7 +138,7 @@ export function CurrentUserProvider({ children }: { children: React.ReactNode })
         busy = false;
       }
     };
-    const timer = window.setInterval(() => void refreshParameters(), 30_000);
+    const timer = window.setInterval(() => void refreshParameters(), 5 * 60_000);
     window.addEventListener('focus', refreshParameters);
     return () => {
       cancelled = true;
