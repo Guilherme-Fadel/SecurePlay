@@ -10,7 +10,7 @@ import { Question } from '../question/question.entity';
 import { UsuarioChallenge } from '../usuario-challenge/usuario-challenge.entity';
 import { UsuarioStats } from '../usuario-stats/usuario-stats.entity';
 import { RedisService } from '../redis/redis.service';
-import { ttlUntilEndOfDay } from '../common/utils/date.utils';
+import { getLocalDateKey, ttlUntilEndOfDay } from '../common/utils/date.utils';
 import { SubmitChallengeDto } from './dto/challenge.dto';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 
@@ -54,15 +54,28 @@ export class ChallengeService {
       .find({ where: { usuario_id }, select: ['challenge_id'] })
       .then((rows) => rows.map((r) => r.challenge_id));
 
-    const query = this.challengeRepository
-      .createQueryBuilder('c')
-      .where('c.active = :active', { active: true });
+    const activeChallenges = await this.challengeRepository.find({
+      where: { active: true },
+      select: ['id'],
+      order: { id: 'ASC' },
+    });
+    const completed = new Set(completedIds);
+    const availableIds = activeChallenges
+      .map(({ id }) => id)
+      .filter((id) => !completed.has(id));
+    if (availableIds.length === 0) return null;
 
-    if (completedIds.length > 0) {
-      query.andWhere('c.id NOT IN (:...completedIds)', { completedIds });
+    // Seleção estável por usuário e dia: evita ORDER BY RAND(), que força o
+    // banco a ordenar todos os desafios ativos a cada cache miss.
+    const seed = `${usuario_id}:${getLocalDateKey()}`;
+    let hash = 0;
+    for (let index = 0; index < seed.length; index += 1) {
+      hash = (hash * 31 + seed.charCodeAt(index)) >>> 0;
     }
-
-    const challenge = await query.orderBy('RAND()').getOne();
+    const selectedId = availableIds[hash % availableIds.length];
+    const challenge = await this.challengeRepository.findOne({
+      where: { id: selectedId, active: true },
+    });
 
     if (challenge) {
       await this.setRedisDailyChallenge(usuario_id, challenge);
