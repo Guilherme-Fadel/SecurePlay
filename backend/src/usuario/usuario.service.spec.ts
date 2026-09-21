@@ -1,6 +1,7 @@
 import { BadRequestException } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
 import { UsuarioService } from './usuario.service';
+import { Role } from '../auth/roles.enum';
 
 jest.mock('bcrypt', () => ({
   compare: jest.fn(),
@@ -68,4 +69,25 @@ describe('UsuarioService.changePassword', () => {
 
     expect(users.findOne).not.toHaveBeenCalled();
   });
+});
+
+describe('UsuarioService.requestNickname', () => {
+  it.each([Role.ADMIN, Role.PLATFORM_ADMIN])(
+    'recusa apelido para %s',
+    async (role) => {
+      const users = {
+        findOne: jest.fn(),
+        save: jest.fn(),
+      };
+      users.findOne.mockResolvedValue({ id: 11, role, empresa_id: 2 });
+      const service = new UsuarioService(users as never, undefined as never);
+
+      await expect(
+        service.requestNickname(11, 'Guardião Solar'),
+      ).rejects.toMatchObject({
+        status: 400,
+      });
+      expect(users.save).not.toHaveBeenCalled();
+    },
+  );
 });

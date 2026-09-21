@@ -1,4 +1,4 @@
-import { Injectable, Inject, Logger } from '@nestjs/common';
+import { Injectable, Inject, Logger, NotFoundException } from '@nestjs/common';
 import { Repository, SelectQueryBuilder } from 'typeorm';
 import { UsuarioStats } from '../usuario-stats/usuario-stats.entity';
 import { ChallengeService } from '../challenge/challenge.service';
@@ -86,9 +86,16 @@ export class DashboardService {
       .leftJoinAndSelect('u.empresa', 'e')
       .where('s.usuario_id = :uid', { uid: usuario_id })
       .getOne();
+    const isManagementUser =
+      currentEntry?.usuario?.role === Role.ADMIN ||
+      currentEntry?.usuario?.role === Role.PLATFORM_ADMIN;
+    if (isManagementUser) {
+      throw new NotFoundException(
+        'Usuários de gerência não participam do ranking',
+      );
+    }
     const company = currentEntry?.usuario?.empresa ?? null;
     const companyAvailable = !!company;
-    const isPlatformAdmin = currentEntry?.usuario?.role === Role.PLATFORM_ADMIN;
     const globalRankingEnabled = isFeatureEnabled(parameters, 'globalRanking');
     const trialUser = !!currentEntry?.usuario?.trial_started_at;
     const scope =
@@ -100,11 +107,12 @@ export class DashboardService {
     const applyScope = (
       query: SelectQueryBuilder<UsuarioStats>,
     ): SelectQueryBuilder<UsuarioStats> => {
+      query.andWhere('u.role = :rankingRole', { rankingRole: Role.USER });
       if (scope === 'company' && company) {
         query.andWhere('u.empresa_id = :empresaId', { empresaId: company.id });
       } else if (scope === 'company') {
         query.andWhere('1 = 0');
-      } else if (!isPlatformAdmin) {
+      } else {
         query.andWhere(`EXISTS (
           SELECT 1 FROM empresa ranking_empresa
           WHERE ranking_empresa.id = u.empresa_id
@@ -151,7 +159,8 @@ export class DashboardService {
                   ? (currentEntry?.usuario?.nickname ??
                     currentEntry?.usuario?.name ??
                     'Você')
-                  : (entry.usuario?.nickname ?? `Aventureiro ${entry.usuario_id}`),
+                  : (entry.usuario?.nickname ??
+                    `Aventureiro ${entry.usuario_id}`),
               points,
               level: calcLevel(entry.total_points),
               companyName: null,
@@ -159,8 +168,8 @@ export class DashboardService {
               profileImageUrl: includeImages
                 ? await this.resolveProfileImageUrl(
                     entry.usuario?.profile_image_key,
-                )
-              : null,
+                  )
+                : null,
             };
           }),
         )
@@ -264,12 +273,17 @@ export class DashboardService {
       await this.challengeService.countTotalActive();
     const parameters = await this.companyFeatures.forUser(usuario_id);
     const globalRankingEnabled = isFeatureEnabled(parameters, 'globalRanking');
-    const ranking = globalRankingEnabled
-      ? await this.getRanking(usuario_id, 'global', false, {
+    let ranking: Awaited<ReturnType<typeof this.getRanking>> | null = null;
+    if (globalRankingEnabled) {
+      try {
+        ranking = await this.getRanking(usuario_id, 'global', false, {
           includeImages: false,
           includeEntries: false,
-        })
-      : null;
+        });
+      } catch (error) {
+        if (!(error instanceof NotFoundException)) throw error;
+      }
+    }
     const totalUsers = ranking?.totalParticipants ?? null;
     const globalRanking = ranking?.currentUser.position ?? null;
     const xpToday = await this.getRedisXpToday(usuario_id);

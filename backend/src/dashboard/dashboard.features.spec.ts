@@ -82,14 +82,25 @@ describe('DashboardService company parameters', () => {
     });
   });
 
-  it('permite ranking global administrativo sem empresa ou filtro de adesão', async () => {
+  it('recusa o ranking para usuários de gerência', async () => {
     const { service, query } = buildService(
       null,
       undefined,
       Role.PLATFORM_ADMIN,
     );
-    expect((await service.getRanking(7, 'global')).scope).toBe('global');
+    await expect(service.getRanking(7, 'global')).rejects.toThrow(
+      'Usuários de gerência não participam do ranking',
+    );
     expect(query.andWhere).not.toHaveBeenCalled();
+  });
+
+  it('limita a classificação aos participantes', async () => {
+    const { service, query } = buildService({ id: 3, nome: 'Escola' });
+    await service.getRanking(7, 'company');
+
+    expect(query.andWhere).toHaveBeenCalledWith('u.role = :rankingRole', {
+      rankingRole: Role.USER,
+    });
   });
 
   it('does not expose other institutions to a user without an institution', async () => {

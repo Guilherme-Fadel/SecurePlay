@@ -111,6 +111,11 @@ export class UsuarioService {
   }
   async requestNickname(userId: number, requestedNickname: string) {
     const usuario = await this.getUsuarioById(userId);
+    if (usuario?.role === Role.ADMIN || usuario?.role === Role.PLATFORM_ADMIN) {
+      throw new BadRequestException(
+        'Usuários de gerência não utilizam apelidos no ranking',
+      );
+    }
     if (!usuario?.empresa_id) {
       throw new BadRequestException(
         'Seu perfil precisa estar vinculado a uma organização',

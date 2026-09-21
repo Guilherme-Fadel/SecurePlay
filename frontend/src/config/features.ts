@@ -33,8 +33,8 @@ export function companyIdentityKey(user: Parameters<typeof companySessionKey>[0]
 }
 
 export function companyFeaturesForUser(user: { role?: string; empresa_id: number | null; empresa_parametros: CompanyParameters } | null) {
-  if (user?.role === 'platform_admin') {
-    return { ranking: true, globalRanking: true, achievements: true, games: COMPANY_GAMES.map((game) => game.slug) };
+  if (user?.role === 'platform_admin' || user?.role === 'admin') {
+    return { ranking: false, globalRanking: false, achievements: true, games: COMPANY_GAMES.map((game) => game.slug) };
   }
   const parameters = user?.empresa_id ? user.empresa_parametros ?? NO_COMPANY_PARAMETERS : NO_COMPANY_PARAMETERS;
   return {

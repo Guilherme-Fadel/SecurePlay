@@ -69,7 +69,8 @@ export function Perfil() {
   const xpToNextLevel = stats?.xpToNextLevel ?? 0;
   const xpCeiling = points + xpToNextLevel;
   const xpProgress = stats && xpCeiling > 0 ? Math.min(100, Math.round((points / xpCeiling) * 100)) : 0;
-  const displayName = user?.nickname || user?.name || (userLoading ? 'Carregando perfil...' : 'Participante SecurePlay');
+  const isManagementUser = user?.role === 'admin' || user?.role === 'platform_admin';
+  const displayName = (isManagementUser ? user?.name : user?.nickname || user?.name) || (userLoading ? 'Carregando perfil...' : 'Participante SecurePlay');
   const firstName = displayName.split(/\s+/)[0] || 'você';
   const companyName = user?.empresa_nome || 'Comunidade SecurePlay';
   const displayLevel = stats?.level ?? user?.level;
@@ -279,7 +280,7 @@ export function Perfil() {
             </div>
           </div>
 
-          <div className="profile-hero-action">
+          {!isManagementUser && <div className="profile-hero-action">
             <form className="profile-nickname-form profile-hero-nickname-form" onSubmit={handleNicknameRequest}>
               <div className="profile-nickname-heading">
                 <label htmlFor="profile-nickname">Apelido no ranking</label>
@@ -292,7 +293,7 @@ export function Perfil() {
               {user?.nickname_request_status === 'pending' && <p className="profile-nickname-status is-pending">Pedido para “{user.nickname_pending}” aguardando aprovação.</p>}
               {user?.nickname_request_status === 'rejected' && <p className="profile-nickname-status is-rejected">O último pedido não foi aprovado. Tente outro apelido.</p>}
             </form>
-          </div>
+          </div>}
 
           <div className="profile-level-summary">
             <span>Seu nível</span>

@@ -152,6 +152,11 @@ export class ConvitesService {
 
   async aprovarApelidoDaEmpresa(empresaId: number, usuarioId: number) {
     const usuario = await this.getUsuarioDaEmpresa(empresaId, usuarioId);
+    if (usuario.role !== Role.USER) {
+      throw new BadRequestException(
+        'Usuários de gerência não podem ter apelidos no ranking',
+      );
+    }
     if (!usuario.nickname_pending) {
       throw new BadRequestException('Não há apelido pendente para aprovar');
     }
@@ -170,6 +175,11 @@ export class ConvitesService {
 
   async rejeitarApelidoDaEmpresa(empresaId: number, usuarioId: number) {
     const usuario = await this.getUsuarioDaEmpresa(empresaId, usuarioId);
+    if (usuario.role !== Role.USER) {
+      throw new BadRequestException(
+        'Usuários de gerência não podem ter apelidos no ranking',
+      );
+    }
     if (!usuario.nickname_pending) {
       throw new BadRequestException('Não há apelido pendente para rejeitar');
     }
