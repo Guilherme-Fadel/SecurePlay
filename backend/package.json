@@ -21,7 +21,9 @@
     "test:e2e": "jest --config ./test/jest-e2e.json",
     "db:achievements": "node --env-file=.env scripts/apply-achievements.cjs",
     "db:lesson-order": "node --env-file=.env scripts/apply-global-lesson-order.cjs",
+    "db:migrate": "node --env-file=.env -r ts-node/register -r tsconfig-paths/register node_modules/typeorm/cli.js migration:run -d src/database/migration-data-source.ts",
     "db:company-parameters": "node --env-file=.env -r ts-node/register -r tsconfig-paths/register node_modules/typeorm/cli.js migration:run -d src/database/migration-data-source.ts",
+    "db:hml": "node scripts/apply-database-hml.cjs",
     "s3:cors": "node --env-file=.env scripts/apply-s3-cors.cjs"
   },
   "dependencies": {

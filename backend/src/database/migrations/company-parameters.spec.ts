@@ -1,4 +1,4 @@
-import { CompanyParameters1789459200000 } from './add-company-parameters';
+import { CompanyParameters1789459200000 } from './1789459200000-add-company-parameters';
 
 describe('Migration de parâmetros da empresa', () => {
   it('adiciona apenas os objetos necessários sem reescrever registros existentes', async () => {
