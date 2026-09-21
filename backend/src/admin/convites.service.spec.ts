@@ -66,3 +66,56 @@ describe('ConvitesService.inativarUsuarioGlobal', () => {
     expect(usuarioRepository.save).not.toHaveBeenCalled();
   });
 });
+
+describe('ConvitesService.listarApelidosPendentesDaEmpresa', () => {
+  it('pagina somente apelidos pendentes de participantes', async () => {
+    const query = {
+      where: jest.fn().mockReturnThis(),
+      andWhere: jest.fn().mockReturnThis(),
+      orderBy: jest.fn().mockReturnThis(),
+      skip: jest.fn().mockReturnThis(),
+      take: jest.fn().mockReturnThis(),
+      getManyAndCount: jest.fn().mockResolvedValue([
+        [
+          {
+            id: 9,
+            name: 'Ana',
+            email: 'ana@secureplay.test',
+            role: Role.USER,
+            level: 3,
+            active: true,
+            nickname: null,
+            nickname_pending: 'Aninha',
+            nickname_request_status: 'pending',
+          },
+        ],
+        26,
+      ]),
+    };
+    const usuarioRepository = { createQueryBuilder: jest.fn().mockReturnValue(query) };
+    const service = new ConvitesService(
+      {} as never,
+      usuarioRepository as never,
+      {} as never,
+      {} as never,
+    );
+
+    await expect(
+      service.listarApelidosPendentesDaEmpresa(4, {
+        page: 2,
+        pageSize: 25,
+        search: 'Ana',
+      }),
+    ).resolves.toEqual({
+      items: [expect.objectContaining({ id: 9, nickname_pending: 'Aninha' })],
+      page: 2,
+      pageSize: 25,
+      total: 26,
+      totalPages: 2,
+    });
+    expect(query.where).toHaveBeenCalledWith('usuario.empresa_id = :empresaId', { empresaId: 4 });
+    expect(query.andWhere).toHaveBeenCalledWith('usuario.role = :role', { role: Role.USER });
+    expect(query.skip).toHaveBeenCalledWith(25);
+    expect(query.take).toHaveBeenCalledWith(25);
+  });
+});

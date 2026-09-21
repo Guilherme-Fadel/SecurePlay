@@ -29,6 +29,14 @@ export interface ConvitePublico {
   expires_at: string;
 }
 
+export interface ApelidosPendentesPaginados {
+  items: UsuarioEmpresa[];
+  page: number;
+  pageSize: number;
+  total: number;
+  totalPages: number;
+}
+
 function empresaPath(empresaId?: number) {
   return empresaId
     ? `/platform/admin/empresas/${empresaId}`
@@ -37,6 +45,19 @@ function empresaPath(empresaId?: number) {
 
 export async function listarUsuarios(empresaId?: number): Promise<UsuarioEmpresa[]> {
   const response = await api.get(`${empresaPath(empresaId)}/usuarios`);
+  return response.data;
+}
+
+export async function listarApelidosPendentes(
+  options: { page: number; pageSize?: number; search?: string },
+  empresaId?: number,
+): Promise<ApelidosPendentesPaginados> {
+  const params = new URLSearchParams({
+    page: String(options.page),
+    pageSize: String(options.pageSize ?? 25),
+  });
+  if (options.search?.trim()) params.set('search', options.search.trim());
+  const response = await api.get(`${empresaPath(empresaId)}/apelidos-pendentes?${params}`);
   return response.data;
 }
 

@@ -37,17 +37,57 @@ export class ConvitesService {
       order: { name: 'ASC' },
     });
 
-    return usuarios.map((usuario) => ({
-      id: usuario.id,
-      name: usuario.name,
-      email: usuario.email,
-      role: usuario.role,
-      level: usuario.level,
-      active: usuario.active,
-      nickname: usuario.nickname,
-      nickname_pending: usuario.nickname_pending,
-      nickname_request_status: usuario.nickname_request_status,
-    }));
+    return usuarios.map((usuario) => this.toUsuarioResumo(usuario));
+  }
+
+  async listarApelidosPendentes(
+    userId: number,
+    filtros: { page?: number; pageSize?: number; search?: string },
+  ) {
+    const empresa = await this.getEmpresaDoAdministrador(userId);
+    return this.listarApelidosPendentesDaEmpresa(empresa.id, filtros);
+  }
+
+  async listarApelidosPendentesDaEmpresa(
+    empresaId: number,
+    filtros: { page?: number; pageSize?: number; search?: string },
+  ) {
+    const page = Number.isFinite(filtros.page)
+      ? Math.max(1, Math.floor(filtros.page as number))
+      : 1;
+    const pageSize = Number.isFinite(filtros.pageSize)
+      ? Math.min(100, Math.max(10, Math.floor(filtros.pageSize as number)))
+      : 25;
+    const search = filtros.search?.trim().slice(0, 100);
+    const query = this.usuarioRepository
+      .createQueryBuilder('usuario')
+      .where('usuario.empresa_id = :empresaId', { empresaId })
+      .andWhere('usuario.role = :role', { role: Role.USER })
+      .andWhere('usuario.nickname_request_status = :status', {
+        status: 'pending',
+      })
+      .andWhere('usuario.nickname_pending IS NOT NULL');
+
+    if (search) {
+      query.andWhere(
+        '(usuario.name LIKE :search OR usuario.email LIKE :search OR usuario.nickname_pending LIKE :search)',
+        { search: `%${search}%` },
+      );
+    }
+
+    const [usuarios, total] = await query
+      .orderBy('usuario.id', 'DESC')
+      .skip((page - 1) * pageSize)
+      .take(pageSize)
+      .getManyAndCount();
+
+    return {
+      items: usuarios.map((usuario) => this.toUsuarioResumo(usuario)),
+      page,
+      pageSize,
+      total,
+      totalPages: Math.ceil(total / pageSize),
+    };
   }
 
   async criar(userId: number, dto: CreateConviteDto) {

@@ -26,6 +26,7 @@ import { AppButton } from "@/components/ui/buttons/AppButton";
 import { InfoCard } from "@/components/ui/visuals/InfoCard";
 import { AppSectionHeader } from "@/components/ui/visuals/AppSectionHeader";
 import { UserManagementTab } from "@/components/admin/UserManagementTab";
+import { PendingNicknamesTab } from "@/components/admin/PendingNicknamesTab";
 import { CompanyManagementTab } from "@/components/admin/CompanyManagementTab";
 import { CompanyParametersTab } from "@/components/admin/CompanyParametersTab";
 import { AdminThemePreview } from "@/components/admin/AdminThemePreview";
@@ -88,7 +89,7 @@ const Admin = forwardRef<AdminSaveHandle, AdminProps>(function Admin(
   const generation = useRef(0);
   const logoPreviewObjectUrlRef = useRef<string | null>(null);
   const [activeTab, setActiveTab] = useState<
-    "empresas" | "usuarios" | "layout" | "funcionalidades"
+    "empresas" | "usuarios" | "apelidos" | "layout" | "funcionalidades"
   >(initialTab);
   const [empresas, setEmpresas] = useState<EmpresaAdministravel[]>([]);
   const [empresaSelecionadaId, setEmpresaSelecionadaId] = useState<
@@ -450,6 +451,17 @@ const Admin = forwardRef<AdminSaveHandle, AdminProps>(function Admin(
                 </button>
                 <button
                   type="button"
+                  onClick={() => setActiveTab("apelidos")}
+                  className={cn(
+                    "admin-tab",
+                    activeTab === "apelidos" && "is-active",
+                  )}
+                >
+                  <CheckCircle2 size={17} />
+                  <span>Apelidos pendentes</span>
+                </button>
+                <button
+                  type="button"
                   onClick={() => setActiveTab("layout")}
                   className={cn(
                     "admin-tab",
@@ -500,6 +512,13 @@ const Admin = forwardRef<AdminSaveHandle, AdminProps>(function Admin(
                     platformMode ? empresaSelecionada?.nome : undefined
                   }
                   podeCriarAdministrador={platformMode}
+                />
+              ) : activeTab === "apelidos" ? (
+                <PendingNicknamesTab
+                  empresaId={empresaAlvoId}
+                  empresaNome={
+                    platformMode ? empresaSelecionada?.nome : undefined
+                  }
                 />
               ) : (
                 <motion.div

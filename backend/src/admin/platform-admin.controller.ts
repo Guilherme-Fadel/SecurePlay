@@ -6,6 +6,7 @@ import {
   ParseIntPipe,
   Post,
   Put,
+  Query,
   Request,
 } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
@@ -114,6 +115,20 @@ export class PlatformAdminController {
     @Param('empresaId', ParseIntPipe) empresaId: number,
   ) {
     return this.convitesService.listarUsuariosDaEmpresa(empresaId);
+  }
+
+  @Get('empresas/:empresaId/apelidos-pendentes')
+  async listarApelidosPendentesDaEmpresa(
+    @Param('empresaId', ParseIntPipe) empresaId: number,
+    @Query('page') page?: string,
+    @Query('pageSize') pageSize?: string,
+    @Query('search') search?: string,
+  ) {
+    return this.convitesService.listarApelidosPendentesDaEmpresa(empresaId, {
+      page: Number(page),
+      pageSize: Number(pageSize),
+      search,
+    });
   }
 
   @Get('empresas/:empresaId/convites')

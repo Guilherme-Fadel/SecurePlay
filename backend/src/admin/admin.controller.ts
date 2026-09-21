@@ -6,6 +6,7 @@ import {
   Body,
   Request,
   Param,
+  Query,
 } from '@nestjs/common';
 import { AdminService } from './admin.service';
 import { ConvitesService } from './convites.service';
@@ -48,6 +49,20 @@ export class AdminController {
   @Get('usuarios')
   async listarUsuarios(@Request() req: any) {
     return this.convitesService.listarUsuarios(req.user.userId);
+  }
+
+  @Get('apelidos-pendentes')
+  async listarApelidosPendentes(
+    @Request() req: any,
+    @Query('page') page?: string,
+    @Query('pageSize') pageSize?: string,
+    @Query('search') search?: string,
+  ) {
+    return this.convitesService.listarApelidosPendentes(req.user.userId, {
+      page: Number(page),
+      pageSize: Number(pageSize),
+      search,
+    });
   }
 
   @Get('convites')
