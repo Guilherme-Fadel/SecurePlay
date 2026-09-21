@@ -29,6 +29,7 @@ import { UserManagementTab } from "@/components/admin/UserManagementTab";
 import { PendingNicknamesTab } from "@/components/admin/PendingNicknamesTab";
 import { InvitationManagementTab } from "@/components/admin/InvitationManagementTab";
 import { AdminOverviewTab } from "@/components/admin/AdminOverviewTab";
+import { AuditTab } from "@/components/admin/AuditTab";
 import { CompanyManagementTab } from "@/components/admin/CompanyManagementTab";
 import { CompanyParametersTab } from "@/components/admin/CompanyParametersTab";
 import { AdminThemePreview } from "@/components/admin/AdminThemePreview";
@@ -37,6 +38,7 @@ import { optimizeImageUpload } from "@/lib/optimizeImageUpload";
 import {
   ArrowLeft,
   BarChart3,
+  ClipboardList,
   Building2,
   CheckCircle2,
   Link2,
@@ -93,7 +95,7 @@ const Admin = forwardRef<AdminSaveHandle, AdminProps>(function Admin(
   const generation = useRef(0);
   const logoPreviewObjectUrlRef = useRef<string | null>(null);
   const [activeTab, setActiveTab] = useState<
-    "empresas" | "visao-geral" | "usuarios" | "apelidos" | "convites" | "layout" | "funcionalidades"
+    "empresas" | "visao-geral" | "usuarios" | "apelidos" | "convites" | "auditoria" | "layout" | "funcionalidades"
   >(initialTab);
   const [empresas, setEmpresas] = useState<EmpresaAdministravel[]>([]);
   const [empresaSelecionadaId, setEmpresaSelecionadaId] = useState<
@@ -472,6 +474,10 @@ const Admin = forwardRef<AdminSaveHandle, AdminProps>(function Admin(
                   <Link2 size={17} />
                   <span>Convites</span>
                 </button>
+                {platformMode && <button type="button" onClick={() => setActiveTab("auditoria")} className={cn("admin-tab", activeTab === "auditoria" && "is-active")}>
+                  <ClipboardList size={17} />
+                  <span>Auditoria</span>
+                </button>}
                 <button
                   type="button"
                   onClick={() => setActiveTab("layout")}
@@ -537,6 +543,8 @@ const Admin = forwardRef<AdminSaveHandle, AdminProps>(function Admin(
                 />
               ) : activeTab === "convites" ? (
                 <InvitationManagementTab empresaId={empresaAlvoId} empresaNome={platformMode ? empresaSelecionada?.nome : undefined} podeCriarAdministrador={platformMode} />
+              ) : activeTab === "auditoria" && platformMode ? (
+                <AuditTab empresaId={empresaAlvoId} empresaNome={empresaSelecionada?.nome} />
               ) : (
                 <motion.div
                   initial={{ opacity: 0, y: 14 }}

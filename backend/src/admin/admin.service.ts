@@ -127,6 +127,52 @@ export class AdminService {
     }));
   }
 
+  async listarAuditoriaDaEmpresa(
+    empresaId: number,
+    filtros: { page?: number; pageSize?: number },
+  ) {
+    const page = Number.isFinite(filtros.page)
+      ? Math.max(1, Math.floor(filtros.page as number))
+      : 1;
+    const pageSize = Number.isFinite(filtros.pageSize)
+      ? Math.min(100, Math.max(10, Math.floor(filtros.pageSize as number)))
+      : 25;
+    const [registros, total] = await this.dataSource
+      .getRepository(EmpresaParametrosAudit)
+      .findAndCount({
+        where: { empresa_id: empresaId },
+        relations: ['alterado_por'],
+        order: { created_at: 'DESC', id: 'DESC' },
+        skip: (page - 1) * pageSize,
+        take: pageSize,
+      });
+
+    return {
+      items: registros.map((registro) => ({
+        id: registro.id,
+        created_at: registro.created_at,
+        alterado_por: registro.alterado_por
+          ? {
+              id: registro.alterado_por.id,
+              name: registro.alterado_por.name,
+              email: registro.alterado_por.email,
+            }
+          : null,
+        configuracoes_alteradas: Object.keys(registro.atual).filter(
+          (key) =>
+            JSON.stringify(registro.atual[key as keyof typeof registro.atual]) !==
+            JSON.stringify(
+              registro.anterior[key as keyof typeof registro.anterior],
+            ),
+        ).length,
+      })),
+      page,
+      pageSize,
+      total,
+      totalPages: Math.ceil(total / pageSize),
+    };
+  }
+
   async getTemaDaEmpresa(empresaId: number) {
     return this.toTema(await this.getEmpresa(empresaId));
   }

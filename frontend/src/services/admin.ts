@@ -17,6 +17,21 @@ export interface EmpresaCriadaComAdministrador {
   token: string;
 }
 
+export interface RegistroAuditoriaEmpresa {
+  id: number;
+  created_at: string;
+  alterado_por: { id: number; name: string; email: string } | null;
+  configuracoes_alteradas: number;
+}
+
+export interface AuditoriaPaginada {
+  items: RegistroAuditoriaEmpresa[];
+  page: number;
+  pageSize: number;
+  total: number;
+  totalPages: number;
+}
+
 function empresaPath(empresaId?: number) {
   return empresaId ? `/platform/admin/empresas/${empresaId}` : "/admin/empresa";
 }
@@ -43,6 +58,15 @@ export async function getCompanyParameters(
   empresaId?: number,
 ): Promise<CompanyParameters> {
   const response = await api.get(`${empresaPath(empresaId)}/parametros`);
+  return response.data;
+}
+
+export async function listarAuditoriaEmpresa(
+  empresaId: number,
+  page: number,
+): Promise<AuditoriaPaginada> {
+  const params = new URLSearchParams({ page: String(page), pageSize: '25' });
+  const response = await api.get(`/platform/admin/empresas/${empresaId}/auditoria?${params}`);
   return response.data;
 }
 

@@ -67,6 +67,18 @@ export class PlatformAdminController {
     return this.adminService.getParametrosDaEmpresa(empresaId);
   }
 
+  @Get('empresas/:empresaId/auditoria')
+  async listarAuditoriaDaEmpresa(
+    @Param('empresaId', ParseIntPipe) empresaId: number,
+    @Query('page') page?: string,
+    @Query('pageSize') pageSize?: string,
+  ) {
+    return this.adminService.listarAuditoriaDaEmpresa(empresaId, {
+      page: Number(page),
+      pageSize: Number(pageSize),
+    });
+  }
+
   @Put('empresas/:empresaId/parametros')
   async updateParametros(
     @Param('empresaId', ParseIntPipe) empresaId: number,
