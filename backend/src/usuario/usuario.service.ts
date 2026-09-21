@@ -46,6 +46,9 @@ export class UsuarioService {
       userId: usuario.id,
       name: usuario.name,
       email: usuario.email,
+      birth_date: usuario.birth_date,
+      email_verified_at: usuario.email_verified_at,
+      trial_ends_at: usuario.trial_ends_at,
       level: usuario.level,
       role: usuario.role,
       empresa_id: usuario.empresa_id ?? null,
@@ -56,9 +59,14 @@ export class UsuarioService {
         usuario.role === Role.PLATFORM_ADMIN
           ? platformAdminParameters()
           : usuario.empresa
-            ? resolveCompanyParameters(
-                usuario.empresa.parametros_funcionalidades,
-              )
+            ? {
+                ...resolveCompanyParameters(
+                  usuario.empresa.parametros_funcionalidades,
+                ),
+                ...(usuario.trial_started_at
+                  ? { rankingEnabled: false, globalRankingEnabled: false }
+                  : {}),
+              }
             : noCompanyParameters(),
       nickname: usuario.nickname,
       nickname_pending: usuario.nickname_pending,

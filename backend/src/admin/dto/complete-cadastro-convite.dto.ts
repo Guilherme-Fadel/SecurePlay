@@ -6,9 +6,9 @@ import {
   MaxLength,
   MinLength,
 } from 'class-validator';
-import { IsSecurePassword } from '../../common/validators/password.validator';
+import { BirthDateDto } from '../../registration/dto/birth-date.dto';
 
-export class CompleteCadastroConviteDto {
+export class CompleteCadastroConviteDto extends BirthDateDto {
   @IsString()
   @MinLength(3)
   name: string;
@@ -25,6 +25,4 @@ export class CompleteCadastroConviteDto {
   })
   nickname?: string;
 
-  @IsSecurePassword()
-  password: string;
 }

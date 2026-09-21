@@ -4,6 +4,7 @@ import {
   PrimaryGeneratedColumn,
   ManyToOne,
   JoinColumn,
+  Index,
 } from 'typeorm';
 import { Role } from '../auth/roles.enum';
 import { Empresa } from '../empresa/empresa.entity';
@@ -29,7 +30,20 @@ export class Usuario {
   profile_image_key: string | null;
 
   @Column({ length: 100 })
+  @Index('ux_usuario_email', { unique: true })
   email: string;
+
+  @Column({ type: 'date', nullable: true })
+  birth_date: string | null;
+
+  @Column({ type: 'datetime', nullable: true })
+  email_verified_at: Date | null;
+
+  @Column({ type: 'datetime', nullable: true })
+  trial_started_at: Date | null;
+
+  @Column({ type: 'datetime', nullable: true })
+  trial_ends_at: Date | null;
 
   @Column({ length: 255 })
   password: string;

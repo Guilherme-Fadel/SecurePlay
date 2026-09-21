@@ -4,6 +4,7 @@ import {
   PrimaryGeneratedColumn,
   CreateDateColumn,
   UpdateDateColumn,
+  Index,
 } from 'typeorm';
 import type { CompanyParameters } from '../config/features';
 
@@ -14,6 +15,10 @@ export class Empresa {
 
   @Column({ length: 100 })
   nome: string;
+
+  @Column({ type: 'varchar', length: 32, nullable: true })
+  @Index('ux_empresa_system_key', { unique: true })
+  system_key: string | null;
 
   @Column({ type: 'json', nullable: true })
   parametros_funcionalidades: CompanyParameters | null;

@@ -9,9 +9,10 @@ import { empresaProviders } from '../empresa/empresa.providers';
 import { usuarioProviders } from '../usuario/usuario.providers';
 import { DatabaseModule } from '../database/database.molule';
 import { S3Service } from '../conteudo/s3/s3.service';
+import { RegistrationModule } from '../registration/registration.module';
 
 @Module({
-  imports: [DatabaseModule],
+  imports: [DatabaseModule, RegistrationModule],
   controllers: [AdminController, ConvitesController, PlatformAdminController],
   providers: [
     ...empresaProviders,

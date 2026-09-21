@@ -21,9 +21,12 @@ export class CompanyFeaturesService {
       relations: ['empresa'],
     });
     if (usuario?.role === Role.PLATFORM_ADMIN) return platformAdminParameters();
-    return usuario?.empresa
+    const parameters = usuario?.empresa
       ? resolveCompanyParameters(usuario.empresa.parametros_funcionalidades)
       : noCompanyParameters();
+    return usuario?.trial_started_at
+      ? { ...parameters, rankingEnabled: false, globalRankingEnabled: false }
+      : parameters;
   }
 
   async requireFeature(userId: number, feature: FeatureName) {

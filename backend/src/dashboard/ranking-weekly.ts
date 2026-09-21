@@ -161,7 +161,11 @@ export async function loadRankingWeek(options: {
               (options.seasonPoints.get(item.usuario_id) ?? 0) >
               (options.seasonPoints.get(entry.usuario_id) ?? 0),
           ).length + 1,
-        name: entry.usuario?.nickname ?? entry.usuario?.name ?? 'Aventureiro',
+        name:
+          entry.usuario?.nickname ??
+          (entry.usuario_id === options.currentUserId
+            ? (entry.usuario?.name ?? 'Você')
+            : `Aventureiro ${entry.usuario_id}`),
         points: options.seasonPoints.get(entry.usuario_id) ?? 0,
         level: calcLevel(entry.total_points),
         companyName: entry.usuario?.empresa?.nome ?? null,

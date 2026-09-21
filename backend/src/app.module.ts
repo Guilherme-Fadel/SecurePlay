@@ -23,6 +23,9 @@ import { AppThrottlerGuard } from './common/security/app-throttler.guard';
 import { CsrfGuard } from './auth/csrf.guard';
 import { FeatureGuard } from './common/features/feature.guard';
 import { CompanyFeaturesModule } from './common/features/company-features.module';
+import { RegistrationModule } from './registration/registration.module';
+import { TrialAccessGuard } from './registration/trial-access.guard';
+import { DatabaseModule } from './database/database.molule';
 
 @Module({
   imports: [
@@ -40,6 +43,7 @@ import { CompanyFeaturesModule } from './common/features/company-features.module
       }),
     }),
     RedisModule,
+    DatabaseModule,
     AuthModule,
     UsuarioModule,
     BenefitsModule,
@@ -50,6 +54,7 @@ import { CompanyFeaturesModule } from './common/features/company-features.module
     ArcadeModule,
     AdminModule,
     CompanyFeaturesModule,
+    RegistrationModule,
     AchievementsModule,
     ConfigModule.forRoot({
       isGlobal: true,
@@ -64,6 +69,10 @@ import { CompanyFeaturesModule } from './common/features/company-features.module
     {
       provide: APP_GUARD,
       useClass: RolesGuard,
+    },
+    {
+      provide: APP_GUARD,
+      useClass: TrialAccessGuard,
     },
     {
       provide: APP_GUARD,

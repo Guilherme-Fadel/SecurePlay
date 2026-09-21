@@ -15,6 +15,7 @@ import { UsuarioService } from 'src/usuario/usuario.service';
 import { Public } from './public.decorator';
 import { Throttle } from '@nestjs/throttler';
 import { ChangePasswordDto } from './dto/change-password.dto';
+import { AllowExpiredTrial } from '../registration/trial-access.guard';
 
 @Controller('auth')
 export class AuthController {
@@ -46,6 +47,7 @@ export class AuthController {
   }
 
   @Post('logout')
+  @AllowExpiredTrial()
   @HttpCode(HttpStatus.OK)
   async signOut(
     @Request() req: any,
@@ -60,6 +62,7 @@ export class AuthController {
   }
 
   @Get(['me', 'token'])
+  @AllowExpiredTrial()
   async me(@Request() req: any, @Response({ passthrough: true }) res: any) {
     res.header('Cache-Control', 'private, no-store');
     return this.usuarioService.getUsuarioDados(req.user.userId);

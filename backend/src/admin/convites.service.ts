@@ -1,19 +1,18 @@
 import {
   BadRequestException,
-  ForbiddenException,
   Inject,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
 import { createHash, randomBytes } from 'crypto';
-import * as bcrypt from 'bcrypt';
-import { DataSource, Repository } from 'typeorm';
+import { Repository } from 'typeorm';
 import { Empresa } from '../empresa/empresa.entity';
 import { Role } from '../auth/roles.enum';
 import { Usuario } from '../usuario/usuario.entity';
 import { CompleteCadastroConviteDto } from './dto/complete-cadastro-convite.dto';
 import { CreateConviteDto } from './dto/create-convite.dto';
 import { Convite } from './entities/convite.entity';
+import { RegistrationService } from '../registration/registration.service';
 
 @Injectable()
 export class ConvitesService {
@@ -24,8 +23,7 @@ export class ConvitesService {
     private readonly usuarioRepository: Repository<Usuario>,
     @Inject('EMPRESA_REPOSITORY')
     private readonly empresaRepository: Repository<Empresa>,
-    @Inject('DATA_SOURCE')
-    private readonly dataSource: DataSource,
+    private readonly registrationService: RegistrationService,
   ) {}
 
   async listarUsuarios(userId: number) {
@@ -62,7 +60,12 @@ export class ConvitesService {
     dto: CreateConviteDto,
     role: Role = Role.USER,
   ) {
-    await this.getEmpresa(empresaId);
+    const empresa = await this.getEmpresa(empresaId);
+    if (empresa.system_key === 'free_trial') {
+      throw new BadRequestException(
+        'A empresa do teste gratuito não aceita convites',
+      );
+    }
     const email = dto.email?.trim().toLowerCase() || null;
     const roleDoConvite = role === Role.ADMIN ? Role.ADMIN : Role.USER;
 
@@ -139,55 +142,7 @@ export class ConvitesService {
   }
 
   async completarCadastro(token: string, dto: CompleteCadastroConviteDto) {
-    const hash = this.hashToken(token);
-    const email = dto.email.trim().toLowerCase();
-
-    await this.dataSource.transaction(async (manager) => {
-      const convite = await manager
-        .getRepository(Convite)
-        .createQueryBuilder('convite')
-        .setLock('pessimistic_write')
-        .where('convite.token_hash = :hash', { hash })
-        .getOne();
-
-      if (!convite || !this.estaValido(convite)) {
-        throw new ForbiddenException('Este convite não está mais disponível');
-      }
-
-      if (convite.email && convite.email !== email) {
-        throw new ForbiddenException(
-          'Use o e-mail para o qual este convite foi criado',
-        );
-      }
-
-      const usuarioRepository = manager.getRepository(Usuario);
-      if (await usuarioRepository.findOne({ where: { email } })) {
-        throw new BadRequestException(
-          'Este e-mail já possui um acesso cadastrado',
-        );
-      }
-
-      const usuario = usuarioRepository.create({
-        name: dto.name.trim(),
-        email,
-        password: await bcrypt.hash(dto.password, 10),
-        empresa_id: convite.empresa_id,
-        role: convite.role === Role.ADMIN ? Role.ADMIN : Role.USER,
-        nickname_pending: dto.nickname?.trim().replace(/\s+/g, ' ') || null,
-        nickname_request_status: dto.nickname ? 'pending' : 'none',
-      });
-      await usuarioRepository.save(usuario);
-
-      convite.uses += 1;
-      await manager.getRepository(Convite).save(convite);
-    });
-
-    return {
-      sucesso: true,
-      mensagem: dto.nickname
-        ? 'Cadastro concluído. Seu apelido será revisado pelo administrador da turma.'
-        : 'Cadastro concluído. Você já pode entrar na plataforma.',
-    };
+    return this.registrationService.startInvite(token, dto);
   }
 
   async aprovarApelido(userId: number, usuarioId: number) {
