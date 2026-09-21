@@ -71,7 +71,10 @@ export class DashboardService {
     usuario_id: number,
     requestedScope: 'global' | 'company' = 'global',
     includeWeekly = true,
+    options: { includeImages?: boolean; includeEntries?: boolean } = {},
   ) {
+    const includeImages = options.includeImages ?? true;
+    const includeEntries = options.includeEntries ?? true;
     const parameters = await this.companyFeatures.requireFeature(
       usuario_id,
       'ranking',
@@ -87,10 +90,11 @@ export class DashboardService {
     const companyAvailable = !!company;
     const isPlatformAdmin = currentEntry?.usuario?.role === Role.PLATFORM_ADMIN;
     const globalRankingEnabled = isFeatureEnabled(parameters, 'globalRanking');
+    const trialUser = !!currentEntry?.usuario?.trial_started_at;
     const scope =
       requestedScope === 'company' && companyAvailable
         ? 'company'
-        : globalRankingEnabled
+        : globalRankingEnabled && !trialUser
           ? 'global'
           : 'company';
     const applyScope = (
@@ -106,6 +110,7 @@ export class DashboardService {
           WHERE ranking_empresa.id = u.empresa_id
           AND JSON_UNQUOTE(JSON_EXTRACT(ranking_empresa.parametros_funcionalidades, '$.globalRankingEnabled')) = 'true'
           AND COALESCE(JSON_UNQUOTE(JSON_EXTRACT(ranking_empresa.parametros_funcionalidades, '$.rankingEnabled')), 'true') = 'true'
+          AND u.trial_started_at IS NULL
         )`);
       }
       return query;
@@ -130,34 +135,36 @@ export class DashboardService {
       .slice(0, 50);
     let previousPoints: number | null = null;
     let previousPosition = 0;
-    const leaderboard = await Promise.all(
-      leaderboardEntries.map(async (entry, index) => {
-        const points = seasonPoints.get(entry.usuario_id) ?? 0;
-        if (previousPoints === null || points < previousPoints) {
-          previousPosition = index + 1;
-          previousPoints = points;
-        }
-        return {
-          id: entry.usuario_id,
-          position: previousPosition,
-          name:
-            entry.usuario_id === usuario_id
-              ? (currentEntry?.usuario?.nickname ??
-                currentEntry?.usuario?.name ??
-                'Você')
-              : (entry.usuario?.nickname ??
-                entry.usuario?.name ??
-                `Aventureiro ${index + 1}`),
-          points,
-          level: calcLevel(entry.total_points),
-          companyName: null,
-          isCurrentUser: entry.usuario_id === usuario_id,
-          profileImageUrl: await this.resolveProfileImageUrl(
-            entry.usuario?.profile_image_key,
-          ),
-        };
-      }),
-    );
+    const leaderboard = includeEntries
+      ? await Promise.all(
+          leaderboardEntries.map(async (entry, index) => {
+            const points = seasonPoints.get(entry.usuario_id) ?? 0;
+            if (previousPoints === null || points < previousPoints) {
+              previousPosition = index + 1;
+              previousPoints = points;
+            }
+            return {
+              id: entry.usuario_id,
+              position: previousPosition,
+              name:
+                entry.usuario_id === usuario_id
+                  ? (currentEntry?.usuario?.nickname ??
+                    currentEntry?.usuario?.name ??
+                    'Você')
+                  : (entry.usuario?.nickname ?? `Aventureiro ${entry.usuario_id}`),
+              points,
+              level: calcLevel(entry.total_points),
+              companyName: null,
+              isCurrentUser: entry.usuario_id === usuario_id,
+              profileImageUrl: includeImages
+                ? await this.resolveProfileImageUrl(
+                    entry.usuario?.profile_image_key,
+                )
+              : null,
+            };
+          }),
+        )
+      : [];
     const currentSeasonPoints = seasonPoints.get(usuario_id) ?? 0;
     const currentPosition =
       allStats.filter(
@@ -196,9 +203,11 @@ export class DashboardService {
       level: calcLevel(currentStats.total_points),
       companyName: company?.nome ?? null,
       isCurrentUser: true,
-      profileImageUrl: await this.resolveProfileImageUrl(
-        currentEntry?.usuario?.profile_image_key,
-      ),
+      profileImageUrl: includeImages
+        ? await this.resolveProfileImageUrl(
+            currentEntry?.usuario?.profile_image_key,
+          )
+        : null,
     };
     let weekly = unavailableRankingWeek();
     if (includeWeekly) {
@@ -256,7 +265,10 @@ export class DashboardService {
     const parameters = await this.companyFeatures.forUser(usuario_id);
     const globalRankingEnabled = isFeatureEnabled(parameters, 'globalRanking');
     const ranking = globalRankingEnabled
-      ? await this.getRanking(usuario_id, 'global', false)
+      ? await this.getRanking(usuario_id, 'global', false, {
+          includeImages: false,
+          includeEntries: false,
+        })
       : null;
     const totalUsers = ranking?.totalParticipants ?? null;
     const globalRanking = ranking?.currentUser.position ?? null;
