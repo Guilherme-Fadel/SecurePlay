@@ -1,5 +1,5 @@
 import { api } from '@/services/api';
-import type { CurrentUser } from '@/services/me';
+import { getMe, type CurrentUser } from '@/services/me';
 
 export interface LoginResult {
   sucesso: boolean;
@@ -20,11 +20,20 @@ export async function loginService(
   try {
 
     const response = await api.post('/auth/login', { email, password });
+    let user: CurrentUser;
+    try {
+      user = await getMe();
+    } catch {
+      return {
+        sucesso: false,
+        mensagem: 'Não foi possível confirmar sua sessão. Tente novamente. Se o problema continuar, entre em contato com o suporte.',
+      };
+    }
     return {
       sucesso: true,
       mensagem: response.data.message ?? 'Login realizado',
       nome: response.data.nome,
-      user: response.data.user,
+      user,
     };
 
   } catch (error: any) {

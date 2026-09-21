@@ -4,6 +4,7 @@
   "version": "0.0.1",
   "type": "module",
   "scripts": {
+    "test:api-proxy": "node --test scripts/test-api-proxy.mjs",
     "build": "vite build",
     "prebuild": "npm run check:assets && npm run typecheck",
     "check:assets": "node scripts/check-assets.cjs",
