@@ -57,7 +57,7 @@ export class AuthService {
 
     const user = await this.usuarioService.getUsuarioByEmail(email);
 
-    if (!user) {
+    if (!user || !user.active) {
       throw new UnauthorizedException('Usuário ou senha inválidos');
     }
 

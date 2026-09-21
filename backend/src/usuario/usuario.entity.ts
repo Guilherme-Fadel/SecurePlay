@@ -51,6 +51,9 @@ export class Usuario {
   @Column({ default: 1 })
   level: number;
 
+  @Column({ default: true })
+  active: boolean;
+
   @Column({ type: 'varchar', length: 20, default: 'user' })
   role: Role;
 

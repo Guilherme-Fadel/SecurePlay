@@ -121,6 +121,7 @@ export class AdminService {
       email: usuario.email,
       role: usuario.role,
       level: usuario.level,
+      active: usuario.active,
       empresa_id: usuario.empresa_id ?? null,
       empresa_nome: usuario.empresa?.nome ?? null,
     }));

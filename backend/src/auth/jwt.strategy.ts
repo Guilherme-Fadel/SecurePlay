@@ -3,6 +3,7 @@ import { PassportStrategy } from '@nestjs/passport';
 import { Strategy } from 'passport-jwt';
 import { Role } from './roles.enum';
 import { Request } from 'express';
+import { UsuarioService } from '../usuario/usuario.service';
 
 function extractFromCookieOrHeader(req: Request): string | null {
   if (req.cookies?.token) {
@@ -18,7 +19,7 @@ function extractFromCookieOrHeader(req: Request): string | null {
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
-  constructor() {
+  constructor(private readonly usuarioService: UsuarioService) {
     const secret = process.env.JWT_SECRET?.trim();
     if (!secret || secret.length < 32) {
       throw new Error(
@@ -34,14 +35,15 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
   }
 
   async validate(payload: any) {
+    const usuario = await this.usuarioService.getUsuarioById(payload.sub);
     const validRoles = Object.values(Role);
-    if (!payload.role || !validRoles.includes(payload.role)) {
+    if (!usuario?.active || !validRoles.includes(usuario.role)) {
       throw new UnauthorizedException('Ocorreu um erro inesperado');
     }
     return {
-      userId: payload.sub,
-      email: payload.email,
-      role: payload.role,
+      userId: usuario.id,
+      email: usuario.email,
+      role: usuario.role,
     };
   }
 }

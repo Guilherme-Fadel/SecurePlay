@@ -260,7 +260,7 @@ export function Perfil() {
               </div>
               <div className="profile-identity-meta">
                 <span><Building2 size={14} /> {companyName}</span>
-                <span><BadgeCheck size={14} /> Conta ativa</span>
+                <span><BadgeCheck size={14} /> {user?.active === false ? 'Conta inativa' : 'Conta ativa'}</span>
               </div>
               <div className="profile-email-line">
                 <Mail size={14} />

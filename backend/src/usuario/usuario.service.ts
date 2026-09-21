@@ -50,6 +50,7 @@ export class UsuarioService {
       email_verified_at: usuario.email_verified_at,
       trial_ends_at: usuario.trial_ends_at,
       level: usuario.level,
+      active: usuario.active,
       role: usuario.role,
       empresa_id: usuario.empresa_id ?? null,
       empresa_paleta: usuario.empresa?.paleta || null,

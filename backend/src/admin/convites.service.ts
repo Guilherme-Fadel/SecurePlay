@@ -43,6 +43,7 @@ export class ConvitesService {
       email: usuario.email,
       role: usuario.role,
       level: usuario.level,
+      active: usuario.active,
       nickname: usuario.nickname,
       nickname_pending: usuario.nickname_pending,
       nickname_request_status: usuario.nickname_request_status,
@@ -190,6 +191,28 @@ export class ConvitesService {
     return this.toUsuarioResumo(usuario);
   }
 
+  async inativarUsuario(userId: number, usuarioId: number) {
+    const empresa = await this.getEmpresaDoAdministrador(userId);
+    return this.inativarUsuarioDaEmpresa(empresa.id, userId, usuarioId);
+  }
+
+  async inativarUsuarioDaEmpresa(
+    empresaId: number,
+    atorId: number,
+    usuarioId: number,
+  ) {
+    const usuario = await this.getUsuarioDaEmpresa(empresaId, usuarioId);
+    return this.inativar(usuario, atorId);
+  }
+
+  async inativarUsuarioGlobal(atorId: number, usuarioId: number) {
+    const usuario = await this.usuarioRepository.findOne({
+      where: { id: usuarioId },
+    });
+    if (!usuario) throw new NotFoundException('Usuário não encontrado');
+    return this.inativar(usuario, atorId);
+  }
+
   private async getEmpresaDoAdministrador(userId: number) {
     const usuario = await this.usuarioRepository.findOne({
       where: { id: userId },
@@ -227,10 +250,29 @@ export class ConvitesService {
       email: usuario.email,
       role: usuario.role,
       level: usuario.level,
+      active: usuario.active,
       nickname: usuario.nickname,
       nickname_pending: usuario.nickname_pending,
       nickname_request_status: usuario.nickname_request_status,
     };
+  }
+
+  private async inativar(usuario: Usuario, atorId: number) {
+    if (usuario.id === atorId) {
+      throw new BadRequestException('Você não pode inativar a própria conta');
+    }
+    if (usuario.role === Role.PLATFORM_ADMIN) {
+      throw new BadRequestException(
+        'Contas de administrador da plataforma não podem ser inativadas aqui',
+      );
+    }
+    if (!usuario.active) {
+      throw new BadRequestException('Este usuário já está inativo');
+    }
+
+    usuario.active = false;
+    await this.usuarioRepository.save(usuario);
+    return this.toUsuarioResumo(usuario);
   }
 
   private async getConviteValido(token: string, incluirEmpresa = false) {

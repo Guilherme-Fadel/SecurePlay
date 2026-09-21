@@ -17,6 +17,7 @@ export interface CurrentUser {
   email_verified_at: string | null;
   trial_ends_at: string | null;
   level: number;
+  active: boolean;
   role: string;
   empresa_id: number | null;
   empresa_paleta: EmpresaPaleta | null;

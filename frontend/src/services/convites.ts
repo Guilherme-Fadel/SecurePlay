@@ -17,6 +17,7 @@ export interface UsuarioEmpresa {
   email: string;
   role: string;
   level: number;
+  active: boolean;
   nickname: string | null;
   nickname_pending: string | null;
   nickname_request_status: 'none' | 'pending' | 'approved' | 'rejected';
@@ -74,5 +75,10 @@ export async function aprovarApelido(usuarioId: number, empresaId?: number): Pro
 
 export async function rejeitarApelido(usuarioId: number, empresaId?: number): Promise<UsuarioEmpresa> {
   const response = await api.post(`${empresaPath(empresaId)}/usuarios/${usuarioId}/apelido/rejeitar`);
+  return response.data;
+}
+
+export async function inativarUsuario(usuarioId: number, empresaId?: number): Promise<UsuarioEmpresa> {
+  const response = await api.post(`${empresaPath(empresaId)}/usuarios/${usuarioId}/inativar`);
   return response.data;
 }

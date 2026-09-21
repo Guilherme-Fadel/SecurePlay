@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
-import { AlertCircle, Check, CheckCircle2, Copy, Link2, Plus, QrCode, Trash2, UsersRound, X } from 'lucide-react';
+import { AlertCircle, Ban, Check, CheckCircle2, Copy, Link2, Plus, QrCode, Trash2, UsersRound, X } from 'lucide-react';
 import { AppButton } from '@/components/ui/buttons/AppButton';
 import { cn } from '@/lib/utils';
-import { aprovarApelido, criarConvite, listarConvites, listarUsuarios, rejeitarApelido, revogarConvite, type Convite, type UsuarioEmpresa } from '@/services/convites';
+import { aprovarApelido, criarConvite, inativarUsuario, listarConvites, listarUsuarios, rejeitarApelido, revogarConvite, type Convite, type UsuarioEmpresa } from '@/services/convites';
+import { useCurrentUser } from '@/hooks/useCurrentUser';
 
 function formatDate(value: string) {
   return new Intl.DateTimeFormat('pt-BR', { dateStyle: 'medium' }).format(new Date(value));
@@ -16,6 +17,7 @@ interface UserManagementTabProps {
 }
 
 export function UserManagementTab({ empresaId, empresaNome, podeCriarAdministrador = false }: UserManagementTabProps) {
+  const { user } = useCurrentUser();
   const [usuarios, setUsuarios] = useState<UsuarioEmpresa[]>([]);
   const [convites, setConvites] = useState<Convite[]>([]);
   const [email, setEmail] = useState('');
@@ -25,6 +27,7 @@ export function UserManagementTab({ empresaId, empresaNome, podeCriarAdministrad
   const [creating, setCreating] = useState(false);
   const [revoking, setRevoking] = useState<number | null>(null);
   const [reviewingNickname, setReviewingNickname] = useState<number | null>(null);
+  const [deactivatingUser, setDeactivatingUser] = useState<number | null>(null);
   const [linkGerado, setLinkGerado] = useState<string | null>(null);
   const [feedback, setFeedback] = useState<string | null>(null);
   const dialogRef = useRef<HTMLDivElement>(null);
@@ -127,6 +130,20 @@ export function UserManagementTab({ empresaId, empresaNome, podeCriarAdministrad
     }
   };
 
+  const inativar = async (usuario: UsuarioEmpresa) => {
+    if (!window.confirm(`Inativar o acesso de ${usuario.name}? Essa pessoa será desconectada e não poderá entrar novamente.`)) return;
+    setDeactivatingUser(usuario.id);
+    try {
+      const updated = await inativarUsuario(usuario.id, empresaId);
+      setUsuarios((current) => current.map((item) => item.id === usuario.id ? updated : item));
+      setFeedback('Acesso inativado. As sessões ativas foram revogadas.');
+    } catch (error: any) {
+      setFeedback(error.response?.data?.message ?? 'Não foi possível inativar o usuário.');
+    } finally {
+      setDeactivatingUser(null);
+    }
+  };
+
   const copiar = async (link: string) => {
     await navigator.clipboard.writeText(link);
     setFeedback('Link copiado para a área de transferência.');
@@ -159,7 +176,7 @@ export function UserManagementTab({ empresaId, empresaNome, podeCriarAdministrad
 
       <section className="admin-users-card admin-users-list-card">
         <div className="admin-users-card-heading"><span className="admin-users-heading-icon is-secondary"><UsersRound size={19} /></span><div><h2>Usuários cadastrados</h2><p>Usuários que concluíram o cadastro.</p></div></div>
-        <div className="admin-users-list">{usuarios.length === 0 ? <p className="admin-users-empty">Ainda não há usuários cadastrados.</p> : usuarios.map((usuario) => <div key={usuario.id} className="admin-user-row"><span>{(usuario.nickname ?? usuario.name).charAt(0).toUpperCase()}</span><div><strong>{usuario.nickname ?? usuario.name}</strong><small>{usuario.nickname ? `${usuario.name} · ` : ''}{usuario.email}{usuario.role === 'admin' ? ' · Administrador' : ''}</small></div><em>Nível {usuario.level}</em></div>)}</div>
+        <div className="admin-users-list">{usuarios.length === 0 ? <p className="admin-users-empty">Ainda não há usuários cadastrados.</p> : usuarios.map((usuario) => <div key={usuario.id} className={`admin-user-row${usuario.active ? '' : ' is-inactive'}`}><span>{(usuario.nickname ?? usuario.name).charAt(0).toUpperCase()}</span><div><strong>{usuario.nickname ?? usuario.name}</strong><small>{usuario.nickname ? `${usuario.name} · ` : ''}{usuario.email}{usuario.role === 'admin' ? ' · Administrador' : ''}{!usuario.active ? ' · Acesso inativo' : ''}</small></div><em>Nível {usuario.level}</em>{usuario.active && usuario.id !== user?.userId && usuario.role !== 'platform_admin' && <AppButton variant="ghost" size="sm" icon={<Ban size={14} />} disabled={deactivatingUser === usuario.id} onClick={() => void inativar(usuario)}>{deactivatingUser === usuario.id ? 'Inativando...' : 'Inativar'}</AppButton>}</div>)}</div>
       </section>
     </div>
 

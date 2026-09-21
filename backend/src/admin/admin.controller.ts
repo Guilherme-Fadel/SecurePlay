@@ -75,4 +75,9 @@ export class AdminController {
   async rejeitarApelido(@Request() req: any, @Param('id') id: string) {
     return this.convitesService.rejeitarApelido(req.user.userId, Number(id));
   }
+
+  @Post('usuarios/:id/inativar')
+  async inativarUsuario(@Request() req: any, @Param('id') id: string) {
+    return this.convitesService.inativarUsuario(req.user.userId, Number(id));
+  }
 }
