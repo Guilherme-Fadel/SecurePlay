@@ -5,7 +5,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { createHash, randomBytes } from 'crypto';
-import { DataSource, Repository } from 'typeorm';
+import { DataSource, In, Repository } from 'typeorm';
 import { Role } from '../auth/roles.enum';
 import { Empresa } from '../empresa/empresa.entity';
 import { UpdateTemaDto } from './dto/update-tema.dto';
@@ -141,23 +141,26 @@ export class AdminService {
       .getRepository(EmpresaParametrosAudit)
       .findAndCount({
         where: { empresa_id: empresaId },
-        relations: ['alterado_por'],
         order: { created_at: 'DESC', id: 'DESC' },
         skip: (page - 1) * pageSize,
         take: pageSize,
       });
+    const autoresIds = [...new Set(registros.map((registro) => registro.alterado_por_id))];
+    const autores = autoresIds.length
+      ? await this.usuarioRepository.find({ where: { id: In(autoresIds) } })
+      : [];
+    const autoresPorId = new Map(autores.map((autor) => [autor.id, autor]));
 
     return {
       items: registros.map((registro) => ({
         id: registro.id,
         created_at: registro.created_at,
-        alterado_por: registro.alterado_por
-          ? {
-              id: registro.alterado_por.id,
-              name: registro.alterado_por.name,
-              email: registro.alterado_por.email,
-            }
-          : null,
+        alterado_por: (() => {
+          const autor = autoresPorId.get(registro.alterado_por_id);
+          return autor
+            ? { id: autor.id, name: autor.name, email: autor.email }
+            : null;
+        })(),
         configuracoes_alteradas: Object.keys(registro.atual).filter(
           (key) =>
             JSON.stringify(registro.atual[key as keyof typeof registro.atual]) !==

@@ -8,18 +8,21 @@ describe('ConvitesService.inativarUsuarioGlobal', () => {
       findOne: jest.fn().mockResolvedValue(user),
       save: jest.fn().mockImplementation((value) => Promise.resolve(value)),
     };
+    const adminAuditService = { registrar: jest.fn().mockResolvedValue(undefined) };
     const service = new ConvitesService(
       {} as never,
       usuarioRepository as never,
       {} as never,
       {} as never,
+      adminAuditService as never,
     );
-    return { service, usuarioRepository };
+    return { service, usuarioRepository, adminAuditService };
   };
 
   it('inativa um usuário e retorna o novo estado', async () => {
     const user = {
       id: 12,
+      empresa_id: 7,
       name: 'Participante',
       email: 'participante@secureplay.test',
       role: Role.USER,
@@ -29,7 +32,7 @@ describe('ConvitesService.inativarUsuarioGlobal', () => {
       nickname_pending: null,
       nickname_request_status: 'none',
     };
-    const { service, usuarioRepository } = buildService(user);
+    const { service, usuarioRepository, adminAuditService } = buildService(user);
 
     await expect(service.inativarUsuarioGlobal(1, 12)).resolves.toMatchObject({
       id: 12,
@@ -38,6 +41,9 @@ describe('ConvitesService.inativarUsuarioGlobal', () => {
     expect(usuarioRepository.save).toHaveBeenCalledWith(
       expect.objectContaining({ active: false }),
     );
+    expect(adminAuditService.registrar).toHaveBeenCalledWith(expect.objectContaining({
+      acao: 'usuario.inativado', alvoId: 12, atorId: 1,
+    }));
   });
 
   it('impede inativação da própria conta', async () => {
@@ -98,6 +104,7 @@ describe('ConvitesService.listarApelidosPendentesDaEmpresa', () => {
       usuarioRepository as never,
       {} as never,
       {} as never,
+      { registrar: jest.fn() } as never,
     );
 
     await expect(
@@ -136,6 +143,7 @@ describe('ConvitesService.listarUsuariosPaginadosDaEmpresa', () => {
       { createQueryBuilder: jest.fn().mockReturnValue(query) } as never,
       {} as never,
       {} as never,
+      { registrar: jest.fn() } as never,
     );
 
     await expect(service.listarUsuariosPaginadosDaEmpresa(7, {
@@ -170,6 +178,7 @@ describe('ConvitesService.obterResumoAdministrativoDaEmpresa', () => {
       } as never,
       {} as never,
       {} as never,
+      { registrar: jest.fn() } as never,
     );
 
     await expect(service.obterResumoAdministrativoDaEmpresa(7)).resolves.toEqual({

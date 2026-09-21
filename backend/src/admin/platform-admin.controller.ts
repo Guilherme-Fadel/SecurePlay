@@ -20,6 +20,7 @@ import { PresignLogoDto } from './dto/presign-logo.dto';
 import { UpdateTemaDto } from './dto/update-tema.dto';
 import { UpdateCompanyParametersDto } from './dto/update-company-parameters.dto';
 import { UpdateCompanySettingsDto } from './dto/update-company-settings.dto';
+import { AdminAuditService } from './admin-audit.service';
 
 @Controller('platform/admin')
 @Roles(Role.PLATFORM_ADMIN)
@@ -27,6 +28,7 @@ export class PlatformAdminController {
   constructor(
     private readonly adminService: AdminService,
     private readonly convitesService: ConvitesService,
+    private readonly adminAuditService: AdminAuditService,
   ) {}
 
   @Get('empresas')
@@ -77,6 +79,15 @@ export class PlatformAdminController {
       page: Number(page),
       pageSize: Number(pageSize),
     });
+  }
+
+  @Get('empresas/:empresaId/auditoria/eventos')
+  async listarEventosAuditoriaDaEmpresa(
+    @Param('empresaId', ParseIntPipe) empresaId: number,
+    @Query('page') page?: string,
+    @Query('pageSize') pageSize?: string,
+  ) {
+    return this.adminAuditService.listarDaEmpresa(empresaId, Number(page) || 1, Number(pageSize) || 25);
   }
 
   @Put('empresas/:empresaId/parametros')
@@ -185,24 +196,27 @@ export class PlatformAdminController {
   async revogarConvite(
     @Param('empresaId', ParseIntPipe) empresaId: number,
     @Param('conviteId', ParseIntPipe) conviteId: number,
+    @Request() req: any,
   ) {
-    return this.convitesService.revogarDaEmpresa(empresaId, conviteId);
+    return this.convitesService.revogarDaEmpresa(empresaId, conviteId, req.user.userId);
   }
 
   @Post('empresas/:empresaId/usuarios/:usuarioId/apelido/aprovar')
   async aprovarApelido(
     @Param('empresaId', ParseIntPipe) empresaId: number,
     @Param('usuarioId', ParseIntPipe) usuarioId: number,
+    @Request() req: any,
   ) {
-    return this.convitesService.aprovarApelidoDaEmpresa(empresaId, usuarioId);
+    return this.convitesService.aprovarApelidoDaEmpresa(empresaId, usuarioId, req.user.userId);
   }
 
   @Post('empresas/:empresaId/usuarios/:usuarioId/apelido/rejeitar')
   async rejeitarApelido(
     @Param('empresaId', ParseIntPipe) empresaId: number,
     @Param('usuarioId', ParseIntPipe) usuarioId: number,
+    @Request() req: any,
   ) {
-    return this.convitesService.rejeitarApelidoDaEmpresa(empresaId, usuarioId);
+    return this.convitesService.rejeitarApelidoDaEmpresa(empresaId, usuarioId, req.user.userId);
   }
 
   @Post('empresas/:empresaId/usuarios/:usuarioId/inativar')

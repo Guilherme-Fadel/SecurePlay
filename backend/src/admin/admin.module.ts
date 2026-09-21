@@ -10,6 +10,7 @@ import { usuarioProviders } from '../usuario/usuario.providers';
 import { DatabaseModule } from '../database/database.molule';
 import { S3Service } from '../conteudo/s3/s3.service';
 import { RegistrationModule } from '../registration/registration.module';
+import { AdminAuditService } from './admin-audit.service';
 
 @Module({
   imports: [DatabaseModule, RegistrationModule],
@@ -20,6 +21,7 @@ import { RegistrationModule } from '../registration/registration.module';
     ...conviteProviders,
     AdminService,
     ConvitesService,
+    AdminAuditService,
     S3Service,
   ],
   exports: [AdminService, ...empresaProviders],

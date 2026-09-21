@@ -7,7 +7,7 @@ describe('AdminService.listarAuditoriaDaEmpresa', () => {
         [{
           id: 8,
           created_at: new Date('2026-09-21T12:00:00.000Z'),
-          alterado_por: { id: 3, name: 'Admin', email: 'admin@secureplay.test' },
+          alterado_por_id: 3,
           anterior: { rankingEnabled: false },
           atual: { rankingEnabled: true },
         }],
@@ -16,7 +16,7 @@ describe('AdminService.listarAuditoriaDaEmpresa', () => {
     };
     const service = new AdminService(
       {} as never,
-      {} as never,
+      { find: jest.fn().mockResolvedValue([{ id: 3, name: 'Admin', email: 'admin@secureplay.test' }]) } as never,
       { getRepository: jest.fn().mockReturnValue(repository) } as never,
       {} as never,
     );
@@ -35,7 +35,6 @@ describe('AdminService.listarAuditoriaDaEmpresa', () => {
     });
     expect(repository.findAndCount).toHaveBeenCalledWith(expect.objectContaining({
       where: { empresa_id: 4 },
-      relations: ['alterado_por'],
       skip: 0,
       take: 25,
     }));

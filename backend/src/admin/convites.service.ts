@@ -13,6 +13,7 @@ import { CompleteCadastroConviteDto } from './dto/complete-cadastro-convite.dto'
 import { CreateConviteDto } from './dto/create-convite.dto';
 import { Convite } from './entities/convite.entity';
 import { RegistrationService } from '../registration/registration.service';
+import { AdminAuditService } from './admin-audit.service';
 
 type UsuarioFiltros = {
   page?: number;
@@ -31,6 +32,7 @@ export class ConvitesService {
     @Inject('EMPRESA_REPOSITORY')
     private readonly empresaRepository: Repository<Empresa>,
     private readonly registrationService: RegistrationService,
+    private readonly adminAuditService: AdminAuditService,
   ) {}
 
   async listarUsuarios(userId: number) {
@@ -225,6 +227,7 @@ export class ConvitesService {
       role: roleDoConvite,
     });
     const saved = await this.conviteRepository.save(convite);
+    await this.adminAuditService.registrar({ empresaId, atorId: userId, acao: 'convite.criado', alvoTipo: 'convite', alvoId: saved.id, detalhes: { email: saved.email, role: saved.role } });
 
     return {
       convite: this.toResumo(saved),
@@ -247,10 +250,10 @@ export class ConvitesService {
 
   async revogar(userId: number, conviteId: number) {
     const empresa = await this.getEmpresaDoAdministrador(userId);
-    return this.revogarDaEmpresa(empresa.id, conviteId);
+    return this.revogarDaEmpresa(empresa.id, conviteId, userId);
   }
 
-  async revogarDaEmpresa(empresaId: number, conviteId: number) {
+  async revogarDaEmpresa(empresaId: number, conviteId: number, atorId?: number) {
     const convite = await this.conviteRepository.findOne({
       where: { id: conviteId, empresa_id: empresaId },
     });
@@ -258,6 +261,7 @@ export class ConvitesService {
 
     convite.revoked = true;
     await this.conviteRepository.save(convite);
+    if (atorId) await this.adminAuditService.registrar({ empresaId, atorId, acao: 'convite.revogado', alvoTipo: 'convite', alvoId: convite.id, detalhes: { email: convite.email } });
     return this.toResumo(convite);
   }
 
@@ -276,10 +280,10 @@ export class ConvitesService {
 
   async aprovarApelido(userId: number, usuarioId: number) {
     const empresa = await this.getEmpresaDoAdministrador(userId);
-    return this.aprovarApelidoDaEmpresa(empresa.id, usuarioId);
+    return this.aprovarApelidoDaEmpresa(empresa.id, usuarioId, userId);
   }
 
-  async aprovarApelidoDaEmpresa(empresaId: number, usuarioId: number) {
+  async aprovarApelidoDaEmpresa(empresaId: number, usuarioId: number, atorId?: number) {
     const usuario = await this.getUsuarioDaEmpresa(empresaId, usuarioId);
     if (usuario.role !== Role.USER) {
       throw new BadRequestException(
@@ -290,19 +294,21 @@ export class ConvitesService {
       throw new BadRequestException('Não há apelido pendente para aprovar');
     }
 
-    usuario.nickname = usuario.nickname_pending;
+    const apelido = usuario.nickname_pending;
+    usuario.nickname = apelido;
     usuario.nickname_pending = null;
     usuario.nickname_request_status = 'approved';
     await this.usuarioRepository.save(usuario);
+    if (atorId) await this.adminAuditService.registrar({ empresaId, atorId, acao: 'apelido.aprovado', alvoTipo: 'usuario', alvoId: usuario.id, detalhes: { apelido } });
     return this.toUsuarioResumo(usuario);
   }
 
   async rejeitarApelido(userId: number, usuarioId: number) {
     const empresa = await this.getEmpresaDoAdministrador(userId);
-    return this.rejeitarApelidoDaEmpresa(empresa.id, usuarioId);
+    return this.rejeitarApelidoDaEmpresa(empresa.id, usuarioId, userId);
   }
 
-  async rejeitarApelidoDaEmpresa(empresaId: number, usuarioId: number) {
+  async rejeitarApelidoDaEmpresa(empresaId: number, usuarioId: number, atorId?: number) {
     const usuario = await this.getUsuarioDaEmpresa(empresaId, usuarioId);
     if (usuario.role !== Role.USER) {
       throw new BadRequestException(
@@ -313,9 +319,11 @@ export class ConvitesService {
       throw new BadRequestException('Não há apelido pendente para rejeitar');
     }
 
+    const apelido = usuario.nickname_pending;
     usuario.nickname_pending = null;
     usuario.nickname_request_status = 'rejected';
     await this.usuarioRepository.save(usuario);
+    if (atorId) await this.adminAuditService.registrar({ empresaId, atorId, acao: 'apelido.rejeitado', alvoTipo: 'usuario', alvoId: usuario.id, detalhes: { apelido } });
     return this.toUsuarioResumo(usuario);
   }
 
@@ -330,7 +338,7 @@ export class ConvitesService {
     usuarioId: number,
   ) {
     const usuario = await this.getUsuarioDaEmpresa(empresaId, usuarioId);
-    return this.inativar(usuario, atorId);
+    return this.inativar(usuario, atorId, empresaId);
   }
 
   async inativarUsuarioGlobal(atorId: number, usuarioId: number) {
@@ -338,7 +346,7 @@ export class ConvitesService {
       where: { id: usuarioId },
     });
     if (!usuario) throw new NotFoundException('Usuário não encontrado');
-    return this.inativar(usuario, atorId);
+    return this.inativar(usuario, atorId, usuario.empresa_id);
   }
 
   private async getEmpresaDoAdministrador(userId: number) {
@@ -401,7 +409,7 @@ export class ConvitesService {
     };
   }
 
-  private async inativar(usuario: Usuario, atorId: number) {
+  private async inativar(usuario: Usuario, atorId: number, empresaId: number | null) {
     if (usuario.id === atorId) {
       throw new BadRequestException('Você não pode inativar a própria conta');
     }
@@ -416,6 +424,7 @@ export class ConvitesService {
 
     usuario.active = false;
     await this.usuarioRepository.save(usuario);
+    if (empresaId) await this.adminAuditService.registrar({ empresaId, atorId, acao: 'usuario.inativado', alvoTipo: 'usuario', alvoId: usuario.id, detalhes: { email: usuario.email, role: usuario.role } });
     return this.toUsuarioResumo(usuario);
   }
 

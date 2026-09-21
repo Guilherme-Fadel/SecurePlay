@@ -32,6 +32,9 @@ export interface AuditoriaPaginada {
   totalPages: number;
 }
 
+export interface EventoAuditoria { id: number; acao: string; alvo_tipo: string; alvo_id: number | null; detalhes: Record<string, unknown> | null; created_at: string; ator: { id: number; name: string; email: string } | null; }
+export interface EventosAuditoriaPaginados { items: EventoAuditoria[]; page: number; pageSize: number; total: number; totalPages: number; }
+
 function empresaPath(empresaId?: number) {
   return empresaId ? `/platform/admin/empresas/${empresaId}` : "/admin/empresa";
 }
@@ -67,6 +70,11 @@ export async function listarAuditoriaEmpresa(
 ): Promise<AuditoriaPaginada> {
   const params = new URLSearchParams({ page: String(page), pageSize: '25' });
   const response = await api.get(`/platform/admin/empresas/${empresaId}/auditoria?${params}`);
+  return response.data;
+}
+
+export async function listarEventosAuditoriaEmpresa(empresaId: number): Promise<EventosAuditoriaPaginados> {
+  const response = await api.get(`/platform/admin/empresas/${empresaId}/auditoria/eventos?page=1&pageSize=25`);
   return response.data;
 }
 

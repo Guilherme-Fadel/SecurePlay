@@ -23,6 +23,7 @@ describe('Administração global e por empresa', () => {
     const controller = new PlatformAdminController(
       {} as never,
       convitesService as never,
+      {} as never,
     );
     const dto = { email: 'pessoa@empresa.com', validade_dias: 7, max_uses: 1 };
 
@@ -43,6 +44,7 @@ describe('Administração global e por empresa', () => {
     const controller = new PlatformAdminController(
       {} as never,
       convitesService as never,
+      {} as never,
     );
     const dto = {
       email: 'admin@empresa.com',
@@ -67,6 +69,7 @@ describe('Administração global e por empresa', () => {
     };
     const controller = new PlatformAdminController(
       adminService as never,
+      {} as never,
       {} as never,
     );
 
