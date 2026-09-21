@@ -9,6 +9,9 @@ function run(script) {
     cwd: backendRoot,
     stdio: 'inherit',
     env: process.env,
+    // No Windows, npm.cmd precisa ser iniciado pelo shell para evitar
+    // EINVAL no spawnSync.
+    shell: process.platform === 'win32',
   });
 
   if (result.error) throw result.error;

@@ -7,7 +7,12 @@ START TRANSACTION;
 
 DROP TEMPORARY TABLE IF EXISTS aula_global_sequence;
 
-CREATE TEMPORARY TABLE aula_global_sequence AS
+CREATE TEMPORARY TABLE aula_global_sequence (
+  id BIGINT NOT NULL PRIMARY KEY,
+  new_order BIGINT NOT NULL
+);
+
+INSERT INTO aula_global_sequence (id, new_order)
 SELECT
   id,
   ROW_NUMBER() OVER (
