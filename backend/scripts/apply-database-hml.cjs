@@ -25,4 +25,10 @@ function run(script) {
 run('db:migrate');
 run('db:lesson-order');
 
+if (['true', '1', 'yes'].includes(String(process.env.SEED_FREE_TRIAL || '').toLowerCase())) {
+  run('db:free-trial');
+}
+
+run('db:initial-admin');
+
 process.stdout.write('Atualização do banco de homologação concluída.\n');

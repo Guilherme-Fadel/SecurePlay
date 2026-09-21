@@ -137,14 +137,9 @@ export class TrialAndEmailVerification1789632000000 implements MigrationInterfac
         }),
       );
     }
-    const freeCompany = (await queryRunner.query(
-      "SELECT id FROM empresa WHERE system_key = 'free_trial' LIMIT 1",
-    )) as unknown[];
-    if (!freeCompany.length) {
-      await queryRunner.query(
-        'INSERT INTO empresa (nome, system_key, parametros_funcionalidades, created_at, updated_at) VALUES (\'SecurePlay Teste Gratuito\', \'free_trial\', \'{"rankingEnabled":false,"globalRankingEnabled":false,"achievementsEnabled":true,"enabledGames":["quiz-relampago","caca-phishing","classificacao-dados","termotech"]}\', NOW(6), NOW(6))',
-      );
-    }
+    // A empresa free_trial pertence apenas ao ambiente SecurePlay público.
+    // Ela é criada pelo seed de implantação desse ambiente, e não por esta
+    // migration compartilhada com instalações de clientes.
   }
 
   down(): Promise<void> {
