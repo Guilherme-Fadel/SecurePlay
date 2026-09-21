@@ -27,6 +27,7 @@ import { InfoCard } from "@/components/ui/visuals/InfoCard";
 import { AppSectionHeader } from "@/components/ui/visuals/AppSectionHeader";
 import { UserManagementTab } from "@/components/admin/UserManagementTab";
 import { PendingNicknamesTab } from "@/components/admin/PendingNicknamesTab";
+import { InvitationManagementTab } from "@/components/admin/InvitationManagementTab";
 import { CompanyManagementTab } from "@/components/admin/CompanyManagementTab";
 import { CompanyParametersTab } from "@/components/admin/CompanyParametersTab";
 import { AdminThemePreview } from "@/components/admin/AdminThemePreview";
@@ -36,6 +37,7 @@ import {
   ArrowLeft,
   Building2,
   CheckCircle2,
+  Link2,
   LayoutTemplate,
   Palette,
   RotateCcw,
@@ -89,7 +91,7 @@ const Admin = forwardRef<AdminSaveHandle, AdminProps>(function Admin(
   const generation = useRef(0);
   const logoPreviewObjectUrlRef = useRef<string | null>(null);
   const [activeTab, setActiveTab] = useState<
-    "empresas" | "usuarios" | "apelidos" | "layout" | "funcionalidades"
+    "empresas" | "usuarios" | "apelidos" | "convites" | "layout" | "funcionalidades"
   >(initialTab);
   const [empresas, setEmpresas] = useState<EmpresaAdministravel[]>([]);
   const [empresaSelecionadaId, setEmpresaSelecionadaId] = useState<
@@ -460,6 +462,10 @@ const Admin = forwardRef<AdminSaveHandle, AdminProps>(function Admin(
                   <CheckCircle2 size={17} />
                   <span>Apelidos pendentes</span>
                 </button>
+                <button type="button" onClick={() => setActiveTab("convites")} className={cn("admin-tab", activeTab === "convites" && "is-active")}>
+                  <Link2 size={17} />
+                  <span>Convites</span>
+                </button>
                 <button
                   type="button"
                   onClick={() => setActiveTab("layout")}
@@ -513,7 +519,6 @@ const Admin = forwardRef<AdminSaveHandle, AdminProps>(function Admin(
                   empresaNome={
                     platformMode ? empresaSelecionada?.nome : undefined
                   }
-                  podeCriarAdministrador={platformMode}
                 />
               ) : activeTab === "apelidos" ? (
                 <PendingNicknamesTab
@@ -522,6 +527,8 @@ const Admin = forwardRef<AdminSaveHandle, AdminProps>(function Admin(
                     platformMode ? empresaSelecionada?.nome : undefined
                   }
                 />
+              ) : activeTab === "convites" ? (
+                <InvitationManagementTab empresaId={empresaAlvoId} empresaNome={platformMode ? empresaSelecionada?.nome : undefined} podeCriarAdministrador={platformMode} />
               ) : (
                 <motion.div
                   initial={{ opacity: 0, y: 14 }}
