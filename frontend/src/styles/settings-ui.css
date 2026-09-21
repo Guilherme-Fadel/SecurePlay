@@ -193,8 +193,6 @@
 .settings-status-chip.is-active { background: rgba(var(--primary-rgb), .1); color: var(--primary); }
 .settings-card-footnote { color: var(--dashboard-muted); font-size: 10px; line-height: 1.4; }
 
-html[data-reduced-motion=''] *, html[data-reduced-motion=''] *::before, html[data-reduced-motion=''] *::after { transition-duration: .01ms !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; scroll-behavior: auto !important; }
-html[data-compact-ui=''] .secure-home-main { padding: 16px; }
 
 @media (max-width: 800px) {
   .settings-page-heading { align-items: flex-start; flex-direction: column; }

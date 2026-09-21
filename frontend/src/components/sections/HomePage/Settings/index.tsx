@@ -7,7 +7,6 @@ import {
   Clock3,
   Globe2,
   KeyRound,
-  Laptop,
   LockKeyhole,
   LayoutTemplate,
   Monitor,
@@ -20,7 +19,6 @@ import {
   Sparkles,
   Sun,
   UsersRound,
-  Volume2,
 } from "lucide-react";
 import { AppButton } from "@/components/ui/buttons/AppButton";
 import { InfoCard } from "@/components/ui/visuals/InfoCard";
@@ -32,20 +30,16 @@ import type { AdminSaveHandle } from "@/pages/Admin";
 const CompanyAdminSettings = lazy(() => import("@/pages/Admin"));
 
 type SettingsSection =
-  | "experiencia"
+  | "aparencia"
   | "notificacoes"
   | "seguranca"
   | "usuarios_empresa"
-  | "layout_empresa"
-  | "funcionalidades_empresa";
+  | "layout_empresa";
 
 interface UserPreferences {
   emailNotifications: boolean;
   challengeReminder: boolean;
   achievementNotifications: boolean;
-  soundEffects: boolean;
-  reducedMotion: boolean;
-  compactMode: boolean;
   timezone: string;
 }
 
@@ -54,9 +48,6 @@ const defaultPreferences: UserPreferences = {
   emailNotifications: true,
   challengeReminder: true,
   achievementNotifications: true,
-  soundEffects: true,
-  reducedMotion: false,
-  compactMode: false,
   timezone: "America/Sao_Paulo",
 };
 const settingSections: Array<{
@@ -66,9 +57,9 @@ const settingSections: Array<{
   icon: typeof Palette;
 }> = [
   {
-    id: "experiencia",
-    label: "Experiência",
-    description: "Tema e interface",
+    id: "aparencia",
+    label: "Aparência",
+    description: "Tema da interface",
     icon: Palette,
   },
   {
@@ -101,12 +92,6 @@ const companyAdminSections: Array<{
     label: "Layout da empresa",
     description: "Marca e paleta",
     icon: LayoutTemplate,
-  },
-  {
-    id: "funcionalidades_empresa",
-    label: "Funcionalidades",
-    description: "Parâmetros da empresa",
-    icon: Settings2,
   },
 ];
 
@@ -162,7 +147,7 @@ export function Settings() {
   const { theme, setTheme } = useTheme();
   const { user } = useCurrentUser();
   const [activeSection, setActiveSection] =
-    useState<SettingsSection>("experiencia");
+    useState<SettingsSection>("aparencia");
   const [preferences, setPreferences] =
     useState<UserPreferences>(readPreferences);
   const [saved, setSaved] = useState(false);
@@ -174,32 +159,18 @@ export function Settings() {
   const companyAdmin = useRef<AdminSaveHandle>(null);
   const companySection =
     activeSection === "usuarios_empresa" ||
-    activeSection === "layout_empresa" ||
-    activeSection === "funcionalidades_empresa";
-  const [companyTab, setCompanyTab] = useState<
-    "usuarios" | "layout" | "funcionalidades"
-  >("usuarios");
+    activeSection === "layout_empresa";
+  const [companyTab, setCompanyTab] = useState<"usuarios" | "layout">(
+    "usuarios",
+  );
   useEffect(() => {
     if (activeSection === "usuarios_empresa") setCompanyTab("usuarios");
     if (activeSection === "layout_empresa") setCompanyTab("layout");
-    if (activeSection === "funcionalidades_empresa")
-      setCompanyTab("funcionalidades");
     setSaved(false);
   }, [activeSection, draftTheme]);
   useEffect(() => {
     if (companyDirty) setSaved(false);
   }, [companyDirty]);
-
-  useEffect(() => {
-    document.documentElement.toggleAttribute(
-      "data-reduced-motion",
-      preferences.reducedMotion,
-    );
-    document.documentElement.toggleAttribute(
-      "data-compact-ui",
-      preferences.compactMode,
-    );
-  }, [preferences.compactMode, preferences.reducedMotion]);
 
   const updatePreference = <Key extends keyof UserPreferences>(
     key: Key,
@@ -317,20 +288,18 @@ export function Settings() {
             <div className="settings-navigation-note">
               <LockKeyhole size={14} />
               <span>
-                {activeSection === "funcionalidades_empresa"
-                  ? "Os parâmetros da empresa são salvos no sistema."
-                  : "Suas preferências ficam vinculadas a este navegador."}
+                Suas preferências ficam vinculadas a este navegador.
               </span>
             </div>
           </aside>
 
           <section className="settings-content">
-            {activeSection === "experiencia" && (
+            {activeSection === "aparencia" && (
               <div className="settings-panel">
                 <div className="settings-panel-heading">
                   <div>
-                    <h2>Experiência</h2>
-                    <p>Ajuste a aparência e o comportamento da interface.</p>
+                    <h2>Aparência</h2>
+                    <p>Escolha como prefere visualizar a interface.</p>
                   </div>
                 </div>
                 <InfoCard raised className="settings-card">
@@ -391,43 +360,6 @@ export function Settings() {
                         </button>
                       ))}
                     </div>
-                  </InfoCard.Section>
-                </InfoCard>
-                <InfoCard raised className="settings-card">
-                  <InfoCard.Header
-                    title="Interface"
-                    subtitle="Pequenos ajustes para deixar o painel do seu jeito."
-                    icon={Sparkles}
-                    variant="secondary"
-                  />
-                  <InfoCard.Section className="settings-toggle-list">
-                    <ToggleRow
-                      title="Sons da interface"
-                      description="Reproduz sons sutis durante interações na plataforma."
-                      icon={Volume2}
-                      checked={preferences.soundEffects}
-                      onChange={(value) =>
-                        updatePreference("soundEffects", value)
-                      }
-                    />
-                    <ToggleRow
-                      title="Reduzir animações"
-                      description="Diminui movimentos e transições em toda a plataforma."
-                      icon={Sparkles}
-                      checked={preferences.reducedMotion}
-                      onChange={(value) =>
-                        updatePreference("reducedMotion", value)
-                      }
-                    />
-                    <ToggleRow
-                      title="Modo compacto"
-                      description="Aproxima informações para exibir mais conteúdo por tela."
-                      icon={Laptop}
-                      checked={preferences.compactMode}
-                      onChange={(value) =>
-                        updatePreference("compactMode", value)
-                      }
-                    />
                   </InfoCard.Section>
                 </InfoCard>
               </div>
