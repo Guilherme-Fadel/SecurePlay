@@ -1,6 +1,7 @@
 import { Injectable, Inject, Logger, NotFoundException } from '@nestjs/common';
-import { Repository, SelectQueryBuilder } from 'typeorm';
+import { DataSource, Repository, SelectQueryBuilder } from 'typeorm';
 import { UsuarioStats } from '../usuario-stats/usuario-stats.entity';
+import { Usuario } from '../usuario/usuario.entity';
 import { ChallengeService } from '../challenge/challenge.service';
 import { RedisService } from '../redis/redis.service';
 import { TokenService } from '../arcade/token.service';
@@ -20,6 +21,7 @@ import { CompanyFeaturesService } from '../common/features/company-features.serv
 import { Role } from '../auth/roles.enum';
 import { loadRankingWeek, unavailableRankingWeek } from './ranking-weekly';
 import { getRankingSeason, getSeasonXpByUser } from './ranking-season';
+import { Empresa } from '../empresa/empresa.entity';
 @Injectable()
 export class DashboardService {
   private readonly logger = new Logger(DashboardService.name);
@@ -27,6 +29,7 @@ export class DashboardService {
   constructor(
     @Inject('USUARIO_STATS_REPOSITORY')
     private statsRepository: Repository<UsuarioStats>,
+    @Inject('DATA_SOURCE') private readonly dataSource: DataSource,
     private challengeService: ChallengeService,
     private redisService: RedisService,
     private tokenService: TokenService,
@@ -71,7 +74,7 @@ export class DashboardService {
     usuario_id: number,
     requestedScope: 'global' | 'company' = 'global',
     includeWeekly = true,
-    options: { includeImages?: boolean; includeEntries?: boolean } = {},
+    options: { includeImages?: boolean; includeEntries?: boolean; companyId?: number } = {},
   ) {
     const includeImages = options.includeImages ?? true;
     const includeEntries = options.includeEntries ?? true;
@@ -85,14 +88,17 @@ export class DashboardService {
       .leftJoinAndSelect('u.empresa', 'e')
       .where('s.usuario_id = :uid', { uid: usuario_id })
       .getOne();
+    const currentUserRecord = currentEntry?.usuario ?? await this.dataSource.getRepository(Usuario).findOne({ where: { id: usuario_id }, relations: ['empresa'] });
     const isManagementUser =
-      currentEntry?.usuario?.role === Role.ADMIN ||
-      currentEntry?.usuario?.role === Role.PLATFORM_ADMIN;
+      currentUserRecord?.role === Role.ADMIN ||
+      currentUserRecord?.role === Role.PLATFORM_ADMIN;
     const currentStats = isManagementUser ? null : await this.getOrCreateStats(usuario_id);
-    const company = currentEntry?.usuario?.empresa ?? null;
+    const company = isManagementUser && currentUserRecord?.role === Role.PLATFORM_ADMIN && options.companyId
+      ? await this.dataSource.getRepository(Empresa).findOne({ where: { id: options.companyId } })
+      : currentUserRecord?.empresa ?? null;
     const companyAvailable = !!company;
     const globalRankingEnabled = isFeatureEnabled(parameters, 'globalRanking');
-    const trialUser = !!currentEntry?.usuario?.trial_started_at;
+    const trialUser = !!currentUserRecord?.trial_started_at;
     const scope =
       requestedScope === 'company' && companyAvailable
         ? 'company'

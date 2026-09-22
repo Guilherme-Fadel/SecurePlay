@@ -9,10 +9,13 @@ export class DashboardController {
   async getRanking(
     @Request() req: any,
     @Query('scope') scope?: 'global' | 'company',
+    @Query('companyId') companyId?: string,
   ) {
     return this.dashboardService.getRanking(
       req.user.userId,
       scope === 'company' ? 'company' : 'global',
+      true,
+      { companyId: companyId ? Number(companyId) : undefined },
     );
   }
 

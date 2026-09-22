@@ -13,10 +13,10 @@ export function useWeeklyStreak() {
     const { data: streak, loading, error } = useCachedQuery<WeeklyStreak>('weeklyStreak', getWeeklyStreak);
     return { streak, loading, error };
 }
-export function useDashboardRanking(scope: 'global' | 'company' = 'global') {
+export function useDashboardRanking(scope: 'global' | 'company' = 'global', companyId?: number) {
     const features = useCompanyFeatures();
     const effectiveScope = features.globalRanking ? scope : 'company';
-    const { data, loading, error, refetch } = useCachedQuery(`dashboardRanking:${effectiveScope}`, () => getDashboardRanking(effectiveScope), { staleTime: 30_000, enabled: features.ranking });
+    const { data, loading, error, refetch } = useCachedQuery(`dashboardRanking:${effectiveScope}:${companyId ?? 'self'}`, () => getDashboardRanking(effectiveScope, companyId), { staleTime: 30_000, enabled: features.ranking && (effectiveScope !== 'company' || !companyId || companyId > 0) });
     return { ranking: data, loading, error, refetch };
 }
 export function useDashboardJourney() {

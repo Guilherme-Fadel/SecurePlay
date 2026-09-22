@@ -1,10 +1,12 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { ArrowDown, ArrowUp, BookOpen, Building2, CalendarDays, Crown, Flame, Globe2, Medal, RefreshCw, Shield, Sparkles, Trophy, Zap } from 'lucide-react';
 import { PageTransition } from '@/components/shared/PageTransition';
 import { AppButton } from '@/components/ui/buttons/AppButton';
 import { Avatar } from '@/components/ui/visuals/Avatar';
 import { useDashboardRanking } from '@/hooks/useDashboard';
 import { useCompanyFeatures } from '@/hooks/useCompanyFeatures';
+import { useCurrentUser } from '@/hooks/useCurrentUser';
+import { listarEmpresas, type EmpresaAdministravel } from '@/services/admin';
 import type { RankingData, RankingEntry } from '@/services/dashboard';
 import galleryEmblem from '@/assets/static/mission-room/missions-room-emblem.png';
 import hallArtwork from '@/assets/static/ranking/ranking-gallery-hall-v1.webp';
@@ -30,14 +32,19 @@ function seasonLabel(season: RankingData['season']) {
 
 export function Ranking() {
   const features = useCompanyFeatures();
+  const { user } = useCurrentUser();
+  const isPlatformAdmin = user?.role === 'platform_admin';
   const [scope, setScope] = useState<RankingScope>(features.globalRanking ? 'global' : 'company');
+  const [companies, setCompanies] = useState<EmpresaAdministravel[]>([]);
+  const [companyId, setCompanyId] = useState<number>();
+  useEffect(() => { if (isPlatformAdmin) void listarEmpresas().then((items) => { setCompanies(items); setCompanyId((current) => current ?? items[0]?.id); }).catch(() => setCompanies([])); }, [isPlatformAdmin]);
   const effectiveScope = features.globalRanking ? scope : 'company';
-  return <RankingContent key={effectiveScope} scope={effectiveScope} onScopeChange={setScope} />;
+  return <RankingContent key={`${effectiveScope}-${companyId ?? 'none'}`} scope={effectiveScope} companyId={isPlatformAdmin ? companyId : undefined} companies={isPlatformAdmin ? companies : []} onCompanyChange={setCompanyId} onScopeChange={setScope} />;
 }
 
-function RankingContent({ scope, onScopeChange }: { scope: RankingScope; onScopeChange: (scope: RankingScope) => void }) {
+function RankingContent({ scope, companyId, companies, onCompanyChange, onScopeChange }: { scope: RankingScope; companyId?: number; companies: EmpresaAdministravel[]; onCompanyChange: (id: number) => void; onScopeChange: (scope: RankingScope) => void }) {
   const features = useCompanyFeatures();
-  const { ranking, loading, error, refetch } = useDashboardRanking(scope);
+  const { ranking, loading, error, refetch } = useDashboardRanking(scope, companyId);
   const scopeLabel = ranking?.scope === 'company' ? 'Minha instituição' : 'Global';
   const season = ranking?.season;
 
@@ -54,6 +61,7 @@ function RankingContent({ scope, onScopeChange }: { scope: RankingScope; onScope
               {features.globalRanking && <button type="button" aria-pressed={scope === 'global'} onClick={() => onScopeChange('global')}><Globe2 size={17} />Global</button>}
               <button type="button" aria-pressed={scope === 'company'} onClick={() => onScopeChange('company')} disabled={!!ranking && !ranking.companyAvailable && scope !== 'company'}><Building2 size={17} />Minha instituição</button>
             </div>
+            {scope === 'company' && companies.length > 0 && <label className="ranking-company-select">Empresa<select value={companyId ?? ''} onChange={(event) => onCompanyChange(Number(event.target.value))}>{companies.map((company) => <option key={company.id} value={company.id}>{company.nome}</option>)}</select></label>}
             <div className="ranking-season-pill" title={season ? undefined : 'Nenhuma temporada configurada'}><CalendarDays size={17} />{seasonLabel(season)}</div>
             <button className="ranking-refresh" type="button" onClick={refetch} disabled={loading} aria-label="Atualizar ranking" title="Atualizar ranking"><RefreshCw size={17} /></button>
           </div>

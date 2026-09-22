@@ -32,6 +32,7 @@ describe('DashboardService check-in automatico', () => {
     const service = new DashboardService(
       statsRepository as never,
       {} as never,
+      {} as never,
       redisService as never,
       tokenService as never,
       eventEmitter as never,

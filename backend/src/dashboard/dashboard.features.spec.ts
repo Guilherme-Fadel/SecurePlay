@@ -58,6 +58,7 @@ describe('DashboardService company parameters', () => {
     };
     const service = new DashboardService(
       repository as never,
+      { getRepository: jest.fn() } as never,
       {
         countCompleted: () => Promise.resolve(0),
         countTotalActive: () => Promise.resolve(0),

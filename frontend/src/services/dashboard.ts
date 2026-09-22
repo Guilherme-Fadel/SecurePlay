@@ -85,8 +85,9 @@ export interface RankingData {
 
 export async function getDashboardRanking(
   scope: 'global' | 'company' = 'global',
+  companyId?: number,
 ): Promise<RankingData> {
-  const response = await api.get('/dashboard/ranking', { params: { scope } });
+  const response = await api.get('/dashboard/ranking', { params: { scope, ...(companyId ? { companyId } : {}) } });
   return response.data;
 }
 
