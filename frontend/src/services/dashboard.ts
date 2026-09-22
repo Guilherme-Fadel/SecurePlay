@@ -63,7 +63,8 @@ export interface RankingData {
   totalParticipants: number;
   top: RankingEntry[];
   leaderboard: RankingEntry[];
-  currentUser: RankingEntry;
+  currentUser: RankingEntry | null;
+  viewerParticipates: boolean;
   season?: { name: string; startsAt: string; endsAt: string; status: 'upcoming' | 'active' } | null;
   weeklyPositionChange?: number | null;
   weeklyDataAvailable?: boolean;
@@ -76,9 +77,9 @@ export interface RankingData {
   }>;
   summary: {
     leaderPoints: number;
-    pointsBehindLeader: number;
-    pointsToNextPosition: number;
-    percentile: number;
+    pointsBehindLeader: number | null;
+    pointsToNextPosition: number | null;
+    percentile: number | null;
   };
 }
 

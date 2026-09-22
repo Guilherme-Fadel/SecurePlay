@@ -98,8 +98,9 @@ function LeaderBanner({ entry, place }: { entry: RankingEntry; place: number }) 
 
 function JourneyCard({ ranking }: { ranking: RankingData }) {
   const user = ranking.currentUser;
+  if (!user) return <section className="ranking-card ranking-journey" aria-labelledby="ranking-journey-title"><div className="ranking-card-heading"><span className="ranking-card-icon"><Shield size={25} /></span><div><h2 id="ranking-journey-title">Visão de gestão</h2><p>Você acompanha esta classificação, mas não participa nem ocupa uma posição no ranking.</p></div></div></section>;
   const gap = ranking.summary.pointsToNextPosition;
-  const progress = gap > 0 ? Math.min(100, Math.round(user.points / (user.points + gap) * 100)) : user.points > 0 ? 100 : 0;
+  const progress = gap && gap > 0 ? Math.min(100, Math.round(user.points / (user.points + gap) * 100)) : user.points > 0 ? 100 : 0;
   const change = ranking.weeklyPositionChange;
   return <section className="ranking-card ranking-journey" aria-labelledby="ranking-journey-title">
     <div className="ranking-card-heading"><span className="ranking-card-icon"><BookOpen size={25} /></span><div><h2 id="ranking-journey-title">Sua Jornada</h2><p>Continue aprendendo. Você está mais perto da próxima posição!</p></div></div>
@@ -108,7 +109,7 @@ function JourneyCard({ ranking }: { ranking: RankingData }) {
       <div className="ranking-journey-progress">
         <div className="ranking-journey-movement">{change == null ? <span className="is-neutral">Variação semanal indisponível</span> : change > 0 ? <span className="is-up"><ArrowUp size={17} /> {change} {change === 1 ? 'posição' : 'posições'} esta semana</span> : change < 0 ? <span className="is-down"><ArrowDown size={17} /> {Math.abs(change)} {change === -1 ? 'posição' : 'posições'} esta semana</span> : <span className="is-neutral">Posição estável esta semana</span>}</div>
         <div className="ranking-progress-track" role="progressbar" aria-valuenow={progress} aria-valuemin={0} aria-valuemax={100} aria-label="Progresso até a próxima posição"><span style={{ width: `${progress}%` }} /></div>
-        <small>{gap > 0 ? `${gap.toLocaleString('pt-BR')} XP para alcançar #${user.position - 1}` : user.points === 0 ? 'A temporada está começando' : 'Você está na liderança desta classificação'}</small>
+        <small>{gap && gap > 0 ? `${gap.toLocaleString('pt-BR')} XP para alcançar #${user.position - 1}` : user.points === 0 ? 'A temporada está começando' : 'Você está na liderança desta classificação'}</small>
       </div>
       <strong className="ranking-journey-xp"><Medal size={19} /><span><b>{formatXp(user.points)}</b><small>na temporada</small></span></strong>
     </div>

@@ -40,7 +40,7 @@ export function RankingWidget() {
             </li>
           ))}
         </ol>
-        <div className="academy-ranking-you">
+        {currentUser ? <div className="academy-ranking-you">
           <span className="academy-ranking-you-position">#{currentUser.position}</span>
           <Avatar name={currentUser.name} imageUrl={currentUser.profileImageUrl} className="academy-ranking-avatar" />
           <span className="academy-ranking-you-identity">
@@ -48,7 +48,7 @@ export function RankingWidget() {
             <strong>{currentUser.name}</strong>
           </span>
           <b>{formatPoints(currentUser.points)} XP</b>
-        </div>
+        </div> : <div className="academy-ranking-you"><span className="academy-ranking-you-identity"><small>Visão de gestão</small><strong>Você acompanha esta classificação, sem participar dela.</strong></span></div>}
       </div>
       <InfoCard.Footer className="academy-card-footer-link">
         <button type="button" className="academy-footer-action" onClick={() => navigateToSection('ranking')}>Ver ranking completo <ChevronRight size={11} /></button>

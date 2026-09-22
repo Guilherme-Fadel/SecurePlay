@@ -79,7 +79,6 @@ export class DashboardService {
       usuario_id,
       'ranking',
     );
-    const currentStats = await this.getOrCreateStats(usuario_id);
     const currentEntry = await this.statsRepository
       .createQueryBuilder('s')
       .leftJoinAndSelect('s.usuario', 'u')
@@ -89,11 +88,7 @@ export class DashboardService {
     const isManagementUser =
       currentEntry?.usuario?.role === Role.ADMIN ||
       currentEntry?.usuario?.role === Role.PLATFORM_ADMIN;
-    if (isManagementUser) {
-      throw new NotFoundException(
-        'Usuários de gerência não participam do ranking',
-      );
-    }
+    const currentStats = isManagementUser ? null : await this.getOrCreateStats(usuario_id);
     const company = currentEntry?.usuario?.empresa ?? null;
     const companyAvailable = !!company;
     const globalRankingEnabled = isFeatureEnabled(parameters, 'globalRanking');
@@ -174,12 +169,8 @@ export class DashboardService {
           }),
         )
       : [];
-    const currentSeasonPoints = seasonPoints.get(usuario_id) ?? 0;
-    const currentPosition =
-      allStats.filter(
-        (entry) =>
-          (seasonPoints.get(entry.usuario_id) ?? 0) > currentSeasonPoints,
-      ).length + 1;
+    const currentSeasonPoints = isManagementUser ? 0 : (seasonPoints.get(usuario_id) ?? 0);
+    const currentPosition = isManagementUser ? null : allStats.filter((entry) => (seasonPoints.get(entry.usuario_id) ?? 0) > currentSeasonPoints).length + 1;
     const totalParticipants = allStats.length;
     const nextPoints = allStats.reduce((next, entry) => {
       const points = seasonPoints.get(entry.usuario_id) ?? 0;
@@ -190,18 +181,18 @@ export class DashboardService {
     const pointsToNextPosition = !Number.isFinite(nextPoints)
       ? 0
       : Math.max(1, nextPoints - currentSeasonPoints + 1);
-    const percentile =
+    const percentile = isManagementUser ? null :
       totalParticipants <= 1
         ? 100
         : Math.max(
             0,
             Math.round(
-              ((totalParticipants - currentPosition) /
+              ((totalParticipants - (currentPosition ?? 0)) /
                 (totalParticipants - 1)) *
                 100,
             ),
           );
-    const currentUser = {
+    const currentUser = isManagementUser ? null : {
       id: usuario_id,
       position: currentPosition,
       name:
@@ -209,7 +200,7 @@ export class DashboardService {
         currentEntry?.usuario?.name ??
         'Você',
       points: currentSeasonPoints,
-      level: calcLevel(currentStats.total_points),
+      level: calcLevel(currentStats!.total_points),
       companyName: company?.nome ?? null,
       isCurrentUser: true,
       profileImageUrl: includeImages
@@ -225,7 +216,7 @@ export class DashboardService {
           redis: this.redisService,
           getScopedStats: () => Promise.resolve(allStats),
           seasonPoints,
-          currentUserId: usuario_id,
+      currentUserId: isManagementUser ? 0 : usuario_id,
           resolveProfileImageUrl: (key) => this.resolveProfileImageUrl(key),
         });
       } catch (error) {
@@ -250,13 +241,14 @@ export class DashboardService {
         weeklyChange: weekly.changes?.get(entry.id) ?? null,
       })),
       currentUser,
-      weeklyPositionChange: weekly.changes?.get(usuario_id) ?? null,
+      viewerParticipates: !isManagementUser,
+      weeklyPositionChange: isManagementUser ? null : (weekly.changes?.get(usuario_id) ?? null),
       weeklyDataAvailable: weekly.available,
       weeklyHighlights: weekly.highlights,
       summary: {
         leaderPoints,
-        pointsBehindLeader: Math.max(0, leaderPoints - currentSeasonPoints),
-        pointsToNextPosition,
+        pointsBehindLeader: isManagementUser ? null : Math.max(0, leaderPoints - currentSeasonPoints),
+        pointsToNextPosition: isManagementUser ? null : pointsToNextPosition,
         percentile,
       },
     };
@@ -285,7 +277,7 @@ export class DashboardService {
       }
     }
     const totalUsers = ranking?.totalParticipants ?? null;
-    const globalRanking = ranking?.currentUser.position ?? null;
+    const globalRanking = ranking?.currentUser?.position ?? null;
     const xpToday = await this.getRedisXpToday(usuario_id);
     return {
       totalPoints: stats.total_points,

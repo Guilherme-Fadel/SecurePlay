@@ -82,16 +82,19 @@ describe('DashboardService company parameters', () => {
     });
   });
 
-  it('recusa o ranking para usuários de gerência', async () => {
+  it('permite a visualização para gerência sem incluí-la na classificação', async () => {
     const { service, query } = buildService(
       null,
       undefined,
       Role.PLATFORM_ADMIN,
     );
-    await expect(service.getRanking(7, 'global')).rejects.toThrow(
-      'Usuários de gerência não participam do ranking',
-    );
-    expect(query.andWhere).not.toHaveBeenCalled();
+    await expect(service.getRanking(7, 'global')).resolves.toMatchObject({
+      currentUser: null,
+      viewerParticipates: false,
+    });
+    expect(query.andWhere).toHaveBeenCalledWith('u.role = :rankingRole', {
+      rankingRole: Role.USER,
+    });
   });
 
   it('limita a classificação aos participantes', async () => {
