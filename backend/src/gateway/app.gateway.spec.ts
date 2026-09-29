@@ -56,4 +56,36 @@ describe('AppGateway', () => {
     expect(socket.disconnect).toHaveBeenCalled();
     expect(socket.join).not.toHaveBeenCalled();
   });
+
+  it('rejeita socket de usuário inativo mesmo com JWT válido', async () => {
+    const gateway = new AppGateway(
+      {
+        verifyAsync: jest.fn().mockResolvedValue({ sub: 27, role: Role.USER }),
+      } as never,
+      { get: jest.fn().mockResolvedValue(null) } as never,
+      {
+        getRepository: jest.fn().mockReturnValue({
+          findOne: jest.fn().mockResolvedValue({ id: 27, active: false }),
+        }),
+      } as never,
+    );
+    const socket = makeSocket('token=jwt-assinado');
+
+    await gateway.handleConnection(socket as never);
+
+    expect(socket.disconnect).toHaveBeenCalled();
+    expect(socket.join).not.toHaveBeenCalled();
+  });
+
+  it('desconecta sessões WebSocket existentes ao inativar usuário', () => {
+    const gateway = new AppGateway({} as never, {} as never);
+    const disconnectSockets = jest.fn();
+    const inRoom = jest.fn().mockReturnValue({ disconnectSockets });
+    gateway.server = { in: inRoom } as never;
+
+    gateway.handleUserDeactivated({ userId: 27 });
+
+    expect(inRoom).toHaveBeenCalledWith('user_27');
+    expect(disconnectSockets).toHaveBeenCalledWith(true);
+  });
 });

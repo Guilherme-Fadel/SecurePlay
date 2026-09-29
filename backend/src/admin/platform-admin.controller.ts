@@ -177,6 +177,19 @@ export class PlatformAdminController {
     return this.convitesService.listarDaEmpresa(empresaId);
   }
 
+  @Get('empresas/:empresaId/convites/paginados')
+  async listarConvitesPaginadosDaEmpresa(
+    @Param('empresaId', ParseIntPipe) empresaId: number,
+    @Query('page') page?: string,
+    @Query('pageSize') pageSize?: string,
+    @Query('search') search?: string,
+    @Query('sort') sort?: 'asc' | 'desc',
+  ) {
+    return this.convitesService.listarPaginadosDaEmpresa(empresaId, {
+      page: Number(page), pageSize: Number(pageSize), search, sort,
+    });
+  }
+
   @Post('empresas/:empresaId/convites')
   @Throttle({ short: { limit: 10, ttl: 60000 } })
   async criarConvite(

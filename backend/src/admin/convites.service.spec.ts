@@ -9,14 +9,16 @@ describe('ConvitesService.inativarUsuarioGlobal', () => {
       save: jest.fn().mockImplementation((value) => Promise.resolve(value)),
     };
     const adminAuditService = { registrar: jest.fn().mockResolvedValue(undefined) };
+    const eventEmitter = { emit: jest.fn() };
     const service = new ConvitesService(
       {} as never,
       usuarioRepository as never,
       {} as never,
       {} as never,
       adminAuditService as never,
+      eventEmitter as never,
     );
-    return { service, usuarioRepository, adminAuditService };
+    return { service, usuarioRepository, adminAuditService, eventEmitter };
   };
 
   it('inativa um usuário e retorna o novo estado', async () => {
@@ -32,7 +34,7 @@ describe('ConvitesService.inativarUsuarioGlobal', () => {
       nickname_pending: null,
       nickname_request_status: 'none',
     };
-    const { service, usuarioRepository, adminAuditService } = buildService(user);
+    const { service, usuarioRepository, adminAuditService, eventEmitter } = buildService(user);
 
     await expect(service.inativarUsuarioGlobal(1, 12)).resolves.toMatchObject({
       id: 12,
@@ -44,6 +46,7 @@ describe('ConvitesService.inativarUsuarioGlobal', () => {
     expect(adminAuditService.registrar).toHaveBeenCalledWith(expect.objectContaining({
       acao: 'usuario.inativado', alvoId: 12, atorId: 1,
     }));
+    expect(eventEmitter.emit).toHaveBeenCalledWith('usuario.inativado', { userId: 12 });
   });
 
   it('impede inativação da própria conta', async () => {
@@ -105,6 +108,7 @@ describe('ConvitesService.listarApelidosPendentesDaEmpresa', () => {
       {} as never,
       {} as never,
       { registrar: jest.fn() } as never,
+      { emit: jest.fn() } as never,
     );
 
     await expect(
@@ -144,6 +148,7 @@ describe('ConvitesService.listarUsuariosPaginadosDaEmpresa', () => {
       {} as never,
       {} as never,
       { registrar: jest.fn() } as never,
+      { emit: jest.fn() } as never,
     );
 
     await expect(service.listarUsuariosPaginadosDaEmpresa(7, {
@@ -155,6 +160,59 @@ describe('ConvitesService.listarUsuariosPaginadosDaEmpresa', () => {
       roles: [Role.ADMIN, Role.PLATFORM_ADMIN],
     });
     expect(query.addOrderBy).toHaveBeenCalledWith('usuario.id', 'ASC');
+  });
+});
+
+describe('ConvitesService.listarPaginadosDaEmpresa', () => {
+  it('filtra pelo tenant e e-mail, ordena e retorna metadados da página', async () => {
+    const query = {
+      where: jest.fn().mockReturnThis(),
+      andWhere: jest.fn().mockReturnThis(),
+      orderBy: jest.fn().mockReturnThis(),
+      addOrderBy: jest.fn().mockReturnThis(),
+      skip: jest.fn().mockReturnThis(),
+      take: jest.fn().mockReturnThis(),
+      getManyAndCount: jest.fn().mockResolvedValue([[{
+        id: 3, email: 'ana@example.test', role: Role.USER,
+        expires_at: new Date('2026-10-01T00:00:00Z'), created_at: new Date('2026-09-20T00:00:00Z'),
+        max_uses: 1, uses: 0, revoked: false,
+      }], 31]),
+    };
+    const service = new ConvitesService(
+      { createQueryBuilder: jest.fn().mockReturnValue(query) } as never,
+      {} as never, {} as never, {} as never, { registrar: jest.fn() } as never,
+      { emit: jest.fn() } as never,
+    );
+
+    await expect(service.listarPaginadosDaEmpresa(8, {
+      page: 2, pageSize: 10, search: 'ana@', sort: 'asc',
+    })).resolves.toMatchObject({
+      items: [expect.objectContaining({ email: 'ana@example.test', role: Role.USER })],
+      page: 2, pageSize: 10, total: 31, totalPages: 4,
+    });
+    expect(query.where).toHaveBeenCalledWith('convite.empresa_id = :empresaId', { empresaId: 8 });
+    expect(query.andWhere).toHaveBeenCalledWith('convite.email LIKE :search', { search: '%ana@%' });
+    expect(query.orderBy).toHaveBeenCalledWith('convite.created_at', 'ASC');
+    expect(query.skip).toHaveBeenCalledWith(10);
+    expect(query.take).toHaveBeenCalledWith(10);
+  });
+
+  it('aplica paginação padrão e desc para sort ausente ou inválido', async () => {
+    const query = {
+      where: jest.fn().mockReturnThis(), orderBy: jest.fn().mockReturnThis(),
+      addOrderBy: jest.fn().mockReturnThis(), skip: jest.fn().mockReturnThis(),
+      take: jest.fn().mockReturnThis(), getManyAndCount: jest.fn().mockResolvedValue([[], 0]),
+    };
+    const service = new ConvitesService(
+      { createQueryBuilder: jest.fn().mockReturnValue(query) } as never,
+      {} as never, {} as never, {} as never, { registrar: jest.fn() } as never,
+      { emit: jest.fn() } as never,
+    );
+
+    await expect(service.listarPaginadosDaEmpresa(8, { page: 0, pageSize: 500, sort: 'other' as never }))
+      .resolves.toMatchObject({ items: [], page: 1, pageSize: 100, total: 0, totalPages: 0 });
+    expect(query.orderBy).toHaveBeenCalledWith('convite.created_at', 'DESC');
+    expect(query.where).toHaveBeenCalledWith('convite.empresa_id = :empresaId', { empresaId: 8 });
   });
 });
 
@@ -179,6 +237,7 @@ describe('ConvitesService.obterResumoAdministrativoDaEmpresa', () => {
       {} as never,
       {} as never,
       { registrar: jest.fn() } as never,
+      { emit: jest.fn() } as never,
     );
 
     await expect(service.obterResumoAdministrativoDaEmpresa(7)).resolves.toEqual({

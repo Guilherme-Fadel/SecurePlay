@@ -14,6 +14,9 @@ import { CreateConviteDto } from './dto/create-convite.dto';
 import { Convite } from './entities/convite.entity';
 import { RegistrationService } from '../registration/registration.service';
 import { AdminAuditService } from './admin-audit.service';
+import { EventEmitter2 } from '@nestjs/event-emitter';
+
+type ConviteFiltros = { page?: number; pageSize?: number; search?: string; sort?: 'asc' | 'desc' };
 
 type UsuarioFiltros = {
   page?: number;
@@ -33,6 +36,7 @@ export class ConvitesService {
     private readonly empresaRepository: Repository<Empresa>,
     private readonly registrationService: RegistrationService,
     private readonly adminAuditService: AdminAuditService,
+    private readonly eventEmitter: EventEmitter2,
   ) {}
 
   async listarUsuarios(userId: number) {
@@ -248,6 +252,23 @@ export class ConvitesService {
     return convites.map((convite) => this.toResumo(convite));
   }
 
+  async listarPaginados(userId: number, filtros: ConviteFiltros) {
+    const empresa = await this.getEmpresaDoAdministrador(userId);
+    return this.listarPaginadosDaEmpresa(empresa.id, filtros);
+  }
+
+  async listarPaginadosDaEmpresa(empresaId: number, filtros: ConviteFiltros) {
+    const { page, pageSize, search } = this.normalizarFiltrosPaginados(filtros);
+    const direction = filtros.sort === 'asc' ? 'ASC' : 'DESC';
+    const query = this.conviteRepository.createQueryBuilder('convite')
+      .where('convite.empresa_id = :empresaId', { empresaId });
+    if (search) query.andWhere('convite.email LIKE :search', { search: `%${search}%` });
+    const [convites, total] = await query.orderBy('convite.created_at', direction)
+      .addOrderBy('convite.id', direction)
+      .skip((page - 1) * pageSize).take(pageSize).getManyAndCount();
+    return { items: convites.map((convite) => this.toResumo(convite)), page, pageSize, total, totalPages: Math.ceil(total / pageSize) };
+  }
+
   async revogar(userId: number, conviteId: number) {
     const empresa = await this.getEmpresaDoAdministrador(userId);
     return this.revogarDaEmpresa(empresa.id, conviteId, userId);
@@ -270,6 +291,7 @@ export class ConvitesService {
     return {
       empresa_nome: convite.empresa.nome,
       email: convite.email,
+      role: convite.role,
       expires_at: convite.expires_at,
     };
   }
@@ -424,6 +446,7 @@ export class ConvitesService {
 
     usuario.active = false;
     await this.usuarioRepository.save(usuario);
+    this.eventEmitter.emit('usuario.inativado', { userId: usuario.id });
     if (empresaId) await this.adminAuditService.registrar({ empresaId, atorId, acao: 'usuario.inativado', alvoTipo: 'usuario', alvoId: usuario.id, detalhes: { email: usuario.email, role: usuario.role } });
     return this.toUsuarioResumo(usuario);
   }

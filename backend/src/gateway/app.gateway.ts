@@ -71,6 +71,11 @@ export class AppGateway implements OnGatewayConnection, OnGatewayDisconnect {
           .findOne({ where: { id: userId } });
         if (
           !user ||
+          !user.active ||
+          user.password_change_required ||
+          (user.role === Role.PLATFORM_ADMIN &&
+            user.email_verification_required &&
+            !user.email_verified_at) ||
           (user.trial_ends_at && new Date(user.trial_ends_at) <= new Date())
         ) {
           throw new Error('Conta indisponível');
@@ -117,6 +122,11 @@ export class AppGateway implements OnGatewayConnection, OnGatewayDisconnect {
     ).trialTimer;
     if (timer) clearTimeout(timer);
     this.logger.log(`Socket desconectado: ${client.id}`);
+  }
+
+  @OnEvent('usuario.inativado')
+  handleUserDeactivated(payload: { userId: number }) {
+    this.server.in(`user_${payload.userId}`).disconnectSockets(true);
   }
 
   @OnEvent('notification.created')

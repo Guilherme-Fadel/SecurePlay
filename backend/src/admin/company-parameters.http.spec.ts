@@ -8,6 +8,7 @@ import {
 import { AdminController } from './admin.controller';
 import { PlatformAdminController } from './platform-admin.controller';
 import { AdminService } from './admin.service';
+import { AdminAuditService } from './admin-audit.service';
 import { ConvitesService } from './convites.service';
 import { RolesGuard } from '../auth/roles.guard';
 import { Role } from '../auth/roles.enum';
@@ -160,6 +161,7 @@ describe('HTTP — parâmetros institucionais', () => {
         { provide: 'DATA_SOURCE', useValue: dataSource },
         { provide: S3Service, useValue: {} },
         { provide: ConvitesService, useValue: {} },
+        { provide: AdminAuditService, useValue: {} },
         {
           provide: AchievementsService,
           useValue: { getTrail: async () => ({ available: true }) },
