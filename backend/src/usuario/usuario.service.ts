@@ -65,7 +65,7 @@ export class UsuarioService {
                   usuario.empresa.parametros_funcionalidades,
                 ),
                 ...(usuario.trial_started_at
-                  ? { rankingEnabled: false, globalRankingEnabled: false }
+                  ? { globalRankingEnabled: false }
                   : {}),
               }
             : noCompanyParameters(),

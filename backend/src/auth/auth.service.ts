@@ -1,10 +1,10 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
-import { UsuarioService } from 'src/usuario/usuario.service';
-import { LoginDto } from 'src/usuario/dto/login.dto';
-import { RedisService } from 'src/redis/redis.service';
-import { calcTokenTtl } from 'src/common/utils/token.utils';
+import { UsuarioService } from '../usuario/usuario.service';
+import { LoginDto } from '../usuario/dto/login.dto';
+import { RedisService } from '../redis/redis.service';
+import { calcTokenTtl } from '../common/utils/token.utils';
 import { ConfigService } from '@nestjs/config';
 import { RegistrationService } from '../registration/registration.service';
 import { Role } from './roles.enum';
@@ -80,6 +80,14 @@ export class AuthService {
         requiresEmailVerification: true,
         email: user.email,
         message: 'Confira seu e-mail para confirmar o acesso administrativo.',
+      };
+    }
+
+    if (user.password_change_required) {
+      return {
+        requiresPasswordSetup: true,
+        email: user.email,
+        message: 'Defina sua senha pelo link enviado ao seu e-mail antes de entrar.',
       };
     }
 

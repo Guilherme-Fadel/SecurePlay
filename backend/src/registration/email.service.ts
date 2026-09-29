@@ -10,6 +10,29 @@ export class EmailService {
   private readonly logger = new Logger(EmailService.name);
 
   async sendVerification(to: string, token: string): Promise<void> {
+    return this.sendLink(
+      to,
+      token,
+      'Confirme seu e-mail na SecurePlay',
+      'Confirme seu e-mail para ativar seu acesso: ',
+    );
+  }
+
+  async sendPasswordSetup(to: string, token: string): Promise<void> {
+    return this.sendLink(
+      to,
+      token,
+      'Defina sua senha na SecurePlay',
+      'Abra o link para definir sua senha e ativar seu acesso: ',
+    );
+  }
+
+  private async sendLink(
+    to: string,
+    token: string,
+    subject: string,
+    introduction: string,
+  ): Promise<void> {
     const apiKey = process.env.RESEND_API_KEY?.trim();
     const from = process.env.EMAIL_FROM?.trim();
     const siteUrl = process.env.PUBLIC_SITE_URL?.trim();
@@ -31,11 +54,8 @@ export class EmailService {
         body: JSON.stringify({
           from,
           to: [to],
-          subject: 'Confirme seu e-mail na SecurePlay',
-          text:
-            'Confirme seu e-mail para ativar seu acesso: ' +
-            link +
-            '\nO link expira em até 24 horas.',
+          subject,
+          text: introduction + link + '\nO link expira em até 24 horas.',
         }),
         signal: AbortSignal.timeout(10000),
       });
@@ -45,7 +65,7 @@ export class EmailService {
         error instanceof Error ? error.message : 'Falha no envio de e-mail',
       );
       throw new ServiceUnavailableException(
-        'Não foi possível enviar o e-mail de confirmação',
+        'Não foi possível enviar o e-mail',
       );
     }
   }

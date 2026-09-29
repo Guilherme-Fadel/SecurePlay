@@ -37,7 +37,14 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
   async validate(payload: any) {
     const usuario = await this.usuarioService.getUsuarioById(payload.sub);
     const validRoles = Object.values(Role);
-    if (!usuario?.active || !validRoles.includes(usuario.role)) {
+    if (
+      !usuario?.active ||
+      usuario.password_change_required ||
+      (usuario.role === Role.PLATFORM_ADMIN &&
+        usuario.email_verification_required &&
+        !usuario.email_verified_at) ||
+      !validRoles.includes(usuario.role)
+    ) {
       throw new UnauthorizedException('Ocorreu um erro inesperado');
     }
     return {

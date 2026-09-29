@@ -58,6 +58,9 @@ export class Usuario {
   password_setup_expires_at: Date | null;
 
   @Column({ type: 'datetime', nullable: true })
+  password_setup_last_sent_at: Date | null;
+
+  @Column({ type: 'datetime', nullable: true })
   trial_started_at: Date | null;
 
   @Column({ type: 'datetime', nullable: true })

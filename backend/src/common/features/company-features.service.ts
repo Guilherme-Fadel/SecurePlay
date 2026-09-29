@@ -25,7 +25,7 @@ export class CompanyFeaturesService {
       ? resolveCompanyParameters(usuario.empresa.parametros_funcionalidades)
       : noCompanyParameters();
     return usuario?.trial_started_at
-      ? { ...parameters, rankingEnabled: false, globalRankingEnabled: false }
+      ? { ...parameters, globalRankingEnabled: false }
       : parameters;
   }
 

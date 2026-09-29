@@ -53,7 +53,7 @@ async function run() {
       [
         'SecurePlay Teste Gratuito',
         JSON.stringify({
-          rankingEnabled: false,
+          rankingEnabled: true,
           globalRankingEnabled: false,
           achievementsEnabled: true,
           enabledGames: [

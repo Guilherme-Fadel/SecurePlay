@@ -28,6 +28,7 @@ type RegistrationContext = {
   inviteId: number | null;
   invitedEmail: string | null;
   inviteExpiresAt: Date | null;
+  inviteRole: Role | null;
 };
 
 @Injectable()
@@ -43,6 +44,7 @@ export class RegistrationService {
       inviteId: null,
       invitedEmail: null,
       inviteExpiresAt: null,
+      inviteRole: null,
     });
   }
 
@@ -60,6 +62,7 @@ export class RegistrationService {
       inviteId: invite.id,
       invitedEmail: invite.email,
       inviteExpiresAt: invite.expires_at,
+      inviteRole: invite.role,
     });
   }
 
@@ -73,6 +76,9 @@ export class RegistrationService {
       throw new ForbiddenException(
         'Use o e-mail para o qual este convite foi criado',
       );
+    }
+    if (context.inviteRole === Role.ADMIN && 'nickname' in dto && dto.nickname) {
+      throw new BadRequestException('Administradores não utilizam apelidos');
     }
     if (
       await this.dataSource.getRepository(Usuario).findOne({ where: { email } })
@@ -97,7 +103,7 @@ export class RegistrationService {
     pending.name = dto.name.trim();
     pending.birth_date = birthDate;
     pending.nickname =
-      'nickname' in dto
+      context.inviteRole !== Role.ADMIN && 'nickname' in dto
         ? dto.nickname?.trim().replace(/\s+/g, ' ') || null
         : null;
     pending.kind = context.kind;
@@ -131,6 +137,11 @@ export class RegistrationService {
         !user.email_verified_at
       ) {
         await this.startPlatformAdminVerification(user);
+      } else if (
+        user?.password_change_required &&
+        user.email_verified_at
+      ) {
+        await this.startPasswordSetup(user);
       }
       return {
         sucesso: true,
@@ -185,6 +196,8 @@ export class RegistrationService {
         .where('registration.token_hash = :hash', { hash: this.hash(token) })
         .getOne();
       if (!pending || pending.expires_at <= new Date()) {
+        const existing = await this.confirmExistingPasswordSetup(token, manager);
+        if (existing) return existing;
         return this.confirmPlatformAdmin(token, manager);
       }
       if (
@@ -239,8 +252,9 @@ export class RegistrationService {
             : null,
         empresa_id: companyId,
         role,
-        nickname_pending: pending.nickname,
-        nickname_request_status: pending.nickname ? 'pending' : 'none',
+        nickname_pending: role === Role.USER ? pending.nickname : null,
+        nickname_request_status:
+          role === Role.USER && pending.nickname ? 'pending' : 'none',
       });
       await manager.getRepository(Usuario).save(user);
       await manager.getRepository(PendingRegistration).remove(pending);
@@ -274,19 +288,141 @@ export class RegistrationService {
       user.password_change_required = false;
       user.password_setup_token_hash = null;
       user.password_setup_expires_at = null;
+      user.password_setup_last_sent_at = null;
       await manager.getRepository(Usuario).save(user);
       return { sucesso: true, mensagem: 'Senha definida com sucesso.' };
     });
   }
 
   async startPlatformAdminVerification(user: Usuario) {
-    const token = randomBytes(32).toString('base64url');
-    user.email_verification_token_hash = this.hash(token);
-    user.email_verification_expires_at = new Date(
+    const issue = await this.dataSource.transaction(async (manager) => {
+      const locked = await manager.getRepository(Usuario)
+        .createQueryBuilder('user')
+        .setLock('pessimistic_write')
+        .where('user.id = :id', { id: user.id })
+        .getOne();
+      if (
+        !locked?.active ||
+        locked.role !== Role.PLATFORM_ADMIN ||
+        !locked.email_verification_required ||
+        locked.email_verified_at
+      ) {
+        return null;
+      }
+      const previous = {
+        email_verification_token_hash: locked.email_verification_token_hash,
+        email_verification_expires_at: locked.email_verification_expires_at,
+      };
+      const issuedAt = locked.email_verification_expires_at
+        ? new Date(locked.email_verification_expires_at).getTime() -
+          CONFIRMATION_HOURS * 60 * 60 * 1000
+        : 0;
+      if (locked.email_verification_token_hash && Date.now() - issuedAt < RESEND_COOLDOWN_MS) {
+        return null;
+      }
+      const token = randomBytes(32).toString('base64url');
+      locked.email_verification_token_hash = this.hash(token);
+      locked.email_verification_expires_at = new Date(
+        Date.now() + CONFIRMATION_HOURS * 60 * 60 * 1000,
+      );
+      await manager.getRepository(Usuario).save(locked);
+      return { token, tokenHash: locked.email_verification_token_hash, previous };
+    });
+    if (!issue) return;
+    try {
+      await this.emailService.sendVerification(user.email, issue.token);
+    } catch (error) {
+      await this.dataSource.getRepository(Usuario)
+        .createQueryBuilder()
+        .update(Usuario)
+        .set(issue.previous)
+        .where('id = :id AND email_verification_token_hash = :tokenHash', {
+          id: user.id,
+          tokenHash: issue.tokenHash,
+        })
+        .execute();
+      throw error;
+    }
+  }
+
+  private async startPasswordSetup(user: Usuario) {
+    const issue = await this.dataSource.transaction(async (manager) => {
+      const locked = await manager.getRepository(Usuario)
+        .createQueryBuilder('user')
+        .setLock('pessimistic_write')
+        .where('user.id = :id', { id: user.id })
+        .getOne();
+      if (!locked?.active || !locked.password_change_required || !locked.email_verified_at) {
+        return null;
+      }
+      if (
+        locked.password_setup_last_sent_at &&
+        Date.now() - new Date(locked.password_setup_last_sent_at).getTime() < RESEND_COOLDOWN_MS
+      ) {
+        return null;
+      }
+      const previous = {
+        password_setup_token_hash: locked.password_setup_token_hash,
+        password_setup_expires_at: locked.password_setup_expires_at,
+        password_setup_last_sent_at: locked.password_setup_last_sent_at,
+      };
+      const token = randomBytes(32).toString('base64url');
+      locked.password_setup_token_hash = this.hash(token);
+      locked.password_setup_expires_at = new Date(
+        Date.now() + CONFIRMATION_HOURS * 60 * 60 * 1000,
+      );
+      locked.password_setup_last_sent_at = new Date();
+      await manager.getRepository(Usuario).save(locked);
+      return { token, tokenHash: locked.password_setup_token_hash, previous };
+    });
+    if (!issue) return;
+    try {
+      await this.emailService.sendPasswordSetup(user.email, issue.token);
+    } catch (error) {
+      await this.dataSource.getRepository(Usuario)
+        .createQueryBuilder()
+        .update(Usuario)
+        .set(issue.previous)
+        .where('id = :id AND password_setup_token_hash = :tokenHash', {
+          id: user.id,
+          tokenHash: issue.tokenHash,
+        })
+        .execute();
+      throw error;
+    }
+  }
+
+  private async confirmExistingPasswordSetup(
+    token: string,
+    manager: EntityManager,
+  ) {
+    const user = await manager.getRepository(Usuario)
+      .createQueryBuilder('user')
+      .setLock('pessimistic_write')
+      .where('user.password_setup_token_hash = :tokenHash', {
+        tokenHash: this.hash(token),
+      })
+      .getOne();
+    if (!user) return null;
+    if (
+      !user.email_verified_at ||
+      !user.password_change_required ||
+      !user.password_setup_expires_at ||
+      user.password_setup_expires_at <= new Date()
+    ) {
+      throw new NotFoundException('Link para definir senha inválido ou expirado');
+    }
+    const passwordSetupToken = randomBytes(32).toString('base64url');
+    user.password_setup_token_hash = this.hash(passwordSetupToken);
+    user.password_setup_expires_at = new Date(
       Date.now() + CONFIRMATION_HOURS * 60 * 60 * 1000,
     );
-    await this.dataSource.getRepository(Usuario).save(user);
-    await this.emailService.sendVerification(user.email, token);
+    await manager.getRepository(Usuario).save(user);
+    return {
+      sucesso: true,
+      mensagem: 'E-mail confirmado. Defina sua senha para ativar o acesso.',
+      password_setup_token: passwordSetupToken,
+    };
   }
 
   private async confirmPlatformAdmin(token: string, manager: EntityManager) {
@@ -332,7 +468,7 @@ export class RegistrationService {
           nome: TRIAL_COMPANY_NAME,
           system_key: TRIAL_COMPANY_KEY,
           parametros_funcionalidades: {
-            rankingEnabled: false,
+            rankingEnabled: true,
             globalRankingEnabled: false,
             achievementsEnabled: true,
             enabledGames: [

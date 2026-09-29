@@ -34,7 +34,7 @@ export class AuthController {
   ) {
     const result = await this.authService.signIn(dto);
 
-    if (result.requiresEmailVerification) {
+    if (result.requiresEmailVerification || result.requiresPasswordSetup) {
       return result;
     }
 

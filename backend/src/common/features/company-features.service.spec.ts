@@ -54,6 +54,32 @@ describe('CompanyFeaturesService — isolamento institucional', () => {
       );
     },
   );
+
+  it('permite ranking interno para aluno trial sem liberar ranking global', async () => {
+    const repository = {
+      findOne: jest.fn().mockResolvedValue({
+        role: Role.USER,
+        trial_started_at: new Date(),
+        empresa: {
+          parametros_funcionalidades: resolveCompanyParameters({
+            rankingEnabled: true,
+            globalRankingEnabled: true,
+          }),
+        },
+      }),
+    };
+    const service = new CompanyFeaturesService({
+      getRepository: () => repository,
+    } as never);
+
+    await expect(service.requireFeature(1, 'ranking')).resolves.toMatchObject({
+      rankingEnabled: true,
+      globalRankingEnabled: false,
+    });
+    await expect(service.requireFeature(1, 'globalRanking')).rejects.toThrow(
+      NotFoundException,
+    );
+  });
   function setup() {
     const companies = new Map([
       [
