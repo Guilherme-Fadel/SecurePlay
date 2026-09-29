@@ -7,6 +7,7 @@ export interface LoginResult {
   nome?: string;
   user?: CurrentUser;
   requiresEmailVerification?: boolean;
+  requiresPasswordSetup?: boolean;
   email?: string;
 }
 
@@ -26,6 +27,14 @@ export async function loginService(
       return {
         sucesso: false,
         requiresEmailVerification: true,
+        email: response.data.email,
+        mensagem: response.data.message,
+      };
+    }
+    if (response.data.requiresPasswordSetup) {
+      return {
+        sucesso: false,
+        requiresPasswordSetup: true,
         email: response.data.email,
         mensagem: response.data.message,
       };

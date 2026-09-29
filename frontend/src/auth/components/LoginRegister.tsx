@@ -30,6 +30,11 @@ export function LoginRegister() {
         navigate(`/verifique-email?email=${encodeURIComponent(result.email ?? email)}`);
         return;
       }
+      if (result.requiresPasswordSetup) {
+        toast.info(result.mensagem);
+        navigate(`/verifique-email?email=${encodeURIComponent(result.email ?? email)}&mode=password`);
+        return;
+      }
 
       if (!result.sucesso) {
         toast.error(result.mensagem);

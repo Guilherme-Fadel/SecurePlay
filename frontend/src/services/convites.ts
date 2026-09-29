@@ -27,6 +27,7 @@ export interface ConvitePublico {
   empresa_nome: string;
   email: string | null;
   expires_at: string;
+  role: 'user' | 'admin';
 }
 
 export interface ApelidosPendentesPaginados {
@@ -37,7 +38,7 @@ export interface ApelidosPendentesPaginados {
   totalPages: number;
 }
 
-export interface UsuariosPaginados extends ApelidosPendentesPaginados {}
+export type UsuariosPaginados = ApelidosPendentesPaginados;
 
 export interface ResumoAdministrativo {
   usuariosAtivos: number;
@@ -84,8 +85,25 @@ export async function listarApelidosPendentes(
   return response.data;
 }
 
-export async function listarConvites(empresaId?: number): Promise<Convite[]> {
-  const response = await api.get(`${empresaPath(empresaId)}/convites`);
+export interface ConvitesPaginados {
+  items: Convite[];
+  page: number;
+  pageSize: number;
+  total: number;
+  totalPages: number;
+}
+
+export async function listarConvites(
+  options: { page: number; pageSize?: number; search?: string; sort?: 'asc' | 'desc' },
+  empresaId?: number,
+): Promise<ConvitesPaginados> {
+  const params = new URLSearchParams({
+    page: String(options.page),
+    pageSize: String(options.pageSize ?? 25),
+    sort: options.sort ?? 'desc',
+  });
+  if (options.search?.trim()) params.set('search', options.search.trim());
+  const response = await api.get(`${empresaPath(empresaId)}/convites/paginados?${params}`);
   return response.data;
 }
 

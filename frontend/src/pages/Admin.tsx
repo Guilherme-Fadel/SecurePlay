@@ -106,6 +106,10 @@ const Admin = forwardRef<AdminSaveHandle, AdminProps>(function Admin(
   const empresaAlvoId = platformMode
     ? (empresaSelecionadaId ?? undefined)
     : undefined;
+  const adminSessionKey = user
+    ? `secureplay-admin-view:${user.userId}:${platformMode ? "platform" : "company"}`
+    : null;
+  const [restoredAdminSessionKey, setRestoredAdminSessionKey] = useState<string | null>(null);
   const draftKey = JSON.stringify({
     paleta,
     logoUrl,
@@ -140,8 +144,42 @@ const Admin = forwardRef<AdminSaveHandle, AdminProps>(function Admin(
   };
 
   useEffect(() => {
-    setActiveTab(initialTab);
-  }, [initialTab]);
+    if (!adminSessionKey) return;
+    try {
+      const saved = sessionStorage.getItem(adminSessionKey);
+      if (saved) {
+        const state = JSON.parse(saved) as { activeTab?: typeof activeTab; empresaId?: number | null };
+        const allowedTabs = platformMode
+          ? ["empresas", "visao-geral", "usuarios", "apelidos", "convites", "auditoria", "layout", "funcionalidades"]
+          : ["visao-geral", "usuarios", "apelidos", "convites", "layout"];
+        if (state.activeTab && allowedTabs.includes(state.activeTab)) {
+          setActiveTab(lockedTab ? initialTab : state.activeTab);
+        } else {
+          setActiveTab(initialTab);
+        }
+        if (platformMode && typeof state.empresaId === "number") {
+          setEmpresaSelecionadaId(state.empresaId);
+        }
+      } else {
+        setActiveTab(initialTab);
+      }
+    } catch {
+      setActiveTab(initialTab);
+    }
+    setRestoredAdminSessionKey(adminSessionKey);
+  }, [adminSessionKey, initialTab, lockedTab, platformMode]);
+
+  useEffect(() => {
+    if (!adminSessionKey || restoredAdminSessionKey !== adminSessionKey) return;
+    try {
+      sessionStorage.setItem(adminSessionKey, JSON.stringify({
+        activeTab: lockedTab ? initialTab : activeTab,
+        empresaId: platformMode ? empresaSelecionadaId : null,
+      }));
+    } catch {
+      // Preferencias de navegação são opcionais se o armazenamento da sessão estiver indisponível.
+    }
+  }, [activeTab, adminSessionKey, empresaSelecionadaId, initialTab, lockedTab, platformMode, restoredAdminSessionKey]);
 
   useEffect(
     () => () => {

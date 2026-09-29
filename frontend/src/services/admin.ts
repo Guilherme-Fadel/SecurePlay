@@ -73,8 +73,13 @@ export async function listarAuditoriaEmpresa(
   return response.data;
 }
 
-export async function listarEventosAuditoriaEmpresa(empresaId: number): Promise<EventosAuditoriaPaginados> {
-  const response = await api.get(`/platform/admin/empresas/${empresaId}/auditoria/eventos?page=1&pageSize=25`);
+export async function listarEventosAuditoriaEmpresa(
+  empresaId: number,
+  page: number,
+  pageSize = 25,
+): Promise<EventosAuditoriaPaginados> {
+  const params = new URLSearchParams({ page: String(page), pageSize: String(pageSize) });
+  const response = await api.get(`/platform/admin/empresas/${empresaId}/auditoria/eventos?${params}`);
   return response.data;
 }
 

@@ -2,6 +2,7 @@ import { useDeferredValue, useEffect, useState } from 'react';
 import { AlertCircle, Check, CheckCircle2, Search, X } from 'lucide-react';
 import { AppButton } from '@/components/ui/buttons/AppButton';
 import { cn } from '@/lib/utils';
+import { useCurrentUser } from '@/hooks/useCurrentUser';
 import {
   aprovarApelido,
   listarApelidosPendentes,
@@ -19,29 +20,51 @@ const emptyResult: ApelidosPendentesPaginados = {
 };
 
 export function PendingNicknamesTab({ empresaId, empresaNome }: PendingNicknamesTabProps) {
+  const { user } = useCurrentUser();
+  const sessionKey = `secureplay-admin-nicknames:${user?.userId ?? 'unknown'}:${empresaId ?? 'company'}`;
   const [search, setSearch] = useState('');
   const deferredSearch = useDeferredValue(search);
   const [page, setPage] = useState(1);
   const [result, setResult] = useState(emptyResult);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
+  const [reload, setReload] = useState(0);
   const [reviewing, setReviewing] = useState<number | null>(null);
   const [feedback, setFeedback] = useState<string | null>(null);
-
-  useEffect(() => { setPage(1); }, [deferredSearch, empresaId]);
+  const [restoredKey, setRestoredKey] = useState<string | null>(null);
 
   useEffect(() => {
+    try {
+      const saved = sessionStorage.getItem(sessionKey);
+      const state = saved ? JSON.parse(saved) as { search?: string; page?: number } : {};
+      setSearch(state.search ?? '');
+      setPage(typeof state.page === 'number' && Number.isInteger(state.page) && state.page > 0 ? state.page : 1);
+    } catch {
+      setSearch(''); setPage(1);
+    }
+    setRestoredKey(sessionKey);
+  }, [sessionKey]);
+
+  useEffect(() => {
+    if (restoredKey !== sessionKey || deferredSearch !== search) return;
+    try { sessionStorage.setItem(sessionKey, JSON.stringify({ search, page })); } catch { /* Optional session preference. */ }
+  }, [page, restoredKey, search, sessionKey]);
+
+  useEffect(() => {
+    if (restoredKey !== sessionKey || deferredSearch !== search) return;
     let cancelled = false;
     setLoading(true);
+    setLoadError(false);
     void listarApelidosPendentes({ page, search: deferredSearch }, empresaId)
       .then((next) => {
         if (!cancelled) setResult(next);
       })
       .catch(() => {
-        if (!cancelled) setFeedback('Não foi possível carregar os apelidos pendentes.');
+        if (!cancelled) { setLoadError(true); setFeedback('Não foi possível carregar os apelidos pendentes.'); }
       })
       .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
-  }, [deferredSearch, empresaId, page]);
+  }, [deferredSearch, empresaId, page, reload, restoredKey, search, sessionKey]);
 
   const revisar = async (usuarioId: number, aprovado: boolean) => {
     setReviewing(usuarioId);
@@ -75,8 +98,8 @@ export function PendingNicknamesTab({ empresaId, empresaNome }: PendingNicknames
         <div className="admin-users-stat"><CheckCircle2 size={18} /><span><strong>{result.total}</strong> aguardando revisão</span></div>
       </div>
 
-      {feedback && <div className={cn('admin-feedback', feedback.startsWith('Não foi') && 'is-error')} role="status">
-        {feedback.startsWith('Não foi') ? <AlertCircle size={17} /> : <CheckCircle2 size={17} />}{feedback}
+      {feedback && <div className={cn('admin-feedback', feedback.startsWith('Não foi') && 'is-error')} role={feedback.startsWith('Não foi') ? 'alert' : 'status'}>
+        {feedback.startsWith('Não foi') ? <AlertCircle size={17} /> : <CheckCircle2 size={17} />}{feedback}{loadError && <AppButton variant="ghost" size="sm" onClick={() => setReload((current) => current + 1)}>Tentar novamente</AppButton>}
       </div>}
 
       <section className="admin-users-card admin-pending-nicknames-card" aria-busy={loading}>
@@ -84,11 +107,12 @@ export function PendingNicknamesTab({ empresaId, empresaNome }: PendingNicknames
           <label>
             <span className="sr-only">Buscar apelidos pendentes</span>
             <Search size={17} aria-hidden="true" />
-            <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Buscar por nome, e-mail ou apelido" />
+            <input value={search} onChange={(event) => { setSearch(event.target.value); setPage(1); }} placeholder="Buscar por nome, e-mail ou apelido" />
           </label>
           <span>{loading ? 'Carregando...' : `${result.total} resultado${result.total === 1 ? '' : 's'}`}</span>
         </div>
-        {result.items.length === 0 && !loading ? <p className="admin-users-empty">{search ? 'Nenhum apelido pendente corresponde à busca.' : 'Não há apelidos aguardando revisão.'}</p> : (
+        {loading && <p className="admin-users-empty" role="status">Carregando apelidos...</p>}
+        {result.items.length === 0 && !loading && !loadError ? <p className="admin-users-empty">{search ? 'Nenhum apelido pendente corresponde à busca.' : 'Não há apelidos aguardando revisão.'}</p> : result.items.length > 0 && (
           <div className="admin-pending-nicknames-table-wrap">
             <table className="admin-pending-nicknames-table">
               <thead><tr><th>Apelido solicitado</th><th>Participante</th><th>E-mail</th><th><span className="sr-only">Ações</span></th></tr></thead>

@@ -1,9 +1,10 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useDeferredValue, useEffect, useMemo, useRef, useState } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
-import { AlertCircle, CheckCircle2, Copy, Link2, Plus, QrCode, Trash2 } from 'lucide-react';
+import { AlertCircle, CheckCircle2, Copy, Link2, Plus, QrCode, Search, Trash2 } from 'lucide-react';
 import { AppButton } from '@/components/ui/buttons/AppButton';
 import { cn } from '@/lib/utils';
-import { criarConvite, listarConvites, revogarConvite, type Convite } from '@/services/convites';
+import { criarConvite, listarConvites, revogarConvite, type ConvitesPaginados } from '@/services/convites';
+import { useCurrentUser } from '@/hooks/useCurrentUser';
 
 interface InvitationManagementTabProps {
   empresaId?: number;
@@ -16,7 +17,17 @@ function formatDate(value: string) {
 }
 
 export function InvitationManagementTab({ empresaId, empresaNome, podeCriarAdministrador = false }: InvitationManagementTabProps) {
-  const [convites, setConvites] = useState<Convite[]>([]);
+  const { user } = useCurrentUser();
+  const sessionKey = `secureplay-admin-invitations:${user?.userId ?? 'unknown'}:${empresaId ?? 'company'}`;
+  const emptyResult: ConvitesPaginados = { items: [], page: 1, pageSize: 25, total: 0, totalPages: 0 };
+  const [result, setResult] = useState(emptyResult);
+  const [search, setSearch] = useState('');
+  const deferredSearch = useDeferredValue(search);
+  const [sort, setSort] = useState<'asc' | 'desc'>('desc');
+  const [page, setPage] = useState(1);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
+  const [reload, setReload] = useState(0);
   const [email, setEmail] = useState('');
   const [validade, setValidade] = useState(7);
   const [maxUses, setMaxUses] = useState(1);
@@ -25,9 +36,26 @@ export function InvitationManagementTab({ empresaId, empresaNome, podeCriarAdmin
   const [revoking, setRevoking] = useState<number | null>(null);
   const [linkGerado, setLinkGerado] = useState<string | null>(null);
   const [feedback, setFeedback] = useState<string | null>(null);
+  const [restoredKey, setRestoredKey] = useState<string | null>(null);
   const dialogRef = useRef<HTMLDivElement>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
   const openerRef = useRef<HTMLElement | null>(null);
+
+  useEffect(() => {
+    try {
+      const saved = sessionStorage.getItem(sessionKey);
+      const state = saved ? JSON.parse(saved) as { search?: string; sort?: 'asc' | 'desc'; page?: number } : {};
+      setSearch(state.search ?? '');
+      setSort(state.sort === 'asc' ? 'asc' : 'desc');
+      setPage(typeof state.page === 'number' && Number.isInteger(state.page) && state.page > 0 ? state.page : 1);
+    } catch { setSearch(''); setSort('desc'); setPage(1); }
+    setRestoredKey(sessionKey);
+  }, [sessionKey]);
+
+  useEffect(() => {
+    if (restoredKey !== sessionKey || deferredSearch !== search) return;
+    try { sessionStorage.setItem(sessionKey, JSON.stringify({ search, sort, page })); } catch { /* Optional session preference. */ }
+  }, [page, restoredKey, search, sessionKey, sort]);
 
   const fecharConvite = () => {
     setLinkGerado(null);
@@ -52,8 +80,16 @@ export function InvitationManagementTab({ empresaId, empresaNome, podeCriarAdmin
   }, [linkGerado]);
 
   useEffect(() => {
-    void listarConvites(empresaId).then(setConvites).catch(() => setFeedback('Não foi possível carregar os convites.'));
-  }, [empresaId]);
+    if (restoredKey !== sessionKey || deferredSearch !== search) return;
+    let cancelled = false;
+    setLoading(true);
+    setLoadError(false);
+    void listarConvites({ page, pageSize: 25, search: deferredSearch, sort }, empresaId)
+      .then((next) => { if (!cancelled) setResult(next); })
+      .catch(() => { if (!cancelled) setLoadError(true); })
+      .finally(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; };
+  }, [deferredSearch, empresaId, page, reload, restoredKey, search, sessionKey, sort]);
 
   const criar = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -62,7 +98,10 @@ export function InvitationManagementTab({ empresaId, empresaNome, podeCriarAdmin
       const result = await criarConvite({ email: email.trim() || undefined, validade_dias: validade, max_uses: maxUses, administrador: podeCriarAdministrador && administrador }, empresaId);
       openerRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
       setLinkGerado(`${window.location.origin}/cadastro#${result.token}`);
-      setConvites((current) => [result.convite, ...current]);
+      setPage(1);
+      setSearch('');
+      setSort('desc');
+      setReload((current) => current + 1);
       setEmail('');
       setAdministrador(false);
       setFeedback(administrador ? 'Convite de administrador criado com sucesso.' : 'Convite criado com sucesso. Compartilhe o link ou QR code.');
@@ -75,7 +114,7 @@ export function InvitationManagementTab({ empresaId, empresaNome, podeCriarAdmin
     setRevoking(id);
     try {
       const updated = await revogarConvite(id, empresaId);
-      setConvites((current) => current.map((convite) => convite.id === id ? updated : convite));
+      setResult((current) => ({ ...current, items: current.items.map((convite) => convite.id === id ? updated : convite) }));
       setFeedback('Convite revogado. O link não pode mais ser utilizado.');
     } catch { setFeedback('Não foi possível revogar o convite.'); }
     finally { setRevoking(null); }
@@ -85,14 +124,14 @@ export function InvitationManagementTab({ empresaId, empresaNome, podeCriarAdmin
     await navigator.clipboard.writeText(link);
     setFeedback('Link copiado para a área de transferência.');
   };
-  const ativos = useMemo(() => convites.filter((convite) => convite.status === 'ativo').length, [convites]);
+  const ativos = useMemo(() => result.items.filter((convite) => convite.status === 'ativo').length, [result.items]);
 
   return <div className="admin-users-content">
-    <div className="admin-users-heading"><div><span className="admin-page-eyebrow">Convites {empresaNome ? `· ${empresaNome}` : 'da empresa'}</span><h1>Convites</h1><p>Crie acessos com validade, acompanhe a utilização e revogue links quando necessário.</p></div><div className="admin-users-stat"><QrCode size={18} /><span><strong>{ativos}</strong> convites ativos</span></div></div>
+    <div className="admin-users-heading"><div><span className="admin-page-eyebrow">Convites {empresaNome ? `· ${empresaNome}` : 'da empresa'}</span><h1>Convites</h1><p>Crie acessos com validade, acompanhe a utilização e revogue links quando necessário.</p></div><div className="admin-users-stat"><QrCode size={18} /><span><strong>{ativos}</strong> ativos nesta página</span></div></div>
     {feedback && <div className={cn('admin-feedback', feedback.startsWith('Não foi') && 'is-error')} role="status"><span>{feedback.startsWith('Não foi') ? <AlertCircle size={17} /> : <CheckCircle2 size={17} />}</span>{feedback}</div>}
     <div className="admin-invites-workspace">
       <section className="admin-users-card admin-invite-form-card"><div className="admin-users-card-heading"><span className="admin-users-heading-icon"><Plus size={19} /></span><div><h2>Novo convite</h2><p>{administrador ? 'O responsável receberá acesso de administrador desta empresa.' : 'O aluno cria a própria senha pelo link seguro.'}</p></div></div><form onSubmit={criar} className="admin-invite-form"><label>E-mail do {administrador ? 'administrador' : 'aluno'} {!administrador && <small>opcional</small>}<input type="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder={administrador ? 'admin@empresa.com' : 'aluno@empresa.com'} required={administrador} /></label>{podeCriarAdministrador && <label className="admin-invite-admin-flag"><input type="checkbox" checked={administrador} onChange={(event) => { setAdministrador(event.target.checked); if (event.target.checked) setMaxUses(1); }} /><span>Administrador</span></label>}<div className="admin-invite-options"><label>Validade<select value={validade} onChange={(event) => setValidade(Number(event.target.value))}><option value={1}>1 dia</option><option value={7}>7 dias</option><option value={14}>14 dias</option><option value={30}>30 dias</option></select></label><label>Usos permitidos<select value={maxUses} disabled={administrador} onChange={(event) => setMaxUses(Number(event.target.value))}><option value={1}>1 uso</option>{!administrador && <><option value={5}>5 usos</option><option value={20}>20 usos</option><option value={100}>100 usos</option></>}</select></label></div><AppButton type="submit" disabled={creating} icon={<Link2 size={16} />}>{creating ? 'Gerando...' : 'Gerar convite'}</AppButton></form></section>
-      <section className="admin-users-card admin-invites-card"><div className="admin-users-card-heading"><span className="admin-users-heading-icon is-accent"><QrCode size={19} /></span><div><h2>Convites emitidos</h2><p>Links com expiração e uso controlado.</p></div></div><div className="admin-invites-table">{convites.length === 0 ? <p className="admin-users-empty">Nenhum convite criado ainda.</p> : convites.map((convite) => <div key={convite.id} className="admin-invite-row"><div><strong>{convite.email ?? 'Link aberto para a empresa'}{convite.role === 'admin' ? ' · Administrador' : ''}</strong><small>Expira em {formatDate(convite.expires_at)} · {convite.uses}/{convite.max_uses} usos</small></div><span className={`admin-invite-status is-${convite.status}`}>{convite.status}</span>{convite.status === 'ativo' && <AppButton variant="ghost" size="sm" icon={<Trash2 size={14} />} disabled={revoking === convite.id} onClick={() => void revogar(convite.id)}>Revogar</AppButton>}</div>)}</div></section>
+      <section className="admin-users-card admin-invites-card" aria-busy={loading}><div className="admin-users-card-heading"><span className="admin-users-heading-icon is-accent"><QrCode size={19} /></span><div><h2>Convites emitidos</h2><p>Links com expiração e uso controlado.</p></div></div><div className="admin-user-toolbar"><label><span className="sr-only">Buscar convites</span><Search size={16} aria-hidden="true" /><input value={search} onChange={(event) => { setSearch(event.target.value); setPage(1); }} placeholder="Buscar por e-mail" /></label><select aria-label="Ordenar convites por data" value={sort} onChange={(event) => { setSort(event.target.value as 'asc' | 'desc'); setPage(1); }}><option value="desc">Mais recentes</option><option value="asc">Mais antigos</option></select></div>{loadError && <div className="admin-feedback is-error" role="alert"><AlertCircle size={17} />Não foi possível carregar os convites.<AppButton variant="ghost" size="sm" onClick={() => setReload((current) => current + 1)}>Tentar novamente</AppButton></div>}{loading && <p className="admin-users-empty" role="status">Carregando convites...</p>}<div className="admin-invites-table">{result.items.length === 0 && !loading && !loadError ? <p className="admin-users-empty">{deferredSearch ? 'Nenhum convite corresponde à busca.' : 'Nenhum convite criado ainda.'}</p> : result.items.map((convite) => <div key={convite.id} className="admin-invite-row"><div><strong>{convite.email ?? 'Link aberto para a empresa'}{convite.role === 'admin' ? ' · Administrador' : ''}</strong><small>Expira em {formatDate(convite.expires_at)} · {convite.uses}/{convite.max_uses} usos</small></div><span className={`admin-invite-status is-${convite.status}`}>{convite.status}</span>{convite.status === 'ativo' && <AppButton variant="ghost" size="sm" icon={<Trash2 size={14} />} disabled={revoking === convite.id} onClick={() => void revogar(convite.id)}>Revogar</AppButton>}</div>)}</div>{result.totalPages > 1 && <nav className="admin-table-pagination" aria-label="Paginação de convites"><AppButton variant="ghost" size="sm" disabled={page === 1 || loading} onClick={() => setPage((current) => current - 1)}>Anterior</AppButton><span>Página {page} de {result.totalPages} · {result.total} convites</span><AppButton variant="ghost" size="sm" disabled={page >= result.totalPages || loading} onClick={() => setPage((current) => current + 1)}>Próxima</AppButton></nav>}</section>
     </div>
     {linkGerado && <div className="admin-qr-modal" role="dialog" aria-modal="true" aria-labelledby="invite-dialog-title"><div className="admin-qr-card" ref={dialogRef}><button ref={closeButtonRef} className="admin-qr-close" onClick={fecharConvite} aria-label="Fechar">×</button><div className="admin-qr-title"><QrCode size={20} /><div><strong id="invite-dialog-title">Convite pronto</strong><span>Compartilhe pelo link ou QR code.</span></div></div><div className="admin-qr-code"><QRCodeSVG value={linkGerado} size={172} level="M" includeMargin /></div><div className="admin-qr-link"><span>{linkGerado}</span><button onClick={() => void copiar(linkGerado)}><Copy size={15} /> Copiar</button></div></div></div>}
   </div>;

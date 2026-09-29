@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { PageTransition } from '@/components/shared/PageTransition';
 import { confirmEmail, resendEmail, setPassword as setRegistrationPassword } from '@/services/registration';
@@ -7,6 +7,7 @@ import './invite-register.css';
 
 export function CheckEmail() {
   const [params] = useSearchParams();
+  const passwordSetup = params.get('mode') === 'password';
   const [email, setEmail] = useState(params.get('email') ?? '');
   const [message, setMessage] = useState('');
   const resend = async () => {
@@ -18,10 +19,12 @@ export function CheckEmail() {
   };
   return <PageTransition><div className="invite-page"><main className="invite-card">
     <div className="invite-brand">secure<em>play</em></div>
-    <h1>Confira seu e-mail</h1>
-    <p className="invite-intro">Enviamos um link para confirmar seu endereço. Abra-o para criar sua senha e liberar o acesso.</p>
+    <h1>{passwordSetup ? 'Defina sua senha' : 'Confira seu e-mail'}</h1>
+    <p className="invite-intro">{passwordSetup
+      ? 'Seu e-mail já foi confirmado. Solicite um novo link para definir sua senha antes de entrar.'
+      : 'Enviamos um link para confirmar seu endereço. Abra-o para criar sua senha e liberar o acesso.'}</p>
     <div className="invite-form"><label>E-mail<input type="email" value={email} onChange={(event) => setEmail(event.target.value)} required /></label>
-      <button type="button" onClick={resend} disabled={!email}>Reenviar confirmação</button></div>
+      <button type="button" onClick={resend} disabled={!email}>{passwordSetup ? 'Enviar link para definir senha' : 'Reenviar confirmação'}</button></div>
     {message && <p role="status" className="invite-legal-note">{message}</p>}
     <p className="invite-legal-note">Digitou o endereço errado? <Link to="/teste-gratuito">Refaça o cadastro do teste</Link> ou use novamente seu convite.</p>
   </main></div></PageTransition>;
@@ -29,6 +32,7 @@ export function CheckEmail() {
 
 export function ConfirmEmail() {
   const token = window.location.hash.slice(1);
+  const confirmationStarted = useRef(false);
   const [hasConfirmationLink] = useState(Boolean(token));
   const [password, setPassword] = useState('');
   const [repeatPassword, setRepeatPassword] = useState('');
@@ -38,7 +42,8 @@ export function ConfirmEmail() {
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState('');
   useEffect(() => {
-    if (!token) return;
+    if (!token || confirmationStarted.current) return;
+    confirmationStarted.current = true;
     void confirmEmail(token).then((nextToken) => {
       window.history.replaceState(null, '', '/confirmar-email');
       setPasswordSetupToken(nextToken);

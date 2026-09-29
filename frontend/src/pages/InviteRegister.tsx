@@ -37,7 +37,12 @@ export default function InviteRegister() {
     event.preventDefault();
     setSubmitting(true);
     try {
-      const result = await concluirCadastroConvite(token, { name, nickname: nickname.trim() || undefined, email, birth_date: birthDate });
+      const result = await concluirCadastroConvite(token, {
+        name,
+        ...(convite?.role === 'user' ? { nickname: nickname.trim() || undefined } : {}),
+        email,
+        birth_date: birthDate,
+      });
       toast.success(result.mensagem);
       setTimeout(() => navigate('/verifique-email?email=' + encodeURIComponent(email), { replace: true }), 800);
     } catch (error: any) {
@@ -72,7 +77,7 @@ export default function InviteRegister() {
 
               <form onSubmit={handleSubmit} className="invite-form">
                 <label>Seu nome<input value={name} onChange={(event) => setName(event.target.value)} minLength={3} required /></label>
-                <label>Apelido de aventura <small>vai para aprovação</small><input value={nickname} onChange={(event) => setNickname(event.target.value)} minLength={3} maxLength={24} pattern="[A-Za-zÀ-ÿ0-9 _-]+" placeholder="Ex.: Guardiã Estelar" /></label>
+                {convite.role === 'user' && <label>Apelido de aventura <small>vai para aprovação</small><input value={nickname} onChange={(event) => setNickname(event.target.value)} minLength={3} maxLength={24} pattern="[A-Za-zÀ-ÿ0-9 _-]+" placeholder="Ex.: Guardiã Estelar" /></label>}
                 <label>E-mail da escola<input type="email" value={email} onChange={(event) => setEmail(event.target.value)} disabled={Boolean(convite.email)} required /></label>
                 <BirthDateField value={birthDate} onChange={setBirthDate} />
                 <button type="submit" disabled={submitting}>{submitting ? 'Enviando confirmação...' : 'Confirmar meu e-mail'}</button>
