@@ -17,6 +17,14 @@ export interface EmpresaCriadaComAdministrador {
   token: string;
 }
 
+export interface EmpresasPaginadas {
+  items: EmpresaAdministravel[];
+  page: number;
+  pageSize: number;
+  total: number;
+  totalPages: number;
+}
+
 export interface RegistroAuditoriaEmpresa {
   id: number;
   created_at: string;
@@ -41,6 +49,22 @@ function empresaPath(empresaId?: number) {
 
 export async function listarEmpresas(): Promise<EmpresaAdministravel[]> {
   const response = await api.get("/platform/admin/empresas");
+  return response.data;
+}
+
+export async function listarEmpresasPaginadas(filters: {
+  page: number;
+  pageSize?: number;
+  search?: string;
+  sort?: 'asc' | 'desc';
+}): Promise<EmpresasPaginadas> {
+  const params = new URLSearchParams({
+    page: String(filters.page),
+    pageSize: String(filters.pageSize ?? 25),
+    sort: filters.sort ?? 'asc',
+  });
+  if (filters.search?.trim()) params.set('search', filters.search.trim());
+  const response = await api.get(`/platform/admin/empresas/paginadas?${params}`);
   return response.data;
 }
 

@@ -1,18 +1,18 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { AlertCircle, Building2, CheckCircle2, Copy, Plus } from "lucide-react";
 import { AppButton } from "@/components/ui/buttons/AppButton";
-import { criarEmpresa, type EmpresaAdministravel } from "@/services/admin";
+import { criarEmpresa, listarEmpresasPaginadas, type EmpresaAdministravel, type EmpresasPaginadas } from "@/services/admin";
 
 interface CompanyManagementTabProps {
-  empresas: EmpresaAdministravel[];
   onEmpresaCriada: (empresa: EmpresaAdministravel) => void;
+  storageKey: string;
   empresaNome?: string;
   onNomeChange?: (nome: string) => void;
 }
 
 export function CompanyManagementTab({
-  empresas,
   onEmpresaCriada,
+  storageKey,
   empresaNome,
   onNomeChange,
 }: CompanyManagementTabProps) {
@@ -24,6 +24,59 @@ export function CompanyManagementTab({
   const [linkAdministrador, setLinkAdministrador] = useState<string | null>(
     null,
   );
+  const [searchInput, setSearchInput] = useState("");
+  const [search, setSearch] = useState("");
+  const [sort, setSort] = useState<"asc" | "desc">("asc");
+  const [page, setPage] = useState(1);
+  const [reload, setReload] = useState(0);
+  const [list, setList] = useState<EmpresasPaginadas | null>(null);
+  const [loadingList, setLoadingList] = useState(true);
+  const [listError, setListError] = useState(false);
+  const [restoredKey, setRestoredKey] = useState<string | null>(null);
+
+  useEffect(() => {
+    let nextSearch = "";
+    let nextSort: "asc" | "desc" = "asc";
+    let nextPage = 1;
+    try {
+      const saved = sessionStorage.getItem(storageKey);
+      if (saved) {
+        const state = JSON.parse(saved) as { search?: string; sort?: string; page?: number };
+        if (typeof state.search === "string") nextSearch = state.search;
+        if (state.sort === "desc") nextSort = "desc";
+        if (Number.isInteger(state.page) && (state.page as number) > 0) nextPage = state.page as number;
+      }
+    } catch { /* Filtros persistidos são opcionais. */ }
+    setSearchInput(nextSearch);
+    setSearch(nextSearch);
+    setSort(nextSort);
+    setPage(nextPage);
+    setList(null);
+    setRestoredKey(storageKey);
+  }, [storageKey]);
+  useEffect(() => {
+    if (restoredKey !== storageKey) return;
+    try { sessionStorage.setItem(storageKey, JSON.stringify({ search, sort, page })); }
+    catch { /* Listagem permanece utilizável sem sessionStorage. */ }
+  }, [search, sort, page, storageKey, restoredKey]);
+  useEffect(() => {
+    if (restoredKey !== storageKey) return;
+    let cancelled = false;
+    setLoadingList(true);
+    setListError(false);
+    void listarEmpresasPaginadas({ page, pageSize: 25, search, sort })
+      .then((data) => {
+        if (cancelled) return;
+        if (page > Math.max(1, data.totalPages)) {
+          setPage(Math.max(1, data.totalPages));
+          return;
+        }
+        setList(data);
+      })
+      .catch(() => { if (!cancelled) { setList(null); setListError(true); } })
+      .finally(() => { if (!cancelled) setLoadingList(false); });
+    return () => { cancelled = true; };
+  }, [page, search, sort, reload, restoredKey, storageKey]);
 
   const cadastrar = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -35,6 +88,8 @@ export function CompanyManagementTab({
         email_administrador: emailAdministrador.trim(),
       });
       onEmpresaCriada(resultado.empresa);
+      setPage(1);
+      setReload((current) => current + 1);
       setNome("");
       setEmailAdministrador("");
       setErro(false);
@@ -183,11 +238,24 @@ export function CompanyManagementTab({
       <section className="admin-company-list-card">
         <div className="admin-company-list-heading">
           <strong>Empresas cadastradas</strong>
-          <span>{empresas.length}</span>
+          <span aria-label="Total de empresas encontradas">{list?.total ?? "—"}</span>
         </div>
-        {empresas.length ? (
+        <form className="admin-company-list-filters" onSubmit={(event) => { event.preventDefault(); setPage(1); setSearch(searchInput.trim()); }}>
+          <label>Buscar por nome
+            <input value={searchInput} onChange={(event) => setSearchInput(event.target.value)} placeholder="Nome da empresa" maxLength={100} />
+          </label>
+          <AppButton type="submit" size="sm">Buscar</AppButton>
+          <label>Ordenar por nome
+            <select value={sort} onChange={(event) => { setPage(1); setSort(event.target.value as "asc" | "desc"); }}>
+              <option value="asc">A–Z</option><option value="desc">Z–A</option>
+            </select>
+          </label>
+        </form>
+        {loadingList ? <p role="status" className="admin-users-empty">Carregando empresas...</p> : listError ? (
+          <div role="alert" className="admin-feedback is-error">Não foi possível carregar as empresas. <AppButton size="sm" onClick={() => setReload((current) => current + 1)}>Tentar novamente</AppButton></div>
+        ) : list?.items.length ? (
           <ul className="admin-company-list">
-            {empresas.map((empresa) => (
+            {list.items.map((empresa) => (
               <li key={empresa.id}>
                 <span className="admin-company-icon">
                   <Building2 size={17} />
@@ -202,7 +270,14 @@ export function CompanyManagementTab({
             ))}
           </ul>
         ) : (
-          <p className="admin-users-empty">Nenhuma empresa cadastrada.</p>
+          <p className="admin-users-empty">{search ? "Nenhuma empresa encontrada para esta busca." : "Nenhuma empresa cadastrada."}</p>
+        )}
+        {!loadingList && !listError && list && list.totalPages > 1 && (
+          <nav className="admin-company-pagination" aria-label="Páginas de empresas">
+            <AppButton size="sm" variant="ghost" disabled={page <= 1} onClick={() => setPage((current) => current - 1)}>Anterior</AppButton>
+            <span>Página {page} de {list.totalPages}</span>
+            <AppButton size="sm" variant="ghost" disabled={page >= list.totalPages} onClick={() => setPage((current) => current + 1)}>Próxima</AppButton>
+          </nav>
         )}
       </section>
     </div>

@@ -54,7 +54,7 @@ function empresaPath(empresaId?: number) {
 }
 
 export async function listarUsuarios(
-  options: { page: number; pageSize?: number; search?: string; status?: 'active' | 'inactive' | 'management' },
+  options: { page: number; pageSize?: number; search?: string; status?: 'active' | 'inactive' | 'management'; sort?: 'asc' | 'desc' },
   empresaId?: number,
 ): Promise<UsuariosPaginados> {
   const params = new URLSearchParams({
@@ -63,6 +63,7 @@ export async function listarUsuarios(
   });
   if (options.search?.trim()) params.set('search', options.search.trim());
   if (options.status) params.set('status', options.status);
+  if (options.sort) params.set('sort', options.sort);
   const response = await api.get(`${empresaPath(empresaId)}/usuarios?${params}`);
   return response.data;
 }
@@ -73,7 +74,7 @@ export async function obterResumoAdministrativo(empresaId?: number): Promise<Res
 }
 
 export async function listarApelidosPendentes(
-  options: { page: number; pageSize?: number; search?: string },
+  options: { page: number; pageSize?: number; search?: string; sort?: 'default' | 'asc' | 'desc' },
   empresaId?: number,
 ): Promise<ApelidosPendentesPaginados> {
   const params = new URLSearchParams({
@@ -81,6 +82,7 @@ export async function listarApelidosPendentes(
     pageSize: String(options.pageSize ?? 25),
   });
   if (options.search?.trim()) params.set('search', options.search.trim());
+  if (options.sort) params.set('sort', options.sort);
   const response = await api.get(`${empresaPath(empresaId)}/apelidos-pendentes?${params}`);
   return response.data;
 }

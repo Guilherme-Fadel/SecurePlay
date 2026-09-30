@@ -40,7 +40,7 @@ function sectionPath(section: Section, target: ContentTarget | null): string {
  * garante o acesso e o RolesGuard no backend. Serve para nao montar a tela nem
  * disparar as chamadas dela para quem vai receber 403.
  */
-const restrictedSections: Partial<Record<Section, string>> = { admin: 'platform_admin' };
+const restrictedSections: Partial<Record<Section, string[]>> = { admin: ['platform_admin', 'admin'] };
 function HomeContent() {
     const features = useCompanyFeatures();
     const navigate = useNavigate();
@@ -50,8 +50,8 @@ function HomeContent() {
         (section: Section) => {
             if (section === 'conquistas' && !features.achievements) return false;
             if (section === 'ranking' && !features.ranking) return false;
-            const requiredRole = restrictedSections[section];
-            return !requiredRole || user?.role === requiredRole;
+            const allowedRoles = restrictedSections[section];
+            return !allowedRoles || allowedRoles.includes(user?.role ?? '');
         },
         [user?.role, features.achievements, features.ranking],
     );
@@ -63,7 +63,7 @@ function HomeContent() {
         conteudos: <Conteudos />,
         configuracoes: <Settings />,
         perfil: <Perfil />,
-        admin: <Suspense fallback={null}><Admin platformMode /></Suspense>,
+        admin: <Suspense fallback={null}><Admin platformMode={user?.role === 'platform_admin'} /></Suspense>,
     };
     useEmpresaTema();
     useVisualPreload(user);

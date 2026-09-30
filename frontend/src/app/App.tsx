@@ -55,6 +55,6 @@ function LegacyInviteRedirect() {
  */
 function AdminEntry() {
   const { user } = useCurrentUser();
-  const allowed = user?.role === 'platform_admin';
+  const allowed = user?.role === 'platform_admin' || user?.role === 'admin';
   return <Navigate to={allowed ? '/home/admin' : '/home'} replace />;
 }

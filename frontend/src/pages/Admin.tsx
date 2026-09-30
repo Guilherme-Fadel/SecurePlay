@@ -13,7 +13,7 @@ import {
   presignLogo,
   getCompanyParameters,
   updateCompanySettings,
-  listarEmpresas,
+  listarEmpresasPaginadas,
   type EmpresaAdministravel,
 } from "@/services/admin";
 import { EmpresaPaleta } from "@/services/me";
@@ -98,11 +98,17 @@ const Admin = forwardRef<AdminSaveHandle, AdminProps>(function Admin(
     "empresas" | "visao-geral" | "usuarios" | "apelidos" | "convites" | "auditoria" | "layout" | "funcionalidades"
   >(initialTab);
   const [empresas, setEmpresas] = useState<EmpresaAdministravel[]>([]);
+  const [empresaSelecionadaDetalhe, setEmpresaSelecionadaDetalhe] = useState<EmpresaAdministravel | null>(null);
+  const [empresaBuscaInput, setEmpresaBuscaInput] = useState("");
+  const [empresaBusca, setEmpresaBusca] = useState("");
+  const [empresasTotal, setEmpresasTotal] = useState(0);
+  const [empresasLoading, setEmpresasLoading] = useState(false);
   const [empresaSelecionadaId, setEmpresaSelecionadaId] = useState<
     number | null
   >(null);
   const empresaSelecionada =
-    empresas.find((empresa) => empresa.id === empresaSelecionadaId) ?? null;
+    empresas.find((empresa) => empresa.id === empresaSelecionadaId) ??
+    (empresaSelecionadaDetalhe?.id === empresaSelecionadaId ? empresaSelecionadaDetalhe : null);
   const empresaAlvoId = platformMode
     ? (empresaSelecionadaId ?? undefined)
     : undefined;
@@ -140,7 +146,11 @@ const Admin = forwardRef<AdminSaveHandle, AdminProps>(function Admin(
         a.nome.localeCompare(b.nome, "pt-BR"),
       ),
     );
-    if (!dirty) setEmpresaSelecionadaId(empresa.id);
+    setEmpresasTotal((current) => current + 1);
+    if (!dirty) {
+      setEmpresaSelecionadaDetalhe(empresa);
+      setEmpresaSelecionadaId(empresa.id);
+    }
   };
 
   useEffect(() => {
@@ -192,13 +202,19 @@ const Admin = forwardRef<AdminSaveHandle, AdminProps>(function Admin(
 
   useEffect(() => {
     if (!platformMode) return;
-    listarEmpresas()
+    let cancelled = false;
+    setEmpresasLoading(true);
+    listarEmpresasPaginadas({ page: 1, pageSize: 25, search: empresaBusca })
       .then((data) => {
-        setEmpresas(data);
-        setEmpresaSelecionadaId((current) => current ?? data[0]?.id ?? null);
+        if (cancelled) return;
+        setEmpresas(data.items);
+        setEmpresasTotal(data.total);
+        setEmpresaSelecionadaId((current) => current ?? data.items[0]?.id ?? null);
       })
-      .catch(() => setMessage("Erro ao carregar as empresas."));
-  }, [platformMode]);
+      .catch(() => { if (!cancelled) setMessage("Erro ao carregar as empresas."); })
+      .finally(() => { if (!cancelled) setEmpresasLoading(false); });
+    return () => { cancelled = true; };
+  }, [platformMode, empresaBusca]);
 
   useEffect(() => {
     if (platformMode && !empresaSelecionadaId) return;
@@ -211,6 +227,9 @@ const Admin = forwardRef<AdminSaveHandle, AdminProps>(function Admin(
       .then(([data, nextParameters]) => {
         if (generation.current !== current) return;
         setEmpresaNome(data.nome);
+        if (platformMode && empresaAlvoId) {
+          setEmpresaSelecionadaDetalhe({ id: empresaAlvoId, ...data });
+        }
         const nextPalette = data.paleta ?? DEFAULT_PALETTES[0].paleta;
         setPaleta(nextPalette);
         setLogoUrl(data.logo_url ?? null);
@@ -343,6 +362,10 @@ const Admin = forwardRef<AdminSaveHandle, AdminProps>(function Admin(
               : empresa,
           ),
         );
+      if (platformMode && empresaAlvoId) {
+        setEmpresaSelecionadaDetalhe((current) => current?.id === empresaAlvoId
+          ? { ...current, nome: updatedTema.nome } : current);
+      }
       if (user && !platformMode) {
         setSession({
           ...user,
@@ -392,6 +415,17 @@ const Admin = forwardRef<AdminSaveHandle, AdminProps>(function Admin(
             {platformMode && (
               <div className="admin-platform-context">
                 <span>Empresa administrada</span>
+                <form onSubmit={(event) => { event.preventDefault(); setEmpresaBusca(empresaBuscaInput.trim()); }} className="admin-platform-search">
+                  <input
+                    type="search"
+                    value={empresaBuscaInput}
+                    onChange={(event) => setEmpresaBuscaInput(event.target.value)}
+                    placeholder="Buscar empresa"
+                    aria-label="Buscar empresa por nome"
+                    maxLength={100}
+                  />
+                  <AppButton type="submit" size="sm" variant="ghost">Buscar</AppButton>
+                </form>
                 <select
                   disabled={saving || uploading}
                   value={empresaSelecionadaId ?? ""}
@@ -401,20 +435,26 @@ const Admin = forwardRef<AdminSaveHandle, AdminProps>(function Admin(
                       window.confirm(
                         "Há alterações não salvas. Deseja descartá-las e trocar de empresa?",
                       )
-                    )
+                    ) {
                       setEmpresaSelecionadaId(Number(event.target.value));
+                      setEmpresaSelecionadaDetalhe(empresas.find((empresa) => empresa.id === Number(event.target.value)) ?? null);
+                    }
                   }}
                   aria-label="Selecionar empresa"
                 >
                   <option value="" disabled>
                     Selecione uma empresa
                   </option>
+                  {empresaSelecionadaDetalhe && !empresas.some((empresa) => empresa.id === empresaSelecionadaDetalhe.id) && (
+                    <option value={empresaSelecionadaDetalhe.id}>{empresaSelecionadaDetalhe.nome}</option>
+                  )}
                   {empresas.map((empresa) => (
                     <option key={empresa.id} value={empresa.id}>
                       {empresa.nome}
                     </option>
                   ))}
                 </select>
+                <small role="status">{empresasLoading ? "Buscando..." : `${empresasTotal} empresa(s) encontrada(s); até 25 opções por busca`}</small>
               </div>
             )}
 
@@ -463,7 +503,7 @@ const Admin = forwardRef<AdminSaveHandle, AdminProps>(function Admin(
             className={cn("admin-workspace", lockedTab && "is-single-column")}
           >
             {!lockedTab && (
-              <aside className="admin-tabs" aria-label="Seções administrativas">
+              <nav className="admin-tabs" aria-label="Seções administrativas">
                 <span className="admin-tabs-label">
                   {platformMode
                     ? "Administração global"
@@ -473,6 +513,7 @@ const Admin = forwardRef<AdminSaveHandle, AdminProps>(function Admin(
                   <button
                     type="button"
                     onClick={() => setActiveTab("empresas")}
+                    aria-current={activeTab === "empresas" ? "page" : undefined}
                     className={cn(
                       "admin-tab",
                       activeTab === "empresas" && "is-active",
@@ -482,13 +523,14 @@ const Admin = forwardRef<AdminSaveHandle, AdminProps>(function Admin(
                     <span>Empresas</span>
                   </button>
                 )}
-                <button type="button" onClick={() => setActiveTab("visao-geral")} className={cn("admin-tab", activeTab === "visao-geral" && "is-active")}>
+                <button type="button" onClick={() => setActiveTab("visao-geral")} aria-current={activeTab === "visao-geral" ? "page" : undefined} className={cn("admin-tab", activeTab === "visao-geral" && "is-active")}>
                   <BarChart3 size={17} />
                   <span>Visão geral</span>
                 </button>
                 <button
                   type="button"
                   onClick={() => setActiveTab("usuarios")}
+                  aria-current={activeTab === "usuarios" ? "page" : undefined}
                   className={cn(
                     "admin-tab",
                     activeTab === "usuarios" && "is-active",
@@ -500,6 +542,7 @@ const Admin = forwardRef<AdminSaveHandle, AdminProps>(function Admin(
                 <button
                   type="button"
                   onClick={() => setActiveTab("apelidos")}
+                  aria-current={activeTab === "apelidos" ? "page" : undefined}
                   className={cn(
                     "admin-tab",
                     activeTab === "apelidos" && "is-active",
@@ -508,46 +551,40 @@ const Admin = forwardRef<AdminSaveHandle, AdminProps>(function Admin(
                   <CheckCircle2 size={17} />
                   <span>Apelidos pendentes</span>
                 </button>
-                <button type="button" onClick={() => setActiveTab("convites")} className={cn("admin-tab", activeTab === "convites" && "is-active")}>
+                <button type="button" onClick={() => setActiveTab("convites")} aria-current={activeTab === "convites" ? "page" : undefined} className={cn("admin-tab", activeTab === "convites" && "is-active")}>
                   <Link2 size={17} />
                   <span>Convites</span>
                 </button>
-                {platformMode && <button type="button" onClick={() => setActiveTab("auditoria")} className={cn("admin-tab", activeTab === "auditoria" && "is-active")}>
+                {platformMode && <button type="button" onClick={() => setActiveTab("auditoria")} aria-current={activeTab === "auditoria" ? "page" : undefined} className={cn("admin-tab", activeTab === "auditoria" && "is-active")}>
                   <ClipboardList size={17} />
                   <span>Auditoria</span>
                 </button>}
                 <button
                   type="button"
                   onClick={() => setActiveTab("layout")}
+                  aria-current={activeTab === "layout" || activeTab === "funcionalidades" ? "page" : undefined}
                   className={cn(
                     "admin-tab",
-                    activeTab === "layout" && "is-active",
+                    (activeTab === "layout" || activeTab === "funcionalidades") && "is-active",
                   )}
                 >
                   <LayoutTemplate size={17} />
-                  <span>Layout</span>
+                  <span>Configurações da empresa</span>
                 </button>
-                {platformMode && user?.role === "platform_admin" && (
-                  <button
-                    type="button"
-                    onClick={() => setActiveTab("funcionalidades")}
-                    className={cn(
-                      "admin-tab",
-                      activeTab === "funcionalidades" && "is-active",
-                    )}
-                  >
-                    <SlidersHorizontal size={17} />
-                    <span>Funcionalidades</span>
-                  </button>
-                )}
-              </aside>
+              </nav>
             )}
 
             <section className="admin-workspace-content">
+              {!lockedTab && (activeTab === "layout" || activeTab === "funcionalidades") && (
+                <nav className="admin-settings-subnav" aria-label="Configurações da empresa">
+                  <button type="button" aria-current={activeTab === "layout" ? "page" : undefined} onClick={() => setActiveTab("layout")}>Layout</button>
+                  {platformMode && <button type="button" aria-current={activeTab === "funcionalidades" ? "page" : undefined} onClick={() => setActiveTab("funcionalidades")}>Funcionalidades</button>}
+                </nav>
+              )}
               {activeTab === "empresas" && platformMode ? (
                 <CompanyManagementTab
-                  empresas={empresas}
                   onEmpresaCriada={handleEmpresaCriada}
+                  storageKey={`${adminSessionKey}:companies`}
                   empresaNome={empresaNome}
                   onNomeChange={loaded ? setEmpresaNome : undefined}
                 />
@@ -564,7 +601,7 @@ const Admin = forwardRef<AdminSaveHandle, AdminProps>(function Admin(
                   saving={saving}
                 />
               ) : activeTab === "visao-geral" ? (
-                <AdminOverviewTab empresaId={empresaAlvoId} empresaNome={platformMode ? empresaSelecionada?.nome : undefined} />
+                <AdminOverviewTab empresaId={empresaAlvoId} empresaNome={platformMode ? empresaSelecionada?.nome : undefined} onNavigate={(tab) => setActiveTab(tab)} />
               ) : activeTab === "usuarios" ? (
                 <UserManagementTab
                   empresaId={empresaAlvoId}

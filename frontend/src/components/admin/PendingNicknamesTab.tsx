@@ -23,6 +23,7 @@ export function PendingNicknamesTab({ empresaId, empresaNome }: PendingNicknames
   const { user } = useCurrentUser();
   const sessionKey = `secureplay-admin-nicknames:${user?.userId ?? 'unknown'}:${empresaId ?? 'company'}`;
   const [search, setSearch] = useState('');
+  const [sort, setSort] = useState<'default' | 'asc' | 'desc'>('default');
   const deferredSearch = useDeferredValue(search);
   const [page, setPage] = useState(1);
   const [result, setResult] = useState(emptyResult);
@@ -36,35 +37,38 @@ export function PendingNicknamesTab({ empresaId, empresaNome }: PendingNicknames
   useEffect(() => {
     try {
       const saved = sessionStorage.getItem(sessionKey);
-      const state = saved ? JSON.parse(saved) as { search?: string; page?: number } : {};
+      const state = saved ? JSON.parse(saved) as { search?: string; sort?: 'default' | 'asc' | 'desc'; page?: number } : {};
       setSearch(state.search ?? '');
+      setSort(state.sort === 'asc' || state.sort === 'desc' ? state.sort : 'default');
       setPage(typeof state.page === 'number' && Number.isInteger(state.page) && state.page > 0 ? state.page : 1);
     } catch {
-      setSearch(''); setPage(1);
+      setSearch(''); setSort('default'); setPage(1);
     }
     setRestoredKey(sessionKey);
   }, [sessionKey]);
 
   useEffect(() => {
     if (restoredKey !== sessionKey || deferredSearch !== search) return;
-    try { sessionStorage.setItem(sessionKey, JSON.stringify({ search, page })); } catch { /* Optional session preference. */ }
-  }, [page, restoredKey, search, sessionKey]);
+    try { sessionStorage.setItem(sessionKey, JSON.stringify({ search, sort, page })); } catch { /* Optional session preference. */ }
+  }, [page, restoredKey, search, sessionKey, sort]);
 
   useEffect(() => {
     if (restoredKey !== sessionKey || deferredSearch !== search) return;
     let cancelled = false;
     setLoading(true);
     setLoadError(false);
-    void listarApelidosPendentes({ page, search: deferredSearch }, empresaId)
+    void listarApelidosPendentes({ page, search: deferredSearch, sort }, empresaId)
       .then((next) => {
-        if (!cancelled) setResult(next);
+        if (cancelled) return;
+        if (page > Math.max(1, next.totalPages)) { setPage(Math.max(1, next.totalPages)); return; }
+        setResult(next);
       })
       .catch(() => {
         if (!cancelled) { setLoadError(true); setFeedback('Não foi possível carregar os apelidos pendentes.'); }
       })
       .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
-  }, [deferredSearch, empresaId, page, reload, restoredKey, search, sessionKey]);
+  }, [deferredSearch, empresaId, page, reload, restoredKey, search, sessionKey, sort]);
 
   const revisar = async (usuarioId: number, aprovado: boolean) => {
     setReviewing(usuarioId);
@@ -78,6 +82,7 @@ export function PendingNicknamesTab({ empresaId, empresaNome }: PendingNicknames
         total: Math.max(0, current.total - 1),
         items: current.items.filter((item) => item.id !== usuarioId),
       }));
+      setReload((current) => current + 1);
       setFeedback(aprovado ? 'Apelido aprovado e liberado no ranking.' : 'Pedido de apelido recusado.');
     } catch (error: any) {
       setFeedback(error.response?.data?.message ?? 'Não foi possível revisar o apelido.');
@@ -109,6 +114,11 @@ export function PendingNicknamesTab({ empresaId, empresaNome }: PendingNicknames
             <Search size={17} aria-hidden="true" />
             <input value={search} onChange={(event) => { setSearch(event.target.value); setPage(1); }} placeholder="Buscar por nome, e-mail ou apelido" />
           </label>
+          <select aria-label="Ordenar apelidos pendentes" value={sort} onChange={(event) => { setSort(event.target.value as 'default' | 'asc' | 'desc'); setPage(1); }}>
+            <option value="default">Ordem padrão</option>
+            <option value="asc">Apelido A–Z</option>
+            <option value="desc">Apelido Z–A</option>
+          </select>
           <span>{loading ? 'Carregando...' : `${result.total} resultado${result.total === 1 ? '' : 's'}`}</span>
         </div>
         {loading && <p className="admin-users-empty" role="status">Carregando apelidos...</p>}
