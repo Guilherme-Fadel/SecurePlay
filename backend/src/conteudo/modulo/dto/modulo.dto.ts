@@ -30,6 +30,11 @@ export class CreateModuloDto {
   @MaxLength(100)
   category: string;
 
+  @IsOptional()
+  @IsString()
+  @MaxLength(64)
+  learning_path?: string;
+
   @IsEnum(ModuloDifficulty)
   difficulty: ModuloDifficulty;
 
@@ -76,6 +81,11 @@ export class UpdateModuloDto {
   @IsString()
   @MaxLength(100)
   category?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(64)
+  learning_path?: string;
 
   @IsOptional()
   @IsEnum(ModuloDifficulty)

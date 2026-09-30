@@ -13,6 +13,8 @@ describe('AulaService (progresso parcial)', () => {
     create: jest.Mock;
     save: jest.Mock;
   };
+  let aulaQuizRepository: { find: jest.Mock; count: jest.Mock };
+  let s3Service: { generatePresignedGetUrl: jest.Mock };
   let moduloService: { assertModuloDesbloqueado: jest.Mock };
 
   beforeEach(() => {
@@ -23,6 +25,8 @@ describe('AulaService (progresso parcial)', () => {
       create: jest.fn((value) => value),
       save: jest.fn(async (value) => value),
     };
+    aulaQuizRepository = { find: jest.fn().mockResolvedValue([]), count: jest.fn().mockResolvedValue(0) };
+    s3Service = { generatePresignedGetUrl: jest.fn() };
     // por padrao o modulo esta liberado; os testes de aula validam o bloqueio sequencial de aula
     moduloService = {
       assertModuloDesbloqueado: jest.fn().mockResolvedValue(undefined),
@@ -30,12 +34,12 @@ describe('AulaService (progresso parcial)', () => {
 
     service = new AulaService(
       aulaRepository as never,
-      {} as never,
+      aulaQuizRepository as never,
       usuarioAulaRepository as never,
       {} as never,
       {} as never,
       {} as never,
-      {} as never,
+      s3Service as never,
       {} as never,
       {} as never,
       moduloService as never,
@@ -141,6 +145,54 @@ describe('AulaService (progresso parcial)', () => {
     await expect(service.findOne(7, 3)).rejects.toBeInstanceOf(
       BadRequestException,
     );
+  });
+
+  it('entrega páginas textuais e quiz sem resolver texto como URL nem expor o gabarito', async () => {
+    aulaRepository.findOne.mockResolvedValueOnce({
+      id: 77,
+      modulo_id: 50,
+      order: 1,
+      title: 'Segurança digital',
+      type: 'texto',
+      pages: ['Objetivo da aula\n\nProteja suas contas.'],
+      content_url: null,
+      active: true,
+    });
+    aulaRepository.find.mockResolvedValue([{ id: 77, modulo_id: 50, order: 1 }]);
+    usuarioAulaRepository.findOne.mockResolvedValue(null);
+    aulaQuizRepository.find.mockResolvedValue([{ id: 9, text: 'O que fazer?', options: ['Verificar', 'Ignorar'], correct_index: 0, order: 1 }]);
+
+    const result = await service.findOne(77, 3);
+
+    expect(result.pages).toEqual(['Objetivo da aula\n\nProteja suas contas.']);
+    expect(result.quiz).toEqual([{ id: 9, text: 'O que fazer?', options: ['Verificar', 'Ignorar'], order: 1 }]);
+    expect(s3Service.generatePresignedGetUrl).not.toHaveBeenCalled();
+  });
+
+  it('impede concluir diretamente uma aula textual que possui quiz', async () => {
+    aulaRepository.findOne.mockResolvedValueOnce({ id: 77, modulo_id: 50, type: 'texto', active: true });
+    aulaQuizRepository.count.mockResolvedValue(3);
+
+    await expect(service.concluir(77, 3)).rejects.toThrow(/responda ao quiz/i);
+    expect(usuarioAulaRepository.save).not.toHaveBeenCalled();
+  });
+
+  it('rejeita respostas duplicadas antes de pontuar ou creditar XP', async () => {
+    aulaRepository.findOne.mockResolvedValueOnce({ id: 77, modulo_id: 50, order: 1, type: 'texto', active: true });
+    aulaRepository.find.mockResolvedValue([{ id: 77, modulo_id: 50, order: 1 }]);
+    usuarioAulaRepository.findOne.mockResolvedValue(null);
+    aulaQuizRepository.find.mockResolvedValue([
+      { id: 1, options: ['Sim', 'Não'], correct_index: 0 },
+      { id: 2, options: ['Sim', 'Não'], correct_index: 1 },
+    ]);
+
+    await expect(service.submitQuiz(77, 3, {
+      answers: [
+        { questionId: 1, selectedIndex: 0 },
+        { questionId: 1, selectedIndex: 0 },
+      ],
+    })).rejects.toThrow(/cada pergunta uma vez/i);
+    expect(usuarioAulaRepository.save).not.toHaveBeenCalled();
   });
 
   it('nao pula para a primeira aula do capitulo seguinte', async () => {

@@ -5,7 +5,7 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { Not, Repository } from 'typeorm';
-import { Aula } from './aula.entity';
+import { Aula, AulaType } from './aula.entity';
 import { AulaQuiz } from '../aula-quiz/aula-quiz.entity';
 import { UsuarioAula } from '../usuario-aula/usuario-aula.entity';
 import { UsuarioStats } from '../../usuario-stats/usuario-stats.entity';
@@ -65,7 +65,7 @@ export class AulaService {
     });
 
     let quiz: AulaQuiz[] = [];
-    if (aula.type === 'quadrinho') {
+    if (aula.type === AulaType.QUADRINHO || aula.type === AulaType.TEXTO) {
       quiz = await this.aulaQuizRepository.find({
         where: { aula_id: id },
         order: { order: 'ASC' },
@@ -82,7 +82,9 @@ export class AulaService {
         ? await this.resolveUrl(aula.content_url)
         : null,
       pages: aula.pages
-        ? await Promise.all(aula.pages.map((key) => this.resolveUrl(key)))
+        ? aula.type === AulaType.TEXTO
+          ? aula.pages
+          : await Promise.all(aula.pages.map((key) => this.resolveUrl(key)))
         : null,
       duration: aula.duration,
       xp: aula.xp,
@@ -226,6 +228,15 @@ export class AulaService {
       throw new NotFoundException('Aula não encontrada');
     }
 
+    if (aula.type === AulaType.QUADRINHO || aula.type === AulaType.TEXTO) {
+      const quizCount = await this.aulaQuizRepository.count({
+        where: { aula_id: aulaId },
+      });
+      if (quizCount > 0) {
+        throw new BadRequestException('Responda ao quiz para concluir esta aula');
+      }
+    }
+
     const existing = await this.usuarioAulaRepository.findOne({
       where: { usuario_id, aula_id: aulaId },
     });
@@ -277,7 +288,7 @@ export class AulaService {
       throw new NotFoundException('Aula não encontrada');
     }
 
-    if (aula.type !== 'quadrinho') {
+    if (aula.type !== AulaType.QUADRINHO && aula.type !== AulaType.TEXTO) {
       throw new BadRequestException('Esta aula não possui quiz');
     }
 
@@ -301,17 +312,18 @@ export class AulaService {
 
     const questionMap = new Map(questions.map((q) => [q.id, q]));
 
+    const submittedIds = new Set(dto.answers.map((answer) => answer.questionId));
+    if (dto.answers.length !== questions.length || submittedIds.size !== questions.length ||
+        dto.answers.some((answer) => {
+          const question = questionMap.get(answer.questionId);
+          return !question || answer.selectedIndex < 0 || answer.selectedIndex >= question.options.length;
+        })) {
+      throw new BadRequestException('Responda cada pergunta uma vez com uma opção válida');
+    }
+
     let correctCount = 0;
     const corrections = dto.answers.map((answer) => {
-      const question = questionMap.get(answer.questionId);
-
-      if (!question) {
-        return {
-          questionId: answer.questionId,
-          correct: false,
-          correctIndex: -1,
-        };
-      }
+      const question = questionMap.get(answer.questionId)!;
 
       const isCorrect = answer.selectedIndex === question.correct_index;
       if (isCorrect) correctCount++;

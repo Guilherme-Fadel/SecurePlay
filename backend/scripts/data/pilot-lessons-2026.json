@@ -1,0 +1,1111 @@
+{
+  "version": 1,
+  "sourceFolderId": "1z5engKY4Co4EZsf1ZqO2Da220TZAcAhE",
+  "editorialNote": "Leitura textual adaptada de objetivo, ação, sinal de risco e apoio dos 24 roteiros. Inclui as três questões específicas de cada fonte; alternativas reordenadas sem mudar o gabarito. Vídeos e quadrinhos ainda não estão produzidos.",
+  "lessons": [
+    {
+      "number": 1,
+      "sourceId": "1B4viBRooDWqvzOgV9dDycehOPKr3SpMV",
+      "title": "O que é segurança digital",
+      "objective": "Reconhecer que segurança digital é o conjunto de cuidados para proteger pessoas, contas e dispositivos.",
+      "ageRange": "9 a 12 anos",
+      "xp": 200,
+      "pages": [
+        "Entenda o tema\n\nSegurança digital reúne cuidados com pessoas, contas e dispositivos. Pequenas decisões, como conferir uma mensagem ou ajustar uma permissão, podem evitar problemas.\n\nObjetivo: Reconhecer que segurança digital é o conjunto de cuidados para proteger pessoas, contas e dispositivos.",
+        "Situação para pensar\n\nAlex recebe um convite inesperado enquanto usa a internet. Antes de aceitar, ele precisa entender quem enviou e o que será compartilhado.\n\nSinal de alerta: achar que nada de ruim acontece online.",
+        "Como agir\n\nUse a internet com atenção e responsabilidade. Observe quem pede a informação, por qual canal e com qual finalidade.",
+        "Peça apoio e reflita\n\nUma ação recomendada é perguntar a um adulto de confiança quando algo parecer estranho.\n\nQual detalhe você conferiria antes de aceitar um convite desconhecido?"
+      ],
+      "quiz": [
+        {
+          "text": "Qual é a melhor atitude ao estudar o que é segurança digital?",
+          "options": [
+            "Agir sem pensar nas consequências",
+            "Use a internet com atenção e responsabilidade.",
+            "Achar que nada de ruim acontece online.",
+            "Ignorar orientações de segurança"
+          ],
+          "correctIndex": 1
+        },
+        {
+          "text": "Qual situação merece atenção especial?",
+          "options": [
+            "Usar recursos oficiais",
+            "Conversar com alguém de confiança",
+            "Achar que nada de ruim acontece online.",
+            "Use a internet com atenção e responsabilidade."
+          ],
+          "correctIndex": 2
+        },
+        {
+          "text": "Quando surgir uma dúvida ou sensação de risco, o que fazer?",
+          "options": [
+            "Esconder o problema",
+            "Continuar mesmo sem entender",
+            "Confiar apenas em pessoas desconhecidas",
+            "Perguntar a um adulto de confiança quando algo parecer estranho."
+          ],
+          "correctIndex": 3
+        }
+      ]
+    },
+    {
+      "number": 2,
+      "sourceId": "1qcBxCWz-VJkvvnd12vmeufmSEmH7tH73",
+      "title": "Senhas fortes e únicas",
+      "objective": "Criar senhas longas, difíceis de adivinhar e diferentes para cada conta.",
+      "ageRange": "10 a 14 anos",
+      "xp": 300,
+      "pages": [
+        "Entenda o tema\n\nUma senha longa e exclusiva protege cada conta de forma independente. Se a mesma senha for usada em vários serviços, o vazamento de um deles pode afetar os outros.\n\nObjetivo: Criar senhas longas, difíceis de adivinhar e diferentes para cada conta.",
+        "Situação para pensar\n\nUm jogo pede que Alex crie uma conta e ele pensa em repetir a senha do e-mail. Essa escolha conecta o risco de duas contas que deveriam estar separadas.\n\nSinal de alerta: reutilizar a mesma senha em todos os aplicativos.",
+        "Como agir\n\nUse frases-senha longas, com palavras sem relação entre si, números e símbolos quando permitido. Prefira uma frase-senha exclusiva e, se possível, guarde-a em um gerenciador de senhas com ajuda de um responsável.",
+        "Peça apoio e reflita\n\nUma ação recomendada é usar um gerenciador de senhas ou pedir ajuda a um responsável.\n\nVocê consegue pensar em uma forma de criar senhas diferentes sem precisar compartilhá-las?"
+      ],
+      "quiz": [
+        {
+          "text": "Qual é a melhor atitude ao estudar senhas fortes e únicas?",
+          "options": [
+            "Ignorar orientações de segurança",
+            "Agir sem pensar nas consequências",
+            "Use frases-senha longas, com palavras sem relação entre si, números e símbolos quando permitido.",
+            "Reutilizar a mesma senha em todos os aplicativos."
+          ],
+          "correctIndex": 2
+        },
+        {
+          "text": "Qual situação merece atenção especial?",
+          "options": [
+            "Use frases-senha longas, com palavras sem relação entre si, números e símbolos quando permitido.",
+            "Usar recursos oficiais",
+            "Conversar com alguém de confiança",
+            "Reutilizar a mesma senha em todos os aplicativos."
+          ],
+          "correctIndex": 3
+        },
+        {
+          "text": "Quando surgir uma dúvida ou sensação de risco, o que fazer?",
+          "options": [
+            "Usar um gerenciador de senhas ou pedir ajuda a um responsável.",
+            "Esconder o problema",
+            "Continuar mesmo sem entender",
+            "Confiar apenas em pessoas desconhecidas"
+          ],
+          "correctIndex": 0
+        }
+      ]
+    },
+    {
+      "number": 3,
+      "sourceId": "1-zVOLvxa522IIcV7kdR9k66ehD0YanCS",
+      "title": "Autenticação em dois fatores",
+      "objective": "Explicar como uma segunda confirmação reduz o risco de invasão de contas.",
+      "ageRange": "11 a 15 anos",
+      "xp": 350,
+      "pages": [
+        "Entenda o tema\n\nA autenticação em dois fatores acrescenta uma confirmação ao login. Ela reduz o risco de acesso indevido mesmo quando alguém descobre a senha, mas o código de confirmação continua sendo secreto.\n\nObjetivo: Explicar como uma segunda confirmação reduz o risco de invasão de contas.",
+        "Situação para pensar\n\nUma pessoa diz ser do suporte e pede o código que acabou de chegar ao celular de Alex. O pedido é suspeito, ainda que a mensagem pareça urgente.\n\nSinal de alerta: compartilhar o código recebido por sms ou aplicativo.",
+        "Como agir\n\nAtive a confirmação em duas etapas e guarde códigos de recuperação em local seguro. Ative o recurso pelas configurações oficiais da conta e guarde os códigos de recuperação em local seguro.",
+        "Peça apoio e reflita\n\nUma ação recomendada é procurar as configurações oficiais da conta.\n\nQuem deve receber um código de confirmação enviado para a sua conta?"
+      ],
+      "quiz": [
+        {
+          "text": "Qual é a melhor atitude ao estudar autenticação em dois fatores?",
+          "options": [
+            "Compartilhar o código recebido por SMS ou aplicativo.",
+            "Ignorar orientações de segurança",
+            "Agir sem pensar nas consequências",
+            "Ative a confirmação em duas etapas e guarde códigos de recuperação em local seguro."
+          ],
+          "correctIndex": 3
+        },
+        {
+          "text": "Qual situação merece atenção especial?",
+          "options": [
+            "Compartilhar o código recebido por SMS ou aplicativo.",
+            "Ative a confirmação em duas etapas e guarde códigos de recuperação em local seguro.",
+            "Usar recursos oficiais",
+            "Conversar com alguém de confiança"
+          ],
+          "correctIndex": 0
+        },
+        {
+          "text": "Quando surgir uma dúvida ou sensação de risco, o que fazer?",
+          "options": [
+            "Confiar apenas em pessoas desconhecidas",
+            "Procurar as configurações oficiais da conta.",
+            "Esconder o problema",
+            "Continuar mesmo sem entender"
+          ],
+          "correctIndex": 1
+        }
+      ]
+    },
+    {
+      "number": 4,
+      "sourceId": "1OEjJ3SxBbaGVR3yXv3Ty0nwD6JETc3tI",
+      "title": "Engenharia social",
+      "objective": "Reconhecer urgência falsa, autoridade falsa e promessas fáceis em mensagens suspeitas.",
+      "ageRange": "12 a 16 anos",
+      "xp": 600,
+      "pages": [
+        "Entenda o tema\n\nEngenharia social é o uso de conversa, pressão ou aparência de autoridade para levar alguém a agir sem conferir. A urgência artificial é um sinal comum.\n\nObjetivo: Reconhecer urgência falsa, autoridade falsa e promessas fáceis em mensagens suspeitas.",
+        "Situação para pensar\n\nAlex recebe um aviso dizendo que a conta será bloqueada em minutos. A mensagem pede um clique imediato, antes que ele consiga verificar o remetente.\n\nSinal de alerta: agir rápido porque a mensagem ameaça bloquear a conta.",
+        "Como agir\n\nPare, pense e confirme antes de responder ou clicar. Interrompa a conversa e procure o serviço pelo aplicativo ou endereço que você já conhece.",
+        "Peça apoio e reflita\n\nUma ação recomendada é confirmar pelo site, aplicativo ou adulto de confiança.\n\nComo confirmar uma ameaça de bloqueio sem usar o link da mensagem?"
+      ],
+      "quiz": [
+        {
+          "text": "Qual é a melhor atitude ao estudar engenharia social?",
+          "options": [
+            "Pare, pense e confirme antes de responder ou clicar.",
+            "Agir rápido porque a mensagem ameaça bloquear a conta.",
+            "Ignorar orientações de segurança",
+            "Agir sem pensar nas consequências"
+          ],
+          "correctIndex": 0
+        },
+        {
+          "text": "Qual situação merece atenção especial?",
+          "options": [
+            "Conversar com alguém de confiança",
+            "Agir rápido porque a mensagem ameaça bloquear a conta.",
+            "Pare, pense e confirme antes de responder ou clicar.",
+            "Usar recursos oficiais"
+          ],
+          "correctIndex": 1
+        },
+        {
+          "text": "Quando surgir uma dúvida ou sensação de risco, o que fazer?",
+          "options": [
+            "Continuar mesmo sem entender",
+            "Confiar apenas em pessoas desconhecidas",
+            "Confirmar pelo site, aplicativo ou adulto de confiança.",
+            "Esconder o problema"
+          ],
+          "correctIndex": 2
+        }
+      ]
+    },
+    {
+      "number": 5,
+      "sourceId": "1Hn4TI7bKMKn-DtBToVTUNw-k0xz1n2Ta",
+      "title": "Phishing links e e mails falsos",
+      "objective": "Identificar mensagens que imitam empresas para roubar dados ou levar a páginas falsas.",
+      "ageRange": "11 a 16 anos",
+      "xp": 500,
+      "pages": [
+        "Entenda o tema\n\nPhishing usa mensagens e páginas que imitam serviços conhecidos para obter senhas, códigos ou dados. Um logotipo conhecido não comprova que o link é verdadeiro.\n\nObjetivo: Identificar mensagens que imitam empresas para roubar dados ou levar a páginas falsas.",
+        "Situação para pensar\n\nUm e-mail parece vir de uma loja, mas o endereço do remetente e o destino do botão não combinam com o serviço. O clique pode levar a uma página falsa.\n\nSinal de alerta: abrir qualquer link que use logotipo conhecido.",
+        "Como agir\n\nConfira remetente, endereço do link e erros antes de clicar. Confira remetente e endereço completo antes de agir; abra o aplicativo oficial por conta própria quando tiver dúvida.",
+        "Peça apoio e reflita\n\nUma ação recomendada é acessar o serviço pelo aplicativo ou endereço digitado por você.\n\nO que você faria se um e-mail exigisse atualização urgente da sua senha?"
+      ],
+      "quiz": [
+        {
+          "text": "Qual é a melhor atitude ao estudar phishing links e e mails falsos?",
+          "options": [
+            "Agir sem pensar nas consequências",
+            "Confira remetente, endereço do link e erros antes de clicar.",
+            "Abrir qualquer link que use logotipo conhecido.",
+            "Ignorar orientações de segurança"
+          ],
+          "correctIndex": 1
+        },
+        {
+          "text": "Qual situação merece atenção especial?",
+          "options": [
+            "Usar recursos oficiais",
+            "Conversar com alguém de confiança",
+            "Abrir qualquer link que use logotipo conhecido.",
+            "Confira remetente, endereço do link e erros antes de clicar."
+          ],
+          "correctIndex": 2
+        },
+        {
+          "text": "Quando surgir uma dúvida ou sensação de risco, o que fazer?",
+          "options": [
+            "Esconder o problema",
+            "Continuar mesmo sem entender",
+            "Confiar apenas em pessoas desconhecidas",
+            "Acessar o serviço pelo aplicativo ou endereço digitado por você."
+          ],
+          "correctIndex": 3
+        }
+      ]
+    },
+    {
+      "number": 6,
+      "sourceId": "108Ocs5OhcIFWUOkIwQIuFVQPfjacgraS",
+      "title": "Golpes em jogos online e moedas virtuais",
+      "objective": "Evitar ofertas falsas de moedas, itens raros e contas de jogos.",
+      "ageRange": "9 a 14 anos",
+      "xp": 450,
+      "pages": [
+        "Entenda o tema\n\nOfertas de moedas, skins ou itens raros podem ser iscas para roubar contas de jogos. Recompensa que exige senha, código de login ou arquivo desconhecido merece desconfiança.\n\nObjetivo: Evitar ofertas falsas de moedas, itens raros e contas de jogos.",
+        "Situação para pensar\n\nUma mensagem promete moedas grátis após Alex entrar em um site fora do jogo. Para receber o prêmio, o site pede o login da conta principal.\n\nSinal de alerta: enviar a senha para receber uma recompensa.",
+        "Como agir\n\nDesconfie de diamantes, skins ou moedas grátis que peçam login, código ou download. Use apenas canais oficiais do jogo para conferir promoções e nunca entregue credenciais em troca de itens.",
+        "Peça apoio e reflita\n\nUma ação recomendada é contar a um responsável e denunciar dentro do jogo.\n\nComo denunciar uma oferta suspeita dentro de um jogo?"
+      ],
+      "quiz": [
+        {
+          "text": "Qual é a melhor atitude ao estudar golpes em jogos online e moedas virtuais?",
+          "options": [
+            "Ignorar orientações de segurança",
+            "Agir sem pensar nas consequências",
+            "Desconfie de diamantes, skins ou moedas grátis que peçam login, código ou download.",
+            "Enviar a senha para receber uma recompensa."
+          ],
+          "correctIndex": 2
+        },
+        {
+          "text": "Qual situação merece atenção especial?",
+          "options": [
+            "Desconfie de diamantes, skins ou moedas grátis que peçam login, código ou download.",
+            "Usar recursos oficiais",
+            "Conversar com alguém de confiança",
+            "Enviar a senha para receber uma recompensa."
+          ],
+          "correctIndex": 3
+        },
+        {
+          "text": "Quando surgir uma dúvida ou sensação de risco, o que fazer?",
+          "options": [
+            "Contar a um responsável e denunciar dentro do jogo.",
+            "Esconder o problema",
+            "Continuar mesmo sem entender",
+            "Confiar apenas em pessoas desconhecidas"
+          ],
+          "correctIndex": 0
+        }
+      ]
+    },
+    {
+      "number": 7,
+      "sourceId": "1d6jzXL8Lsi7GnMIxdGlDfa01MH5qSA9J",
+      "title": "Privacidade nas redes sociais",
+      "objective": "Configurar e avaliar quem pode ver publicações, comentários e mensagens.",
+      "ageRange": "10 a 15 anos",
+      "xp": 350,
+      "pages": [
+        "Entenda o tema\n\nAs configurações de privacidade ajudam a decidir quem vê publicações, comentários e mensagens. Seguidores e permissões mudam com o tempo, então vale revisar o perfil.\n\nObjetivo: Configurar e avaliar quem pode ver publicações, comentários e mensagens.",
+        "Situação para pensar\n\nAlex publica uma foto com detalhes da rotina em um perfil aberto. Pessoas fora de seu círculo também podem ver e compartilhar a publicação.\n\nSinal de alerta: deixar o perfil aberto sem avaliar o que publica.",
+        "Como agir\n\nRevise privacidade, seguidores e permissões do perfil regularmente. Revise audiência, seguidores e permissões antes de publicar e periodicamente depois.",
+        "Peça apoio e reflita\n\nUma ação recomendada é conversar com um adulto sobre configurações de privacidade.\n\nQuem realmente precisa ver sua localização ou sua rotina nas redes sociais?"
+      ],
+      "quiz": [
+        {
+          "text": "Qual é a melhor atitude ao estudar privacidade nas redes sociais?",
+          "options": [
+            "Deixar o perfil aberto sem avaliar o que publica.",
+            "Ignorar orientações de segurança",
+            "Agir sem pensar nas consequências",
+            "Revise privacidade, seguidores e permissões do perfil regularmente."
+          ],
+          "correctIndex": 3
+        },
+        {
+          "text": "Qual situação merece atenção especial?",
+          "options": [
+            "Deixar o perfil aberto sem avaliar o que publica.",
+            "Revise privacidade, seguidores e permissões do perfil regularmente.",
+            "Usar recursos oficiais",
+            "Conversar com alguém de confiança"
+          ],
+          "correctIndex": 0
+        },
+        {
+          "text": "Quando surgir uma dúvida ou sensação de risco, o que fazer?",
+          "options": [
+            "Confiar apenas em pessoas desconhecidas",
+            "Conversar com um adulto sobre configurações de privacidade.",
+            "Esconder o problema",
+            "Continuar mesmo sem entender"
+          ],
+          "correctIndex": 1
+        }
+      ]
+    },
+    {
+      "number": 8,
+      "sourceId": "1kWNrZEP4-srvGOSACd4b8dgFVjXrJYzG",
+      "title": "Dados pessoais na internet",
+      "objective": "Diferenciar informações pessoais de dados seguros para compartilhar.",
+      "ageRange": "8 a 13 anos",
+      "xp": 300,
+      "pages": [
+        "Entenda o tema\n\nDados pessoais incluem informações que identificam ou localizam alguém, como endereço, escola, telefone e rotina. Juntas, pequenas pistas podem revelar mais do que parecem.\n\nObjetivo: Diferenciar informações pessoais de dados seguros para compartilhar.",
+        "Situação para pensar\n\nUm desafio online pede nome completo, escola e horário em que a casa fica vazia. Preencher tudo pode expor Alex e sua família.\n\nSinal de alerta: publicar endereço e horário em que a casa fica vazia.",
+        "Como agir\n\nProteja nome completo, endereço, escola, telefone, fotos íntimas e rotina. Compartilhe apenas o necessário e peça ajuda antes de enviar informações em formulários desconhecidos.",
+        "Peça apoio e reflita\n\nUma ação recomendada é pedir ajuda antes de preencher formulários ou desafios.\n\nQue dados você retiraria de uma publicação antes de compartilhá-la?"
+      ],
+      "quiz": [
+        {
+          "text": "Qual é a melhor atitude ao estudar dados pessoais na internet?",
+          "options": [
+            "Proteja nome completo, endereço, escola, telefone, fotos íntimas e rotina.",
+            "Publicar endereço e horário em que a casa fica vazia.",
+            "Ignorar orientações de segurança",
+            "Agir sem pensar nas consequências"
+          ],
+          "correctIndex": 0
+        },
+        {
+          "text": "Qual situação merece atenção especial?",
+          "options": [
+            "Conversar com alguém de confiança",
+            "Publicar endereço e horário em que a casa fica vazia.",
+            "Proteja nome completo, endereço, escola, telefone, fotos íntimas e rotina.",
+            "Usar recursos oficiais"
+          ],
+          "correctIndex": 1
+        },
+        {
+          "text": "Quando surgir uma dúvida ou sensação de risco, o que fazer?",
+          "options": [
+            "Continuar mesmo sem entender",
+            "Confiar apenas em pessoas desconhecidas",
+            "Pedir ajuda antes de preencher formulários ou desafios.",
+            "Esconder o problema"
+          ],
+          "correctIndex": 2
+        }
+      ]
+    },
+    {
+      "number": 9,
+      "sourceId": "1kbs0hrdS6DOEXAykMy84bs8BHi36SGqg",
+      "title": "Pegada digital e reputação",
+      "objective": "Entender que publicações podem permanecer, circular e afetar a reputação.",
+      "ageRange": "11 a 16 anos",
+      "xp": 400,
+      "pages": [
+        "Entenda o tema\n\nA pegada digital é o conjunto de marcas deixadas por publicações, comentários e encaminhamentos. Mesmo depois de apagar algo, outras pessoas podem ter feito cópias.\n\nObjetivo: Entender que publicações podem permanecer, circular e afetar a reputação.",
+        "Situação para pensar\n\nAlex considera postar uma brincadeira que humilha um colega, pensando que poderá apagá-la depois. Uma captura de tela pode continuar circulando.\n\nSinal de alerta: publicar algo humilhante porque depois é possível apagar.",
+        "Como agir\n\nPense no futuro e no impacto antes de postar, comentar ou encaminhar. Pense no efeito da publicação sobre você e outras pessoas antes de enviar.",
+        "Peça apoio e reflita\n\nUma ação recomendada é revisar a postagem e pedir orientação antes de compartilhar.\n\nVocê ficaria confortável se essa postagem reaparecesse no futuro?"
+      ],
+      "quiz": [
+        {
+          "text": "Qual é a melhor atitude ao estudar pegada digital e reputação?",
+          "options": [
+            "Agir sem pensar nas consequências",
+            "Pense no futuro e no impacto antes de postar, comentar ou encaminhar.",
+            "Publicar algo humilhante porque depois é possível apagar.",
+            "Ignorar orientações de segurança"
+          ],
+          "correctIndex": 1
+        },
+        {
+          "text": "Qual situação merece atenção especial?",
+          "options": [
+            "Usar recursos oficiais",
+            "Conversar com alguém de confiança",
+            "Publicar algo humilhante porque depois é possível apagar.",
+            "Pense no futuro e no impacto antes de postar, comentar ou encaminhar."
+          ],
+          "correctIndex": 2
+        },
+        {
+          "text": "Quando surgir uma dúvida ou sensação de risco, o que fazer?",
+          "options": [
+            "Esconder o problema",
+            "Continuar mesmo sem entender",
+            "Confiar apenas em pessoas desconhecidas",
+            "Revisar a postagem e pedir orientação antes de compartilhar."
+          ],
+          "correctIndex": 3
+        }
+      ]
+    },
+    {
+      "number": 10,
+      "sourceId": "1Tpj6LtYuy3TFxgmYU79PUzP7yv3UZ-uu",
+      "title": "Cyberbullying",
+      "objective": "Reconhecer agressões online e saber registrar, bloquear e buscar apoio.",
+      "ageRange": "10 a 16 anos",
+      "xp": 500,
+      "pages": [
+        "Entenda o tema\n\nCyberbullying inclui ofensas, humilhações ou perseguição repetidas em ambientes digitais. Quem presencia também pode ajudar sem ampliar a agressão.\n\nObjetivo: Reconhecer agressões online e saber registrar, bloquear e buscar apoio.",
+        "Situação para pensar\n\nUma ofensa contra uma colega começa a circular no grupo. Repassá-la para divertir outros aumenta o alcance do ataque.\n\nSinal de alerta: repassar a ofensa para divertir o grupo.",
+        "Como agir\n\nNão responda com agressão; guarde provas, bloqueie e peça ajuda. Não responda com agressão; registre o ocorrido, bloqueie e peça apoio à família ou à escola.",
+        "Peça apoio e reflita\n\nUma ação recomendada é falar com família, escola ou outro adulto de confiança.\n\nA quem você recorreria se a agressão acontecesse em um grupo da turma?"
+      ],
+      "quiz": [
+        {
+          "text": "Qual é a melhor atitude ao estudar cyberbullying?",
+          "options": [
+            "Ignorar orientações de segurança",
+            "Agir sem pensar nas consequências",
+            "Não responda com agressão; guarde provas, bloqueie e peça ajuda.",
+            "Repassar a ofensa para divertir o grupo."
+          ],
+          "correctIndex": 2
+        },
+        {
+          "text": "Qual situação merece atenção especial?",
+          "options": [
+            "Não responda com agressão; guarde provas, bloqueie e peça ajuda.",
+            "Usar recursos oficiais",
+            "Conversar com alguém de confiança",
+            "Repassar a ofensa para divertir o grupo."
+          ],
+          "correctIndex": 3
+        },
+        {
+          "text": "Quando surgir uma dúvida ou sensação de risco, o que fazer?",
+          "options": [
+            "Falar com família, escola ou outro adulto de confiança.",
+            "Esconder o problema",
+            "Continuar mesmo sem entender",
+            "Confiar apenas em pessoas desconhecidas"
+          ],
+          "correctIndex": 0
+        }
+      ]
+    },
+    {
+      "number": 11,
+      "sourceId": "1_WEgGPP_zV0AiyLgXwWgaOty5ew6QwRt",
+      "title": "Fake news e desinformação",
+      "objective": "Questionar conteúdos que usam medo, choque ou promessa fácil para manipular.",
+      "ageRange": "10 a 16 anos",
+      "xp": 450,
+      "pages": [
+        "Entenda o tema\n\nDesinformação pode usar medo, choque ou promessa fácil para provocar compartilhamento rápido. Popularidade de uma mensagem não demonstra que ela é verdadeira.\n\nObjetivo: Questionar conteúdos que usam medo, choque ou promessa fácil para manipular.",
+        "Situação para pensar\n\nMuitas pessoas encaminham uma notícia alarmante, mas ninguém mostra a fonte original. Alex precisa decidir se repassa ou se verifica.\n\nSinal de alerta: repassar uma notícia porque muitas pessoas enviaram.",
+        "Como agir\n\nVerifique autor, data, contexto e fontes antes de acreditar ou compartilhar. Confira autor, data, contexto e outras fontes antes de acreditar ou compartilhar.",
+        "Peça apoio e reflita\n\nUma ação recomendada é comparar com fontes confiáveis e conversar sobre a dúvida.\n\nQual fonte independente poderia ajudar a confirmar essa notícia?"
+      ],
+      "quiz": [
+        {
+          "text": "Qual é a melhor atitude ao estudar fake news e desinformação?",
+          "options": [
+            "Repassar uma notícia porque muitas pessoas enviaram.",
+            "Ignorar orientações de segurança",
+            "Agir sem pensar nas consequências",
+            "Verifique autor, data, contexto e fontes antes de acreditar ou compartilhar."
+          ],
+          "correctIndex": 3
+        },
+        {
+          "text": "Qual situação merece atenção especial?",
+          "options": [
+            "Repassar uma notícia porque muitas pessoas enviaram.",
+            "Verifique autor, data, contexto e fontes antes de acreditar ou compartilhar.",
+            "Usar recursos oficiais",
+            "Conversar com alguém de confiança"
+          ],
+          "correctIndex": 0
+        },
+        {
+          "text": "Quando surgir uma dúvida ou sensação de risco, o que fazer?",
+          "options": [
+            "Confiar apenas em pessoas desconhecidas",
+            "Comparar com fontes confiáveis e conversar sobre a dúvida.",
+            "Esconder o problema",
+            "Continuar mesmo sem entender"
+          ],
+          "correctIndex": 1
+        }
+      ]
+    },
+    {
+      "number": 12,
+      "sourceId": "1GpkMFxZZAtekY01eymtkMb85CAlpR3F4",
+      "title": "Verificação de fontes e imagens",
+      "objective": "Aplicar passos simples para conferir origem, data, evidências e contexto de uma informação.",
+      "ageRange": "12 a 16 anos",
+      "xp": 500,
+      "pages": [
+        "Entenda o tema\n\nUma foto verdadeira pode ser usada fora do contexto. Verificar origem, data e lugar ajuda a entender se ela realmente mostra o fato alegado.\n\nObjetivo: Aplicar passos simples para conferir origem, data, evidências e contexto de uma informação.",
+        "Situação para pensar\n\nUma imagem antiga aparece como se fosse de um acontecimento de hoje. A legenda é nova, mas a foto pode contar outra história.\n\nSinal de alerta: concluir que uma foto prova algo sem checar data e local.",
+        "Como agir\n\nProcure a fonte original e use busca reversa de imagem quando possível. Procure a fonte original e compare a imagem em mais de uma fonte; use busca reversa quando possível.",
+        "Peça apoio e reflita\n\nUma ação recomendada é pesquisar em mais de uma fonte confiável.\n\nO que a data e o local mudam na interpretação de uma imagem?"
+      ],
+      "quiz": [
+        {
+          "text": "Qual é a melhor atitude ao estudar verificação de fontes e imagens?",
+          "options": [
+            "Procure a fonte original e use busca reversa de imagem quando possível.",
+            "Concluir que uma foto prova algo sem checar data e local.",
+            "Ignorar orientações de segurança",
+            "Agir sem pensar nas consequências"
+          ],
+          "correctIndex": 0
+        },
+        {
+          "text": "Qual situação merece atenção especial?",
+          "options": [
+            "Conversar com alguém de confiança",
+            "Concluir que uma foto prova algo sem checar data e local.",
+            "Procure a fonte original e use busca reversa de imagem quando possível.",
+            "Usar recursos oficiais"
+          ],
+          "correctIndex": 1
+        },
+        {
+          "text": "Quando surgir uma dúvida ou sensação de risco, o que fazer?",
+          "options": [
+            "Continuar mesmo sem entender",
+            "Confiar apenas em pessoas desconhecidas",
+            "Pesquisar em mais de uma fonte confiável.",
+            "Esconder o problema"
+          ],
+          "correctIndex": 2
+        }
+      ]
+    },
+    {
+      "number": 13,
+      "sourceId": "18SffDvx8uPwqhnMWoCdESu5Idoj4iPVU",
+      "title": "Uso seguro de IA e chatbots",
+      "objective": "Usar ferramentas de IA sem entregar dados pessoais e checando respostas importantes.",
+      "ageRange": "11 a 16 anos",
+      "xp": 450,
+      "pages": [
+        "Entenda o tema\n\nFerramentas de IA podem ajudar a estudar e criar, mas também podem apresentar respostas erradas ou incompletas. Dados pessoais enviados ao chatbot podem sair do seu controle.\n\nObjetivo: Usar ferramentas de IA sem entregar dados pessoais e checando respostas importantes.",
+        "Situação para pensar\n\nAlex recebe uma resposta convincente e pensa em copiá-la sem ler. Antes, precisa verificar se as informações fazem sentido e de onde vieram.\n\nSinal de alerta: copiar qualquer resposta da ia sem ler ou verificar.",
+        "Como agir\n\nNão informe dados pessoais; use a IA como apoio e confirme informações relevantes. Use a IA como apoio, preserve seus dados e confira informações importantes em fontes confiáveis.",
+        "Peça apoio e reflita\n\nUma ação recomendada é conferir em fontes confiáveis e pedir apoio em dúvidas importantes.\n\nQue informação pessoal você evitaria colocar em uma conversa com IA?"
+      ],
+      "quiz": [
+        {
+          "text": "Qual é a melhor atitude ao estudar uso seguro de ia e chatbots?",
+          "options": [
+            "Agir sem pensar nas consequências",
+            "Não informe dados pessoais; use a IA como apoio e confirme informações relevantes.",
+            "Copiar qualquer resposta da IA sem ler ou verificar.",
+            "Ignorar orientações de segurança"
+          ],
+          "correctIndex": 1
+        },
+        {
+          "text": "Qual situação merece atenção especial?",
+          "options": [
+            "Usar recursos oficiais",
+            "Conversar com alguém de confiança",
+            "Copiar qualquer resposta da IA sem ler ou verificar.",
+            "Não informe dados pessoais; use a IA como apoio e confirme informações relevantes."
+          ],
+          "correctIndex": 2
+        },
+        {
+          "text": "Quando surgir uma dúvida ou sensação de risco, o que fazer?",
+          "options": [
+            "Esconder o problema",
+            "Continuar mesmo sem entender",
+            "Confiar apenas em pessoas desconhecidas",
+            "Conferir em fontes confiáveis e pedir apoio em dúvidas importantes."
+          ],
+          "correctIndex": 3
+        }
+      ]
+    },
+    {
+      "number": 14,
+      "sourceId": "1UpNO4UYP6t9fGAgBWK2MZfXrFtm4O-qh",
+      "title": "Perfis falsos e catfishing",
+      "objective": "Identificar sinais de perfil falso e proteger-se de manipulação afetiva ou financeira.",
+      "ageRange": "11 a 16 anos",
+      "xp": 500,
+      "pages": [
+        "Entenda o tema\n\nUm perfil pode esconder a identidade de quem está do outro lado. Pedidos de segredo, fotos privadas ou dinheiro são sinais para interromper a conversa e buscar apoio.\n\nObjetivo: Identificar sinais de perfil falso e proteger-se de manipulação afetiva ou financeira.",
+        "Situação para pensar\n\nUma pessoa recém-conhecida insiste que Alex prove confiança enviando uma foto íntima e não conte a ninguém. A pressão é um alerta.\n\nSinal de alerta: enviar fotos privadas para provar confiança.",
+        "Como agir\n\nDesconfie de perfis novos, histórias incoerentes, pedidos de segredo ou dinheiro. Não envie imagens ou dinheiro; bloqueie o contato e converse com um adulto de confiança.",
+        "Peça apoio e reflita\n\nUma ação recomendada é bloquear e conversar com um adulto de confiança.\n\nComo reagir se alguém pedir segredo sobre algo que causa desconforto?"
+      ],
+      "quiz": [
+        {
+          "text": "Qual é a melhor atitude ao estudar perfis falsos e catfishing?",
+          "options": [
+            "Ignorar orientações de segurança",
+            "Agir sem pensar nas consequências",
+            "Desconfie de perfis novos, histórias incoerentes, pedidos de segredo ou dinheiro.",
+            "Enviar fotos privadas para provar confiança."
+          ],
+          "correctIndex": 2
+        },
+        {
+          "text": "Qual situação merece atenção especial?",
+          "options": [
+            "Desconfie de perfis novos, histórias incoerentes, pedidos de segredo ou dinheiro.",
+            "Usar recursos oficiais",
+            "Conversar com alguém de confiança",
+            "Enviar fotos privadas para provar confiança."
+          ],
+          "correctIndex": 3
+        },
+        {
+          "text": "Quando surgir uma dúvida ou sensação de risco, o que fazer?",
+          "options": [
+            "Bloquear e conversar com um adulto de confiança.",
+            "Esconder o problema",
+            "Continuar mesmo sem entender",
+            "Confiar apenas em pessoas desconhecidas"
+          ],
+          "correctIndex": 0
+        }
+      ]
+    },
+    {
+      "number": 15,
+      "sourceId": "1c_G_L057BgkGq0O-c0yOEFirBF1stIQo",
+      "title": "Segurança em chats grupos e comunidades",
+      "objective": "Manter limites, respeito e privacidade em conversas digitais.",
+      "ageRange": "9 a 15 anos",
+      "xp": 350,
+      "pages": [
+        "Entenda o tema\n\nGrupos e comunidades devem respeitar limites e privacidade. Pressão para entrar em desafios, aceitar desconhecidos ou revelar dados não é obrigação de ninguém.\n\nObjetivo: Manter limites, respeito e privacidade em conversas digitais.",
+        "Situação para pensar\n\nUm grupo privado recebe uma pessoa desconhecida que começa a pedir informações sobre os participantes. Alex pode sair e relatar a situação.\n\nSinal de alerta: aceitar desconhecidos em grupos privados sem verificar.",
+        "Como agir\n\nEvite expor dados, não entre em desafios perigosos e use ferramentas de bloqueio. Evite compartilhar dados e use ferramentas de denúncia e bloqueio quando houver pressão ou ameaça.",
+        "Peça apoio e reflita\n\nUma ação recomendada é sair do grupo e pedir ajuda se houver pressão ou ameaça.\n\nQuem pode ajudar se uma conversa em grupo se tornar ameaçadora?"
+      ],
+      "quiz": [
+        {
+          "text": "Qual é a melhor atitude ao estudar segurança em chats grupos e comunidades?",
+          "options": [
+            "Aceitar desconhecidos em grupos privados sem verificar.",
+            "Ignorar orientações de segurança",
+            "Agir sem pensar nas consequências",
+            "Evite expor dados, não entre em desafios perigosos e use ferramentas de bloqueio."
+          ],
+          "correctIndex": 3
+        },
+        {
+          "text": "Qual situação merece atenção especial?",
+          "options": [
+            "Aceitar desconhecidos em grupos privados sem verificar.",
+            "Evite expor dados, não entre em desafios perigosos e use ferramentas de bloqueio.",
+            "Usar recursos oficiais",
+            "Conversar com alguém de confiança"
+          ],
+          "correctIndex": 0
+        },
+        {
+          "text": "Quando surgir uma dúvida ou sensação de risco, o que fazer?",
+          "options": [
+            "Confiar apenas em pessoas desconhecidas",
+            "Sair do grupo e pedir ajuda se houver pressão ou ameaça.",
+            "Esconder o problema",
+            "Continuar mesmo sem entender"
+          ],
+          "correctIndex": 1
+        }
+      ]
+    },
+    {
+      "number": 16,
+      "sourceId": "1nH2snOsdgwJExh6BfBsvimeBZQ6SwgV6",
+      "title": "Downloads arquivos e aplicativos suspeitos",
+      "objective": "Escolher fontes oficiais e reconhecer riscos em arquivos e aplicativos desconhecidos.",
+      "ageRange": "10 a 16 anos",
+      "xp": 450,
+      "pages": [
+        "Entenda o tema\n\nArquivos e aplicativos de origem desconhecida podem conter riscos para o dispositivo e para os dados. A loja oficial e as permissões solicitadas são pistas para avaliar uma instalação.\n\nObjetivo: Escolher fontes oficiais e reconhecer riscos em arquivos e aplicativos desconhecidos.",
+        "Situação para pensar\n\nUm desconhecido envia um arquivo e promete um prêmio se Alex o instalar. O arquivo não vem de uma fonte conhecida.\n\nSinal de alerta: instalar um arquivo enviado por desconhecido para ganhar um prêmio.",
+        "Como agir\n\nBaixe apenas de lojas oficiais e confira permissões e avaliações. Baixe por canais oficiais, leia avaliações e confira se as permissões combinam com a função do aplicativo.",
+        "Peça apoio e reflita\n\nUma ação recomendada é apagar ou não abrir o arquivo e perguntar a um responsável.\n\nPor que um aplicativo simples pediria acesso aos seus contatos ou à câmera?"
+      ],
+      "quiz": [
+        {
+          "text": "Qual é a melhor atitude ao estudar downloads arquivos e aplicativos suspeitos?",
+          "options": [
+            "Baixe apenas de lojas oficiais e confira permissões e avaliações.",
+            "Instalar um arquivo enviado por desconhecido para ganhar um prêmio.",
+            "Ignorar orientações de segurança",
+            "Agir sem pensar nas consequências"
+          ],
+          "correctIndex": 0
+        },
+        {
+          "text": "Qual situação merece atenção especial?",
+          "options": [
+            "Conversar com alguém de confiança",
+            "Instalar um arquivo enviado por desconhecido para ganhar um prêmio.",
+            "Baixe apenas de lojas oficiais e confira permissões e avaliações.",
+            "Usar recursos oficiais"
+          ],
+          "correctIndex": 1
+        },
+        {
+          "text": "Quando surgir uma dúvida ou sensação de risco, o que fazer?",
+          "options": [
+            "Continuar mesmo sem entender",
+            "Confiar apenas em pessoas desconhecidas",
+            "Apagar ou não abrir o arquivo e perguntar a um responsável.",
+            "Esconder o problema"
+          ],
+          "correctIndex": 2
+        }
+      ]
+    },
+    {
+      "number": 17,
+      "sourceId": "1DgucO6D1uiPpjbAH4i0w-pYd1pDop8aV",
+      "title": "Vírus malware e ransomware",
+      "objective": "Compreender que programas maliciosos podem espionar, danificar ou bloquear arquivos.",
+      "ageRange": "11 a 16 anos",
+      "xp": 550,
+      "pages": [
+        "Entenda o tema\n\nMalware é software criado para causar dano, espionar ou bloquear arquivos. Atualizações, proteção ativa e cópias de segurança reduzem o impacto de incidentes.\n\nObjetivo: Compreender que programas maliciosos podem espionar, danificar ou bloquear arquivos.",
+        "Situação para pensar\n\nAlex recebe um anexo desconhecido e ignora um aviso de segurança para abri-lo. Depois, percebe comportamento estranho no dispositivo.\n\nSinal de alerta: ignorar avisos de segurança e executar anexos desconhecidos.",
+        "Como agir\n\nMantenha proteção e atualizações ativas e faça backup de arquivos importantes. Não execute anexos suspeitos; se houver sinais de infecção, peça ajuda e desconecte o aparelho da rede quando apropriado.",
+        "Peça apoio e reflita\n\nUma ação recomendada é desconectar da internet e avisar um adulto ou suporte responsável.\n\nOnde você guardaria uma cópia de arquivos importantes?"
+      ],
+      "quiz": [
+        {
+          "text": "Qual é a melhor atitude ao estudar vírus malware e ransomware?",
+          "options": [
+            "Agir sem pensar nas consequências",
+            "Mantenha proteção e atualizações ativas e faça backup de arquivos importantes.",
+            "Ignorar avisos de segurança e executar anexos desconhecidos.",
+            "Ignorar orientações de segurança"
+          ],
+          "correctIndex": 1
+        },
+        {
+          "text": "Qual situação merece atenção especial?",
+          "options": [
+            "Usar recursos oficiais",
+            "Conversar com alguém de confiança",
+            "Ignorar avisos de segurança e executar anexos desconhecidos.",
+            "Mantenha proteção e atualizações ativas e faça backup de arquivos importantes."
+          ],
+          "correctIndex": 2
+        },
+        {
+          "text": "Quando surgir uma dúvida ou sensação de risco, o que fazer?",
+          "options": [
+            "Esconder o problema",
+            "Continuar mesmo sem entender",
+            "Confiar apenas em pessoas desconhecidas",
+            "Desconectar da internet e avisar um adulto ou suporte responsável."
+          ],
+          "correctIndex": 3
+        }
+      ]
+    },
+    {
+      "number": 18,
+      "sourceId": "1qZs47-Rt4AICw-iN6wFfNJMYrZux4j2n",
+      "title": "Atualizações e segurança",
+      "objective": "Explicar por que atualizações corrigem falhas e melhoram a proteção.",
+      "ageRange": "9 a 15 anos",
+      "xp": 300,
+      "pages": [
+        "Entenda o tema\n\nAtualizações corrigem falhas e melhoram a proteção de sistemas, navegadores e aplicativos. Adiar indefinidamente pode manter uma vulnerabilidade conhecida aberta.\n\nObjetivo: Explicar por que atualizações corrigem falhas e melhoram a proteção.",
+        "Situação para pensar\n\nO aparelho de Alex mostra uma atualização pela loja ou configuração oficial. Ele pode conferir a origem e instalar em um momento adequado.\n\nSinal de alerta: adiar atualizações para sempre porque parecem inconvenientes.",
+        "Como agir\n\nInstale atualizações de sistema, navegador e aplicativos quando confiáveis. Use os canais oficiais e peça ajuda quando não souber se o aviso é legítimo.",
+        "Peça apoio e reflita\n\nUma ação recomendada é pedir ajuda para atualizar em uma rede segura.\n\nComo diferenciar uma atualização do sistema de um anúncio que apenas parece atualização?"
+      ],
+      "quiz": [
+        {
+          "text": "Qual é a melhor atitude ao estudar atualizações e segurança?",
+          "options": [
+            "Ignorar orientações de segurança",
+            "Agir sem pensar nas consequências",
+            "Instale atualizações de sistema, navegador e aplicativos quando confiáveis.",
+            "Adiar atualizações para sempre porque parecem inconvenientes."
+          ],
+          "correctIndex": 2
+        },
+        {
+          "text": "Qual situação merece atenção especial?",
+          "options": [
+            "Instale atualizações de sistema, navegador e aplicativos quando confiáveis.",
+            "Usar recursos oficiais",
+            "Conversar com alguém de confiança",
+            "Adiar atualizações para sempre porque parecem inconvenientes."
+          ],
+          "correctIndex": 3
+        },
+        {
+          "text": "Quando surgir uma dúvida ou sensação de risco, o que fazer?",
+          "options": [
+            "Pedir ajuda para atualizar em uma rede segura.",
+            "Esconder o problema",
+            "Continuar mesmo sem entender",
+            "Confiar apenas em pessoas desconhecidas"
+          ],
+          "correctIndex": 0
+        }
+      ]
+    },
+    {
+      "number": 19,
+      "sourceId": "1YNSfFt2ZUeRFHstNv6HKAUVEA8mJ5tyh",
+      "title": "Permissões de aplicativos e localização",
+      "objective": "Avaliar se um aplicativo realmente precisa de câmera, microfone, contatos ou localização.",
+      "ageRange": "10 a 16 anos",
+      "xp": 400,
+      "pages": [
+        "Entenda o tema\n\nPermissões dão a aplicativos acesso a câmera, microfone, contatos ou localização. Cada acesso deve ter relação clara com a tarefa que o aplicativo realiza.\n\nObjetivo: Avaliar se um aplicativo realmente precisa de câmera, microfone, contatos ou localização.",
+        "Situação para pensar\n\nUm jogo simples pede localização permanente e acesso à lista de contatos. Alex deve avaliar se esses dados são realmente necessários.\n\nSinal de alerta: permitir tudo para o aplicativo funcionar mais rápido.",
+        "Como agir\n\nConceda apenas permissões necessárias e revise-as periodicamente. Negue acessos excessivos e revise as permissões já concedidas nas configurações do aparelho.",
+        "Peça apoio e reflita\n\nUma ação recomendada é recusar permissões excessivas e pesquisar antes de instalar.\n\nQual permissão faria sentido para um aplicativo de mapas, e por quanto tempo?"
+      ],
+      "quiz": [
+        {
+          "text": "Qual é a melhor atitude ao estudar permissões de aplicativos e localização?",
+          "options": [
+            "Permitir tudo para o aplicativo funcionar mais rápido.",
+            "Ignorar orientações de segurança",
+            "Agir sem pensar nas consequências",
+            "Conceda apenas permissões necessárias e revise-as periodicamente."
+          ],
+          "correctIndex": 3
+        },
+        {
+          "text": "Qual situação merece atenção especial?",
+          "options": [
+            "Permitir tudo para o aplicativo funcionar mais rápido.",
+            "Conceda apenas permissões necessárias e revise-as periodicamente.",
+            "Usar recursos oficiais",
+            "Conversar com alguém de confiança"
+          ],
+          "correctIndex": 0
+        },
+        {
+          "text": "Quando surgir uma dúvida ou sensação de risco, o que fazer?",
+          "options": [
+            "Confiar apenas em pessoas desconhecidas",
+            "Recusar permissões excessivas e pesquisar antes de instalar.",
+            "Esconder o problema",
+            "Continuar mesmo sem entender"
+          ],
+          "correctIndex": 1
+        }
+      ]
+    },
+    {
+      "number": 20,
+      "sourceId": "16-2k1XKeYX5A9P-XEw1XpVLDVLh-hM64",
+      "title": "Wi Fi público e redes inseguras",
+      "objective": "Adotar cuidados ao usar redes abertas ou desconhecidas.",
+      "ageRange": "12 a 16 anos",
+      "xp": 450,
+      "pages": [
+        "Entenda o tema\n\nRedes públicas ou desconhecidas exigem cuidado extra, sobretudo com contas e pagamentos. Uma conexão aberta não garante que quem a oferece seja confiável.\n\nObjetivo: Adotar cuidados ao usar redes abertas ou desconhecidas.",
+        "Situação para pensar\n\nAlex encontra uma rede Wi-Fi sem senha e pensa em fazer uma compra. Ele pode esperar uma conexão confiável ou usar a rede móvel.\n\nSinal de alerta: fazer pagamentos em qualquer rede aberta disponível.",
+        "Como agir\n\nEvite acessar contas sensíveis em Wi Fi público e prefira rede móvel ou conexão confiável. Evite operações sensíveis em redes abertas quando houver uma opção mais segura.",
+        "Peça apoio e reflita\n\nUma ação recomendada é esperar uma conexão segura para operações importantes.\n\nQue atividade pode esperar até você estar em uma rede confiável?"
+      ],
+      "quiz": [
+        {
+          "text": "Qual é a melhor atitude ao estudar wi fi público e redes inseguras?",
+          "options": [
+            "Evite acessar contas sensíveis em Wi Fi público e prefira rede móvel ou conexão confiável.",
+            "Fazer pagamentos em qualquer rede aberta disponível.",
+            "Ignorar orientações de segurança",
+            "Agir sem pensar nas consequências"
+          ],
+          "correctIndex": 0
+        },
+        {
+          "text": "Qual situação merece atenção especial?",
+          "options": [
+            "Conversar com alguém de confiança",
+            "Fazer pagamentos em qualquer rede aberta disponível.",
+            "Evite acessar contas sensíveis em Wi Fi público e prefira rede móvel ou conexão confiável.",
+            "Usar recursos oficiais"
+          ],
+          "correctIndex": 1
+        },
+        {
+          "text": "Quando surgir uma dúvida ou sensação de risco, o que fazer?",
+          "options": [
+            "Continuar mesmo sem entender",
+            "Confiar apenas em pessoas desconhecidas",
+            "Esperar uma conexão segura para operações importantes.",
+            "Esconder o problema"
+          ],
+          "correctIndex": 2
+        }
+      ]
+    },
+    {
+      "number": 21,
+      "sourceId": "11yA7JQExRHo2OOWXjTYu-tT1YsOEPa0h",
+      "title": "Compras online e marketplaces",
+      "objective": "Reconhecer anúncios e vendedores suspeitos antes de comprar ou enviar dinheiro.",
+      "ageRange": "12 a 16 anos",
+      "xp": 500,
+      "pages": [
+        "Entenda o tema\n\nEm compras online, preço muito baixo e pressão para pagar rapidamente merecem atenção. A reputação do vendedor e as proteções da plataforma ajudam a avaliar a oferta.\n\nObjetivo: Reconhecer anúncios e vendedores suspeitos antes de comprar ou enviar dinheiro.",
+        "Situação para pensar\n\nUm vendedor pede que Alex pague fora do marketplace para conseguir desconto. Isso pode retirar proteções oferecidas pela plataforma.\n\nSinal de alerta: pagar fora da plataforma por pressão do vendedor.",
+        "Como agir\n\nConfira reputação, preço, formas de pagamento e canais oficiais da plataforma. Confira vendedor e anúncio, use os canais oficiais e peça ajuda a um responsável antes de pagar.",
+        "Peça apoio e reflita\n\nUma ação recomendada é pedir ajuda a um responsável e usar pagamentos protegidos.\n\nO que você verificaria antes de enviar dinheiro a um vendedor desconhecido?"
+      ],
+      "quiz": [
+        {
+          "text": "Qual é a melhor atitude ao estudar compras online e marketplaces?",
+          "options": [
+            "Agir sem pensar nas consequências",
+            "Confira reputação, preço, formas de pagamento e canais oficiais da plataforma.",
+            "Pagar fora da plataforma por pressão do vendedor.",
+            "Ignorar orientações de segurança"
+          ],
+          "correctIndex": 1
+        },
+        {
+          "text": "Qual situação merece atenção especial?",
+          "options": [
+            "Usar recursos oficiais",
+            "Conversar com alguém de confiança",
+            "Pagar fora da plataforma por pressão do vendedor.",
+            "Confira reputação, preço, formas de pagamento e canais oficiais da plataforma."
+          ],
+          "correctIndex": 2
+        },
+        {
+          "text": "Quando surgir uma dúvida ou sensação de risco, o que fazer?",
+          "options": [
+            "Esconder o problema",
+            "Continuar mesmo sem entender",
+            "Confiar apenas em pessoas desconhecidas",
+            "Pedir ajuda a um responsável e usar pagamentos protegidos."
+          ],
+          "correctIndex": 3
+        }
+      ]
+    },
+    {
+      "number": 22,
+      "sourceId": "1ku3rscVOFDh7f8E_nIBzdbeYgoVmL81y",
+      "title": "Conteúdo impróprio e controles parentais",
+      "objective": "Usar classificações, filtros e diálogo com responsáveis para navegar de forma saudável.",
+      "ageRange": "8 a 14 anos",
+      "xp": 300,
+      "pages": [
+        "Entenda o tema\n\nClassificações de idade e controles de conteúdo ajudam a navegar conforme a maturidade de cada pessoa. Conversar com responsáveis continua importante quando algo causa desconforto.\n\nObjetivo: Usar classificações, filtros e diálogo com responsáveis para navegar de forma saudável.",
+        "Situação para pensar\n\nAlex encontra um conteúdo assustador e sente que precisa continuar vendo sem contar a ninguém. Fechar a página e pedir apoio é uma escolha segura.\n\nSinal de alerta: continuar vendo algo assustador ou sexual sem contar a ninguém.",
+        "Como agir\n\nUse controles de conteúdo como apoio e converse quando algo causar desconforto. Use filtros como apoio e fale sobre o que viu sem medo de pedir ajuda.",
+        "Peça apoio e reflita\n\nUma ação recomendada é fechar o conteúdo e falar com um adulto de confiança.\n\nCom quem você conversaria se um conteúdo online causasse medo ou desconforto?"
+      ],
+      "quiz": [
+        {
+          "text": "Qual é a melhor atitude ao estudar conteúdo impróprio e controles parentais?",
+          "options": [
+            "Ignorar orientações de segurança",
+            "Agir sem pensar nas consequências",
+            "Use controles de conteúdo como apoio e converse quando algo causar desconforto.",
+            "Continuar vendo algo assustador ou sexual sem contar a ninguém."
+          ],
+          "correctIndex": 2
+        },
+        {
+          "text": "Qual situação merece atenção especial?",
+          "options": [
+            "Use controles de conteúdo como apoio e converse quando algo causar desconforto.",
+            "Usar recursos oficiais",
+            "Conversar com alguém de confiança",
+            "Continuar vendo algo assustador ou sexual sem contar a ninguém."
+          ],
+          "correctIndex": 3
+        },
+        {
+          "text": "Quando surgir uma dúvida ou sensação de risco, o que fazer?",
+          "options": [
+            "Fechar o conteúdo e falar com um adulto de confiança.",
+            "Esconder o problema",
+            "Continuar mesmo sem entender",
+            "Confiar apenas em pessoas desconhecidas"
+          ],
+          "correctIndex": 0
+        }
+      ]
+    },
+    {
+      "number": 23,
+      "sourceId": "1NnyIOOlymgSKQ2cqIaTuIYyqKA8RxuV9",
+      "title": "Direitos autorais pirataria e conteúdo responsável",
+      "objective": "Respeitar autoria e compreender riscos de baixar ou compartilhar cópias não autorizadas.",
+      "ageRange": "11 a 16 anos",
+      "xp": 400,
+      "pages": [
+        "Entenda o tema\n\nRespeitar autoria significa reconhecer quem criou uma obra e usar conteúdo de forma permitida. Links de cópias não autorizadas também podem levar a arquivos perigosos.\n\nObjetivo: Respeitar autoria e compreender riscos de baixar ou compartilhar cópias não autorizadas.",
+        "Situação para pensar\n\nAlex encontra um download gratuito de uma obra paga em um site desconhecido. Além do direito do criador, precisa considerar a segurança do arquivo.\n\nSinal de alerta: baixar arquivos piratas por links desconhecidos.",
+        "Como agir\n\nPrefira fontes legais, dê crédito quando necessário e crie conteúdo próprio. Prefira fontes legais, dê crédito quando necessário e procure alternativas permitidas.",
+        "Peça apoio e reflita\n\nUma ação recomendada é usar opções legais ou conversar com a escola e a família.\n\nComo encontrar uma opção legal para usar uma imagem em um trabalho escolar?"
+      ],
+      "quiz": [
+        {
+          "text": "Qual é a melhor atitude ao estudar direitos autorais pirataria e conteúdo responsável?",
+          "options": [
+            "Baixar arquivos piratas por links desconhecidos.",
+            "Ignorar orientações de segurança",
+            "Agir sem pensar nas consequências",
+            "Prefira fontes legais, dê crédito quando necessário e crie conteúdo próprio."
+          ],
+          "correctIndex": 3
+        },
+        {
+          "text": "Qual situação merece atenção especial?",
+          "options": [
+            "Baixar arquivos piratas por links desconhecidos.",
+            "Prefira fontes legais, dê crédito quando necessário e crie conteúdo próprio.",
+            "Usar recursos oficiais",
+            "Conversar com alguém de confiança"
+          ],
+          "correctIndex": 0
+        },
+        {
+          "text": "Quando surgir uma dúvida ou sensação de risco, o que fazer?",
+          "options": [
+            "Confiar apenas em pessoas desconhecidas",
+            "Usar opções legais ou conversar com a escola e a família.",
+            "Esconder o problema",
+            "Continuar mesmo sem entender"
+          ],
+          "correctIndex": 1
+        }
+      ]
+    },
+    {
+      "number": 24,
+      "sourceId": "1In7Lq7Fy8oe9mqzLh_jchS6sWgGtUcKu",
+      "title": "O que fazer após cair em um golpe",
+      "objective": "Agir rapidamente para limitar danos, preservar evidências e recuperar a segurança.",
+      "ageRange": "10 a 16 anos",
+      "xp": 600,
+      "pages": [
+        "Entenda o tema\n\nDepois de um golpe, agir cedo ajuda a limitar danos. Guardar evidências, proteger contas e avisar responsáveis é mais útil do que esconder o ocorrido.\n\nObjetivo: Agir rapidamente para limitar danos, preservar evidências e recuperar a segurança.",
+        "Situação para pensar\n\nAlex percebe que entregou dados a uma página falsa. Continuar conversando com o golpista ou apagar todas as mensagens dificulta a resposta.\n\nSinal de alerta: apagar tudo em pânico e continuar conversando com o golpista.",
+        "Como agir\n\nNão esconda o ocorrido; mude senhas, avise responsáveis e use os canais oficiais. Interrompa o contato, troque senhas afetadas pelos canais oficiais e peça ajuda imediatamente.",
+        "Peça apoio e reflita\n\nUma ação recomendada é guardar evidências e pedir ajuda imediatamente.\n\nQue informação você guardaria para explicar o ocorrido a um responsável ou suporte?"
+      ],
+      "quiz": [
+        {
+          "text": "Qual é a melhor atitude ao estudar o que fazer após cair em um golpe?",
+          "options": [
+            "Não esconda o ocorrido; mude senhas, avise responsáveis e use os canais oficiais.",
+            "Apagar tudo em pânico e continuar conversando com o golpista.",
+            "Ignorar orientações de segurança",
+            "Agir sem pensar nas consequências"
+          ],
+          "correctIndex": 0
+        },
+        {
+          "text": "Qual situação merece atenção especial?",
+          "options": [
+            "Conversar com alguém de confiança",
+            "Apagar tudo em pânico e continuar conversando com o golpista.",
+            "Não esconda o ocorrido; mude senhas, avise responsáveis e use os canais oficiais.",
+            "Usar recursos oficiais"
+          ],
+          "correctIndex": 1
+        },
+        {
+          "text": "Quando surgir uma dúvida ou sensação de risco, o que fazer?",
+          "options": [
+            "Continuar mesmo sem entender",
+            "Confiar apenas em pessoas desconhecidas",
+            "Guardar evidências e pedir ajuda imediatamente.",
+            "Esconder o problema"
+          ],
+          "correctIndex": 2
+        }
+      ]
+    }
+  ]
+}

@@ -26,6 +26,8 @@
     "db:free-trial": "node --env-file=.env scripts/ensure-free-trial-company.cjs",
     "db:initial-admin": "node --env-file=.env scripts/ensure-initial-admin.cjs",
     "db:hml": "node scripts/apply-database-hml.cjs",
+    "db:pilot-schema": "node --env-file=.env -r ts-node/register -r tsconfig-paths/register scripts/apply-pilot-schema.cjs",
+    "db:pilot-lessons": "node --env-file=.env scripts/import-pilot-lessons.cjs",
     "s3:cors": "node --env-file=.env scripts/apply-s3-cors.cjs"
   },
   "dependencies": {

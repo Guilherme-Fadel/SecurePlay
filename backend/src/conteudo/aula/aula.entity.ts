@@ -11,6 +11,7 @@ import { Modulo } from '../modulo/modulo.entity';
 export enum AulaType {
   VIDEO = 'video',
   QUADRINHO = 'quadrinho',
+  TEXTO = 'texto',
 }
 
 @Entity()

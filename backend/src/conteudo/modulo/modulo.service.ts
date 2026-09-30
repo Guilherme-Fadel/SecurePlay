@@ -63,9 +63,8 @@ export class ModuloService {
       progressRows.map((row) => [row.aula_id, row]),
     );
 
-    // Bloqueio sequencial de modulo: o proximo modulo (pela ordem) so libera
-    // quando o modulo anterior estiver 100% concluido. O primeiro sempre libera.
-    let previousModuloCompleted = true;
+    // Cada trilha progride separadamente; a trilha principal preserva a ordem legada.
+    const completedByPath = new Map<string, boolean>();
 
     return modulos.map((modulo) => {
       const moduloAulas = aulasByModulo.get(modulo.id) ?? [];
@@ -92,10 +91,12 @@ export class ModuloService {
       );
       const thumbnail = this.resolveThumbnail(modulo.thumbnail);
 
+      const path = modulo.learning_path || 'principal';
+      const previousModuloCompleted = completedByPath.get(path) ?? true;
       const locked = !previousModuloCompleted;
       // um modulo sem aulas ativas nao trava a cadeia
       const isModuloCompleted = totalAulas === 0 || progress === 100;
-      previousModuloCompleted = previousModuloCompleted && isModuloCompleted;
+      completedByPath.set(path, previousModuloCompleted && isModuloCompleted);
 
       return {
         ...modulo,

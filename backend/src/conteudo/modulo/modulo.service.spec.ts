@@ -221,6 +221,30 @@ describe('ModuloService findAll calcula locked', () => {
     expect(result.find((m) => m.id === 1)?.locked).toBe(false);
     expect(result.find((m) => m.id === 2)?.locked).toBe(false);
   });
+
+  it('libera a trilha do piloto sem alterar o bloqueio da trilha principal', async () => {
+    const service = buildService(
+      [
+        { id: 1, order: 1, learning_path: 'principal', thumbnail: null },
+        { id: 50, order: 1, learning_path: 'piloto-2026', thumbnail: null },
+        { id: 2, order: 2, learning_path: 'principal', thumbnail: null },
+      ],
+      [
+        { id: 10, modulo_id: 1, order: 1 },
+        { id: 500, modulo_id: 50, order: 1 },
+        { id: 20, modulo_id: 2, order: 1 },
+      ],
+      [],
+    );
+
+    const result = await service.findAll(7);
+
+    expect(result.map((modulo) => [modulo.id, modulo.locked])).toEqual([
+      [1, false],
+      [50, false],
+      [2, true],
+    ]);
+  });
 });
 
 describe('ModuloService thumbnail resolution', () => {

@@ -9,6 +9,7 @@ export enum ModuloType {
   VIDEO = 'video',
   QUADRINHO = 'quadrinho',
   MISTO = 'misto',
+  TEXTO = 'texto',
 }
 
 export enum ModuloDifficulty {
@@ -36,6 +37,9 @@ export class Modulo {
 
   @Column({ length: 100 })
   category: string;
+
+  @Column({ length: 64, default: 'principal' })
+  learning_path: string;
 
   @Column({
     type: 'enum',
