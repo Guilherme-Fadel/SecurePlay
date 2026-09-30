@@ -20,6 +20,11 @@
 .invite-form button:disabled { opacity: .65; cursor: wait; }
 .invite-primary-link { display: grid; min-height: 52px; place-items: center; border-radius: 10px; background: var(--primary); color: #fff; font: 800 15px var(--font-family-ui); text-align: center; text-decoration: none; }
 .invite-primary-link:hover { background: var(--primary-hover); }
+.invite-password-dialog { box-sizing: border-box; width: min(calc(100% - 32px), 470px); max-height: calc(100dvh - 32px); margin: auto; overflow-y: auto; padding: 42px; border: 1px solid rgba(148,163,184,.22); border-radius: 22px; background: #fff; box-shadow: 0 25px 65px rgba(15,23,42,.24); color: #17233a; font-family: var(--font-family-ui); }
+.invite-password-dialog::backdrop { background: rgba(15,23,42,.68); }
+.invite-password-dialog h2 { margin: 0; color: #17233a; font: 800 29px/1.15 var(--font-family-ui); letter-spacing: -.045em; }
+.invite-password-dialog .invite-brand { margin-bottom: 24px; }
+.invite-password-dialog .invite-intro { margin-bottom: 28px; }
 .invite-security { display: flex; align-items: center; justify-content: center; gap: 6px; margin: 25px 0 0; color: #94a3b8; font: 13px var(--font-family-ui); }
 .invite-legal-note { margin: 13px 0 0; color: #64748b; font: 13px/1.5 var(--font-family-ui); text-align: center; }
 .invite-legal-note a { color: var(--primary); font-weight: 800; }
@@ -30,4 +35,4 @@
 .invite-state--error svg { color: var(--danger); }
 .invite-spinner { width: 28px; height: 28px; border: 3px solid rgba(var(--primary-rgb),.18); border-top-color: var(--primary); border-radius: 50%; animation: invite-spin .8s linear infinite; }
 @keyframes invite-spin { to { transform: rotate(360deg); } }
-@media (max-width: 520px) { .invite-page { padding: 16px; } .invite-card { padding: 30px 24px; } .invite-brand { margin-bottom: 30px; } }
+@media (max-width: 520px) { .invite-page { padding: 16px; } .invite-card, .invite-password-dialog { padding: 30px 24px; } .invite-brand { margin-bottom: 30px; } }

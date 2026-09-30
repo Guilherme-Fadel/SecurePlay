@@ -33,6 +33,9 @@ export function CheckEmail() {
 export function ConfirmEmail() {
   const token = window.location.hash.slice(1);
   const confirmationStarted = useRef(false);
+  const dialogRef = useRef<HTMLDialogElement>(null);
+  const passwordInputRef = useRef<HTMLInputElement>(null);
+  const successHeadingRef = useRef<HTMLHeadingElement>(null);
   const [hasConfirmationLink] = useState(Boolean(token));
   const [password, setPassword] = useState('');
   const [repeatPassword, setRepeatPassword] = useState('');
@@ -51,6 +54,17 @@ export function ConfirmEmail() {
       setError('O link expirou, já foi usado ou não está disponível. Peça outro link.');
     }).finally(() => setConfirming(false));
   }, [token]);
+  useEffect(() => {
+    if (!passwordSetupToken || success) return;
+    const dialog = dialogRef.current;
+    if (!dialog) return;
+    if (!dialog.open) dialog.showModal();
+    passwordInputRef.current?.focus();
+    return () => { if (dialog.open) dialog.close(); };
+  }, [passwordSetupToken, success]);
+  useEffect(() => {
+    if (success) successHeadingRef.current?.focus();
+  }, [success]);
   const submit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const validation = passwordValidationMessage(password);
@@ -70,15 +84,29 @@ export function ConfirmEmail() {
   };
   return <PageTransition><div className="invite-page"><main className="invite-card">
     <div className="invite-brand">secure<em>play</em></div>
-    {success ? <><h1>Acesso ativado</h1><p className="invite-intro">E-mail confirmado e senha definida.</p><Link className="invite-primary-link" to="/login">Entrar na SecurePlay</Link></> :
+    {success ? <><h1 ref={successHeadingRef} tabIndex={-1}>Acesso ativado</h1><p className="invite-intro">E-mail confirmado e senha definida.</p><Link className="invite-primary-link" to="/login">Entrar na SecurePlay</Link></> :
       !hasConfirmationLink ? <><h1>Link indisponível</h1><p className="invite-intro">Abra o link recebido por e-mail para continuar.</p><Link className="invite-primary-link" to="/verifique-email">Pedir outro link</Link></> :
-      confirming ? <><h1>Validando e-mail</h1><p className="invite-intro">Estamos validando seu link seguro.</p></> : !passwordSetupToken ? <><h1>Link indisponível</h1><p className="invite-intro">Peça um novo link de confirmação para continuar.</p><Link className="invite-primary-link" to="/verifique-email">Pedir outro link</Link></> : <><h1>Defina sua senha</h1><p className="invite-intro">E-mail confirmado. Defina uma nova senha para ativar o acesso.</p>
-        <form className="invite-form" onSubmit={submit}>
-          <label>Crie uma senha<input type="password" value={password} onChange={(event) => setPassword(event.target.value)} minLength={6} maxLength={72} required autoComplete="new-password" /></label>
-          <label>Repita a senha<input type="password" value={repeatPassword} onChange={(event) => setRepeatPassword(event.target.value)} minLength={6} maxLength={72} required autoComplete="new-password" /></label>
-          <button type="submit" disabled={submitting}>{submitting ? 'Ativando conta...' : 'Confirmar e ativar conta'}</button>
-        </form>
-        {error && <p role="alert" className="invite-legal-note">{error} <Link to="/verifique-email">Pedir outro link</Link></p>}
-      </>}
-  </main></div></PageTransition>;
+      confirming ? <><h1>Validando e-mail</h1><p className="invite-intro">Estamos validando seu link seguro.</p></> :
+      !passwordSetupToken ? <><h1>Link indisponível</h1><p className="invite-intro">Peça um novo link de confirmação para continuar.</p><Link className="invite-primary-link" to="/verifique-email">Pedir outro link</Link></> :
+      <><h1>E-mail confirmado</h1><p className="invite-intro">Defina uma senha para liberar o acesso à SecurePlay.</p></>}
+  </main>
+    {passwordSetupToken && !success && <dialog
+      ref={dialogRef}
+      className="invite-password-dialog"
+      aria-modal="true"
+      aria-labelledby="invite-password-title"
+      aria-describedby="invite-password-description"
+      onCancel={(event) => event.preventDefault()}
+    >
+      <div className="invite-brand">secure<em>play</em></div>
+      <h2 id="invite-password-title">Defina sua senha</h2>
+      <p id="invite-password-description" className="invite-intro">Seu e-mail foi confirmado. Crie uma senha para ativar a conta antes de entrar.</p>
+      <form className="invite-form" onSubmit={submit}>
+        <label>Crie uma senha<input ref={passwordInputRef} type="password" value={password} onChange={(event) => setPassword(event.target.value)} minLength={6} maxLength={72} required autoComplete="new-password" /></label>
+        <label>Repita a senha<input type="password" value={repeatPassword} onChange={(event) => setRepeatPassword(event.target.value)} minLength={6} maxLength={72} required autoComplete="new-password" /></label>
+        <button type="submit" disabled={submitting}>{submitting ? 'Ativando conta...' : 'Confirmar e ativar conta'}</button>
+      </form>
+      {error && <p role="alert" className="invite-legal-note">{error} <Link to="/verifique-email">Pedir outro link</Link></p>}
+    </dialog>}
+  </div></PageTransition>;
 }
