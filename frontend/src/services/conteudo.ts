@@ -6,7 +6,7 @@ export interface Modulo {
   description: string;
   thumbnail: string | null;
   artworkUrl?: string | null;
-  type: 'video' | 'quadrinho' | 'misto';
+  type: 'video' | 'quadrinho' | 'texto' | 'misto';
   category: string;
   difficulty: 'iniciante' | 'intermediario' | 'avancado';
   xp_total: number;
@@ -25,7 +25,7 @@ export interface AulaResumo {
   id: number;
   title: string;
   description: string | null;
-  type: 'video' | 'quadrinho';
+  type: 'video' | 'quadrinho' | 'texto';
   duration: number;
   xp: number;
   order: number;
@@ -55,7 +55,7 @@ export interface AulaDetalhes {
   modulo_id: number;
   title: string;
   description: string | null;
-  type: 'video' | 'quadrinho';
+  type: 'video' | 'quadrinho' | 'texto';
   content_url: string | null;
   pages: string[] | null;
   duration: number;

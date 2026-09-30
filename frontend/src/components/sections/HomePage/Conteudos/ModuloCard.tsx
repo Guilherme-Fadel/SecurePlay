@@ -20,7 +20,7 @@ export function ModuloCard({ modulo, index = 0, onClick }: ModuloCardProps) {
       className={`mission-card ${stateClass}`}
     >
       <span className="mission-card-number">{String(index + 1).padStart(2, '0')}</span>
-      <span className="mission-card-type">{modulo.type === 'quadrinho' ? 'Quadrinho' : modulo.type === 'video' ? 'Vídeo' : 'Misto'}</span>
+      <span className="mission-card-type">{modulo.type === 'quadrinho' ? 'Quadrinho' : modulo.type === 'texto' ? 'Leitura' : modulo.type === 'video' ? 'Vídeo' : 'Misto'}</span>
       <span className="mission-card-art"><ProgressiveImage src={getModuleArtwork(modulo)} alt="" /></span>
       <span className="mission-card-copy"><strong>{modulo.title}</strong><small>{modulo.completedAulas}/{modulo.totalAulas} aulas · {modulo.xp_total} XP</small></span>
       <span className="mission-card-stars" aria-label={`${stars} estrela(s) de dificuldade`}>{Array.from({ length: 3 }).map((_, starIndex) => <Star key={starIndex} size={16} className={starIndex < stars ? 'is-filled' : ''} />)}</span>

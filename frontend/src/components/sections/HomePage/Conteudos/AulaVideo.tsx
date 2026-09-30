@@ -12,11 +12,11 @@ interface AulaVideoProps {
   moduloId: number;
   onBack: () => void;
   onSelectAula: (aulaId: number) => void;
-  onTypeResolved?: (type: 'video' | 'quadrinho') => void;
+  onTypeResolved?: (type: 'video' | 'quadrinho' | 'texto') => void;
 }
 
 export function AulaVideo({ aulaId, moduloId, onBack, onSelectAula, onTypeResolved }: AulaVideoProps) {
-  const { aula, setAula, loading } = useAula(aulaId);
+  const { aula, setAula, loading, error: aulaError, refetch } = useAula(aulaId);
   const { modulo } = useModulo(moduloId);
   const { concluir, salvarProgresso, loading: concluding } = useAulaProgress();
   const [xpGanho, setXpGanho] = useState<number | null>(null);
@@ -26,8 +26,8 @@ export function AulaVideo({ aulaId, moduloId, onBack, onSelectAula, onTypeResolv
 
   useEffect(() => {
     if (!aula) return;
-    if (onTypeResolved && aula.type === 'quadrinho') {
-      onTypeResolved('quadrinho');
+    if (onTypeResolved && aula.type !== 'video') {
+      onTypeResolved(aula.type);
       return;
     }
     setVideoProgress(aula.completed ? 100 : Math.max(1, aula.progress.percent));
@@ -67,8 +67,9 @@ export function AulaVideo({ aulaId, moduloId, onBack, onSelectAula, onTypeResolv
   };
 
   if (loading || !aula) {
-    return <div className="learning-content-loading">Preparando ambiente de aula...</div>;
+    return <div className="learning-content-loading">{aulaError ? <div role="alert"><p>{aulaError}</p><AppButton onClick={() => void refetch()}>Tentar novamente</AppButton><AppButton variant="ghost" onClick={onBack}>Voltar ao módulo</AppButton></div> : 'Preparando ambiente de aula...'}</div>;
   }
+  if (onTypeResolved && aula.type !== 'video') return <div className="learning-content-loading">Preparando o leitor...</div>;
 
   return (
     <LearningShell

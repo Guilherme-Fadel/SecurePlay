@@ -5,6 +5,7 @@ import { ModuloList } from './ModuloList';
 import { ModuloDetalhes } from './ModuloDetalhes';
 import { AulaVideo } from './AulaVideo';
 import { AulaQuadrinho } from './AulaQuadrinho';
+import { AulaTexto } from './AulaTexto';
 import { useSectionContext } from '@/contexts/SectionContext';
 
 type View =
@@ -58,10 +59,13 @@ export function Conteudos() {
 }
 
 function AulaView({ aulaId, moduloId, onBack, onSelectAula }: { aulaId: number; moduloId: number; onBack: () => void; onSelectAula: (aulaId: number) => void }) {
-  const [aulaType, setAulaType] = useState<'video' | 'quadrinho' | null>(null);
+  const [aulaType, setAulaType] = useState<'video' | 'quadrinho' | 'texto' | null>(null);
 
   if (aulaType === 'quadrinho') {
     return <AulaQuadrinho aulaId={aulaId} moduloId={moduloId} onBack={onBack} onSelectAula={onSelectAula} />;
+  }
+  if (aulaType === 'texto') {
+    return <AulaTexto aulaId={aulaId} moduloId={moduloId} onBack={onBack} onSelectAula={onSelectAula} />;
   }
 
   return (

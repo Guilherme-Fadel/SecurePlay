@@ -28,14 +28,12 @@ const pageVariants = {
     opacity: 0.35,
     rotateY: direction > 0 ? -72 : 72,
     x: direction > 0 ? 34 : -34,
-    scale: 0.985,
   }),
-  center: { opacity: 1, rotateY: 0, x: 0, scale: 1 },
+  center: { opacity: 1, rotateY: 0, x: 0 },
   exit: (direction: number) => ({
     opacity: 0.25,
     rotateY: direction > 0 ? 72 : -72,
     x: direction > 0 ? -28 : 28,
-    scale: 0.985,
   }),
 };
 
@@ -92,6 +90,7 @@ export function AulaQuadrinho({ aulaId, moduloId, onBack, onSelectAula }: AulaQu
   }
 
   const readerProgress = aula.completed ? 100 : pages.length ? Math.round(((currentPage + 1) / pages.length) * 100) : 0;
+  const canCompleteWithoutQuiz = isLastPage && !hasQuiz && !aula.completed && xpGanho === null;
 
   return (
     <LearningShell
@@ -117,12 +116,6 @@ export function AulaQuadrinho({ aulaId, moduloId, onBack, onSelectAula }: AulaQu
           <div className="learning-lesson-footer-status">
             <BookOpen size={17} /><div><span>Progresso de leitura</span><strong>{readerProgress}%</strong></div>
           </div>
-          {isLastPage && hasQuiz && !quizAlreadyAnswered && (
-            <AppButton icon={<FileQuestion size={16} />} onClick={() => setShowQuiz(true)}>Iniciar avaliação</AppButton>
-          )}
-          {isLastPage && !hasQuiz && !aula.completed && xpGanho === null && (
-            <AppButton icon={<CheckCircle2 size={16} />} onClick={handleCompleteWithoutQuiz} disabled={concluding}>{concluding ? 'Registrando...' : 'Concluir leitura'}</AppButton>
-          )}
           {(aula.completed || xpGanho !== null) && <div className="learning-reader-complete"><CheckCircle2 size={15} /> Leitura concluída</div>}
           {progressError && <p role="alert">{progressError}</p>}
         </>
@@ -138,7 +131,7 @@ export function AulaQuadrinho({ aulaId, moduloId, onBack, onSelectAula }: AulaQu
 
           <div className="comic-book" onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
             <div className="comic-book-spine" />
-            <AnimatePresence initial={false} custom={direction} mode="popLayout">
+            <AnimatePresence initial={false} custom={direction}>
               <motion.div
                 key={currentPage}
                 className={`comic-page-sheet ${direction > 0 ? 'turn-forward' : 'turn-backward'}`}
@@ -170,8 +163,9 @@ export function AulaQuadrinho({ aulaId, moduloId, onBack, onSelectAula }: AulaQu
           <div className="comic-reader-navigation">
             <button className="classroom-page-button" onClick={goPrev} disabled={currentPage === 0}><ChevronLeft size={18} /><span>Página anterior</span></button>
             <span className="classroom-page-counter" aria-live="polite">{currentPage + 1} / {pages.length}</span>
-            <button className="classroom-page-button is-primary" onClick={goNext} disabled={isLastPage && (!hasQuiz || quizAlreadyAnswered)}>
-              <span>{isLastPage && hasQuiz && !quizAlreadyAnswered ? 'Iniciar avaliação' : 'Próxima página'}</span><ChevronRight size={18} />
+            <button className="classroom-page-button is-primary" onClick={canCompleteWithoutQuiz ? () => void handleCompleteWithoutQuiz() : goNext}
+              disabled={concluding || (isLastPage && (quizAlreadyAnswered || (!hasQuiz && !canCompleteWithoutQuiz)))}>
+              <span>{concluding ? 'Registrando...' : isLastPage && hasQuiz && !quizAlreadyAnswered ? 'Iniciar avaliação' : canCompleteWithoutQuiz ? 'Concluir leitura' : 'Próxima página'}</span><ChevronRight size={18} />
             </button>
           </div>
 

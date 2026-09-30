@@ -18,6 +18,7 @@ interface LearningShellProps {
   aside?: ReactNode;
   footer?: ReactNode;
   readerTools?: ReactNode;
+  hideReaderProgressLabel?: boolean;
 }
 
 export function LearningShell({
@@ -33,6 +34,7 @@ export function LearningShell({
   aside,
   footer,
   readerTools,
+  hideReaderProgressLabel = false,
 }: LearningShellProps) {
   const safeProgress = Math.max(0, Math.min(100, progress));
   const [focused, setFocused] = useState(false);
@@ -83,7 +85,7 @@ export function LearningShell({
         <section className="learning-shell-content" aria-label={title}>
           <div className="classroom-reader-tools">
             {readerTools}
-            <span aria-live="polite">{focused && <strong>{title} · </strong>}{progressLabel}</span>
+            {!hideReaderProgressLabel && <span aria-live="polite">{focused && <strong>{title} · </strong>}{progressLabel}</span>}
             <button ref={focusButtonRef} type="button" aria-pressed={focused} onClick={() => setFocused((value) => !value)}>
               {focused ? <Minimize size={17} /> : <Maximize size={17} />}
               {focused ? 'Sair do modo foco' : 'Modo foco'}

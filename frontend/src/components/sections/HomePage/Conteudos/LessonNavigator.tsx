@@ -32,7 +32,7 @@ export function LessonNavigator({ modulo, activeAulaId, onSelectAula }: LessonNa
               <img className="classroom-lesson-art" src={aula.artworkKey && missionRoomAssets[aula.artworkKey] || getModuleArtwork(modulo)} alt="" />
               <span className="classroom-lesson-label"><strong>{aula.title}</strong><small>
                 {aula.type === 'video' ? <Video size={12} /> : <BookOpen size={12} />}
-                {aula.type === 'video' ? 'Vídeo' : 'Quadrinho'}
+                {aula.type === 'video' ? 'Vídeo' : aula.type === 'texto' ? 'Leitura' : 'Quadrinho'}
                 {aula.status === 'completed' && ' · Concluída'}
                 {aula.id === activeAulaId && aula.status !== 'completed' && ' · Nesta aula'}
               </small></span>

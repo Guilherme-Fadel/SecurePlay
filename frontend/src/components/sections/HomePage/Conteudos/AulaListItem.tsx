@@ -20,6 +20,7 @@ export function AulaListItem({ aula, onClick, index = 0, active = false, artSrc 
   const config = statusConfig[aula.status];
   const isLocked = aula.status === 'locked';
   const TypeIcon = aula.type === 'video' ? Video : BookOpen;
+  const typeLabel = aula.type === 'video' ? 'Vídeo' : aula.type === 'texto' ? 'Leitura' : 'Quadrinho';
 
   return (
     <button
@@ -33,7 +34,7 @@ export function AulaListItem({ aula, onClick, index = 0, active = false, artSrc 
       </div>
 
       <div className="learning-lesson-copy">
-        <div><TypeIcon size={12} /><span>{aula.type === 'video' ? 'Vídeo' : 'Quadrinho'}</span></div>
+        <div><TypeIcon size={12} /><span>{typeLabel}</span></div>
         <h3>{aula.title}</h3>
         {aula.description && (
           <p>{aula.description}</p>
