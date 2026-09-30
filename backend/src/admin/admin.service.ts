@@ -60,6 +60,48 @@ export class AdminService {
     }));
   }
 
+  async listarEmpresasPaginadas(filtros: {
+    page?: number;
+    pageSize?: number;
+    search?: string;
+    sort?: 'asc' | 'desc';
+  }) {
+    const page = Number.isFinite(filtros.page)
+      ? Math.max(1, Math.floor(filtros.page as number))
+      : 1;
+    const pageSize = Number.isFinite(filtros.pageSize)
+      ? Math.min(100, Math.max(10, Math.floor(filtros.pageSize as number)))
+      : 25;
+    const search = typeof filtros.search === 'string'
+      ? filtros.search.trim().slice(0, 100)
+      : '';
+    const direction = filtros.sort === 'desc' ? 'DESC' : 'ASC';
+    const query = this.empresaRepository
+      .createQueryBuilder('empresa')
+      .select(['empresa.id', 'empresa.nome', 'empresa.logo_url', 'empresa.paleta']);
+    if (search) {
+      query.where('INSTR(LOWER(empresa.nome), LOWER(:search)) > 0', { search });
+    }
+    const [empresas, total] = await query
+      .orderBy('empresa.nome', direction)
+      .addOrderBy('empresa.id', 'ASC')
+      .skip((page - 1) * pageSize)
+      .take(pageSize)
+      .getManyAndCount();
+    return {
+      items: empresas.map((empresa) => ({
+        id: empresa.id,
+        nome: empresa.nome,
+        logo_url: empresa.logo_url,
+        paleta: empresa.paleta,
+      })),
+      page,
+      pageSize,
+      total,
+      totalPages: Math.ceil(total / pageSize),
+    };
+  }
+
   async criarEmpresa(
     nome: string,
     emailAdministrador: string,

@@ -53,12 +53,14 @@ export class AdminController {
     @Query('pageSize') pageSize?: string,
     @Query('search') search?: string,
     @Query('status') status?: 'active' | 'inactive' | 'management',
+    @Query('sort') sort?: 'asc' | 'desc',
   ) {
     return this.convitesService.listarUsuariosPaginados(req.user.userId, {
       page: Number(page),
       pageSize: Number(pageSize),
       search,
       status,
+      sort,
     });
   }
 
@@ -73,11 +75,13 @@ export class AdminController {
     @Query('page') page?: string,
     @Query('pageSize') pageSize?: string,
     @Query('search') search?: string,
+    @Query('sort') sort?: 'default' | 'asc' | 'desc',
   ) {
     return this.convitesService.listarApelidosPendentes(req.user.userId, {
       page: Number(page),
       pageSize: Number(pageSize),
       search,
+      sort,
     });
   }
 

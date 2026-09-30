@@ -16,6 +16,19 @@ describe('Administração global e por empresa', () => {
     ]);
   });
 
+  it('encaminha filtros de empresas paginadas sem alterar a lista usada pelo seletor', async () => {
+    const adminService = {
+      listarEmpresasPaginadas: jest.fn().mockResolvedValue({ items: [], total: 0 }),
+    };
+    const controller = new PlatformAdminController(adminService as never, {} as never, {} as never);
+
+    await controller.listarEmpresasPaginadas('2', '25', 'Escola', 'desc');
+
+    expect(adminService.listarEmpresasPaginadas).toHaveBeenCalledWith({
+      page: 2, pageSize: 25, search: 'Escola', sort: 'desc',
+    });
+  });
+
   it('encaminha a criação global de convite com empresa-alvo explícita', async () => {
     const convitesService = {
       criarParaEmpresa: jest.fn().mockResolvedValue({}),

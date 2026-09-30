@@ -82,6 +82,7 @@ describe('ConvitesService.listarApelidosPendentesDaEmpresa', () => {
       where: jest.fn().mockReturnThis(),
       andWhere: jest.fn().mockReturnThis(),
       orderBy: jest.fn().mockReturnThis(),
+      addOrderBy: jest.fn().mockReturnThis(),
       skip: jest.fn().mockReturnThis(),
       take: jest.fn().mockReturnThis(),
       getManyAndCount: jest.fn().mockResolvedValue([
@@ -126,8 +127,12 @@ describe('ConvitesService.listarApelidosPendentesDaEmpresa', () => {
     });
     expect(query.where).toHaveBeenCalledWith('usuario.empresa_id = :empresaId', { empresaId: 4 });
     expect(query.andWhere).toHaveBeenCalledWith('usuario.role = :role', { role: Role.USER });
+    expect(query.orderBy).toHaveBeenCalledWith('usuario.id', 'DESC');
     expect(query.skip).toHaveBeenCalledWith(25);
     expect(query.take).toHaveBeenCalledWith(25);
+    await service.listarApelidosPendentesDaEmpresa(4, { sort: 'asc' });
+    expect(query.orderBy).toHaveBeenCalledWith('usuario.nickname_pending', 'ASC');
+    expect(query.addOrderBy).toHaveBeenCalledWith('usuario.id', 'ASC');
   });
 });
 
@@ -160,6 +165,9 @@ describe('ConvitesService.listarUsuariosPaginadosDaEmpresa', () => {
       roles: [Role.ADMIN, Role.PLATFORM_ADMIN],
     });
     expect(query.addOrderBy).toHaveBeenCalledWith('usuario.id', 'ASC');
+    await service.listarUsuariosPaginadosDaEmpresa(7, { sort: 'desc' });
+    expect(query.orderBy).toHaveBeenCalledWith('usuario.name', 'DESC');
+    expect(query.addOrderBy).toHaveBeenCalledWith('usuario.id', 'DESC');
   });
 });
 

@@ -23,6 +23,7 @@ type UsuarioFiltros = {
   pageSize?: number;
   search?: string;
   status?: 'active' | 'inactive' | 'management';
+  sort?: 'asc' | 'desc';
 };
 
 @Injectable()
@@ -87,9 +88,10 @@ export class ConvitesService {
       );
     }
 
+    const direction = filtros.sort === 'desc' ? 'DESC' : 'ASC';
     const [usuarios, total] = await query
-      .orderBy('usuario.name', 'ASC')
-      .addOrderBy('usuario.id', 'ASC')
+      .orderBy('usuario.name', direction)
+      .addOrderBy('usuario.id', direction)
       .skip((page - 1) * pageSize)
       .take(pageSize)
       .getManyAndCount();
@@ -142,7 +144,7 @@ export class ConvitesService {
 
   async listarApelidosPendentes(
     userId: number,
-    filtros: { page?: number; pageSize?: number; search?: string },
+    filtros: { page?: number; pageSize?: number; search?: string; sort?: 'default' | 'asc' | 'desc' },
   ) {
     const empresa = await this.getEmpresaDoAdministrador(userId);
     return this.listarApelidosPendentesDaEmpresa(empresa.id, filtros);
@@ -150,7 +152,7 @@ export class ConvitesService {
 
   async listarApelidosPendentesDaEmpresa(
     empresaId: number,
-    filtros: { page?: number; pageSize?: number; search?: string },
+    filtros: { page?: number; pageSize?: number; search?: string; sort?: 'default' | 'asc' | 'desc' },
   ) {
     const { page, pageSize, search } = this.normalizarFiltrosPaginados(filtros);
     const query = this.usuarioRepository
@@ -169,8 +171,10 @@ export class ConvitesService {
       );
     }
 
+    const nicknameSort = filtros.sort === 'asc' || filtros.sort === 'desc';
+    query.orderBy(nicknameSort ? 'usuario.nickname_pending' : 'usuario.id', filtros.sort === 'asc' ? 'ASC' : 'DESC');
+    if (nicknameSort) query.addOrderBy('usuario.id', 'ASC');
     const [usuarios, total] = await query
-      .orderBy('usuario.id', 'DESC')
       .skip((page - 1) * pageSize)
       .take(pageSize)
       .getManyAndCount();
