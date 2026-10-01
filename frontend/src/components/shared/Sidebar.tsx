@@ -1,5 +1,5 @@
 import type { Section } from "@/pages/Home"
-import { Award, BookOpen, ChevronLeft, Gamepad2, LayoutDashboard, Menu, Settings, ShieldCheck, ShieldIcon, Trophy, UserRound, X } from "lucide-react"
+import { Award, BookOpen, ChevronLeft, Gamepad2, LayoutDashboard, Menu, ShieldCheck, ShieldIcon, Trophy, UserRound, X } from "lucide-react"
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react"
 import academyCastle from '@/assets/dashboard/academy-castle-pixel-v5.png'
 
@@ -118,7 +118,6 @@ const mobileNavigationItems: Array<{ id: Section; label: string; icon: ReactNode
   { id: 'ranking', label: 'Ranking', icon: <Trophy /> },
   { id: 'conquistas', label: 'Conquistas', icon: <Award /> },
   { id: 'perfil', label: 'Meu perfil', icon: <UserRound /> },
-  { id: 'configuracoes', label: 'Configurações', icon: <Settings /> },
 ]
 
 export function MobileNavigation({ activeSection, onSelect, showAdmin, showAchievements, showRanking }: MobileNavigationProps) {

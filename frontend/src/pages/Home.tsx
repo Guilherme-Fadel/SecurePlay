@@ -3,8 +3,8 @@ import { LoadingScreen } from '@/components/shared/LoadingScreen';
 import { HomeLoadingOverlay } from '@/components/shared/HomeLoadingOverlay';
 import { Header } from "@/components/shared/layout/header/index";
 import { MobileNavigation, Sidebar, SidebarItem } from '@/components/shared/Sidebar';
-import { TrophyIcon, LayoutDashboard, Gamepad2, AwardIcon, BookOpenIcon, SettingsIcon, ArrowLeft, ShieldIcon } from "lucide-react";
-import { Dashboard, Awards, Challenges, Ranking, Conteudos, Settings, Perfil } from '@/components/sections/HomePage/index';
+import { TrophyIcon, LayoutDashboard, Gamepad2, AwardIcon, BookOpenIcon, ArrowLeft, ShieldIcon } from "lucide-react";
+import { Dashboard, Awards, Challenges, Ranking, Conteudos, Perfil } from '@/components/sections/HomePage/index';
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Toaster } from 'sonner';
@@ -15,7 +15,6 @@ import { useEmpresaTema } from '@/hooks/useEmpresaTema';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { useVisualPreload } from '@/hooks/useVisualPreload';
 import '@/styles/app-ui.css';
-import '@/styles/settings-ui.css';
 import '@/styles/profile-ui.css';
 import '@/styles/dashboard-ui.css';
 import '@/styles/academy-dashboard.css';
@@ -23,8 +22,8 @@ import { AppButton } from '@/components/ui/buttons/AppButton';
 import { useCompanyFeatures } from '@/hooks/useCompanyFeatures';
 import { companyIdentityKey } from '@/config/features';
 const Admin = lazy(() => import('@/pages/Admin'));
-export type Section = 'dashboard' | 'desafios' | 'ranking' | 'conquistas' | 'conteudos' | 'configuracoes' | 'perfil' | 'admin';
-const validSections: Section[] = ['dashboard', 'desafios', 'ranking', 'conquistas', 'conteudos', 'configuracoes', 'perfil', 'admin'];
+export type Section = 'dashboard' | 'desafios' | 'ranking' | 'conquistas' | 'conteudos' | 'perfil' | 'admin';
+const validSections: Section[] = ['dashboard', 'desafios', 'ranking', 'conquistas', 'conteudos', 'perfil', 'admin'];
 const DEFAULT_SECTION: Section = 'dashboard';
 
 /** Monta o pathname da Home. O conteudo carrega modulo/aula direto na URL. */
@@ -61,7 +60,6 @@ function HomeContent() {
         ranking: <Ranking />,
         conquistas: <Awards />,
         conteudos: <Conteudos />,
-        configuracoes: <Settings />,
         perfil: <Perfil />,
         admin: <Suspense fallback={null}><Admin platformMode={user?.role === 'platform_admin'} /></Suspense>,
     };
@@ -71,8 +69,8 @@ function HomeContent() {
     // A URL e a fonte de verdade da navegacao. O router cuida do historico, entao
     // nao ha pushState manual nem listener de popstate: o botao voltar do navegador
     // funciona sozinho.
-    const rawSection = params.section as Section | undefined;
-    const activeSection: Section = rawSection && validSections.includes(rawSection) ? rawSection : DEFAULT_SECTION;
+    const rawSection = params.section;
+    const activeSection: Section = validSections.find((section) => section === rawSection) ?? DEFAULT_SECTION;
     const moduloId = Number(params.moduloId);
     const aulaId = Number(params.aulaId);
     // Memoizado por moduloId/aulaId: o Conteudos observa contentTarget num useEffect,
@@ -130,11 +128,11 @@ function HomeContent() {
         }
     }, [go]);
 
-    // /home sem segmento (vindo do login) vira /home/dashboard, para a URL bater
-    // com a secao exibida. replace: nao cria passo extra no historico.
+    // URLs sem secao ou com secao desconhecida voltam ao Inicio sem criar
+    // passo extra no historico.
     useEffect(() => {
-        if (!rawSection) navigate(sectionPath(DEFAULT_SECTION, null), { replace: true });
-    }, [rawSection, navigate]);
+        if (rawSection !== activeSection) navigate(sectionPath(DEFAULT_SECTION, null), { replace: true });
+    }, [rawSection, activeSection, navigate]);
 
     // A secao inicial vem da URL, antes de o usuario estar carregado. Quando ele
     // resolve sem a role, volta para o dashboard e corrige a URL com replace, para
@@ -162,7 +160,6 @@ function HomeContent() {
             <SidebarItem id="desafios" icon={<Gamepad2 />} text="Jogos" active={activeSection === 'desafios'} onSelect={setActiveSection}/>
             {features.ranking && <SidebarItem id="ranking" icon={<TrophyIcon />} text="Ranking" active={activeSection === 'ranking'} onSelect={setActiveSection}/>}
             {features.achievements && <SidebarItem id="conquistas" icon={<AwardIcon />} text="Conquistas" active={activeSection === 'conquistas'} onSelect={setActiveSection}/>}
-            <SidebarItem id="configuracoes" icon={<SettingsIcon />} text="Configurações" active={activeSection === 'configuracoes'} onSelect={setActiveSection}/>
             {canOpenSection('admin') && <SidebarItem id="admin" icon={<ShieldIcon />} text="Administrador" active={activeSection === 'admin'} onSelect={setActiveSection}/>}
           </Sidebar>
 

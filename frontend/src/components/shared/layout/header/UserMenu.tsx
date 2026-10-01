@@ -85,15 +85,6 @@ export function UserMenu({ open, onToggle, onClose }: UserMenuProps) {
               >
                 Meu Perfil
               </button>
-              <button
-                type="button"
-                role="menuitem"
-                onClick={() => { setActiveSection('configuracoes'); onClose(); }}
-                className="secure-user-dropdown-item"
-              >
-                Configurações
-              </button>
-
               <div className="secure-user-dropdown-divider" />
 
               <div className="secure-user-dropdown-theme">
