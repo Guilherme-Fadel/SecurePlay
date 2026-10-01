@@ -40,7 +40,7 @@ export function ModuloDetalhes({ moduloId, onBack, onSelectAula }: ModuloDetalhe
               <header><span>Capítulo {sectionIndex + 1}</span><i /><strong>{name || 'Aulas da missão'}</strong></header>
               <div className="module-book-lessons">{aulas.map((aula, aulaIndex) => <AulaListItem key={aula.id} aula={aula} index={aulaIndex} artSrc={getLessonIcon(aula, aulaIndex, assets)} onClick={() => onSelectAula(aula.id)} />)}</div>
             </section>)}
-            <div className="module-book-finish"><Trophy size={18} /><span>Fim da missão</span><strong>+{modulo.xp_bonus} XP</strong></div>
+            <div className="module-book-finish"><Trophy size={18} /><span>Fim da missão</span></div>
           </div>
         </section>
       </main>

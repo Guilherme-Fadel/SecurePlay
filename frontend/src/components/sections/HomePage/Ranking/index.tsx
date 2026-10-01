@@ -106,7 +106,7 @@ function LeaderBanner({ entry, place }: { entry: RankingEntry; place: number }) 
 
 function JourneyCard({ ranking }: { ranking: RankingData }) {
   const user = ranking.currentUser;
-  if (!user) return <section className="ranking-card ranking-journey" aria-labelledby="ranking-journey-title"><div className="ranking-card-heading"><span className="ranking-card-icon"><Shield size={25} /></span><div><h2 id="ranking-journey-title">Visão de gestão</h2><p>Você acompanha esta classificação, mas não participa nem ocupa uma posição no ranking.</p></div></div></section>;
+  if (!user) return <section className="ranking-card ranking-journey is-management" aria-labelledby="ranking-journey-title"><div className="ranking-card-heading"><span className="ranking-card-icon"><Shield size={25} /></span><div><h2 id="ranking-journey-title">Visão de gestão</h2><p>Você acompanha esta classificação, mas não participa nem ocupa uma posição no ranking.</p></div></div></section>;
   const gap = ranking.summary.pointsToNextPosition;
   const progress = gap && gap > 0 ? Math.min(100, Math.round(user.points / (user.points + gap) * 100)) : user.points > 0 ? 100 : 0;
   const change = ranking.weeklyPositionChange;
@@ -126,15 +126,13 @@ function JourneyCard({ ranking }: { ranking: RankingData }) {
 
 const highlightIcons = { streak: Flame, xp: Zap, challenges: Shield };
 function WeeklyHighlights({ ranking }: { ranking: RankingData }) {
-  const byKind = new Map(ranking.weeklyHighlights?.map(item => [item.kind, item]));
+  const highlights = ranking.weeklyHighlights ?? [];
   return <section className="ranking-card ranking-highlights" aria-labelledby="ranking-highlights-title">
     <div className="ranking-card-heading"><span className="ranking-card-icon is-gold"><Trophy size={25} /></span><div><h2 id="ranking-highlights-title">Destaques da semana</h2><p>Realizações que inspiram nossa comunidade.</p></div></div>
     <div className="ranking-highlights-list">
-      {(['streak', 'xp', 'challenges'] as const).map(kind => {
-        const item = byKind.get(kind);
-        const Icon = highlightIcons[kind];
-        const label = kind === 'streak' ? 'Maior sequência' : kind === 'xp' ? 'Mais XP conquistado' : 'Mais desafios';
-        return <div className="ranking-highlight" key={kind}><Icon size={18} className={`ranking-highlight-icon is-${kind}`} /><span className="ranking-highlight-label">{item?.label ?? label}</span>{item ? <><Avatar name={item.user.name} imageUrl={item.user.profileImageUrl} className="ranking-highlight-avatar" /><strong title={item.user.name}>{item.user.name}</strong><b>{item.value.toLocaleString('pt-BR')} {item.unit}</b></> : <small>{ranking.weeklyDataAvailable ? 'Nenhuma atividade nesta semana' : 'Dados semanais indisponíveis'}</small>}</div>;
+      {highlights.length === 0 ? <p className="ranking-highlights-empty">{ranking.weeklyDataAvailable ? 'Nenhuma atividade nesta semana.' : 'Dados semanais indisponíveis.'}</p> : highlights.map(item => {
+        const Icon = highlightIcons[item.kind];
+        return <div className="ranking-highlight" key={item.kind}><Icon size={18} className={`ranking-highlight-icon is-${item.kind}`} /><span className="ranking-highlight-label">{item.label}</span><Avatar name={item.user.name} imageUrl={item.user.profileImageUrl} className="ranking-highlight-avatar" /><strong title={item.user.name}>{item.user.name}</strong><b>{item.value.toLocaleString('pt-BR')} {item.unit}</b></div>;
       })}
     </div>
   </section>;
@@ -144,11 +142,10 @@ function RankingSection({ ranking, scopeLabel }: { ranking: RankingData; scopeLa
   const rest = (ranking.leaderboard ?? ranking.top).slice(3);
   return <section className="ranking-card ranking-classification" aria-labelledby="ranking-classification-title">
     <div className="ranking-card-heading"><span className="ranking-card-icon is-chart"><Sparkles size={24} /></span><div><h2 id="ranking-classification-title">Classificação</h2><p>Veja quem está subindo no ranking {scopeLabel === 'Global' ? 'global' : 'da sua instituição'}.</p></div></div>
-    <div className="ranking-table" role="table" aria-label={`Classificação ${scopeLabel}, a partir do quarto colocado`}>
+    {rest.length > 0 ? <div className="ranking-table" role="table" aria-label={`Classificação ${scopeLabel}, a partir do quarto colocado`}>
       <div className="ranking-table-head" role="row"><span role="columnheader">#</span><span role="columnheader">Jogador</span><span role="columnheader">Nível</span><span role="columnheader">Variação (semana)</span><span role="columnheader">XP da temporada</span></div>
       {rest.map(entry => <RankingRow key={entry.id} entry={entry} />)}
-      {rest.length === 0 && <p className="ranking-empty">Ainda não há participantes após o Top 3.</p>}
-    </div>
+    </div> : <p className="ranking-empty">{ranking.totalParticipants === 0 ? 'Ainda não há participantes nesta classificação.' : 'Todos os participantes desta classificação estão no pódio.'}</p>}
     {ranking.leaderboard?.length === 50 && ranking.totalParticipants > 50 && <p className="ranking-list-note">Exibindo os 50 primeiros de {ranking.totalParticipants.toLocaleString('pt-BR')} participantes.</p>}
   </section>;
 }

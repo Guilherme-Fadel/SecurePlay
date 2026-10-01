@@ -85,7 +85,7 @@ export function Dashboard() {
         <div className={`hall-support-grid${features.achievements ? '' : ' is-without-achievements'}${features.ranking ? '' : ' is-without-ranking'}`}>
           <section className="hall-panel hall-training-panel" aria-labelledby="training-title">
             <header className="hall-section-heading"><div><h2 id="training-title">Próximas aulas</h2></div></header>
-            <ActiveTraining />
+            <ActiveTraining currentModuleId={currentModule?.id} />
           </section>
           <section className="hall-panel hall-daily-panel" aria-labelledby="daily-title">
             <header className="hall-section-heading"><div><h2 id="daily-title">Missão do dia</h2></div></header>

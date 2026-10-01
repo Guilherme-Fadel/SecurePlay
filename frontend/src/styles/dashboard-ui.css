@@ -42,6 +42,11 @@
   background: rgba(var(--primary-rgb), 0.06);
 }
 
+.dashboard-training-item:focus-visible {
+  outline: 3px solid var(--primary);
+  outline-offset: -3px;
+}
+
 .dashboard-training-main {
   flex: 1;
 }

@@ -43,6 +43,8 @@
 .ranking-hero-empty { align-self:center; padding:14px 20px; border-radius:12px; background:#201435d9; color:#fff; }
 .ranking-content-grid { display:grid; grid-template-columns:minmax(0,2.25fr) minmax(300px,1fr); gap:12px; margin-top:14px; }
 .ranking-card { min-width:0; padding:16px; border:1px solid var(--rank-border); border-radius:15px; background:var(--rank-surface); box-shadow:0 4px 12px #6047290b; }
+.ranking-journey.is-management { align-self:start; }
+.ranking-journey.is-management .ranking-card-heading { margin-bottom:0; }
 .ranking-company-select { display:inline-flex; align-items:center; gap:6px; color:var(--rank-muted); font-size:11px; font-weight:700; }
 .ranking-company-select select { min-height:36px; max-width:220px; padding:0 9px; border:1px solid var(--rank-border); border-radius:8px; background:var(--rank-surface); color:var(--rank-ink); font:inherit; }
 .ranking-card-heading { display:flex; min-height:48px; align-items:center; gap:11px; margin-bottom:10px; }
@@ -71,6 +73,7 @@
 .ranking-journey-xp span { display:grid; gap:2px; }
 .ranking-journey-xp small { color:var(--rank-muted); font-size:10px; font-weight:500; }
 .ranking-highlights-list { display:grid; gap:6px; }
+.ranking-highlights-empty { margin:0; padding:8px 2px 2px; color:var(--rank-muted); font-size:12px; }
 .ranking-highlight { display:grid; min-height:35px; grid-template-columns:20px minmax(86px,1fr) 25px minmax(60px,.8fr) auto; align-items:center; gap:6px; padding:4px 8px; border:1px solid #eee6da; border-radius:9px; background:#fff; font-size:11px; }
 .ranking-highlight-icon.is-streak { color:#e5643f; }.ranking-highlight-icon.is-xp { color:#dfa121; }.ranking-highlight-icon.is-challenges { color:var(--primary); }
 .ranking-highlight-label { font-weight:700; }

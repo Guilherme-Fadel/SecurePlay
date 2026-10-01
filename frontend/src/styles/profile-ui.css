@@ -251,8 +251,7 @@
   background: rgba(var(--primary-rgb), .06);
 }
 
-.profile-level-summary span,
-.profile-level-summary small {
+.profile-level-summary span {
   color: var(--dashboard-muted);
   font-size: 9px;
 }
@@ -264,11 +263,6 @@
   font-size: 28px;
   font-weight: 800;
   line-height: 1;
-}
-
-.profile-level-summary small {
-  color: var(--primary);
-  font-weight: 750;
 }
 
 .profile-layout {
@@ -361,11 +355,6 @@
   margin-top: 9px;
 }
 
-.profile-progress-footnote span:last-child {
-  color: var(--primary);
-  font-weight: 750;
-}
-
 .profile-card-footnote {
   max-width: 65%;
   color: var(--dashboard-muted);
@@ -384,10 +373,6 @@
   align-items: center;
   grid-template-columns: 32px minmax(118px, .8fr) minmax(0, 1.2fr);
   gap: 11px;
-}
-
-.profile-account-row + .profile-account-row {
-  border-top: 1px solid var(--dashboard-border);
 }
 
 .profile-account-icon {

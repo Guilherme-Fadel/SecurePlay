@@ -173,14 +173,10 @@
 
 /* Sala de Missões — biblioteca escalável por nível */
 .missions-room-page { display: flex; min-height: calc(100dvh - 92px); flex-direction: column; gap: 9px; padding: 0 0 10px; }
-.missions-room-title { display: grid; min-height: 52px; grid-template-columns: 48px minmax(0,1fr) auto; align-items: center; gap: 11px; }
+.missions-room-title { display: grid; min-height: 52px; grid-template-columns: 48px minmax(0,1fr); align-items: center; gap: 11px; }
 .missions-room-title > img { width: 48px; height: 48px; object-fit: contain;  }
 .missions-room-title h1 { margin: 0; color: var(--dashboard-text); font-size: clamp(24px,2.1vw,32px); font-weight: 850; letter-spacing: -.045em; }
 .missions-room-title p { margin: 2px 0 0; color: var(--dashboard-muted); font-size: 13px; }
-.missions-room-total-xp { display: grid; grid-template-columns: 30px auto; align-items: center; column-gap: 8px; min-width: 168px; padding: 7px 13px; border: 1px solid rgba(var(--accent-rgb),.42); border-radius: 14px; background: var(--dashboard-surface); box-shadow: var(--dashboard-shadow); }
-.missions-room-total-xp img { grid-row: 1 / 3; width: 34px; height: 34px; object-fit: contain;  }
-.missions-room-total-xp strong { color: var(--primary); font-size: 21px; line-height: 1; }
-.missions-room-total-xp span { color: var(--dashboard-muted); font-size: 9px; }
 
 .missions-room-stage { position: relative; min-height: 300px; padding: 28px 74px 34px; overflow: hidden; border: 1px solid rgba(var(--primary-rgb),.55); border-radius: 20px; background-image: linear-gradient(rgba(15,9,37,.05),rgba(15,9,37,.05)),var(--missions-room-bg); background-position: center; background-size: cover; box-shadow: 0 13px 28px rgba(31,18,69,.16); }
 .missions-level-board { display: grid; width: min(920px,100%); min-height: 230px; margin: 0 auto; grid-template-columns: minmax(170px,.72fr) minmax(300px,1.25fr) minmax(145px,.5fr); overflow: hidden; border: 4px solid #cf9129; border-radius: 13px; background: #fffaf0; box-shadow: 0 0 0 5px #5e3217,0 14px 27px rgba(9,5,24,.34); }
@@ -229,9 +225,7 @@
 
 .missions-shelf-section { display: flex; min-height: 0; flex: 1; flex-direction: column; gap: 7px; }
 .missions-shelf-heading { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; }
-.missions-shelf-heading span { color: var(--primary); font-size: 9px; font-weight: 850; letter-spacing: .1em; }
 .missions-shelf-heading h2 { margin: 0; color: var(--dashboard-text); font-size: 18px; font-weight: 800; }
-.missions-shelf-heading p { margin: 0; color: var(--dashboard-muted); font-size: 10px; }
 .missions-filter-bar { display: flex; min-height: 36px; align-items: center; justify-content: flex-end; gap: 8px; padding: 4px 10px; border: 1px solid var(--dashboard-border); border-radius: 10px; background: var(--dashboard-surface); }
 .missions-filter-bar > div { display: flex; flex-wrap: wrap; gap: 7px; }
 .missions-filter-bar .app-button { min-height: 27px; padding-top: 3px; padding-bottom: 3px; }
@@ -296,7 +290,6 @@
   .missions-level-metrics > div { padding-top: 2px; padding-bottom: 2px; }
   .missions-level-progress { padding: 12px; }
   .missions-level-dots { bottom: 6px; }
-  .missions-shelf-heading span { font-size: 8px; }
   .missions-shelf-heading h2 { font-size: 16px; }
   .missions-filter-bar { min-height: 33px; padding: 3px 9px; }
   .missions-module-grid { min-height: 178px; padding-top: 13px; padding-bottom: 15px; }
@@ -318,7 +311,6 @@
 @media (max-width: 760px) {
   .missions-room-title { grid-template-columns: 50px 1fr; }
   .missions-room-title > img { width: 50px; height: 50px; }
-  .missions-room-total-xp { grid-column: 1 / -1; width: 100%; }
   .missions-room-stage { padding: 58px 45px 48px; }
   .missions-level-board { grid-template-columns: 1fr; }
   .missions-level-art { min-height: 175px; border-right: 0; border-bottom: 1px solid #ead8b7; }
@@ -392,7 +384,6 @@
 .module-book-lessons .learning-lesson-meta { grid-column:3; justify-content:flex-start; }
 .module-book-finish { display:flex; align-items:center; gap:9px; margin:20px 4px 0; padding:10px 13px; border:1px solid #e2bd64; border-radius:10px; background:#fff6d9; color:#d69208; }
 .module-book-finish span { flex:1; color:#5f5870; font-size:10px; }
-.module-book-finish strong { color:#291a4d; font-size:11px; }
 
 @media (max-width:900px) {
   .module-book-page { height:auto; overflow:visible; }

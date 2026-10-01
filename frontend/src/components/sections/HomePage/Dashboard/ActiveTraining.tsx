@@ -1,15 +1,21 @@
 import { InfoCard } from "@/components/ui/visuals/InfoCard";
 import { useConteudos } from "@/hooks/useConteudos";
 import { useSectionContext } from "@/contexts/SectionContext";
-import { ChevronRight, Sparkles } from "lucide-react";
+import { ChevronRight, RefreshCcw, Sparkles } from "lucide-react";
 import { getModuleArtwork } from "@/lib/staticArtwork";
+import { AppButton } from "@/components/ui/buttons/AppButton";
 
-export function ActiveTraining() {
-  const { allModulos, loading } = useConteudos();
+interface ActiveTrainingProps {
+  currentModuleId?: number;
+}
+
+export function ActiveTraining({ currentModuleId }: ActiveTrainingProps) {
+  const { allModulos, loading, error, refetch } = useConteudos();
   const { navigateToSection, navigateToContent } = useSectionContext();
 
-  const pendingModulos = (allModulos ?? [])
-    .filter((modulo) => modulo.progress < 100)
+  const remainingModulos = (allModulos ?? []).filter((modulo) => modulo.progress < 100);
+  const pendingModulos = remainingModulos
+    .filter((modulo) => modulo.id !== currentModuleId)
     .slice(0, 3);
 
   const handleClick = (moduloId?: number, nextAulaId?: number | null, hasStarted?: boolean) => {
@@ -27,21 +33,30 @@ export function ActiveTraining() {
           <InfoCard.Section>
             <p className="text-[var(--text-secondary)]">Carregando...</p>
           </InfoCard.Section>
+        ) : error && !allModulos ? (
+          <InfoCard.Section>
+            <p className="text-[var(--text-secondary)]">Não foi possível carregar as próximas aulas.</p>
+            <AppButton variant="soft" size="sm" icon={<RefreshCcw size={14} />} onClick={refetch}>
+              Tentar novamente
+            </AppButton>
+          </InfoCard.Section>
         ) : pendingModulos.length === 0 ? (
           <InfoCard.Section>
-            <p className="text-[var(--text-secondary)]">Todos os conteúdos foram concluídos!</p>
+            <p className="text-[var(--text-secondary)]">
+              {remainingModulos.length === 0
+                ? 'Todos os conteúdos foram concluídos!'
+                : 'Continue a missão em destaque para avançar.'}
+            </p>
           </InfoCard.Section>
         ) : (
           pendingModulos.map((modulo, index) => {
             const isInProgress = modulo.progress > 0;
             return (
-              <div
+              <button
                 key={modulo.id}
                 onClick={() => handleClick(modulo.id, modulo.nextAulaId, modulo.hasStarted)}
-                onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') handleClick(modulo.id, modulo.nextAulaId, modulo.hasStarted); }}
-                role="button"
-                tabIndex={0}
-                className="dashboard-training-item flex items-center justify-between px-4 py-3 transition-colors cursor-pointer"
+                type="button"
+                className="dashboard-training-item flex w-full items-center justify-between border-0 bg-transparent px-4 py-3 text-left transition-colors cursor-pointer"
               >
                 <span className="academy-training-order" aria-hidden="true">{String(index + 1).padStart(2, '0')}</span>
                 <div className="dashboard-training-main flex min-w-0 items-center gap-3">
@@ -64,7 +79,7 @@ export function ActiveTraining() {
                 <div className="dashboard-training-xp flex items-center gap-2">
                   <span>Continuar</span><ChevronRight size={13} />
                 </div>
-              </div>
+              </button>
             );
           })
         )}

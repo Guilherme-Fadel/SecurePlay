@@ -42,7 +42,6 @@ export function Challenges() {
     }, [apiGames, features.games]);
     const handlePlay = (game: GameCardData) => setActive(game.id);
     const exit = () => setActive(null);
-    const focusedGame = carouselGames.find((game) => game.id === focusedSlug) ?? carouselGames[0];
     const activeGame = features.games.some((slug) => slug === active) ? active : null;
     if (activeGame === 'termotech') {
         return <TermoTech onExit={exit}/>;
@@ -84,12 +83,8 @@ export function Challenges() {
         <div className="challenge-arena-heading">
           <div>
             <span>Arcade de segurança</span>
-            <h3>{focusedGame?.title ?? 'Escolha seu treinamento'}</h3>
-            <p>
-              {focusedGame
-            ? `${focusedGame.tag} · ${focusedGame.xp} XP por conclusão`
-            : 'Explore as missões disponíveis para começar.'}
-            </p>
+            <h3>Explore as experiências</h3>
+            <p>Selecione um cartão para consultar detalhes e iniciar.</p>
           </div>
           <div className="challenge-navigation-hint">
             <ArrowLeft size={13}/>

@@ -10,7 +10,6 @@ import {
   KeyRound,
   Mail,
   Medal,
-  Settings2,
   ShieldCheck,
   Sparkles,
   Target,
@@ -71,7 +70,6 @@ export function Perfil() {
   const xpProgress = stats && xpCeiling > 0 ? Math.min(100, Math.round((points / xpCeiling) * 100)) : 0;
   const isManagementUser = user?.role === 'admin' || user?.role === 'platform_admin';
   const displayName = (isManagementUser ? user?.name : user?.nickname || user?.name) || (userLoading ? 'Carregando perfil...' : 'Participante SecurePlay');
-  const firstName = displayName.split(/\s+/)[0] || 'você';
   const companyName = user?.empresa_nome || 'Comunidade SecurePlay';
   const displayLevel = stats?.level ?? user?.level;
 
@@ -223,14 +221,6 @@ export function Perfil() {
             <h1>Meu Perfil</h1>
             <p>Veja sua identidade, progresso e informações de acesso na plataforma.</p>
           </div>
-          <AppButton
-            size="sm"
-            variant="ghost"
-            icon={<Settings2 size={15} />}
-            onClick={() => navigateToSection('configuracoes')}
-          >
-            Configurações
-          </AppButton>
         </header>
 
         <InfoCard raised className="profile-hero">
@@ -298,7 +288,6 @@ export function Perfil() {
           <div className="profile-level-summary">
             <span>Seu nível</span>
             <strong>{displayLevel ?? '—'}</strong>
-            <small>{statsLoading ? 'Atualizando evolução' : `${formatNumber(points)} XP acumulados`}</small>
           </div>
         </InfoCard>
 
@@ -315,17 +304,14 @@ export function Perfil() {
                 <div className="profile-progress-headline">
                   <div>
                     <span>Progresso para o próximo nível</span>
-                    <strong>{stats ? `${formatNumber(points)} XP` : 'Aguardando dados de evolução'}</strong>
+                    <strong>{stats ? `${formatNumber(xpToNextLevel)} XP para avançar` : 'Aguardando dados de evolução'}</strong>
                   </div>
                   <b>{stats ? `${xpProgress}%` : '—'}</b>
                 </div>
                 <div className="profile-xp-track" aria-label={stats ? `${xpProgress}% do nível atual` : 'Progresso de nível indisponível'}>
                   <i style={{ width: `${xpProgress}%` }} />
                 </div>
-                <div className="profile-progress-footnote">
-                  <span>{stats ? `${formatNumber(xpToNextLevel)} XP para avançar` : 'Complete atividades para começar sua evolução.'}</span>
-                  {displayLevel !== undefined && <span>Nível {displayLevel}</span>}
-                </div>
+                {!stats && <p className="profile-progress-footnote">Complete atividades para começar sua evolução.</p>}
               </InfoCard.Section>
               {features.achievements && <InfoCard.Footer>
                 <span className="profile-card-footnote">Conquistas e itens cosméticos acompanham seu perfil.</span>
@@ -337,17 +323,14 @@ export function Perfil() {
 
             <InfoCard raised className="profile-account-card">
               <InfoCard.Header
-                title="Informações da conta"
-                subtitle="Dados vinculados ao seu acesso atual."
+                title="Segurança da conta"
+                subtitle="Gerencie a senha usada no seu acesso."
                 icon={ShieldCheck}
                 variant="secondary"
               />
-              <InfoCard.Section className="profile-account-list">
-                <ProfileDetail icon={Mail} label="E-mail de acesso" value={user?.email ?? 'Não informado'} />
-                <ProfileDetail icon={UserRound} label="Nome do cadastro" value={user?.name ?? 'Não informado'} />
-                <ProfileDetail icon={Building2} label="Organização" value={companyName} />
-                <ProfileDetail icon={UserRound} label="Tipo de conta" value={roleLabel(user?.role)} />
-              </InfoCard.Section>
+              {user?.nickname && user.name && user.nickname !== user.name && <InfoCard.Section className="profile-account-list">
+                <ProfileDetail icon={UserRound} label="Nome do cadastro" value={user.name} />
+              </InfoCard.Section>}
               <InfoCard.Footer>
                 <span className="profile-card-footnote">Mantenha sua senha única e não a compartilhe com outras pessoas.</span>
                 <AppButton size="sm" variant="soft" icon={<KeyRound size={14} />} onClick={() => setPasswordModalOpen(true)}>
@@ -375,7 +358,7 @@ export function Perfil() {
               <div className="profile-next-icon"><Target size={19} /></div>
               <div>
                 <span>Próximo passo</span>
-                <h3>{stats && xpToNextLevel > 0 ? `Faltam ${formatNumber(xpToNextLevel)} XP para o próximo nível.` : `Continue avançando, ${firstName}.`}</h3>
+                <h3>Escolha sua próxima missão</h3>
                 <p>Complete conteúdos e desafios para fortalecer sua jornada de segurança.</p>
               </div>
               <AppButton size="sm" icon={<Zap size={14} />} onClick={() => navigateToSection('conteudos')}>

@@ -74,7 +74,6 @@ export function ModuloList({ onSelectModulo }: ModuloListProps) {
       <header className="missions-room-title">
         <ProgressiveImage src={assets['missions-room-emblem']} alt="" />
         <div><h1>Sala de Missões</h1><p>Escolha um nível, complete missões e torne-se um guardião digital!</p></div>
-        <div className="missions-room-total-xp"><ProgressiveImage src={assets['icon-star']} alt="" /><strong>{allModulos.reduce((total, modulo) => total + modulo.xp_total + modulo.xp_bonus, 0)}</strong><span>XP disponíveis</span></div>
       </header>
 
       <section className="missions-room-stage" style={{ '--missions-room-bg': `url(${assets['castle-library-bg']})` } as React.CSSProperties}>
@@ -84,9 +83,7 @@ export function ModuloList({ onSelectModulo }: ModuloListProps) {
           <div className="missions-level-copy">
             <span>{level.eyebrow}</span><h2>{level.name}</h2><p>{level.description}</p>
             <div className="missions-level-metrics">
-              <div><ProgressiveImage src={assets['icon-book']} alt="" /><strong>{levelAllModules.length}</strong><span>módulos</span></div>
-              <div><ProgressiveImage src={assets['icon-flag']} alt="" /><strong>{totalLessons}</strong><span>aulas</span></div>
-              <div><ProgressiveImage src={assets['icon-star']} alt="" /><strong>{availableXp}</strong><span>XP</span></div>
+              <div><ProgressiveImage src={assets['icon-star']} alt="" /><strong>{availableXp}</strong><span>XP disponíveis neste nível</span></div>
             </div>
             <AppButton disabled={!nextModule} icon={<Play size={17} />} onClick={() => nextModule && onSelectModulo(nextModule.id)}>{nextModule?.hasStarted || (nextModule?.progress ?? 0) > 0 ? 'Continuar aventura' : 'Começar aventura'}</AppButton>
           </div>
@@ -97,7 +94,7 @@ export function ModuloList({ onSelectModulo }: ModuloListProps) {
       </section>
 
       <section className="missions-shelf-section">
-        <div className="missions-shelf-heading"><div><span>MISSÕES DO NÍVEL</span><h2>{level.name}</h2></div><p>{levelModules.length} missão(ões) encontrada(s)</p></div>
+        <div className="missions-shelf-heading"><h2>Missões deste nível</h2></div>
         <div className="missions-filter-bar">
           <div>{statusFilters.map((filter) => <AppButton key={filter.key} onClick={() => setFilterStatus(filter.key)} variant={filterStatus === filter.key ? 'secondary' : 'ghost'} size="sm">{filter.label}</AppButton>)}</div>
         </div>

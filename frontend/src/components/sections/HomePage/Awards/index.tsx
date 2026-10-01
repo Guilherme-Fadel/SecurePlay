@@ -76,7 +76,7 @@ export function Awards() {
         <AppSectionHeader
           title="Conquistas"
           subtitle="Evolua pelas trilhas, conquiste Chaves Digitais e personalize sua presença no SecurePlay."
-          action={trail ? (
+          action={view === 'trail' && trail ? (
             <div className="achievements-prestige-pill">
               <DigitalKeyIcon size={32} />
               <span>{trail.summary.prestigeBalance}</span>
@@ -133,11 +133,7 @@ function TrailView({ trail, loading, error, refetch }: {
           <p>Cada caminho avança automaticamente conforme suas atividades reais na plataforma.</p>
         </div>
         <div className="achievements-summary-progress">
-          <div className="achievements-progress-ring" style={{ '--progress': `${trail.summary.progressPercent * 3.6}deg` } as CSSProperties}>
-            <strong>{trail.summary.progressPercent}%</strong>
-            <span>completo</span>
-          </div>
-          <div className="achievements-summary-stat"><ChevronsUp size={18} /><span>Nível<strong>{trail.summary.level}</strong></span></div>
+          <div className="achievements-summary-stat"><ChevronsUp size={18} /><span>Seu nível<strong>{trail.summary.level}</strong></span></div>
           <div className="achievements-summary-stat"><DigitalKeyIcon size={32} /><span>Chaves conquistadas<strong>{trail.summary.prestigeEarned}</strong></span></div>
         </div>
       </InfoCard>
@@ -270,7 +266,6 @@ function ShopView() {
           </div>
         </div>
         <div className="achievement-shop-intro">
-          <span className="achievements-eyebrow"><Gem size={14} /> Colecionáveis SecurePlay</span>
           <h3>Transforme sua evolução em identidade</h3>
           <p>Use apenas Chaves Digitais conquistadas na plataforma. Os itens são cosméticos e não alteram seu desempenho.</p>
           <div className="achievement-shop-balance"><DigitalKeyIcon size={36} /><span>Saldo disponível<strong>{shop.prestigeBalance} Chaves Digitais</strong></span></div>

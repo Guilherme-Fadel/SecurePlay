@@ -158,31 +158,6 @@
   gap: 12px;
 }
 
-.achievements-progress-ring {
-  display: grid;
-  width: 92px;
-  height: 92px;
-  flex: 0 0 auto;
-  place-content: center;
-  border-radius: 50%;
-  background: radial-gradient(circle at center, var(--dashboard-surface) 58%, transparent 60%), conic-gradient(var(--primary) var(--progress), rgba(var(--primary-rgb), 0.1) 0);
-  text-align: center;
-}
-
-.achievements-progress-ring strong {
-  color: var(--dashboard-text);
-  font-size: 18px;
-  line-height: 1;
-}
-
-.achievements-progress-ring span {
-  margin-top: 3px;
-  color: var(--dashboard-muted);
-  font-size: 8px;
-  font-weight: 700;
-  text-transform: uppercase;
-}
-
 .achievements-summary-stat {
   display: flex;
   min-width: 124px;
