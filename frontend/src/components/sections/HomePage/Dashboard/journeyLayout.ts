@@ -65,15 +65,3 @@ export function getJourneyWindow<T extends Pick<JourneyNodeData, 'id'>>(
   const start = Math.max(0, Math.min(nodes.length - count, preferredStart));
   return nodes.slice(start, start + count);
 }
-
-export function buildJourneyPath(slots: JourneySlot[]): string {
-  if (slots.length === 0) return '';
-  if (slots.length === 1) return `M ${slots[0].x} ${slots[0].y}`;
-  return slots.slice(1).reduce((path, point, index) => {
-    const previous = slots[index];
-    const distance = point.x - previous.x;
-    const firstControlX = previous.x + distance * 0.42;
-    const secondControlX = point.x - distance * 0.42;
-    return `${path} C ${firstControlX} ${previous.y} ${secondControlX} ${point.y} ${point.x} ${point.y}`;
-  }, `M ${slots[0].x} ${slots[0].y}`);
-}

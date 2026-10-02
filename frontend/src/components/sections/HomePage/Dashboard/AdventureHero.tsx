@@ -2,7 +2,7 @@ import { BookOpen, Check, Play, Star } from 'lucide-react';
 import { AppButton } from '@/components/ui/buttons/AppButton';
 import type { CurrentUser } from '@/services/me';
 import type { DashboardStats, JourneyNodeData, WeeklyStreak } from '@/services/dashboard';
-import bookPortalArt from '@/assets/dashboard/book-portal-pixel-v1.png';
+import { getModuleArtwork, missionRoomAssets } from '@/lib/staticArtwork';
 import streakCalendar from '@/assets/dashboard/streak-calendar-pixel-v1.png';
 import missionPageTab from '@/assets/dashboard/mission-page-tab-pixel-v1.png';
 
@@ -23,6 +23,9 @@ export function AdventureHero({ user, stats, streak, currentModule, onContinue }
   const moduleProgress = currentModule?.progress ?? 0;
   const firstName = user?.name?.trim().split(/\s+/)[0] || 'Agente';
   const checkedDays = streak?.checkedDays ?? weekDays.map(() => false);
+  const missionArtwork = currentModule
+    ? getModuleArtwork({ title: currentModule.title, artworkUrl: currentModule.artworkUrl, thumbnail: null })
+    : missionRoomAssets['level-easy'];
 
   return (
     <section className="hall-hero-grid" aria-label="Resumo da aventura">
@@ -52,11 +55,12 @@ export function AdventureHero({ user, stats, streak, currentModule, onContinue }
             <AppButton className="hall-hero-cta" icon={<Play size={16} />} onClick={onContinue}>Continuar missão</AppButton>
           </div>
         </div>
-        <img className="hall-hero-art" src={bookPortalArt} alt="" aria-hidden="true" />
+        <div className="hall-hero-art-panel" aria-hidden="true">
+          <img className="hall-hero-art" src={missionArtwork} alt="" />
+        </div>
       </article>
 
       <aside className="hall-player-card" aria-label="Nível e sequência semanal">
-        <span className="hall-pixel-corner" aria-hidden="true" />
         <div className="hall-level-copy">
           <h2>Nível {stats?.level ?? '—'}</h2>
           <div><Star size={19} /><strong>{totalPoints.toLocaleString('pt-BR')}</strong><span>/ {levelTarget.toLocaleString('pt-BR')} XP</span></div>

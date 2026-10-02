@@ -5,8 +5,6 @@
 /* Academia de Missões: visual exclusivo do painel principal */
 .academy-dashboard { max-width: 1180px; margin: 0 auto; }
 .secure-sidebar-nav { position: relative; overflow: hidden !important; background: linear-gradient(180deg, #fffdf7 0%, #fff8ed 100%) !important; }
-.secure-sidebar-castle { position: absolute; bottom: 0; left: 0; width: 100%; max-height: 280px; object-fit: cover; object-position: center bottom; pointer-events: none; }
-.secure-sidebar-list { position: relative; z-index: 1; }
 .secure-sidebar-item.is-active { background: linear-gradient(135deg, var(--primary), var(--primary-dark)) !important; color: #fff !important; box-shadow: 0 7px 13px rgba(var(--primary-rgb), .2); }
 
 @media (max-width: 480px) {
@@ -21,7 +19,6 @@
 .dashboard-ranking-card > .dashboard-ranking-body { padding: 5px 8px; }
 
 :root:not([data-theme='light']) .secure-sidebar-nav { background: linear-gradient(180deg,#121126 0%,#18142e 100%) !important; }
-:root:not([data-theme='light']) .secure-sidebar-castle { opacity: .86; filter: saturate(.86) brightness(.7); }
 [data-theme='light'] .secure-sidebar-nav { background: linear-gradient(180deg,#fffdf7 0%,#fff8ed 100%) !important; }
 
 .academy-streak-pixels { position: absolute; top: -25px; right: 0; width: 54px; height: 40px; pointer-events: none; }

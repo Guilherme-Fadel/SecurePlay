@@ -31,23 +31,9 @@
   align-items: center;
   padding: 18px 30px;
   background:
-    radial-gradient(circle at 82% 80%, rgba(255, 212, 91, .2), transparent 34%),
+    radial-gradient(ellipse 48% 88% at 84% 53%, rgba(var(--primary-rgb), .1), transparent 88%),
     linear-gradient(110deg, #fffaf0, #fff7e8);
 }
-
-.hall-mission-card::before,
-.hall-mission-card::after {
-  content: '';
-  position: absolute;
-  z-index: 3;
-  width: 18px;
-  height: 18px;
-  border-color: #d79f28;
-  border-style: solid;
-  pointer-events: none;
-}
-.hall-mission-card::before { top: 12px; left: 12px; border-width: 3px 0 0 3px; }
-.hall-mission-card::after { right: 12px; bottom: 12px; border-width: 0 3px 3px 0; }
 
 /*
  * Moldura roxa interna. Era um outline com offset -7px, mas a arte do heroi
@@ -59,7 +45,7 @@
 .hall-mission-frame { position: absolute; z-index: 3; inset: 3px; border: 4px solid var(--primary-dark); border-radius: 9px; pointer-events: none; }
 
 .hall-mission-copy { position: relative; z-index: 4; width: min(58%, 570px); }
-/* O texto permanece em HTML sobre o painel vazio da arte para continuar legível e responsivo. */
+/* Texto e progresso permanecem em HTML; a arte da missão é apenas decorativa. */
 .hall-ribbon { position: relative; width: 250px; aspect-ratio: 1000 / 219; margin: -7px 0 0 -10px; }
 .hall-ribbon img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; }
 .hall-ribbon span { position: absolute; z-index: 1; top: 52%; left: 59%; max-width: 72%; color: #fff; font-size: 11px; font-weight: 850; line-height: 1; text-align: center; text-shadow: 0 1px 2px #32116e; white-space: nowrap; transform: translate(-50%, -50%); }
@@ -77,14 +63,10 @@
 .hall-mission-card .hall-hero-cta { min-width: 205px; min-height: 43px; justify-content: center; border-color: var(--primary); border-radius: 9px; background: var(--primary); color: #fff; box-shadow: 0 7px 15px rgba(var(--primary-rgb), .24); }
 .hall-mission-card .hall-hero-cta:hover { border-color: var(--primary-hover); background: var(--primary-hover); }
 .hall-mission-card .hall-hero-cta span { white-space: nowrap; }
-.hall-hero-art { position: absolute; z-index: 2; right: 12px; bottom: 4px; width: min(40%, 360px); pointer-events: none; object-fit: contain; }
+.hall-hero-art-panel { position: absolute; z-index: 2; top: 7px; right: 7px; bottom: 7px; display: grid; width: 39%; place-items: center; pointer-events: none; }
+.hall-hero-art { display: block; width: min(78%, 230px); max-height: 91%; object-fit: contain; filter: drop-shadow(0 8px 5px rgba(42, 26, 87, .18)); }
 
 .hall-player-card { padding: 22px 22px 15px; background: linear-gradient(145deg, #fff, #fffdf7); }
-.hall-pixel-corner { position: absolute; top: 10px; right: 10px; width: 22px; height: 22px; border-top: 3px solid #d8a02c; border-right: 3px solid #d8a02c; }
-.hall-pixel-corner::before,
-.hall-pixel-corner::after { content: ''; position: absolute; background: #d8a02c; }
-.hall-pixel-corner::before { top: 5px; right: 5px; width: 3px; height: 9px; }
-.hall-pixel-corner::after { top: 5px; right: 5px; width: 9px; height: 3px; }
 .hall-level-copy h2 { margin: 0 0 10px; color: var(--hall-ink); font-size: 25px; font-weight: 900; }
 .hall-level-copy > div:first-of-type { display: flex; align-items: center; gap: 6px; }
 .hall-level-copy svg { color: #e9a20d; fill: #ffc542; }
@@ -117,11 +99,11 @@
 .hall-link-button { order: 3; }
 .hall-link-button:hover,
 .hall-journey-state button:hover { background: rgba(var(--primary-rgb), .08); }
-.hall-journey-legend { order: 2; display: flex; align-items: center; gap: 13px; color: #5e5872; font-size: 8px; }
+.hall-journey-legend { order: 2; display: flex; align-items: center; gap: 13px; color: #5e5872; font-size: 10px; }
 .hall-journey-legend span { display: inline-flex; align-items: center; gap: 5px; color: inherit; font-size: inherit; font-weight: 650; letter-spacing: 0; text-transform: none; }
-.hall-journey-legend i { width: 9px; height: 9px; border-radius: 50%; background: #81889c; }
-.hall-journey-legend i.is-complete { background: #20a58f; }
-.hall-journey-legend i.is-current { background: var(--hall-brand); }
+.hall-journey-legend i { width: 9px; height: 9px; border-radius: 50%; background: var(--hall-brand); }
+.hall-journey-legend svg:first-child { color: #208e80; }
+.hall-journey-legend span:last-child svg { color: #5e5872; }
 
 .hall-journey { position: relative; height: 190px; overflow: hidden; border: 1px solid rgba(var(--primary-rgb), .24); border-radius: 14px; background: #cfdef0; box-shadow: 0 10px 23px rgba(43, 31, 86, .12); container-type: inline-size; }
 .hall-journey-picture,
@@ -130,11 +112,6 @@
 .hall-journey-shade { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(255,255,255,.02), rgba(20,16,48,.12)); pointer-events: none; }
 .hall-stage-label { position: absolute; z-index: 5; top: 9px; left: 11px; display: inline-flex; min-height: 29px; align-items: center; gap: 6px; padding: 0 9px; border: 1px solid rgba(255,255,255,.68); border-radius: 7px; background: rgba(31,24,70,.78); color: #fff; box-shadow: 0 4px 10px rgba(22,16,54,.18); }
 .hall-stage-label span { font-size: 9px; font-weight: 850; }
-.hall-journey-path { position: absolute; z-index: 2; inset: 28px 2% 20px; width: 96%; height: calc(100% - 48px); overflow: visible; pointer-events: none; }
-.hall-journey-path path { fill: none; stroke-linecap: round; stroke-linejoin: round; vector-effect: non-scaling-stroke; }
-.hall-path-shadow { stroke: rgba(36,20,71,.58); stroke-width: 7; }
-.hall-path-base { stroke: rgba(255,251,218,.95); stroke-width: 4; stroke-dasharray: 3 7; }
-.hall-path-progress { stroke: #46c9bd; stroke-width: 4; stroke-dasharray: 0 100; filter: drop-shadow(0 0 3px rgba(53,205,190,.65)); }
 .hall-journey-nodes { position: absolute; z-index: 3; inset: 28px 2% 20px; width: 96%; height: calc(100% - 48px); margin: 0; padding: 0; list-style: none; }
 .hall-journey-nodes > li { position: absolute; width: 102px; transform: translate(-50%, -50%); text-align: center; }
 /*
@@ -145,6 +122,7 @@
  */
 .hall-journey-node { position: relative; display: grid; width: 60px; height: 60px; margin: 0 auto; place-items: center; border: 0; border-radius: 50%; background: transparent; cursor: pointer; }
 .hall-journey-node:focus-visible { outline: 3px solid #fff; outline-offset: 3px; }
+.hall-journey-node::before { position: absolute; z-index: 0; bottom: -8px; left: 50%; width: 17px; height: 17px; transform: translateX(-50%) rotate(45deg); border-right: 2px solid #fff; border-bottom: 2px solid #fff; border-radius: 2px; background: var(--primary-dark); content: ''; box-shadow: 3px 3px 5px rgba(24, 18, 58, .27); }
 .hall-node-orbit { position: absolute; inset: 0; border-radius: 50%; background: conic-gradient(#ffc83a var(--node-progress,0deg), rgba(255,255,255,.88) 0); box-shadow: 0 4px 0 rgba(42,26,87,.34), 0 6px 12px rgba(30,20,68,.22); }
 .hall-node-orbit::after { content: ''; position: absolute; inset: 3px; border-radius: 50%; background: var(--primary-dark); }
 .hall-node-core { position: relative; z-index: 1; display: grid; width: 52px; height: 52px; overflow: hidden; place-items: center; border: 1.5px solid rgba(255,255,255,.88); border-radius: 50%; background: linear-gradient(145deg,var(--primary-light),var(--primary-dark)); color: #fff; }
@@ -188,7 +166,7 @@
 .hall-training-panel .dashboard-training-copy { flex: 1; }
 .hall-training-panel .dashboard-training-copy > p:first-of-type { font-size: 10px; font-weight: 800; }
 .hall-training-panel .dashboard-training-copy > p:nth-of-type(2) { font-size: 8px; }
-.hall-training-panel .academy-training-status { display: flex; align-items: center; gap: 3px; color: var(--hall-brand); font-size: 6px; font-weight: 900; text-transform: uppercase; }
+.hall-training-panel .academy-training-status { display: block; color: var(--hall-brand); font-size: 6px; font-weight: 900; text-transform: uppercase; }
 .hall-training-panel .dashboard-training-progress { height: 3px; margin-top: 4px; }
 .hall-training-panel .dashboard-training-xp { display: flex; min-height: 28px; align-items: center; gap: 3px; padding: 0 8px; border: 1px solid rgba(var(--primary-rgb),.3); border-radius: 8px; background: #fff !important; color: var(--hall-brand); font-size: 8px; }
 
@@ -198,9 +176,17 @@
 .hall-daily-panel .dashboard-daily-summary h3 { font-size: 11px; line-height: 1.15; }
 .hall-daily-panel .dashboard-daily-summary p { display: -webkit-box; margin: 4px 0 0; overflow: hidden; font-size: 8px; line-height: 1.35; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; }
 .hall-daily-panel .academy-mission-completion { width: 100%; margin: 2px 0 0; }
-.hall-daily-panel .dashboard-daily-card > .sp-card-footer { padding: 4px 8px 8px !important; }
-.hall-daily-panel .dashboard-primary-button { width: 100%; min-height: 38px !important; border: 0; border-radius: 8px; background: var(--primary); color: #fff; font-size: 11px; font-weight: 800; }
-.hall-daily-panel .dashboard-primary-button:hover { background: var(--primary-hover); }
+.hall-daily-hitarea { position: relative; display: flex; min-width: 0; min-height: 0; flex: 1; border-radius: 16px; }
+.hall-daily-hitarea.is-clickable { cursor: pointer; }
+.hall-daily-hitarea.is-clickable:hover .dashboard-daily-card,
+.hall-daily-hitarea.is-clickable:focus-within .dashboard-daily-card { border-color: var(--primary) !important; box-shadow: 0 12px 26px rgba(var(--primary-rgb), .24) !important; transform: translateY(-2px); }
+.hall-daily-overlay { position: absolute; z-index: 3; inset: 0; width: 100%; border: 0; border-radius: inherit; background: transparent; cursor: pointer; }
+.hall-daily-overlay:focus-visible { outline: 3px solid var(--primary); outline-offset: 3px; }
+.hall-daily-complete { display: inline-block; margin-top: 5px; color: var(--secondary-dark); font-size: 9px; font-weight: 800; }
+@media (prefers-reduced-motion: reduce) {
+  .hall-daily-hitarea.is-clickable:hover .dashboard-daily-card,
+  .hall-daily-hitarea.is-clickable:focus-within .dashboard-daily-card { transform: none; }
+}
 
 .hall-achievements-panel .dashboard-achievements-card { display: flex; flex-direction: column; padding: 0 !important; }
 .hall-achievements-panel .academy-achievements-items { display: grid; flex: 1; grid-template-columns: 1fr; grid-auto-flow: row; align-content: start; gap: 5px; padding: 8px 8px 4px; }
@@ -238,7 +224,7 @@
 @media (max-width: 1260px) {
   .hall-hero-grid { grid-template-columns: minmax(0,1.55fr) minmax(320px,.85fr); }
   .hall-mission-copy { width: 65%; }
-  .hall-hero-art { width: 38%; }
+  .hall-hero-art-panel { width: 38%; }
   .hall-support-grid { grid-template-columns: minmax(390px,1.65fr) minmax(190px,.75fr) minmax(250px,1fr); }
   .hall-training-panel { grid-column: 1; }
   .hall-daily-panel { grid-column: 2; }
@@ -250,11 +236,11 @@
 }
 
 @media (max-width: 1260px) and (min-width: 901px) {
-  .hall-mission-copy { width: 100%; }
+  .hall-mission-copy { width: 65%; }
   .hall-mission-actions { max-width: 278px; gap: 8px; }
   .hall-reward { min-width: 112px; grid-template-columns: 24px 1fr; padding-inline: 7px; }
   .hall-mission-card .hall-hero-cta { min-width: 158px; padding-inline: 10px; font-size: 11px; }
-  .hall-hero-art { right: 8px; width: 35%; opacity: .62; }
+  .hall-hero-art-panel { width: 34%; }
   .hall-ranking-panel .dashboard-ranking-body { display:grid; align-items:center; grid-template-columns:minmax(0,1fr) minmax(220px,.7fr); gap:12px; }
 }
 
@@ -282,7 +268,8 @@
   .hall-mission-card h1 { max-width: 86%; font-size: 27px; }
   .hall-mission-actions { align-items: flex-start; flex-direction: column; }
   .hall-mission-card .hall-hero-cta { min-width: 190px; }
-  .hall-hero-art { right: 0; bottom: 4px; width: 185px; opacity: .68; }
+  .hall-hero-art-panel { top: auto; right: 7px; bottom: 7px; width: 45%; height: 53%; border: 0; background: transparent; opacity: .66; }
+  .hall-hero-art { width: 100%; max-height: 100%; }
   .hall-player-card { padding: 18px 16px 14px; }
   .hall-week-row i { width: 28px; height: 28px; }
   .hall-section-heading { flex-wrap: wrap; }
@@ -290,7 +277,6 @@
   .hall-link-button svg { width: 21px; height: 21px; }
   .hall-journey { height: 285px; }
   .hall-journey-picture img { object-position: center; }
-  .hall-journey-path,
   .hall-journey-nodes { inset: 42px 2% 22px; width: 96%; height: calc(100% - 64px); }
   .hall-journey-nodes > li { width: 88px; }
   /* Orbe um pouco menor aqui: cinco nos em tela estreita, mas a arte ainda fica

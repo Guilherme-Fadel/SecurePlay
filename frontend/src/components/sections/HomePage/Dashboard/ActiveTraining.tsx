@@ -1,7 +1,7 @@
 import { InfoCard } from "@/components/ui/visuals/InfoCard";
 import { useConteudos } from "@/hooks/useConteudos";
 import { useSectionContext } from "@/contexts/SectionContext";
-import { ChevronRight, RefreshCcw, Sparkles } from "lucide-react";
+import { ChevronRight, RefreshCcw } from "lucide-react";
 import { getModuleArtwork } from "@/lib/staticArtwork";
 import { AppButton } from "@/components/ui/buttons/AppButton";
 
@@ -64,7 +64,7 @@ export function ActiveTraining({ currentModuleId }: ActiveTrainingProps) {
                     <img src={getModuleArtwork(modulo)} alt="" aria-hidden="true" onError={(event) => { event.currentTarget.style.display = 'none'; }} />
                   </div>
                   <div className="dashboard-training-copy min-w-0">
-                    <span className="academy-training-status"><Sparkles size={9} />{isInProgress ? 'Em aventura' : 'Nova missão'}</span>
+                    <span className="academy-training-status">{isInProgress ? 'Em aventura' : 'Nova missão'}</span>
                     <p className="text-[var(--text-primary)] leading-tight truncate">{modulo.title}</p>
                     <p className="text-[var(--text-secondary)] text-xs mt-0.5">
                       {isInProgress
