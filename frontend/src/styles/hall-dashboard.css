@@ -170,7 +170,9 @@
 .hall-training-panel .dashboard-training-progress { height: 3px; margin-top: 4px; }
 .hall-training-panel .dashboard-training-xp { display: flex; min-height: 28px; align-items: center; gap: 3px; padding: 0 8px; border: 1px solid rgba(var(--primary-rgb),.3); border-radius: 8px; background: #fff !important; color: var(--hall-brand); font-size: 8px; }
 
-.hall-daily-panel .dashboard-daily-body { display: flex !important; align-items: center !important; flex-direction: column; gap: 3px !important; padding: 8px 10px 3px !important; text-align: center !important; }
+.hall-daily-panel .dashboard-daily-card { padding: 0; }
+.hall-daily-panel .dashboard-daily-card::before { z-index: 2; }
+.hall-daily-panel .dashboard-daily-body { display: flex !important; align-items: center !important; flex-direction: column; gap: 3px !important; padding: 8px 10px 3px !important; border: 0; border-radius: inherit; text-align: center !important; }
 .hall-daily-panel .academy-daily-illustration { width: 86px !important; height: 82px !important; object-fit: contain; }
 .hall-daily-panel .dashboard-daily-summary { text-align: center; }
 .hall-daily-panel .dashboard-daily-summary h3 { font-size: 11px; line-height: 1.15; }
