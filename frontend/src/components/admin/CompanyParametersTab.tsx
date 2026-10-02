@@ -106,9 +106,6 @@ function ParameterToggle({
 }) {
   return (
     <label className="settings-toggle-row">
-      <span className="settings-toggle-icon" aria-hidden="true">
-        <SlidersHorizontal size={17} />
-      </span>
       <span className="settings-toggle-copy">
         <strong>{title}</strong>
         <small>{description}</small>

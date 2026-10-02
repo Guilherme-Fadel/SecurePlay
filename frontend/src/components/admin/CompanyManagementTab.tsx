@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { AlertCircle, Building2, CheckCircle2, Copy, Plus } from "lucide-react";
+import { AlertCircle, CheckCircle2, Copy, Plus } from "lucide-react";
 import { AppButton } from "@/components/ui/buttons/AppButton";
 import { AppSearchInput } from "@/components/ui/forms/AppSearchInput";
 import { AppSelect } from "@/components/ui/forms/AppSelect";
@@ -127,7 +127,6 @@ export function CompanyManagementTab({
       {onNomeChange && (
         <section className="admin-company-form-card">
           <div className="admin-company-form-heading">
-            <Building2 size={20} />
             <div className="admin-heading-title">
               <h2>Empresa selecionada</h2>
               <AdminHelpTip label="Empresa selecionada" text="As alterações serão gravadas pelo botão único de salvar." />
@@ -158,7 +157,6 @@ export function CompanyManagementTab({
 
       <section className="admin-company-form-card">
         <div className="admin-company-form-heading">
-          <Building2 size={20} />
           <div className="admin-heading-title">
             <h2>Nova empresa</h2>
             <AdminHelpTip label="Nova empresa" text="Informe quem será o administrador responsável pela organização." />
@@ -246,9 +244,6 @@ export function CompanyManagementTab({
           <ul className="admin-company-list">
             {list.items.map((empresa) => (
               <li key={empresa.id}>
-                <span className="admin-company-icon">
-                  <Building2 size={17} />
-                </span>
                 <span>
                   <strong>{empresa.nome}</strong>
                   <small>

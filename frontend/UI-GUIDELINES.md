@@ -12,7 +12,7 @@ Referência metodológica: [Geist Design System](https://vercel.com/geist/introd
 
 - `src/styles/theme.css` define marca, fontes e cores base. `src/styles/app-ui.css` define cores de superfície e texto dos temas claro/escuro e as primitivas de controle. As paletas da empresa continuam chegando por `useEmpresaTema`.
 - Para controles, use `--app-control-height`, `--app-control-radius`, `--app-control-focus`, `--dashboard-border`, `--dashboard-surface-soft`, `--dashboard-text` e `--dashboard-muted`. Títulos administrativos usam `--admin-title-size` e descrições usam `--admin-copy-size`.
-- `AppInput` cobre texto, e-mail e URL; `AppSearchInput` cobre busca e exige `label`; `AppSelect` cobre escolhas nativas. Todos têm altura, borda, tipografia, foco, hover e desabilitado em `app-ui.css`. Campos de cor, arquivo, checkbox e switches mantêm suas estruturas próprias.
+- `AppInput` cobre texto, e-mail e URL; `AppSearchInput` cobre busca e exige `label`; `AppSelect` cobre escolhas nativas, com seta uniforme em `app-ui.css`. Todos têm altura, borda, tipografia, foco, hover e desabilitado em `app-ui.css`. Campos de cor, arquivo, checkbox e switches mantêm suas estruturas próprias.
 - `AppButton` usa variantes `primary`, `secondary`, `soft` e `ghost`, com tamanhos `sm`, `control` e `md`. `AppFilterChip` é para filtros categóricos curtos com `aria-pressed`; não substitui select com muitas opções. `AppSectionHeader` é para seções internas, não para o título de página.
 
 ## Listagens administrativas
@@ -51,7 +51,7 @@ Exemplo abreviado:
 
 Em Configurações da empresa, Layout e Funcionalidades usam o mesmo `AdminPageHeader`. Os parâmetros de Funcionalidades usam linhas de switch com descrição do recurso visível, estado ligado/desligado, desabilitado e foco; a descrição orienta a escolha e não deve ficar escondida no tooltip. O tooltip cabe aos subtítulos de títulos e seções.
 
-A tela fornece estado, API, filtros, permissões, ações, colunas e texto. Usuários e Apelidos usam busca enquanto se digita; Empresas preserva busca por envio do formulário. Convites usa linhas com ações e Auditoria tem duas listagens sem barra de busca. Essas diferenças são funcionais. Fora da administração, Ranking, Conteúdos, Conquistas e busca do cabeçalho mantêm layouts especializados; reutilizam as primitivas de controle quando o comportamento coincide.
+A tela fornece estado, API, filtros, permissões, ações, colunas e texto. Usuários e Apelidos usam busca enquanto se digita; a listagem de Empresas preserva busca por envio do formulário. A escolha da empresa administrada na barra superior usa sugestões filtradas enquanto se digita e mostra a seleção atual. Convites usa linhas com ações e Auditoria tem duas listagens sem barra de busca. Essas diferenças são funcionais. Fora da administração, Ranking, Conteúdos, Conquistas e busca do cabeçalho mantêm layouts especializados; reutilizam as primitivas de controle quando o comportamento coincide.
 
 Ao criar uma listagem: escolha primeiro as primitivas existentes; use a estrutura acima quando houver título, ferramentas e resultados; forneça labels e `data-label`; defina loading/vazio/erro antes de renderizar dados; confira tema claro/escuro, 320 px e desktop, teclado e overflow.
 

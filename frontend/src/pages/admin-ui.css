@@ -773,8 +773,7 @@
 }
 
 .admin-company-toolbar {
-  position: sticky;
-  top: 0;
+  position: relative;
   z-index: 5;
   display: flex;
   align-items: center;
@@ -816,7 +815,7 @@
   margin: 0 !important;
 }
 
-@media (max-width: 1180px) {
+@media (max-width: 900px) {
   .admin-company-toolbar:not(.is-save-only) {
     grid-template-columns: minmax(0, 1fr);
   }
@@ -844,7 +843,6 @@
 
 @media (max-width: 780px) {
   .admin-company-toolbar { padding: 12px; }
-  .admin-company-toolbar .admin-platform-context select { min-width: 0; }
   .admin-global-save { width: 100%; justify-content: space-between; }
   .admin-global-save .app-button { margin-left: auto; }
   .admin-tabs { flex-wrap: wrap; }
@@ -860,7 +858,7 @@
 .sp-card .settings-toggle-list { padding: 0; }
 .settings-toggle-row {
   display: grid;
-  grid-template-columns: 38px minmax(0, 1fr) 46px;
+  grid-template-columns: minmax(0, 1fr) 46px;
   align-items: center;
   gap: 14px;
   min-width: 0;
@@ -873,23 +871,13 @@
 .settings-toggle-row:last-child { border-bottom: 0; }
 .settings-toggle-row:hover:not(:has(input:disabled)) { background: var(--dashboard-surface-soft); }
 .settings-toggle-row:has(input:disabled) { cursor: not-allowed; opacity: .55; }
-.settings-toggle-icon {
-  display: grid;
-  width: 38px;
-  height: 38px;
-  place-items: center;
-  border: 1px solid var(--dashboard-border);
-  border-radius: 10px;
-  background: var(--dashboard-surface-soft);
-  color: var(--primary);
-}
 .settings-toggle-copy { display: grid; min-width: 0; gap: 3px; }
 .settings-toggle-copy strong { color: var(--dashboard-text); font-size: var(--font-label); line-height: 1.35; }
 .settings-toggle-copy small { color: var(--dashboard-muted); font-size: var(--font-caption); line-height: 1.4; }
 .settings-toggle-row input {
   position: relative;
   z-index: 1;
-  grid-column: 3;
+  grid-column: 2;
   grid-row: 1;
   width: 46px;
   height: 26px;
@@ -900,7 +888,7 @@
 .settings-toggle-row input:disabled { cursor: not-allowed; }
 .settings-switch {
   display: flex;
-  grid-column: 3;
+  grid-column: 2;
   grid-row: 1;
   width: 46px;
   height: 26px;
@@ -923,8 +911,7 @@
 .settings-toggle-row input:checked + .settings-switch i { transform: translateX(20px); }
 .settings-toggle-row input:focus-visible + .settings-switch { outline: var(--app-control-focus); outline-offset: 3px; }
 @media (max-width: 480px) {
-  .settings-toggle-row { grid-template-columns: 34px minmax(0, 1fr) 46px; gap: 10px; padding: 13px 14px; }
-  .settings-toggle-icon { width: 34px; height: 34px; }
+  .settings-toggle-row { grid-template-columns: minmax(0, 1fr) 46px; gap: 10px; padding: 13px 14px; }
 }
 @media (prefers-reduced-motion: reduce) {
   .settings-toggle-row, .settings-switch, .settings-switch i { transition: none; }

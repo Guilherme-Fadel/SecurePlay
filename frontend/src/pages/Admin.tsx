@@ -24,7 +24,6 @@ import { useSectionContext } from "@/contexts/SectionContext";
 import { buildBrandVars } from "@/hooks/useEmpresaTema";
 import { AppButton } from "@/components/ui/buttons/AppButton";
 import { AppSearchInput } from "@/components/ui/forms/AppSearchInput";
-import { AppSelect } from "@/components/ui/forms/AppSelect";
 import { InfoCard } from "@/components/ui/visuals/InfoCard";
 import { AppSectionHeader } from "@/components/ui/visuals/AppSectionHeader";
 import { UserManagementTab } from "@/components/admin/UserManagementTab";
@@ -49,7 +48,6 @@ import {
   LayoutTemplate,
   Palette,
   RotateCcw,
-  Save,
   SlidersHorizontal,
   Upload,
   UsersRound,
@@ -105,11 +103,15 @@ const Admin = forwardRef<AdminSaveHandle, AdminProps>(function Admin(
   const [empresaSelecionadaDetalhe, setEmpresaSelecionadaDetalhe] = useState<EmpresaAdministravel | null>(null);
   const [empresaBuscaInput, setEmpresaBuscaInput] = useState("");
   const [empresaBusca, setEmpresaBusca] = useState("");
-  const [empresasTotal, setEmpresasTotal] = useState(0);
+  const [empresasResolvedBusca, setEmpresasResolvedBusca] = useState<string | null>(null);
   const [empresasLoading, setEmpresasLoading] = useState(false);
+  const [empresasError, setEmpresasError] = useState(false);
+  const [empresaMenuOpen, setEmpresaMenuOpen] = useState(false);
+  const [empresaActiveIndex, setEmpresaActiveIndex] = useState(0);
   const [empresaSelecionadaId, setEmpresaSelecionadaId] = useState<
     number | null
   >(null);
+  const empresaQueryPending = empresaBusca !== empresaBuscaInput.trim() || empresasResolvedBusca !== empresaBusca;
   const empresaSelecionada =
     empresas.find((empresa) => empresa.id === empresaSelecionadaId) ??
     (empresaSelecionadaDetalhe?.id === empresaSelecionadaId ? empresaSelecionadaDetalhe : null);
@@ -150,7 +152,6 @@ const Admin = forwardRef<AdminSaveHandle, AdminProps>(function Admin(
         a.nome.localeCompare(b.nome, "pt-BR"),
       ),
     );
-    setEmpresasTotal((current) => current + 1);
     if (!dirty) {
       setEmpresaSelecionadaDetalhe(empresa);
       setEmpresaSelecionadaId(empresa.id);
@@ -206,19 +207,43 @@ const Admin = forwardRef<AdminSaveHandle, AdminProps>(function Admin(
 
   useEffect(() => {
     if (!platformMode) return;
+    const timeout = window.setTimeout(() => setEmpresaBusca(empresaBuscaInput.trim()), 250);
+    return () => window.clearTimeout(timeout);
+  }, [platformMode, empresaBuscaInput]);
+
+  useEffect(() => {
+    if (!platformMode) return;
     let cancelled = false;
     setEmpresasLoading(true);
+    setEmpresasError(false);
     listarEmpresasPaginadas({ page: 1, pageSize: 25, search: empresaBusca })
       .then((data) => {
         if (cancelled) return;
         setEmpresas(data.items);
-        setEmpresasTotal(data.total);
-        setEmpresaSelecionadaId((current) => current ?? data.items[0]?.id ?? null);
+        setEmpresasResolvedBusca(empresaBusca);
+        setEmpresaActiveIndex(0);
+        if (!empresaBusca) setEmpresaSelecionadaId((current) => current ?? data.items[0]?.id ?? null);
       })
-      .catch(() => { if (!cancelled) setMessage("Erro ao carregar as empresas."); })
+      .catch(() => { if (!cancelled) { setEmpresasResolvedBusca(empresaBusca); setEmpresasError(true); } })
       .finally(() => { if (!cancelled) setEmpresasLoading(false); });
     return () => { cancelled = true; };
   }, [platformMode, empresaBusca]);
+
+  const selectEmpresa = (empresa: EmpresaAdministravel) => {
+    if (saving || uploading) return;
+    if (empresa.id === empresaSelecionadaId) {
+      setEmpresaBuscaInput("");
+      setEmpresaBusca("");
+      setEmpresaMenuOpen(false);
+      return;
+    }
+    if (dirty && !window.confirm("Há alterações não salvas. Deseja descartá-las e trocar de empresa?")) return;
+    setEmpresaSelecionadaId(empresa.id);
+    setEmpresaSelecionadaDetalhe(empresa);
+    setEmpresaBuscaInput("");
+    setEmpresaBusca("");
+    setEmpresaMenuOpen(false);
+  };
 
   useEffect(() => {
     if (platformMode && !empresaSelecionadaId) return;
@@ -418,47 +443,51 @@ const Admin = forwardRef<AdminSaveHandle, AdminProps>(function Admin(
           <header className={cn("admin-company-toolbar", !platformMode && "is-save-only")}>
             {platformMode && (
               <div className="admin-platform-context">
-                <label htmlFor="admin-company-select">Empresa administrada</label>
-                <form onSubmit={(event) => { event.preventDefault(); setEmpresaBusca(empresaBuscaInput.trim()); }} className="admin-platform-search">
+                <div className="admin-company-combobox" onBlur={(event) => {
+                  if (!event.currentTarget.contains(event.relatedTarget)) setEmpresaMenuOpen(false);
+                }}>
                   <AppSearchInput
                     value={empresaBuscaInput}
-                    onChange={(event) => setEmpresaBuscaInput(event.target.value)}
-                    placeholder="Buscar empresa"
-                    label="Buscar empresa por nome"
+                    onChange={(event) => { setEmpresaBuscaInput(event.target.value); setEmpresaMenuOpen(true); }}
+                    onFocus={() => setEmpresaMenuOpen(true)}
+                    onKeyDown={(event) => {
+                      if (event.key === "Escape") setEmpresaMenuOpen(false);
+                      if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+                        event.preventDefault();
+                        setEmpresaMenuOpen(true);
+                        setEmpresaActiveIndex((current) => Math.max(0, Math.min(empresas.length - 1, current + (event.key === "ArrowDown" ? 1 : -1))));
+                      }
+                      if (event.key === "Enter" && empresaMenuOpen && !empresaQueryPending && !empresasLoading && !empresasError && empresas[empresaActiveIndex]) {
+                        event.preventDefault();
+                        selectEmpresa(empresas[empresaActiveIndex]);
+                      }
+                    }}
+                    role="combobox"
+                    aria-expanded={empresaMenuOpen}
+                    aria-controls={empresaMenuOpen ? "admin-company-options" : undefined}
+                    aria-activedescendant={empresaMenuOpen && !empresaQueryPending && !empresasLoading && !empresasError && empresas[empresaActiveIndex] ? `admin-company-option-${empresas[empresaActiveIndex].id}` : undefined}
+                    placeholder="Buscar e selecionar empresa"
+                    label="Buscar e selecionar empresa"
                     maxLength={100}
+                    disabled={saving || uploading}
                   />
-                  <AppButton type="submit" size="control" variant="ghost">Buscar</AppButton>
-                </form>
-                <AppSelect
-                  id="admin-company-select"
-                  disabled={saving || uploading}
-                  value={empresaSelecionadaId ?? ""}
-                  onChange={(event) => {
-                    if (
-                      !dirty ||
-                      window.confirm(
-                        "Há alterações não salvas. Deseja descartá-las e trocar de empresa?",
-                      )
-                    ) {
-                      setEmpresaSelecionadaId(Number(event.target.value));
-                      setEmpresaSelecionadaDetalhe(empresas.find((empresa) => empresa.id === Number(event.target.value)) ?? null);
-                    }
-                  }}
-                  aria-label="Selecionar empresa"
-                >
-                  <option value="" disabled>
-                    Selecione uma empresa
-                  </option>
-                  {empresaSelecionadaDetalhe && !empresas.some((empresa) => empresa.id === empresaSelecionadaDetalhe.id) && (
-                    <option value={empresaSelecionadaDetalhe.id}>{empresaSelecionadaDetalhe.nome}</option>
-                  )}
-                  {empresas.map((empresa) => (
-                    <option key={empresa.id} value={empresa.id}>
-                      {empresa.nome}
-                    </option>
-                  ))}
-                </AppSelect>
-                <small role="status">{empresasLoading ? "Buscando..." : `${empresasTotal} ${empresasTotal === 1 ? 'empresa encontrada' : 'empresas encontradas'}`}</small>
+                  {empresaMenuOpen && <div id="admin-company-options" className="admin-company-options" role="listbox" aria-label="Empresas">
+                    {empresasLoading || empresaQueryPending ? <span role="status">Buscando empresas...</span> : empresasError ? <span role="alert">Não foi possível buscar empresas.</span> : empresas.length === 0 ? <span>Nenhuma empresa encontrada.</span> : empresas.map((empresa, index) => (
+                      <button
+                        key={empresa.id}
+                        id={`admin-company-option-${empresa.id}`}
+                        type="button"
+                        role="option"
+                        aria-selected={empresa.id === empresaSelecionadaId}
+                        disabled={saving || uploading}
+                        className={cn(index === empresaActiveIndex && "is-active")}
+                        onMouseDown={(event) => event.preventDefault()}
+                        onClick={() => selectEmpresa(empresa)}
+                      >{empresa.nome}</button>
+                    ))}
+                  </div>}
+                </div>
+                <span className="admin-selected-company" role="status">Selecionada: <strong>{empresaSelecionada?.nome ?? "nenhuma empresa"}</strong></span>
               </div>
             )}
 
@@ -470,8 +499,7 @@ const Admin = forwardRef<AdminSaveHandle, AdminProps>(function Admin(
                   </span>
                 )}
                 <AppButton
-                  size="control"
-                  icon={<Save size={16} />}
+                  size="sm"
                   onClick={() => void handleSave().catch(() => {})}
                   disabled={!dirty || !loaded || saving || uploading}
                 >
