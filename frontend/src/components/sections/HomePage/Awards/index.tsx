@@ -24,6 +24,7 @@ import {
 import { toast } from 'sonner';
 import { PageTransition } from '@/components/shared/PageTransition';
 import { AppButton } from '@/components/ui/buttons/AppButton';
+import { AppFilterChip } from '@/components/ui/buttons/AppFilterChip';
 import { AppSectionHeader } from '@/components/ui/visuals/AppSectionHeader';
 import { InfoCard } from '@/components/ui/visuals/InfoCard';
 import { AchievementIcon } from '@/components/ui/visuals/AchievementIcon';
@@ -273,8 +274,8 @@ function ShopView() {
       </InfoCard>
 
       <div className="achievement-shop-toolbar scrollbar-thin">
-        <button type="button" className={filter === 'all' ? 'is-active' : ''} onClick={() => setFilter('all')}>Todos</button>
-        {(Object.keys(cosmeticLabels) as CosmeticType[]).map((type) => <button type="button" key={type} className={filter === type ? 'is-active' : ''} onClick={() => setFilter(type)}>{cosmeticLabels[type]}</button>)}
+        <AppFilterChip selected={filter === 'all'} onClick={() => setFilter('all')}>Todos</AppFilterChip>
+        {(Object.keys(cosmeticLabels) as CosmeticType[]).map((type) => <AppFilterChip key={type} selected={filter === type} onClick={() => setFilter(type)}>{cosmeticLabels[type]}</AppFilterChip>)}
       </div>
 
       {items.length === 0 ? <EmptyShop /> : (

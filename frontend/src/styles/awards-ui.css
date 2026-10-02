@@ -712,26 +712,6 @@
   padding-bottom: 2px;
 }
 
-.achievement-shop-toolbar button {
-  min-height: 34px;
-  flex: 0 0 auto;
-  padding: 0 13px;
-  border: 1px solid var(--dashboard-border);
-  border-radius: 9px;
-  background: var(--dashboard-surface);
-  color: var(--dashboard-muted);
-  cursor: pointer;
-  font-family: var(--app-font);
-  font-size: 10px;
-  font-weight: 700;
-}
-
-.achievement-shop-toolbar button.is-active {
-  border-color: rgba(var(--primary-rgb), 0.28);
-  background: rgba(var(--primary-rgb), 0.09);
-  color: var(--primary);
-}
-
 .achievement-shop-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));

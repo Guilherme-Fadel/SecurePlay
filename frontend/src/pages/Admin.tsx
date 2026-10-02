@@ -23,6 +23,8 @@ import { cn } from "@/lib/utils";
 import { useSectionContext } from "@/contexts/SectionContext";
 import { buildBrandVars } from "@/hooks/useEmpresaTema";
 import { AppButton } from "@/components/ui/buttons/AppButton";
+import { AppSearchInput } from "@/components/ui/forms/AppSearchInput";
+import { AppSelect } from "@/components/ui/forms/AppSelect";
 import { InfoCard } from "@/components/ui/visuals/InfoCard";
 import { AppSectionHeader } from "@/components/ui/visuals/AppSectionHeader";
 import { UserManagementTab } from "@/components/admin/UserManagementTab";
@@ -33,6 +35,7 @@ import { AuditTab } from "@/components/admin/AuditTab";
 import { CompanyManagementTab } from "@/components/admin/CompanyManagementTab";
 import { CompanyParametersTab } from "@/components/admin/CompanyParametersTab";
 import { AdminThemePreview } from "@/components/admin/AdminThemePreview";
+import { AdminHelpTip } from "@/components/admin/AdminHelpTip";
 import { derivePalette } from "@/lib/palette";
 import { optimizeImageUpload } from "@/lib/optimizeImageUpload";
 import {
@@ -411,22 +414,22 @@ const Admin = forwardRef<AdminSaveHandle, AdminProps>(function Admin(
 
       <div className={cn("admin-console", platformMode && "is-platform")}>
         {(platformMode || !hideSave) && (
-          <header className="admin-company-toolbar">
+          <header className={cn("admin-company-toolbar", !platformMode && "is-save-only")}>
             {platformMode && (
               <div className="admin-platform-context">
-                <span>Empresa administrada</span>
+                <label htmlFor="admin-company-select">Empresa administrada</label>
                 <form onSubmit={(event) => { event.preventDefault(); setEmpresaBusca(empresaBuscaInput.trim()); }} className="admin-platform-search">
-                  <input
-                    type="search"
+                  <AppSearchInput
                     value={empresaBuscaInput}
                     onChange={(event) => setEmpresaBuscaInput(event.target.value)}
                     placeholder="Buscar empresa"
-                    aria-label="Buscar empresa por nome"
+                    label="Buscar empresa por nome"
                     maxLength={100}
                   />
-                  <AppButton type="submit" size="sm" variant="ghost">Buscar</AppButton>
+                  <AppButton type="submit" size="control" variant="ghost">Buscar</AppButton>
                 </form>
-                <select
+                <AppSelect
+                  id="admin-company-select"
                   disabled={saving || uploading}
                   value={empresaSelecionadaId ?? ""}
                   onChange={(event) => {
@@ -453,8 +456,8 @@ const Admin = forwardRef<AdminSaveHandle, AdminProps>(function Admin(
                       {empresa.nome}
                     </option>
                   ))}
-                </select>
-                <small role="status">{empresasLoading ? "Buscando..." : `${empresasTotal} empresa(s) encontrada(s); até 25 opções por busca`}</small>
+                </AppSelect>
+                <small role="status">{empresasLoading ? "Buscando..." : `${empresasTotal} ${empresasTotal === 1 ? 'empresa encontrada' : 'empresas encontradas'}`}</small>
               </div>
             )}
 
@@ -466,6 +469,7 @@ const Admin = forwardRef<AdminSaveHandle, AdminProps>(function Admin(
                   </span>
                 )}
                 <AppButton
+                  size="control"
                   icon={<Save size={16} />}
                   onClick={() => void handleSave().catch(() => {})}
                   disabled={!dirty || !loaded || saving || uploading}
@@ -603,21 +607,11 @@ const Admin = forwardRef<AdminSaveHandle, AdminProps>(function Admin(
               ) : activeTab === "visao-geral" ? (
                 <AdminOverviewTab empresaId={empresaAlvoId} empresaNome={platformMode ? empresaSelecionada?.nome : undefined} onNavigate={(tab) => setActiveTab(tab)} />
               ) : activeTab === "usuarios" ? (
-                <UserManagementTab
-                  empresaId={empresaAlvoId}
-                  empresaNome={
-                    platformMode ? empresaSelecionada?.nome : undefined
-                  }
-                />
+                <UserManagementTab empresaId={empresaAlvoId} />
               ) : activeTab === "apelidos" ? (
-                <PendingNicknamesTab
-                  empresaId={empresaAlvoId}
-                  empresaNome={
-                    platformMode ? empresaSelecionada?.nome : undefined
-                  }
-                />
+                <PendingNicknamesTab empresaId={empresaAlvoId} />
               ) : activeTab === "convites" ? (
-                <InvitationManagementTab empresaId={empresaAlvoId} empresaNome={platformMode ? empresaSelecionada?.nome : undefined} podeCriarAdministrador={platformMode} />
+                <InvitationManagementTab empresaId={empresaAlvoId} podeCriarAdministrador={platformMode} />
               ) : activeTab === "auditoria" && platformMode ? (
                 <AuditTab empresaId={empresaAlvoId} empresaNome={empresaSelecionada?.nome} />
               ) : (
@@ -633,18 +627,14 @@ const Admin = forwardRef<AdminSaveHandle, AdminProps>(function Admin(
                   >
                     <div className="admin-page-heading">
                       <div>
-                        <span className="admin-page-eyebrow">
-                          Identidade visual
-                        </span>
-                        <h1>
-                          {platformMode
-                            ? "Layout da empresa selecionada"
-                            : "Personalização da empresa"}
-                        </h1>
-                        <p>
-                          Ajuste a marca e as cores usadas na experiência de{" "}
-                          {empresaNome || "sua empresa"}.
-                        </p>
+                        <div className="admin-heading-title">
+                          <h1>
+                            {platformMode
+                              ? "Layout da empresa selecionada"
+                              : "Personalização da empresa"}
+                          </h1>
+                          <AdminHelpTip label="Personalização da empresa" text="Ajuste a marca e as cores usadas na experiência SecurePlay." />
+                        </div>
                       </div>
                       <div className="admin-heading-actions">
                         <AppButton
@@ -662,12 +652,12 @@ const Admin = forwardRef<AdminSaveHandle, AdminProps>(function Admin(
                         <section className="admin-settings-section">
                           <AppSectionHeader
                             title="Marca da empresa"
-                            subtitle="Identificação exibida nos pontos principais da plataforma."
+                            action={<AdminHelpTip label="Marca da empresa" text="Identificação exibida nos pontos principais da plataforma." />}
                           />
                           <InfoCard raised className="admin-logo-card">
                             <InfoCard.Header
                               title="Logotipo"
-                              subtitle="Use uma versão legível em fundos claros e escuros."
+                              action={<AdminHelpTip label="Logotipo" text="Use uma versão legível em fundos claros e escuros." />}
                               icon={Building2}
                               variant="primary"
                             />
@@ -714,7 +704,7 @@ const Admin = forwardRef<AdminSaveHandle, AdminProps>(function Admin(
                         <section className="admin-settings-section">
                           <AppSectionHeader
                             title="Cores da interface"
-                            subtitle="Escolha uma combinação pronta ou personalize cada papel da paleta."
+                            action={<AdminHelpTip label="Cores da interface" text="Escolha uma combinação pronta ou personalize cada papel da paleta." />}
                           />
                           <InfoCard raised className="admin-colors-card">
                             <InfoCard.Header
@@ -781,12 +771,9 @@ const Admin = forwardRef<AdminSaveHandle, AdminProps>(function Admin(
                                 <div className="admin-subsection-icon is-primary">
                                   <WandSparkles size={17} />
                                 </div>
-                                <div>
+                                <div className="admin-subsection-copy">
                                   <strong>Gerar paleta automaticamente</strong>
-                                  <p>
-                                    Selecione uma cor principal para gerar
-                                    combinações equilibradas.
-                                  </p>
+                                  <AdminHelpTip label="Gerar paleta automaticamente" text="Selecione uma cor principal para gerar combinações equilibradas." />
                                 </div>
                               </div>
                               <div className="admin-generator-control">
@@ -810,12 +797,9 @@ const Admin = forwardRef<AdminSaveHandle, AdminProps>(function Admin(
                                 <div className="admin-subsection-icon is-secondary">
                                   <SlidersHorizontal size={17} />
                                 </div>
-                                <div>
+                                <div className="admin-subsection-copy">
                                   <strong>Ajuste manual</strong>
-                                  <p>
-                                    Refine as cores individuais usadas pela
-                                    marca.
-                                  </p>
+                                  <AdminHelpTip label="Ajuste manual" text="Refine as cores individuais usadas pela marca." />
                                 </div>
                               </div>
                               <div className="admin-color-fields">

@@ -45,8 +45,8 @@
 .ranking-card { min-width:0; padding:16px; border:1px solid var(--rank-border); border-radius:15px; background:var(--rank-surface); box-shadow:0 4px 12px #6047290b; }
 .ranking-journey.is-management { align-self:start; }
 .ranking-journey.is-management .ranking-card-heading { margin-bottom:0; }
-.ranking-company-select { display:inline-flex; align-items:center; gap:6px; color:var(--rank-muted); font-size:11px; font-weight:700; }
-.ranking-company-select select { min-height:36px; max-width:220px; padding:0 9px; border:1px solid var(--rank-border); border-radius:8px; background:var(--rank-surface); color:var(--rank-ink); font:inherit; }
+.ranking-company-select { --app-control-border:var(--rank-border); --app-control-surface:var(--rank-surface); --app-control-text:var(--rank-ink); display:inline-flex; align-items:center; gap:6px; color:var(--rank-muted); font-size:11px; font-weight:700; }
+.ranking-company-select .app-filter-select { max-width:220px; }
 .ranking-card-heading { display:flex; min-height:48px; align-items:center; gap:11px; margin-bottom:10px; }
 .ranking-card-heading h2 { font-size:22px; line-height:1.1; }
 .ranking-card-heading p { margin:3px 0 0; color:var(--rank-muted); font-size:12px; line-height:1.3; }

@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { AlertCircle, Building2, CheckCircle2, Copy, Plus } from "lucide-react";
 import { AppButton } from "@/components/ui/buttons/AppButton";
+import { AppSearchInput } from "@/components/ui/forms/AppSearchInput";
+import { AppSelect } from "@/components/ui/forms/AppSelect";
 import { criarEmpresa, listarEmpresasPaginadas, type EmpresaAdministravel, type EmpresasPaginadas } from "@/services/admin";
 
 interface CompanyManagementTabProps {
@@ -241,14 +243,14 @@ export function CompanyManagementTab({
           <span aria-label="Total de empresas encontradas">{list?.total ?? "—"}</span>
         </div>
         <form className="admin-company-list-filters" onSubmit={(event) => { event.preventDefault(); setPage(1); setSearch(searchInput.trim()); }}>
-          <label>Buscar por nome
-            <input value={searchInput} onChange={(event) => setSearchInput(event.target.value)} placeholder="Nome da empresa" maxLength={100} />
-          </label>
-          <AppButton type="submit" size="sm">Buscar</AppButton>
+          <div className="admin-company-filter-field"><span>Buscar por nome</span>
+            <AppSearchInput label="Buscar empresas por nome" value={searchInput} onChange={(event) => setSearchInput(event.target.value)} placeholder="Nome da empresa" maxLength={100} />
+          </div>
+          <AppButton type="submit" size="control" variant="ghost">Buscar</AppButton>
           <label>Ordenar por nome
-            <select value={sort} onChange={(event) => { setPage(1); setSort(event.target.value as "asc" | "desc"); }}>
+            <AppSelect value={sort} onChange={(event) => { setPage(1); setSort(event.target.value as "asc" | "desc"); }}>
               <option value="asc">A–Z</option><option value="desc">Z–A</option>
-            </select>
+            </AppSelect>
           </label>
         </form>
         {loadingList ? <p role="status" className="admin-users-empty">Carregando empresas...</p> : listError ? (

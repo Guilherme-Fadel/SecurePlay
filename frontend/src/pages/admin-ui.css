@@ -268,6 +268,7 @@
 }
 
 .admin-subsection-heading {
+  position: relative;
   display: flex;
   align-items: flex-start;
   gap: 11px;
@@ -298,12 +299,6 @@
   color: var(--dashboard-text);
   font-size: 12px;
   font-weight: 700;
-}
-
-.admin-subsection-heading p {
-  margin: 3px 0 0;
-  color: var(--dashboard-muted);
-  font-size: 10px;
 }
 
 .admin-generator-control {
@@ -735,6 +730,80 @@
     display: none;
   }
 }
+
+.admin-heading-title,
+.admin-subsection-copy {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.admin-help-tip {
+  position: relative;
+  display: inline-flex;
+  flex: 0 0 auto;
+}
+
+.admin-help-tip > button {
+  display: grid;
+  width: 28px;
+  height: 28px;
+  place-items: center;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--dashboard-muted);
+  cursor: help;
+}
+
+.admin-help-tip > button:hover,
+.admin-help-tip > button:focus-visible {
+  background: rgba(var(--primary-rgb), .1);
+  color: var(--primary);
+}
+
+.admin-help-tip > button:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+.admin-help-tip-content {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  z-index: 20;
+  width: max-content;
+  max-width: min(260px, calc(100vw - 32px));
+  padding: 9px 11px;
+  border: 1px solid var(--dashboard-border);
+  border-radius: 9px;
+  background: var(--dashboard-surface);
+  box-shadow: var(--dashboard-shadow);
+  color: var(--dashboard-text);
+  font-size: var(--font-xs);
+  font-weight: 400;
+  line-height: 1.4;
+  opacity: 0;
+  pointer-events: auto;
+  visibility: hidden;
+}
+
+.admin-help-tip-content.is-open {
+  opacity: 1;
+  visibility: visible;
+}
+
+.admin-subsection-heading .admin-help-tip {
+  position: static;
+}
+
+.admin-subsection-heading .admin-help-tip-content {
+  top: 28px;
+  left: 0;
+  right: auto;
+  width: 100%;
+  max-width: none;
+}
 .admin-global-save {
   display: flex;
   align-items: center;
@@ -760,13 +829,42 @@
   box-shadow: var(--dashboard-shadow);
 }
 
+.admin-company-toolbar:not(.is-save-only) {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+}
+
+.admin-company-toolbar:not(.is-save-only) .admin-global-save {
+  margin-left: 0;
+}
+
+.admin-company-toolbar.is-save-only {
+  width: fit-content;
+  max-width: 100%;
+  margin: 0 0 24px auto;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
 .admin-company-toolbar .admin-platform-context {
-  flex: 1;
-  flex-wrap: wrap;
+  width: 100%;
   min-width: 0;
   padding: 0;
   border: 0;
   margin: 0 !important;
+}
+
+@media (max-width: 1180px) {
+  .admin-company-toolbar:not(.is-save-only) {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .admin-company-toolbar:not(.is-save-only) .admin-global-save {
+    justify-self: end;
+  }
 }
 
 .admin-save-status {
@@ -796,7 +894,6 @@
 
 @media (max-width: 780px) {
   .admin-company-toolbar { padding: 12px; }
-  .admin-company-toolbar .admin-platform-context { flex-basis: 100%; }
   .admin-company-toolbar .admin-platform-context select { min-width: 0; }
   .admin-global-save { width: 100%; justify-content: space-between; }
   .admin-global-save .app-button { margin-left: auto; }

@@ -1,6 +1,8 @@
 import { useDeferredValue, useEffect, useState } from 'react';
-import { AlertCircle, Check, CheckCircle2, Search, X } from 'lucide-react';
+import { AlertCircle, Check, CheckCircle2, X } from 'lucide-react';
 import { AppButton } from '@/components/ui/buttons/AppButton';
+import { AppSearchInput } from '@/components/ui/forms/AppSearchInput';
+import { AppSelect } from '@/components/ui/forms/AppSelect';
 import { cn } from '@/lib/utils';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import {
@@ -12,14 +14,13 @@ import {
 
 interface PendingNicknamesTabProps {
   empresaId?: number;
-  empresaNome?: string;
 }
 
 const emptyResult: ApelidosPendentesPaginados = {
   items: [], page: 1, pageSize: 25, total: 0, totalPages: 0,
 };
 
-export function PendingNicknamesTab({ empresaId, empresaNome }: PendingNicknamesTabProps) {
+export function PendingNicknamesTab({ empresaId }: PendingNicknamesTabProps) {
   const { user } = useCurrentUser();
   const sessionKey = `secureplay-admin-nicknames:${user?.userId ?? 'unknown'}:${empresaId ?? 'company'}`;
   const [search, setSearch] = useState('');
@@ -96,7 +97,6 @@ export function PendingNicknamesTab({ empresaId, empresaNome }: PendingNicknames
     <div className="admin-users-content">
       <div className="admin-users-heading">
         <div>
-          <span className="admin-page-eyebrow">Moderação {empresaNome ? `· ${empresaNome}` : 'da empresa'}</span>
           <h1>Apelidos pendentes</h1>
           <p>Revise os apelidos antes que sejam exibidos no ranking da turma.</p>
         </div>
@@ -109,17 +109,12 @@ export function PendingNicknamesTab({ empresaId, empresaNome }: PendingNicknames
 
       <section className="admin-users-card admin-pending-nicknames-card" aria-busy={loading}>
         <div className="admin-nickname-toolbar">
-          <label>
-            <span className="sr-only">Buscar apelidos pendentes</span>
-            <Search size={17} aria-hidden="true" />
-            <input value={search} onChange={(event) => { setSearch(event.target.value); setPage(1); }} placeholder="Buscar por nome, e-mail ou apelido" />
-          </label>
-          <select aria-label="Ordenar apelidos pendentes" value={sort} onChange={(event) => { setSort(event.target.value as 'default' | 'asc' | 'desc'); setPage(1); }}>
+          <AppSearchInput label="Buscar apelidos pendentes" value={search} onChange={(event) => { setSearch(event.target.value); setPage(1); }} placeholder="Buscar por nome, e-mail ou apelido" />
+          <AppSelect aria-label="Ordenar apelidos pendentes" value={sort} onChange={(event) => { setSort(event.target.value as 'default' | 'asc' | 'desc'); setPage(1); }}>
             <option value="default">Ordem padrão</option>
             <option value="asc">Apelido A–Z</option>
             <option value="desc">Apelido Z–A</option>
-          </select>
-          <span>{loading ? 'Carregando...' : `${result.total} resultado${result.total === 1 ? '' : 's'}`}</span>
+          </AppSelect>
         </div>
         {loading && <p className="admin-users-empty" role="status">Carregando apelidos...</p>}
         {result.items.length === 0 && !loading && !loadError ? <p className="admin-users-empty">{search ? 'Nenhum apelido pendente corresponde à busca.' : 'Não há apelidos aguardando revisão.'}</p> : result.items.length > 0 && (

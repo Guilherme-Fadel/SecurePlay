@@ -6,6 +6,7 @@ import { Modulo } from '@/services/conteudo';
 import { ModuloCard } from './ModuloCard';
 import { SkeletonList } from './SkeletonCard';
 import { AppButton } from '@/components/ui/buttons/AppButton';
+import { AppFilterChip } from '@/components/ui/buttons/AppFilterChip';
 import { useMissionRoomAssets } from '@/hooks/useMissionRoomAssets';
 import { ProgressiveImage } from '@/components/ui/visuals/ProgressiveImage';
 
@@ -96,7 +97,7 @@ export function ModuloList({ onSelectModulo }: ModuloListProps) {
       <section className="missions-shelf-section">
         <div className="missions-shelf-heading"><h2>Missões deste nível</h2></div>
         <div className="missions-filter-bar">
-          <div>{statusFilters.map((filter) => <AppButton key={filter.key} onClick={() => setFilterStatus(filter.key)} variant={filterStatus === filter.key ? 'secondary' : 'ghost'} size="sm">{filter.label}</AppButton>)}</div>
+          <div>{statusFilters.map((filter) => <AppFilterChip key={filter.key} selected={filterStatus === filter.key} onClick={() => setFilterStatus(filter.key)}>{filter.label}</AppFilterChip>)}</div>
         </div>
         <div className="missions-carousel">
           <div className={`missions-module-grid ${levelModules.length === 0 ? 'is-empty' : ''}`}>

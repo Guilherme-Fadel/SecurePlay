@@ -2,7 +2,7 @@ import type { ButtonHTMLAttributes, ReactNode } from 'react';
 import { cn } from '@/lib/utils';
 
 type AppButtonVariant = 'primary' | 'secondary' | 'ghost' | 'soft';
-type AppButtonSize = 'sm' | 'md';
+type AppButtonSize = 'sm' | 'control' | 'md';
 
 interface AppButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: AppButtonVariant;

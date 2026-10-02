@@ -3,6 +3,7 @@ import { Eye, ShieldCheck } from 'lucide-react';
 import { EmpresaPaleta } from '@/services/me';
 import { InfoCard } from '@/components/ui/visuals/InfoCard';
 import { AppSectionHeader } from '@/components/ui/visuals/AppSectionHeader';
+import { AdminHelpTip } from './AdminHelpTip';
 
 interface AdminThemePreviewProps {
   paleta: EmpresaPaleta;
@@ -17,7 +18,7 @@ interface AdminThemePreviewProps {
  */
 export function AdminThemePreview({ paleta, logoPreview, empresaNome, userInitial }: AdminThemePreviewProps) {
     return (<section className="admin-settings-section admin-preview-section">
-      <AppSectionHeader title="Pré-visualização" subtitle="Uma amostra do dashboard com a paleta selecionada."/>
+      <AppSectionHeader title="Pré-visualização" action={<AdminHelpTip label="Pré-visualização" text="Uma amostra do dashboard com a paleta selecionada." />}/>
       <InfoCard raised className="admin-preview-card">
         <InfoCard.Header title="Dashboard da empresa" icon={Eye} variant="accent"/>
         <InfoCard.Section>

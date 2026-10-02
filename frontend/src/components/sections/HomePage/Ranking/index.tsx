@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { ArrowDown, ArrowUp, BookOpen, Building2, CalendarDays, Crown, Flame, Globe2, Medal, RefreshCw, Shield, Sparkles, Trophy, Zap } from 'lucide-react';
 import { PageTransition } from '@/components/shared/PageTransition';
 import { AppButton } from '@/components/ui/buttons/AppButton';
+import { AppSelect } from '@/components/ui/forms/AppSelect';
 import { Avatar } from '@/components/ui/visuals/Avatar';
 import { useDashboardRanking } from '@/hooks/useDashboard';
 import { useCompanyFeatures } from '@/hooks/useCompanyFeatures';
@@ -61,7 +62,7 @@ function RankingContent({ scope, companyId, companies, onCompanyChange, onScopeC
               {features.globalRanking && <button type="button" aria-pressed={scope === 'global'} onClick={() => onScopeChange('global')}><Globe2 size={17} />Global</button>}
               <button type="button" aria-pressed={scope === 'company'} onClick={() => onScopeChange('company')} disabled={!!ranking && !ranking.companyAvailable && scope !== 'company'}><Building2 size={17} />Minha instituição</button>
             </div>
-            {scope === 'company' && companies.length > 0 && <label className="ranking-company-select">Empresa<select value={companyId ?? ''} onChange={(event) => onCompanyChange(Number(event.target.value))}>{companies.map((company) => <option key={company.id} value={company.id}>{company.nome}</option>)}</select></label>}
+            {scope === 'company' && companies.length > 0 && <label className="ranking-company-select">Empresa<AppSelect value={companyId ?? ''} onChange={(event) => onCompanyChange(Number(event.target.value))}>{companies.map((company) => <option key={company.id} value={company.id}>{company.nome}</option>)}</AppSelect></label>}
             <div className="ranking-season-pill" title={season ? undefined : 'Nenhuma temporada configurada'}><CalendarDays size={17} />{seasonLabel(season)}</div>
             <button className="ranking-refresh" type="button" onClick={refetch} disabled={loading} aria-label="Atualizar ranking" title="Atualizar ranking"><RefreshCw size={17} /></button>
           </div>
