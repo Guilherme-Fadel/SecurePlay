@@ -12,7 +12,7 @@
 .admin-companies-content { width: 100%; max-width: none; margin: 0; padding: 0; }
 .admin-company-form-card { margin-top: 20px; padding: 22px; border: 1px solid var(--dashboard-border); border-radius: 16px; background: var(--dashboard-surface); box-shadow: var(--dashboard-shadow); }
 .admin-company-list-card { margin-top: 20px; }
-.admin-company-form-heading { display: flex; align-items: center; gap: 12px; color: var(--primary); }.admin-company-form-heading > div { display: grid; gap: 3px; }.admin-company-form-heading strong { color: var(--dashboard-text); }.admin-company-form-heading span { color: var(--dashboard-muted); font-size: var(--font-xs); }
+.admin-company-form-heading { display: flex; align-items: center; gap: 12px; color: var(--primary); }.admin-company-form-heading > .admin-heading-title { display: flex; min-width: 0; gap: 8px; }.admin-company-form-heading h2 { margin: 0; color: var(--dashboard-text); font-size: var(--font-sm); font-weight: 800; }
 .admin-company-form { display: grid; gap: 14px; margin-top: 18px; }.admin-company-form-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }.admin-company-form-fields label { display: grid; gap: 7px; color: var(--dashboard-text); font-size: var(--font-xs); font-weight: 800; }
 .admin-company-invite-card { margin-top: 20px; padding: 18px 22px; border: 1px solid rgba(var(--primary-rgb), .28); border-radius: 16px; background: rgba(var(--primary-rgb), .06); }.admin-company-invite-card strong { color: var(--dashboard-text); }.admin-company-invite-card p { margin: 7px 0 12px; color: var(--dashboard-muted); font-size: var(--font-xs); }.admin-company-invite-card code { color: var(--primary); font-weight: 800; }.admin-company-invite-card > div { display: flex; gap: 10px; }.admin-company-invite-card input { flex: 1; }
 .admin-company-list-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 18px 20px; border-bottom: 1px solid var(--dashboard-border); }.admin-company-list-heading strong { color: var(--dashboard-text); }.admin-company-list-heading span { min-width: 25px; padding: 3px 8px; border-radius: 99px; background: rgba(var(--primary-rgb), .12); color: var(--primary); font-size: var(--font-caption); font-weight: 800; text-align: center; }
@@ -31,12 +31,12 @@
 .admin-settings-subnav button[aria-current='page'] { background: rgba(var(--primary-rgb), .11); color: var(--primary); }
 .admin-users-content { padding: 34px 0 56px; }
 .admin-invites-workspace { display: grid; grid-template-columns: minmax(300px, .7fr) minmax(390px, 1.3fr); gap: 18px; align-items: start; }.admin-invites-workspace .admin-invites-card { margin-top: 0; }
-.admin-overview-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; }.admin-overview-card { display: flex; min-height: 138px; gap: 12px; padding: 18px; border: 1px solid var(--dashboard-border); border-radius: 16px; background: var(--dashboard-surface); box-shadow: var(--dashboard-shadow); }.admin-overview-card > span { display: grid; width: 40px; height: 40px; flex: 0 0 auto; place-items: center; border-radius: 11px; background: rgba(var(--primary-rgb), .1); color: var(--primary); }.admin-overview-card.is-muted > span { background: rgba(148,163,184,.15); color: var(--dashboard-muted); }.admin-overview-card.is-accent > span { background: rgba(var(--accent-rgb),.11); color: var(--accent); }.admin-overview-card.is-secondary > span { background: rgba(var(--secondary-rgb),.1); color: var(--secondary); }.admin-overview-card small,.admin-overview-card strong,.admin-overview-card p { display: block; }.admin-overview-card small,.admin-overview-card p { color: var(--dashboard-muted); font-size: var(--font-caption); }.admin-overview-card strong { margin: 4px 0; color: var(--dashboard-text); font-size: var(--font-xl); }.admin-overview-card p { margin: 0; }.admin-overview-note { margin-top: 18px; }
+.admin-overview-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; }.admin-overview-card { display: flex; min-height: 138px; gap: 12px; padding: 18px; border: 1px solid var(--dashboard-border); border-radius: 16px; background: var(--dashboard-surface); box-shadow: var(--dashboard-shadow); }.admin-overview-card > span { display: grid; width: 40px; height: 40px; flex: 0 0 auto; place-items: center; border-radius: 11px; background: rgba(var(--primary-rgb), .1); color: var(--primary); }.admin-overview-card.is-muted > span { background: rgba(148,163,184,.15); color: var(--dashboard-muted); }.admin-overview-card.is-accent > span { background: rgba(var(--accent-rgb),.11); color: var(--accent); }.admin-overview-card.is-secondary > span { background: rgba(var(--secondary-rgb),.1); color: var(--secondary); }.admin-overview-card small,.admin-overview-card strong,.admin-overview-card p { display: block; }.admin-overview-card small,.admin-overview-card p { color: var(--dashboard-muted); font-size: var(--font-caption); }.admin-overview-card strong { margin: 4px 0; color: var(--dashboard-text); font-size: var(--font-xl); }.admin-overview-card p { margin: 0; }.admin-overview-note { margin-top: 18px; }.admin-users-card.admin-overview-note { overflow: visible; }
 .admin-audit-events-card { margin-top: 18px; }
 .admin-users-card { overflow: hidden; border: 1px solid var(--dashboard-border); border-radius: 18px; background: var(--dashboard-surface); box-shadow: var(--dashboard-shadow); }
 .admin-users-card-heading { display: flex; align-items: center; gap: 12px; padding: 18px 20px; border-bottom: 1px solid var(--dashboard-border); }
 .admin-users-heading-icon { display: grid; width: 39px; height: 39px; place-items: center; border-radius: 11px; background: rgba(var(--primary-rgb),.1); color: var(--primary); }.admin-users-heading-icon.is-secondary { background: rgba(var(--secondary-rgb),.1); color: var(--secondary); }.admin-users-heading-icon.is-accent { background: rgba(var(--accent-rgb),.11); color: var(--accent); }
-.admin-users-card-heading h2 { margin: 0; color: var(--dashboard-text); font-size: var(--font-sm); font-weight: 800; }.admin-users-card-heading p { margin: 3px 0 0; color: var(--dashboard-muted); font-size: var(--font-label); }
+.admin-users-card-heading h2 { margin: 0; color: var(--dashboard-text); font-size: var(--font-sm); font-weight: 800; }
 .admin-invite-form { display: grid; gap: 16px; padding: 20px; }.admin-invite-form > label, .admin-invite-options label { display: grid; gap: 7px; color: var(--dashboard-text); font-size: var(--font-label); font-weight: 700; }.admin-invite-form small { color: var(--dashboard-muted); font-size: var(--font-caption); font-weight: 500; }
 
 .admin-invite-options { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }.admin-invite-options .app-filter-select { width: 100%; }.admin-invite-form .app-button { width: 100%; }.admin-user-status { display: inline-block; padding: 3px 6px; border-radius: 999px; background: rgba(var(--primary-rgb), .1); color: var(--primary); font-size: var(--font-micro); font-weight: 800; }.admin-user-status.is-inactive { background: rgba(148,163,184,.16); color: var(--dashboard-muted); }
@@ -61,12 +61,11 @@
 /* Shared anatomy for administrative list screens. Values inherit the company theme. */
 .admin-list-header {
   display: flex;
-  align-items: flex-end;
+  align-items: center;
   justify-content: space-between;
   gap: 24px;
   margin-bottom: 24px;
 }
-.admin-list-header-copy { min-width: 0; }
 .admin-list-header h1 {
   margin: 0;
   color: var(--dashboard-text);
@@ -74,13 +73,6 @@
   font-weight: 700;
   letter-spacing: -.03em;
   line-height: 1.25;
-}
-.admin-list-header p {
-  max-width: 68ch;
-  margin: 6px 0 0;
-  color: var(--dashboard-muted);
-  font-size: var(--admin-copy-size);
-  line-height: 1.5;
 }
 .admin-list-count {
   display: inline-flex;

@@ -1,23 +1,23 @@
 import type { FormEventHandler, ReactNode } from 'react';
 import { AppButton } from '@/components/ui/buttons/AppButton';
+import { AdminHelpTip } from '@/components/admin/AdminHelpTip';
 import { cn } from '@/lib/utils';
 
 interface AdminPageHeaderProps {
   title: string;
   description: string;
-  eyebrow?: string;
   count?: number;
   countLabel?: string;
   countIcon?: ReactNode;
+  action?: ReactNode;
 }
 
-export function AdminPageHeader({ title, description, eyebrow, count, countLabel, countIcon }: AdminPageHeaderProps) {
+export function AdminPageHeader({ title, description, count, countLabel, countIcon, action }: AdminPageHeaderProps) {
   return (
     <header className="admin-list-header">
-      <div className="admin-list-header-copy">
-        {eyebrow && <span className="admin-page-eyebrow">{eyebrow}</span>}
+      <div className="admin-heading-title">
         <h1>{title}</h1>
-        <p>{description}</p>
+        <AdminHelpTip label={title} text={description} />
       </div>
       {count !== undefined && countLabel && (
         <div className="admin-list-count" role="status" aria-label={`${count} ${countLabel}`}>
@@ -26,7 +26,27 @@ export function AdminPageHeader({ title, description, eyebrow, count, countLabel
           <span>{countLabel}</span>
         </div>
       )}
+      {action}
     </header>
+  );
+}
+
+interface AdminCardHeadingProps {
+  title: string;
+  description: string;
+  icon: ReactNode;
+  iconTone?: 'accent' | 'secondary';
+}
+
+export function AdminCardHeading({ title, description, icon, iconTone }: AdminCardHeadingProps) {
+  return (
+    <div className="admin-users-card-heading">
+      <span className={cn('admin-users-heading-icon', iconTone && `is-${iconTone}`)} aria-hidden="true">{icon}</span>
+      <div className="admin-heading-title">
+        <h2>{title}</h2>
+        <AdminHelpTip label={title} text={description} />
+      </div>
+    </div>
   );
 }
 

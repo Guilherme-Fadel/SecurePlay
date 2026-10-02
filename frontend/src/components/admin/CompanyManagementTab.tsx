@@ -6,6 +6,7 @@ import { AppSelect } from "@/components/ui/forms/AppSelect";
 import { AppInput } from "@/components/ui/forms/AppInput";
 import { criarEmpresa, listarEmpresasPaginadas, type EmpresaAdministravel, type EmpresasPaginadas } from "@/services/admin";
 import { AdminListCard, AdminListContent, AdminListState, AdminPagination, AdminPageHeader, AdminListToolbar } from "@/components/admin/AdminListLayout";
+import { AdminHelpTip } from "@/components/admin/AdminHelpTip";
 
 interface CompanyManagementTabProps {
   onEmpresaCriada: (empresa: EmpresaAdministravel) => void;
@@ -121,17 +122,15 @@ export function CompanyManagementTab({
 
   return (
     <div className="admin-companies-content app-page">
-      <AdminPageHeader eyebrow="Administração da plataforma" title="Empresas" description="Cadastre a empresa e já gere o acesso do administrador que cuidará dela." />
+      <AdminPageHeader title="Empresas" description="Cadastre a empresa e já gere o acesso do administrador que cuidará dela." />
 
       {onNomeChange && (
         <section className="admin-company-form-card">
           <div className="admin-company-form-heading">
             <Building2 size={20} />
-            <div>
-              <strong>Empresa selecionada</strong>
-              <span>
-                As alterações serão gravadas pelo botão único de salvar.
-              </span>
+            <div className="admin-heading-title">
+              <h2>Empresa selecionada</h2>
+              <AdminHelpTip label="Empresa selecionada" text="As alterações serão gravadas pelo botão único de salvar." />
             </div>
           </div>
           <label className="settings-select-field">
@@ -160,11 +159,9 @@ export function CompanyManagementTab({
       <section className="admin-company-form-card">
         <div className="admin-company-form-heading">
           <Building2 size={20} />
-          <div>
-            <strong>Nova empresa</strong>
-            <span>
-              Informe quem será o administrador responsável pela organização.
-            </span>
+          <div className="admin-heading-title">
+            <h2>Nova empresa</h2>
+            <AdminHelpTip label="Nova empresa" text="Informe quem será o administrador responsável pela organização." />
           </div>
         </div>
         <form onSubmit={cadastrar} className="admin-company-form">

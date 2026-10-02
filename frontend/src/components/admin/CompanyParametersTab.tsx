@@ -1,6 +1,7 @@
 import { SlidersHorizontal } from "lucide-react";
 import { COMPANY_GAMES, type CompanyParameters } from "@/config/features";
 import { InfoCard } from "@/components/ui/visuals/InfoCard";
+import { AdminCardHeading, AdminPageHeader } from "@/components/admin/AdminListLayout";
 
 export function CompanyParametersTab({
   parameters,
@@ -15,29 +16,21 @@ export function CompanyParametersTab({
 }) {
   return (
     <div className="app-page admin-page-content">
-      <div className="admin-page-heading">
-        <div>
-          <span className="admin-page-eyebrow">Parâmetros da empresa</span>
-          <h1>Funcionalidades</h1>
-          <p>
-            {canEdit
-              ? "Escolha os recursos disponíveis somente para esta instituição."
-              : "Consulte os recursos da instituição. Somente o administrador da plataforma pode alterá-los."}
-          </p>
-        </div>
-      </div>
+      <AdminPageHeader
+        title="Funcionalidades"
+        description={canEdit
+          ? "Escolha os recursos disponíveis somente para esta instituição."
+          : "Consulte os recursos da instituição. Somente o administrador da plataforma pode alterá-los."}
+      />
       {!parameters && <p role="status">Carregando parâmetros…</p>}
       {parameters && (
         <InfoCard raised>
-          <InfoCard.Header
+          <AdminCardHeading
             title="Recursos disponíveis"
-            subtitle="As permissões também são verificadas pela API."
-            icon={SlidersHorizontal}
+            description="As permissões também são verificadas pela API."
+            icon={<SlidersHorizontal size={19} />}
           />
-          <fieldset
-            disabled={!canEdit || saving}
-            style={{ border: 0, padding: 0, margin: 0, minWidth: 0 }}
-          >
+          <fieldset className="settings-toggle-fieldset" disabled={!canEdit || saving}>
             <InfoCard.Section className="settings-toggle-list">
               <ParameterToggle
                 title="Ranking"
@@ -113,7 +106,7 @@ function ParameterToggle({
 }) {
   return (
     <label className="settings-toggle-row">
-      <span className="settings-toggle-icon">
+      <span className="settings-toggle-icon" aria-hidden="true">
         <SlidersHorizontal size={17} />
       </span>
       <span className="settings-toggle-copy">

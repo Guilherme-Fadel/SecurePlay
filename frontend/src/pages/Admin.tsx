@@ -34,6 +34,7 @@ import { AdminOverviewTab } from "@/components/admin/AdminOverviewTab";
 import { AuditTab } from "@/components/admin/AuditTab";
 import { CompanyManagementTab } from "@/components/admin/CompanyManagementTab";
 import { CompanyParametersTab } from "@/components/admin/CompanyParametersTab";
+import { AdminPageHeader } from "@/components/admin/AdminListLayout";
 import { AdminThemePreview } from "@/components/admin/AdminThemePreview";
 import { AdminHelpTip } from "@/components/admin/AdminHelpTip";
 import { derivePalette } from "@/lib/palette";
@@ -625,27 +626,17 @@ const Admin = forwardRef<AdminSaveHandle, AdminProps>(function Admin(
                     disabled={!loaded}
                     style={{ border: 0, padding: 0, margin: 0, minWidth: 0 }}
                   >
-                    <div className="admin-page-heading">
-                      <div>
-                        <div className="admin-heading-title">
-                          <h1>
-                            {platformMode
-                              ? "Layout da empresa selecionada"
-                              : "Personalização da empresa"}
-                          </h1>
-                          <AdminHelpTip label="Personalização da empresa" text="Ajuste a marca e as cores usadas na experiência SecurePlay." />
+                    <AdminPageHeader
+                      title={platformMode ? "Layout da empresa selecionada" : "Personalização da empresa"}
+                      description="Ajuste a marca e as cores usadas na experiência SecurePlay."
+                      action={
+                        <div className="admin-heading-actions">
+                          <AppButton variant="ghost" icon={<RotateCcw size={16} />} onClick={handleReset}>
+                            Restaurar padrão
+                          </AppButton>
                         </div>
-                      </div>
-                      <div className="admin-heading-actions">
-                        <AppButton
-                          variant="ghost"
-                          icon={<RotateCcw size={16} />}
-                          onClick={handleReset}
-                        >
-                          Restaurar padrão
-                        </AppButton>
-                      </div>
-                    </div>
+                      }
+                    />
 
                     <div className="admin-settings-grid">
                       <div className="admin-settings-column">

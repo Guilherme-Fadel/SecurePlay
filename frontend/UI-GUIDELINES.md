@@ -21,7 +21,8 @@ Referência metodológica: [Geist Design System](https://vercel.com/geist/introd
 
 | Componente | Anatomia e uso | Estados e responsividade |
 | --- | --- | --- |
-| `AdminPageHeader` | Título, descrição, eyebrow opcional e contador opcional com ícone. Use em páginas administrativas equivalentes. | Contador é anunciado por `role=status`; no mobile fica abaixo do título. |
+| `AdminPageHeader` | Título `h1`, descrição em `AdminHelpTip`, contador e ação opcionais. Use em todas as abas administrativas; não use eyebrow. | Ajuda funciona por mouse, teclado e toque; contador é anunciado por `role=status` e no mobile fica abaixo do título. |
+| `AdminCardHeading` | Título `h2`, ícone e descrição em `AdminHelpTip` para seções internas com explicação. | Use texto visível quando a instrução for necessária para tomar uma decisão imediata. |
 | `AdminListCard` | Superfície e borda da listagem; conteúdo por composição. | Recebe `loading` para `aria-busy`. |
 | `AdminListToolbar` | Busca primeiro, filtros/ordenação depois. Aceita `onSubmit` quando a busca depende de envio. | Uma linha quando cabe; controles passam a largura total no mobile. A borda inferior é o único separador sob a busca. |
 | `AdminListContent` e `AdminListState` | Conteúdo da lista ou mensagem `loading`, `empty`, `error` com retry opcional. | Loading usa `role=status`, erro usa `role=alert`; não renderize linhas antigas durante loading ou erro. |
@@ -47,6 +48,8 @@ Exemplo abreviado:
   <AdminPagination page={page} totalPages={totalPages} ariaLabel="Paginação de registros" onPageChange={setPage} />
 </AdminListCard>
 ```
+
+Em Configurações da empresa, Layout e Funcionalidades usam o mesmo `AdminPageHeader`. Os parâmetros de Funcionalidades usam linhas de switch com descrição do recurso visível, estado ligado/desligado, desabilitado e foco; a descrição orienta a escolha e não deve ficar escondida no tooltip. O tooltip cabe aos subtítulos de títulos e seções.
 
 A tela fornece estado, API, filtros, permissões, ações, colunas e texto. Usuários e Apelidos usam busca enquanto se digita; Empresas preserva busca por envio do formulário. Convites usa linhas com ações e Auditoria tem duas listagens sem barra de busca. Essas diferenças são funcionais. Fora da administração, Ranking, Conteúdos, Conquistas e busca do cabeçalho mantêm layouts especializados; reutilizam as primitivas de controle quando o comportamento coincide.
 
