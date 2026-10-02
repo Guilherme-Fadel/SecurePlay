@@ -3,6 +3,7 @@ import { AlertCircle, Check, CheckCircle2, X } from 'lucide-react';
 import { AppButton } from '@/components/ui/buttons/AppButton';
 import { AppSearchInput } from '@/components/ui/forms/AppSearchInput';
 import { AppSelect } from '@/components/ui/forms/AppSelect';
+import { AdminListCard, AdminListContent, AdminListState, AdminListToolbar, AdminPageHeader, AdminPagination } from './AdminListLayout';
 import { cn } from '@/lib/utils';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import {
@@ -65,7 +66,7 @@ export function PendingNicknamesTab({ empresaId }: PendingNicknamesTabProps) {
         setResult(next);
       })
       .catch(() => {
-        if (!cancelled) { setLoadError(true); setFeedback('Não foi possível carregar os apelidos pendentes.'); }
+        if (!cancelled) setLoadError(true);
       })
       .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
@@ -92,37 +93,35 @@ export function PendingNicknamesTab({ empresaId }: PendingNicknamesTabProps) {
     }
   };
 
-  const pageCount = Math.max(1, result.totalPages);
   return (
     <div className="admin-users-content">
-      <div className="admin-users-heading">
-        <div>
-          <h1>Apelidos pendentes</h1>
-          <p>Revise os apelidos antes que sejam exibidos no ranking da turma.</p>
-        </div>
-        <div className="admin-users-stat"><CheckCircle2 size={18} /><span><strong>{result.total}</strong> aguardando revisão</span></div>
-      </div>
-
+      <AdminPageHeader
+        title="Apelidos pendentes"
+        description="Revise os apelidos antes que sejam exibidos no ranking da turma."
+        count={loading || loadError ? undefined : result.total}
+        countLabel="aguardando revisão"
+        countIcon={<CheckCircle2 size={18} />}
+      />
       {feedback && <div className={cn('admin-feedback', feedback.startsWith('Não foi') && 'is-error')} role={feedback.startsWith('Não foi') ? 'alert' : 'status'}>
-        {feedback.startsWith('Não foi') ? <AlertCircle size={17} /> : <CheckCircle2 size={17} />}{feedback}{loadError && <AppButton variant="ghost" size="sm" onClick={() => setReload((current) => current + 1)}>Tentar novamente</AppButton>}
+        {feedback.startsWith('Não foi') ? <AlertCircle size={17} aria-hidden="true" /> : <CheckCircle2 size={17} aria-hidden="true" />}{feedback}
       </div>}
-
-      <section className="admin-users-card admin-pending-nicknames-card" aria-busy={loading}>
-        <div className="admin-nickname-toolbar">
+      <AdminListCard loading={loading}>
+        <AdminListToolbar>
           <AppSearchInput label="Buscar apelidos pendentes" value={search} onChange={(event) => { setSearch(event.target.value); setPage(1); }} placeholder="Buscar por nome, e-mail ou apelido" />
           <AppSelect aria-label="Ordenar apelidos pendentes" value={sort} onChange={(event) => { setSort(event.target.value as 'default' | 'asc' | 'desc'); setPage(1); }}>
             <option value="default">Ordem padrão</option>
             <option value="asc">Apelido A–Z</option>
             <option value="desc">Apelido Z–A</option>
           </AppSelect>
-        </div>
-        {loading && <p className="admin-users-empty" role="status">Carregando apelidos...</p>}
-        {result.items.length === 0 && !loading && !loadError ? <p className="admin-users-empty">{search ? 'Nenhum apelido pendente corresponde à busca.' : 'Não há apelidos aguardando revisão.'}</p> : result.items.length > 0 && (
-          <div className="admin-pending-nicknames-table-wrap">
-            <table className="admin-pending-nicknames-table">
-              <thead><tr><th>Apelido solicitado</th><th>Participante</th><th>E-mail</th><th><span className="sr-only">Ações</span></th></tr></thead>
+        </AdminListToolbar>
+        <AdminListContent>
+          {loading ? <AdminListState kind="loading">Carregando apelidos...</AdminListState>
+            : loadError ? <AdminListState kind="error" onRetry={() => setReload((current) => current + 1)}>Não foi possível carregar os apelidos pendentes.</AdminListState>
+            : result.items.length === 0 ? <AdminListState kind="empty">{search ? 'Nenhum apelido pendente corresponde à busca.' : 'Não há apelidos aguardando revisão.'}</AdminListState>
+            : <div className="admin-list-table-wrap"><table className="admin-list-table">
+              <thead><tr><th>Apelido solicitado</th><th>Participante</th><th>E-mail</th><th className="admin-list-actions-heading"><span className="sr-only">Ações</span></th></tr></thead>
               <tbody>{result.items.map((usuario) => <tr key={usuario.id}>
-                <td data-label="Apelido solicitado"><strong>{usuario.nickname_pending}</strong></td>
+                <td data-label="Apelido solicitado"><strong className="admin-nickname-value">{usuario.nickname_pending}</strong></td>
                 <td data-label="Participante">{usuario.name}</td>
                 <td data-label="E-mail">{usuario.email}</td>
                 <td data-label="Ações"><div className="admin-nickname-actions">
@@ -130,15 +129,10 @@ export function PendingNicknamesTab({ empresaId }: PendingNicknamesTabProps) {
                   <AppButton variant="ghost" size="sm" icon={<X size={14} />} disabled={reviewing === usuario.id} onClick={() => void revisar(usuario.id, false)}>Recusar</AppButton>
                 </div></td>
               </tr>)}</tbody>
-            </table>
-          </div>
-        )}
-        {result.totalPages > 1 && <nav className="admin-table-pagination" aria-label="Paginação de apelidos pendentes">
-          <AppButton variant="ghost" size="sm" disabled={page === 1 || loading} onClick={() => setPage((current) => current - 1)}>Anterior</AppButton>
-          <span>Página {page} de {pageCount}</span>
-          <AppButton variant="ghost" size="sm" disabled={page >= pageCount || loading} onClick={() => setPage((current) => current + 1)}>Próxima</AppButton>
-        </nav>}
-      </section>
+            </table></div>}
+        </AdminListContent>
+        {!loading && !loadError && <AdminPagination page={page} totalPages={result.totalPages} ariaLabel="Paginação de apelidos pendentes" onPageChange={setPage} />}
+      </AdminListCard>
     </div>
   );
 }

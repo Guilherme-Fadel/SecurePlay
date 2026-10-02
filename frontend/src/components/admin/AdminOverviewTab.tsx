@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
-import { AlertCircle, CheckCircle2, Clock3, TicketCheck, UserRoundCheck, UserRoundX } from 'lucide-react';
+import { CheckCircle2, Clock3, TicketCheck, UserRoundCheck, UserRoundX } from 'lucide-react';
 import { AppButton } from '@/components/ui/buttons/AppButton';
 import { cn } from '@/lib/utils';
+import { AdminListState, AdminPageHeader } from '@/components/admin/AdminListLayout';
 import { obterResumoAdministrativo, type ResumoAdministrativo } from '@/services/convites';
 
 interface AdminOverviewTabProps { empresaId?: number; empresaNome?: string; onNavigate?: (tab: 'usuarios' | 'apelidos' | 'convites') => void; }
@@ -30,9 +31,9 @@ export function AdminOverviewTab({ empresaId, empresaNome, onNavigate }: AdminOv
     { label: 'Convites ativos', value: summary.convitesAtivos, description: 'Links ainda utilizáveis', icon: <TicketCheck size={20} />, tone: 'secondary', tab: 'convites' as const },
   ] : [];
   return <div className="admin-users-content">
-    <div className="admin-users-heading"><div><span className="admin-page-eyebrow">Visão geral {empresaNome ? `· ${empresaNome}` : 'da empresa'}</span><h1>Painel administrativo</h1><p>Um resumo direto dos acessos e tarefas que precisam de acompanhamento.</p></div></div>
-    {loading ? <p className="admin-users-empty" role="status">Carregando indicadores...</p> : error ? (
-      <div className={cn('admin-feedback', 'is-error')} role="alert"><AlertCircle size={17} />Não foi possível carregar os indicadores. <AppButton size="sm" onClick={() => setAttempt((current) => current + 1)}>Tentar novamente</AppButton></div>
+    <AdminPageHeader eyebrow={`Visão geral${empresaNome ? ` · ${empresaNome}` : ' da empresa'}`} title="Painel administrativo" description="Um resumo direto dos acessos e tarefas que precisam de acompanhamento." />
+    {loading ? <AdminListState kind="loading">Carregando indicadores...</AdminListState> : error ? (
+      <AdminListState kind="error" onRetry={() => setAttempt((current) => current + 1)}>Não foi possível carregar os indicadores.</AdminListState>
     ) : summary && <>
       <div className="admin-overview-grid">{cards.map((card) => <section key={card.label} className={cn('admin-overview-card', `is-${card.tone}`)}><span>{card.icon}</span><div><small>{card.label}</small><strong>{card.value}</strong><p>{card.description}</p>{onNavigate && <AppButton variant="ghost" size="sm" onClick={() => onNavigate(card.tab)} aria-label={`Abrir ${card.tab} a partir de ${card.label}`}>Ver detalhes</AppButton>}</div></section>)}</div>
       <section className="admin-users-card admin-overview-note"><div className="admin-users-card-heading"><span className="admin-users-heading-icon"><CheckCircle2 size={19} /></span><div><h2>Leitura dos dados</h2><p>Indicadores de gestão não usam posições nem estatísticas do ranking; estes continuam exclusivos de participantes.</p></div></div></section>

@@ -881,16 +881,7 @@
   font-weight: 700;
 }
 
-.admin-company-form-card > .settings-select-field input {
-  width: 100%;
-  min-width: 0;
-  padding: 10px 12px;
-  border: 1px solid var(--dashboard-border);
-  border-radius: 10px;
-  background: var(--dashboard-bg);
-  color: var(--dashboard-text);
-  font: inherit;
-}
+
 
 @media (max-width: 780px) {
   .admin-company-toolbar { padding: 12px; }

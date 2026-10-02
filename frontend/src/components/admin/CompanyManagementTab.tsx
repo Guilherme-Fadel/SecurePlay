@@ -3,7 +3,9 @@ import { AlertCircle, Building2, CheckCircle2, Copy, Plus } from "lucide-react";
 import { AppButton } from "@/components/ui/buttons/AppButton";
 import { AppSearchInput } from "@/components/ui/forms/AppSearchInput";
 import { AppSelect } from "@/components/ui/forms/AppSelect";
+import { AppInput } from "@/components/ui/forms/AppInput";
 import { criarEmpresa, listarEmpresasPaginadas, type EmpresaAdministravel, type EmpresasPaginadas } from "@/services/admin";
+import { AdminListCard, AdminListContent, AdminListState, AdminPagination, AdminPageHeader, AdminListToolbar } from "@/components/admin/AdminListLayout";
 
 interface CompanyManagementTabProps {
   onEmpresaCriada: (empresa: EmpresaAdministravel) => void;
@@ -119,18 +121,7 @@ export function CompanyManagementTab({
 
   return (
     <div className="admin-companies-content app-page">
-      <div className="admin-page-heading">
-        <div>
-          <span className="admin-page-eyebrow">
-            Administração da plataforma
-          </span>
-          <h1>Empresas</h1>
-          <p>
-            Cadastre a empresa e já gere o acesso do administrador que cuidará
-            dela.
-          </p>
-        </div>
-      </div>
+      <AdminPageHeader eyebrow="Administração da plataforma" title="Empresas" description="Cadastre a empresa e já gere o acesso do administrador que cuidará dela." />
 
       {onNomeChange && (
         <section className="admin-company-form-card">
@@ -145,7 +136,7 @@ export function CompanyManagementTab({
           </div>
           <label className="settings-select-field">
             <span>Nome da empresa</span>
-            <input
+            <AppInput
               value={empresaNome ?? ""}
               onChange={(event) => onNomeChange(event.target.value)}
               minLength={2}
@@ -180,7 +171,7 @@ export function CompanyManagementTab({
           <div className="admin-company-form-fields">
             <label htmlFor="empresa-nome">
               Nome da empresa
-              <input
+              <AppInput
                 id="empresa-nome"
                 value={nome}
                 onChange={(event) => setNome(event.target.value)}
@@ -192,7 +183,7 @@ export function CompanyManagementTab({
             </label>
             <label htmlFor="empresa-admin-email">
               E-mail do administrador
-              <input
+              <AppInput
                 id="empresa-admin-email"
                 type="email"
                 value={emailAdministrador}
@@ -220,7 +211,7 @@ export function CompanyManagementTab({
             cadastro, a pessoa receberá a role <code>admin</code> desta empresa.
           </p>
           <div>
-            <input
+            <AppInput
               value={linkAdministrador}
               readOnly
               aria-label="Link do convite do administrador"
@@ -237,12 +228,12 @@ export function CompanyManagementTab({
         </section>
       )}
 
-      <section className="admin-company-list-card">
+      <AdminListCard className="admin-company-list-card" loading={loadingList}>
         <div className="admin-company-list-heading">
           <strong>Empresas cadastradas</strong>
-          <span aria-label="Total de empresas encontradas">{list?.total ?? "—"}</span>
+          <span aria-label="Total de empresas encontradas">{loadingList || listError ? "—" : list?.total ?? "—"}</span>
         </div>
-        <form className="admin-company-list-filters" onSubmit={(event) => { event.preventDefault(); setPage(1); setSearch(searchInput.trim()); }}>
+        <AdminListToolbar onSubmit={(event) => { event.preventDefault(); setPage(1); setSearch(searchInput.trim()); }}>
           <div className="admin-company-filter-field"><span>Buscar por nome</span>
             <AppSearchInput label="Buscar empresas por nome" value={searchInput} onChange={(event) => setSearchInput(event.target.value)} placeholder="Nome da empresa" maxLength={100} />
           </div>
@@ -252,10 +243,9 @@ export function CompanyManagementTab({
               <option value="asc">A–Z</option><option value="desc">Z–A</option>
             </AppSelect>
           </label>
-        </form>
-        {loadingList ? <p role="status" className="admin-users-empty">Carregando empresas...</p> : listError ? (
-          <div role="alert" className="admin-feedback is-error">Não foi possível carregar as empresas. <AppButton size="sm" onClick={() => setReload((current) => current + 1)}>Tentar novamente</AppButton></div>
-        ) : list?.items.length ? (
+        </AdminListToolbar>
+        <AdminListContent>
+        {listError ? <AdminListState kind="error" onRetry={() => setReload((current) => current + 1)}>Não foi possível carregar as empresas.</AdminListState> : loadingList ? <AdminListState kind="loading">Carregando empresas...</AdminListState> : list?.items.length ? (
           <ul className="admin-company-list">
             {list.items.map((empresa) => (
               <li key={empresa.id}>
@@ -272,16 +262,11 @@ export function CompanyManagementTab({
             ))}
           </ul>
         ) : (
-          <p className="admin-users-empty">{search ? "Nenhuma empresa encontrada para esta busca." : "Nenhuma empresa cadastrada."}</p>
+          <AdminListState kind="empty">{search ? "Nenhuma empresa encontrada para esta busca." : "Nenhuma empresa cadastrada."}</AdminListState>
         )}
-        {!loadingList && !listError && list && list.totalPages > 1 && (
-          <nav className="admin-company-pagination" aria-label="Páginas de empresas">
-            <AppButton size="sm" variant="ghost" disabled={page <= 1} onClick={() => setPage((current) => current - 1)}>Anterior</AppButton>
-            <span>Página {page} de {list.totalPages}</span>
-            <AppButton size="sm" variant="ghost" disabled={page >= list.totalPages} onClick={() => setPage((current) => current + 1)}>Próxima</AppButton>
-          </nav>
-        )}
-      </section>
+        </AdminListContent>
+        {!loadingList && !listError && list && <AdminPagination page={page} totalPages={list.totalPages} ariaLabel="Páginas de empresas" onPageChange={setPage} />}
+      </AdminListCard>
     </div>
   );
 }
