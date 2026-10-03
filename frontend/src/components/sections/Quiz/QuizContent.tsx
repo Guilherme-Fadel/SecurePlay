@@ -8,9 +8,10 @@ import { QuizResult } from './QuizResult';
 interface Props {
   challengeId: number;
   onComplete?: () => void;
+  onClose?: () => void;
 }
 
-export function QuizContent({ challengeId, onComplete }: Props) {
+export function QuizContent({ challengeId, onComplete, onClose }: Props) {
   const { s, start, select, advance, submit, reset } = useQuiz(challengeId);
 
   useEffect(() => { start(); return reset; }, [challengeId]);
@@ -21,6 +22,10 @@ export function QuizContent({ challengeId, onComplete }: Props) {
 
   if (s.phase === 'idle' || s.phase === 'loading') {
     return <Feedback icon={Loader2} spin message="Carregando perguntas..." />;
+  }
+
+  if (s.phase === 'saving') {
+    return <Feedback icon={Loader2} spin message="Salvando progresso..." />;
   }
 
   if (s.phase === 'submitting') {
@@ -51,7 +56,7 @@ export function QuizContent({ challengeId, onComplete }: Props) {
   if (!question) {
     return (
       <Feedback icon={AlertCircle} variant="danger" title="Sem perguntas" message="Este desafio não possui perguntas cadastradas.">
-        <ActionBtn onClick={onComplete}>Fechar</ActionBtn>
+        <ActionBtn onClick={onClose}>Fechar</ActionBtn>
       </Feedback>
     );
   }

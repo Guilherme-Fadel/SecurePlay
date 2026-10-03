@@ -107,13 +107,15 @@ export function DailyChallenge() {
             }} />
             <div className="dashboard-daily-summary shrink-0">
               <h3>{challenge.title}</h3>
-              <p>Complete hoje e mantenha sua aventura em movimento.</p>
+              <p>{!completed && totalObjectives > 0 && doneObjectives === totalObjectives
+                ? 'Refaça o quiz para concluir o envio.'
+                : 'Complete hoje e mantenha sua aventura em movimento.'}</p>
               {completed && <span className="hall-daily-complete">Missão concluída</span>}
             </div>
             {doneObjectives > 0 && totalObjectives > 0 && (
               <div className="academy-mission-completion">
-                <small>{doneObjectives} de {totalObjectives} etapas</small>
-                <div className="academy-mission-completion-track" role="progressbar" aria-label="Etapas da missão" aria-valuemin={0} aria-valuemax={totalObjectives} aria-valuenow={doneObjectives}>
+                <small>{doneObjectives} de {totalObjectives} {completed ? 'etapas concluídas' : 'respostas corretas'}</small>
+                <div className="academy-mission-completion-track" role="progressbar" aria-label={completed ? 'Etapas concluídas da missão' : 'Respostas corretas da missão'} aria-valuemin={0} aria-valuemax={totalObjectives} aria-valuenow={doneObjectives}>
                   <motion.div
                     className="academy-mission-completion-fill"
                     initial={{ width: 0 }}
@@ -128,7 +130,7 @@ export function DailyChallenge() {
         {canStart && <button
           type="button"
           className="hall-daily-overlay"
-          aria-label={`${doneObjectives > 0 ? 'Continuar' : 'Iniciar'} missão do dia: ${challenge.title}`}
+          aria-label={`${doneObjectives > 0 ? 'Refazer' : 'Iniciar'} missão do dia: ${challenge.title}`}
           onClick={() => setOpen(true)}
         />}
       </div>
@@ -140,6 +142,7 @@ export function DailyChallenge() {
         <QuizContent
           challengeId={challenge.id}
           onComplete={handleComplete}
+          onClose={handleCloseModal}
         />
       </Modal>
     </>

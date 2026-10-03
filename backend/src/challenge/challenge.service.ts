@@ -193,7 +193,22 @@ export class ChallengeService {
           )
         : 0;
 
-    await this.usuarioChallengeRepository.save(record);
+    if (record.id) {
+      // Atualiza apenas o progresso parcial enquanto a tentativa estiver aberta.
+      // Um PATCH atrasado não pode reverter a conclusão gravada pelo submit.
+      const result = await this.usuarioChallengeRepository.update(
+        { id: record.id, completed: false },
+        {
+          answered_question_ids: record.answered_question_ids,
+          progress: record.progress,
+        },
+      );
+      if (!result.affected) {
+        throw new BadRequestException('Desafio já concluído');
+      }
+    } else {
+      await this.usuarioChallengeRepository.save(record);
+    }
 
     return {
       correct: isCorrect,

@@ -10,7 +10,7 @@ import {
 } from '@/services/challenge';
 import { invalidate } from '@/lib/queryCache';
 
-type Phase = 'idle' | 'loading' | 'playing' | 'submitting' | 'result' | 'error' | 'already_completed';
+type Phase = 'idle' | 'loading' | 'playing' | 'saving' | 'submitting' | 'result' | 'error' | 'already_completed';
 
 interface State {
   phase: Phase;
@@ -63,27 +63,29 @@ export function useQuiz(challengeId: number) {
     set(prev => prev.phase === 'playing' ? { ...prev, selected: optionIndex } : prev);
   }, []);
 
-  const advance = useCallback(() => {
-    set(prev => {
-      if (prev.selected === null) return prev;
+  const advance = useCallback(async () => {
+    if (s.phase !== 'playing' || s.selected === null) return;
 
-      const answer = { questionId: prev.questions[prev.index].id, selectedIndex: prev.selected };
-      const updatedAnswers = [...prev.answers, answer];
-      const last = prev.index >= prev.questions.length - 1;
+    const answer = { questionId: s.questions[s.index].id, selectedIndex: s.selected };
+    const updatedAnswers = [...s.answers, answer];
+    const last = s.index >= s.questions.length - 1;
 
-      saveChallengeProgress(challengeId, answer.questionId, answer.selectedIndex)
-        .then(() => invalidate(`challenge-status:${challengeId}`))
-        .catch(() => {});
+    if (last) {
+      // A submissão final já persiste a tentativa. Evita que um PATCH atrasado
+      // sobrescreva o registro concluído com um estado parcial.
+      set(prev => ({ ...prev, answers: updatedAnswers, selected: null, phase: 'submitting' }));
+      return;
+    }
 
-      return {
-        ...prev,
-        answers: updatedAnswers,
-        index: last ? prev.index : prev.index + 1,
-        selected: null,
-        phase: last ? 'submitting' : 'playing',
-      };
-    });
-  }, [challengeId]);
+    set(prev => ({ ...prev, phase: 'saving' }));
+    try {
+      await saveChallengeProgress(challengeId, answer.questionId, answer.selectedIndex);
+      invalidate(`challenge-status:${challengeId}`);
+      set(prev => ({ ...prev, answers: updatedAnswers, index: prev.index + 1, selected: null, phase: 'playing' }));
+    } catch (err: any) {
+      set(prev => ({ ...prev, phase: 'error', error: err?.response?.data?.message || 'Falha ao salvar o progresso.' }));
+    }
+  }, [challengeId, s]);
 
   const submit = useCallback(async (answers: AnswerPayload[]) => {
     try {
@@ -94,8 +96,14 @@ export function useQuiz(challengeId: number) {
       invalidate('dashboardDaily');
     } catch (err: any) {
       const msg = err?.response?.data?.message || 'Erro ao enviar respostas.';
-      const phase = err?.response?.status === 400 ? 'already_completed' : 'error';
-      set(prev => ({ ...prev, phase, error: msg }));
+      // Falhas de envio, inclusive HTTP 400, não comprovam conclusão.
+      // Só o status do servidor confirma se a tentativa foi gravada.
+      const status = await getChallengeStatus(challengeId).catch(() => null);
+      if (status?.completed) {
+        set(prev => ({ ...prev, phase: 'already_completed', error: 'Você já completou este desafio.' }));
+      } else {
+        set(prev => ({ ...prev, phase: 'error', error: msg }));
+      }
     }
   }, [challengeId]);
 
