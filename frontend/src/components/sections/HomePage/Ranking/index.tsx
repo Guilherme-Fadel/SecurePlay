@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { ArrowDown, ArrowUp, BookOpen, Building2, CalendarDays, Crown, Flame, Globe2, Medal, RefreshCw, Shield, Sparkles, Trophy, Zap } from 'lucide-react';
+import { ArrowDown, ArrowUp, BookOpen, Building2, CalendarDays, Crown, Flame, Globe2, Medal, RefreshCw, Shield, Zap } from 'lucide-react';
 import { PageTransition } from '@/components/shared/PageTransition';
 import { AppButton } from '@/components/ui/buttons/AppButton';
 import { AppSelect } from '@/components/ui/forms/AppSelect';
@@ -8,16 +8,16 @@ import { useDashboardRanking } from '@/hooks/useDashboard';
 import { useCompanyFeatures } from '@/hooks/useCompanyFeatures';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { listarEmpresas, type EmpresaAdministravel } from '@/services/admin';
-import type { RankingData, RankingEntry } from '@/services/dashboard';
+import type { RankingData, RankingEntry, RankingMode, RankingSeasonOption } from '@/services/dashboard';
 import galleryEmblem from '@/assets/static/mission-room/missions-room-emblem.png';
 import hallArtwork from '@/assets/static/ranking/ranking-gallery-hall-v1.webp';
-import landscapeArtwork from '@/assets/static/ranking/ranking-sunset-landscape-v1.webp';
 import firstBanner from '@/assets/static/ranking/ranking-banner-first-v1.svg';
 import secondBanner from '@/assets/static/ranking/ranking-banner-second-v1.svg';
 import thirdBanner from '@/assets/static/ranking/ranking-banner-third-v1.svg';
 import '@/styles/ranking-ui.css';
 
 type RankingScope = 'global' | 'company';
+type RankingViewMode = RankingMode;
 const formatXp = (value: number) => `${value.toLocaleString('pt-BR')} XP`;
 const bannerByPosition = [firstBanner, secondBanner, thirdBanner];
 
@@ -45,9 +45,35 @@ export function Ranking() {
 
 function RankingContent({ scope, companyId, companies, onCompanyChange, onScopeChange }: { scope: RankingScope; companyId?: number; companies: EmpresaAdministravel[]; onCompanyChange: (id: number) => void; onScopeChange: (scope: RankingScope) => void }) {
   const features = useCompanyFeatures();
-  const { ranking, loading, error, refetch } = useDashboardRanking(scope, companyId);
+  const { user } = useCurrentUser();
+  const isManagement = user?.role === 'admin' || user?.role === 'platform_admin';
+  const [viewMode, setViewMode] = useState<RankingViewMode>('current');
+  const [selectedSeasonId, setSelectedSeasonId] = useState('');
+  const [seasonOptions, setSeasonOptions] = useState<RankingSeasonOption[]>([]);
+  const { ranking, loading, error, refetch } = useDashboardRanking(scope, companyId, viewMode, viewMode === 'season' ? selectedSeasonId : undefined);
   const scopeLabel = ranking?.scope === 'company' ? 'Minha instituição' : 'Global';
   const season = ranking?.season;
+  const closedSeasons = seasonOptions.filter(option => option.status === 'closed');
+  const selectedSeason = closedSeasons.find(option => option.id === selectedSeasonId);
+
+  useEffect(() => {
+    if (ranking?.availableSeasons) setSeasonOptions(ranking.availableSeasons);
+  }, [ranking?.availableSeasons]);
+
+  useEffect(() => {
+    const firstCompleteClosedSeasonId = seasonOptions.find(option => option.status === 'closed' && option.completeness === 'complete')?.id;
+    if (viewMode === 'season' && !selectedSeasonId && firstCompleteClosedSeasonId) setSelectedSeasonId(firstCompleteClosedSeasonId);
+  }, [viewMode, selectedSeasonId, seasonOptions]);
+
+  const changeViewMode = (mode: RankingViewMode) => {
+    if (mode === 'season' && !selectedSeasonId) {
+      setSelectedSeasonId(closedSeasons.find(option => option.completeness === 'complete')?.id ?? '');
+    }
+    setViewMode(mode);
+  };
+  const waitingForSeasonChoice = viewMode === 'season' && !selectedSeasonId;
+  const hasCompleteClosedSeason = closedSeasons.some(option => option.completeness === 'complete');
+  const xpLabel = viewMode === 'total' ? 'XP total' : 'XP da temporada';
 
   return (
     <PageTransition>
@@ -62,21 +88,36 @@ function RankingContent({ scope, companyId, companies, onCompanyChange, onScopeC
               {features.globalRanking && <button type="button" aria-pressed={scope === 'global'} onClick={() => onScopeChange('global')}><Globe2 size={17} />Global</button>}
               <button type="button" aria-pressed={scope === 'company'} onClick={() => onScopeChange('company')} disabled={!!ranking && !ranking.companyAvailable && scope !== 'company'}><Building2 size={17} />Minha instituição</button>
             </div>
+            <label className="ranking-mode-select"><span className="sr-only">Classificar por</span><AppSelect aria-label="Classificar ranking por" value={viewMode} onChange={event => changeViewMode(event.target.value as RankingViewMode)}>
+              <option value="current">Temporada atual</option>
+              <option value="season" disabled={!ranking && (loading || !!error) && seasonOptions.length === 0}>Temporadas encerradas</option>
+              <option value="total">Total de XP</option>
+            </AppSelect></label>
+            {viewMode === 'season' && closedSeasons.length > 0 && <label className="ranking-mode-select ranking-season-select"><span className="sr-only">Temporada encerrada</span><AppSelect aria-label="Escolher temporada encerrada" value={selectedSeasonId} onChange={event => setSelectedSeasonId(event.target.value)}>
+              <option value="">Escolha uma temporada</option>
+              {closedSeasons.map(option => <option key={option.id} value={option.id}>{option.name} · {option.completeness === 'complete' ? 'completa' : option.completeness === 'partial' ? 'parcial' : 'sem histórico completo'}</option>)}
+            </AppSelect></label>}
             {scope === 'company' && companies.length > 0 && <label className="ranking-company-select">Empresa<AppSelect value={companyId ?? ''} onChange={(event) => onCompanyChange(Number(event.target.value))}>{companies.map((company) => <option key={company.id} value={company.id}>{company.nome}</option>)}</AppSelect></label>}
-            <div className="ranking-season-pill" title={season ? undefined : 'Nenhuma temporada configurada'}><CalendarDays size={17} />{seasonLabel(season)}</div>
+            {viewMode === 'current' && <div className="ranking-season-pill" title={season ? undefined : 'Nenhuma temporada configurada'}><CalendarDays size={17} />{seasonLabel(season)}</div>}
+            {viewMode === 'season' && selectedSeason && <div className="ranking-season-pill"><CalendarDays size={17} />{selectedSeason.name}{selectedSeason.completeness === 'complete' ? ' · completa' : selectedSeason.completeness === 'partial' ? ' · parcial' : ' · sem histórico completo'}</div>}
+            {viewMode === 'total' && <div className="ranking-season-pill"><Medal size={17} />Pontuação acumulada</div>}
             <button className="ranking-refresh" type="button" onClick={refetch} disabled={loading} aria-label="Atualizar ranking" title="Atualizar ranking"><RefreshCw size={17} /></button>
           </div>
         </header>
-        {loading && !ranking ? <div className="ranking-status" role="status">Carregando a Galeria de Honra…</div> :
+        {waitingForSeasonChoice ? <div className="ranking-history-empty" role="status"><h2>Nenhum histórico completo disponível</h2><p>{closedSeasons.length === 0 ? 'Ainda não há uma temporada encerrada para consultar.' : 'Escolha uma temporada encerrada para verificar os dados disponíveis. Os períodos sem histórico completo serão identificados e não exibidos como resultados finais.'}</p></div> :
+        loading && !ranking ? <div className="ranking-status" role="status">Carregando a Galeria de Honra…</div> :
           error || !ranking ? <div className="ranking-status" role="alert"><h2>Não foi possível carregar o ranking</h2><p>Tente novamente para atualizar a classificação.</p><AppButton onClick={refetch}>Tentar novamente</AppButton></div> :
+          viewMode === 'season' && ranking.dataCompleteness === 'unavailable' ? <div className="ranking-history-empty" role="status"><h2>Histórico não disponível</h2><p>Não há dados completos para montar a classificação final desta temporada.</p></div> :
           <div className="ranking-content">
             {!ranking.companyAvailable && <p className="ranking-scope-hint">Você ainda não faz parte de uma instituição. Exibindo o ranking disponível.</p>}
-            <RankingHero top={ranking.top} scopeLabel={scopeLabel} />
-            <div className="ranking-content-grid">
-              <JourneyCard ranking={ranking} />
-              <WeeklyHighlights ranking={ranking} />
-              <RankingSection ranking={ranking} scopeLabel={scopeLabel} />
-              <div className="ranking-landscape" role="img" aria-label="Castelo em um vale ao pôr do sol"><img src={landscapeArtwork} alt="" /></div>
+            <RankingHero top={ranking.top} scopeLabel={scopeLabel} xpLabel={xpLabel} xpQualifier={viewMode === 'total' ? 'acumulado' : 'na temporada'} />
+            {viewMode !== 'current' && ranking.dataCompleteness === 'partial' && !(viewMode === 'season' && !hasCompleteClosedSeason && closedSeasons.length > 0) && <p className="ranking-history-notice" role="status">Este histórico é parcial e não representa o resultado completo deste período.</p>}
+            {viewMode === 'season' && !hasCompleteClosedSeason && closedSeasons.length > 0 && <p className="ranking-history-notice" role="status">Ainda não há temporada encerrada com histórico completo. Os períodos incompletos estão identificados no seletor.</p>}
+            {viewMode !== 'current' && ranking.dataCompleteness === 'unavailable' && <p className="ranking-history-notice" role="status">Os dados deste ranking não estão disponíveis.</p>}
+            <div className={`ranking-content-grid${isManagement ? ' is-management' : ''}${viewMode !== 'current' ? ' is-historical' : ''}`}>
+              {viewMode === 'current' && !isManagement && ranking.currentUser && <JourneyCard ranking={ranking} />}
+              {viewMode === 'current' && <WeeklyHighlights ranking={ranking} />}
+              <RankingSection ranking={ranking} scopeLabel={scopeLabel} xpLabel={xpLabel} />
             </div>
           </div>}
       </div>
@@ -84,30 +125,30 @@ function RankingContent({ scope, companyId, companies, onCompanyChange, onScopeC
   );
 }
 
-function RankingHero({ top, scopeLabel }: { top: RankingEntry[]; scopeLabel: string }) {
-  return <section className="ranking-hero" aria-label={`Galeria de Honra — ${scopeLabel}`}>
+function RankingHero({ top, scopeLabel, xpLabel, xpQualifier }: { top: RankingEntry[]; scopeLabel: string; xpLabel: string; xpQualifier: string }) {
+  return <section className="ranking-hero" aria-label={`Galeria de Honra — ${scopeLabel}, ${xpLabel}`}>
     <img className="ranking-hero-art" src={hallArtwork} alt="" />
     <div className="ranking-hero-light" aria-hidden="true" />
     <div className="ranking-podium" role="list" aria-label="Três primeiros colocados">
-      {top.slice(0, 3).map((entry, index) => <LeaderBanner key={entry.id} entry={entry} place={index + 1} />)}
+      {top.slice(0, 3).map((entry, index) => <LeaderBanner key={entry.id} entry={entry} place={index + 1} xpQualifier={xpQualifier} />)}
     </div>
     {top.length === 0 && <p className="ranking-hero-empty">A galeria está esperando seus primeiros participantes.</p>}
   </section>;
 }
 
-function LeaderBanner({ entry, place }: { entry: RankingEntry; place: number }) {
-  return <div className={`ranking-leader ranking-leader-${place}`} role="listitem" aria-label={`${entry.position}º lugar: ${entry.name}, ${formatXp(entry.points)}`}>
+function LeaderBanner({ entry, place, xpQualifier }: { entry: RankingEntry; place: number; xpQualifier: string }) {
+  return <div className={`ranking-leader ranking-leader-${place}`} role="listitem" aria-label={`${entry.position}º lugar: ${entry.name}, ${formatXp(entry.points)} ${xpQualifier}`}>
     <img className="ranking-leader-art" src={bannerByPosition[place - 1]} alt="" />
     {place === 1 && <Crown className="ranking-leader-crown" size={32} aria-hidden="true" />}
     <span className="ranking-leader-medal">{entry.position}</span>
     <Avatar name={entry.name} imageUrl={entry.profileImageUrl} className="ranking-leader-avatar" />
-    <span className="ranking-leader-details"><strong title={entry.name}>{entry.name}</strong><b>{formatXp(entry.points)}</b></span>
+    <span className="ranking-leader-details"><strong title={entry.name}>{entry.name}</strong><b>{formatXp(entry.points)}</b><small>{xpQualifier}</small></span>
   </div>;
 }
 
 function JourneyCard({ ranking }: { ranking: RankingData }) {
   const user = ranking.currentUser;
-  if (!user) return <section className="ranking-card ranking-journey is-management" aria-labelledby="ranking-journey-title"><div className="ranking-card-heading"><span className="ranking-card-icon"><Shield size={25} /></span><div><h2 id="ranking-journey-title">Visão de gestão</h2><p>Você acompanha esta classificação, mas não participa nem ocupa uma posição no ranking.</p></div></div></section>;
+  if (!user) return null;
   const gap = ranking.summary.pointsToNextPosition;
   const progress = gap && gap > 0 ? Math.min(100, Math.round(user.points / (user.points + gap) * 100)) : user.points > 0 ? 100 : 0;
   const change = ranking.weeklyPositionChange;
@@ -129,7 +170,7 @@ const highlightIcons = { streak: Flame, xp: Zap, challenges: Shield };
 function WeeklyHighlights({ ranking }: { ranking: RankingData }) {
   const highlights = ranking.weeklyHighlights ?? [];
   return <section className="ranking-card ranking-highlights" aria-labelledby="ranking-highlights-title">
-    <div className="ranking-card-heading"><span className="ranking-card-icon is-gold"><Trophy size={25} /></span><div><h2 id="ranking-highlights-title">Destaques da semana</h2><p>Realizações que inspiram nossa comunidade.</p></div></div>
+    <div className="ranking-card-heading"><div><h2 id="ranking-highlights-title">Destaques da semana</h2><p>Realizações que inspiram nossa comunidade.</p></div></div>
     <div className="ranking-highlights-list">
       {highlights.length === 0 ? <p className="ranking-highlights-empty">{ranking.weeklyDataAvailable ? 'Nenhuma atividade nesta semana.' : 'Dados semanais indisponíveis.'}</p> : highlights.map(item => {
         const Icon = highlightIcons[item.kind];
@@ -139,25 +180,33 @@ function WeeklyHighlights({ ranking }: { ranking: RankingData }) {
   </section>;
 }
 
-function RankingSection({ ranking, scopeLabel }: { ranking: RankingData; scopeLabel: string }) {
+function RankingSection({ ranking, scopeLabel, xpLabel }: { ranking: RankingData; scopeLabel: string; xpLabel: string }) {
   const rest = (ranking.leaderboard ?? ranking.top).slice(3);
+  const showWeeklyChange = ranking.mode === 'current';
+  const description = ranking.mode === 'total'
+    ? 'Classificação pelo XP acumulado; o nível mostra a faixa alcançada.'
+    : ranking.mode === 'season'
+      ? ranking.dataCompleteness === 'complete'
+        ? 'Resultado final desta temporada, ordenado pelo XP conquistado no período.'
+        : 'Dados parciais desta temporada, ordenados pelo XP registrado no período.'
+      : `Veja quem está subindo no ranking ${scopeLabel === 'Global' ? 'global' : 'da sua instituição'}.`;
   return <section className="ranking-card ranking-classification" aria-labelledby="ranking-classification-title">
-    <div className="ranking-card-heading"><span className="ranking-card-icon is-chart"><Sparkles size={24} /></span><div><h2 id="ranking-classification-title">Classificação</h2><p>Veja quem está subindo no ranking {scopeLabel === 'Global' ? 'global' : 'da sua instituição'}.</p></div></div>
-    {rest.length > 0 ? <div className="ranking-table" role="table" aria-label={`Classificação ${scopeLabel}, a partir do quarto colocado`}>
-      <div className="ranking-table-head" role="row"><span role="columnheader">#</span><span role="columnheader">Jogador</span><span role="columnheader">Nível</span><span role="columnheader">Variação (semana)</span><span role="columnheader">XP da temporada</span></div>
-      {rest.map(entry => <RankingRow key={entry.id} entry={entry} />)}
+    <div className="ranking-card-heading"><div><h2 id="ranking-classification-title">Classificação</h2><p>{description}</p></div></div>
+    {rest.length > 0 ? <div className={`ranking-table${showWeeklyChange ? '' : ' is-history'}`} role="table" aria-label={`Classificação ${scopeLabel}, ${xpLabel}, a partir do quarto colocado`}>
+      <div className="ranking-table-head" role="row"><span role="columnheader">#</span><span role="columnheader">Jogador</span><span role="columnheader">Nível</span>{showWeeklyChange && <span role="columnheader">Variação (semana)</span>}<span role="columnheader">{xpLabel}</span></div>
+      {rest.map(entry => <RankingRow key={entry.id} entry={entry} showWeeklyChange={showWeeklyChange} />)}
     </div> : <p className="ranking-empty">{ranking.totalParticipants === 0 ? 'Ainda não há participantes nesta classificação.' : 'Todos os participantes desta classificação estão no pódio.'}</p>}
     {ranking.leaderboard?.length === 50 && ranking.totalParticipants > 50 && <p className="ranking-list-note">Exibindo os 50 primeiros de {ranking.totalParticipants.toLocaleString('pt-BR')} participantes.</p>}
   </section>;
 }
 
-function RankingRow({ entry }: { entry: RankingEntry }) {
+function RankingRow({ entry, showWeeklyChange }: { entry: RankingEntry; showWeeklyChange: boolean }) {
   const change = entry.weeklyChange;
   return <div className={`ranking-table-row${entry.isCurrentUser ? ' is-personal' : ''}`} role="row">
     <strong role="cell">#{entry.position}</strong>
     <span className="ranking-table-player" role="cell"><Avatar name={entry.name} imageUrl={entry.profileImageUrl} className="ranking-table-avatar" /><strong title={entry.name}>{entry.name}</strong>{entry.isCurrentUser && <em>Você</em>}</span>
     <span role="cell"><b className="ranking-level-badge">Nv. {entry.level}</b></span>
-    <span className={`ranking-trend${change == null ? '' : change > 0 ? ' is-up' : change < 0 ? ' is-down' : ''}`} role="cell" title={change == null ? 'Variação semanal indisponível' : undefined}>{change == null || change === 0 ? '—' : change > 0 ? <><ArrowUp size={14} />{change}</> : <><ArrowDown size={14} />{Math.abs(change)}</>}</span>
+    {showWeeklyChange && <span className={`ranking-trend${change == null ? '' : change > 0 ? ' is-up' : change < 0 ? ' is-down' : ''}`} role="cell" title={change == null ? 'Variação semanal indisponível' : undefined}>{change == null || change === 0 ? '—' : change > 0 ? <><ArrowUp size={14} />{change}</> : <><ArrowDown size={14} />{Math.abs(change)}</>}</span>}
     <strong className="ranking-table-xp" role="cell">{formatXp(entry.points)}</strong>
   </div>;
 }

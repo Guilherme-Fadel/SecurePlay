@@ -56,7 +56,23 @@ export interface RankingEntry {
   weeklyChange?: number | null;
 }
 
+export type RankingMode = 'current' | 'season' | 'total';
+
+export interface RankingSeasonOption {
+  id: string;
+  name: string;
+  startsAt: string;
+  endsAt: string;
+  status: 'active' | 'closed';
+  completeness: 'complete' | 'partial' | 'unavailable';
+}
+
 export interface RankingData {
+  mode: RankingMode;
+  metric: 'seasonXp' | 'totalXp';
+  selectedSeason: string | null;
+  availableSeasons: RankingSeasonOption[];
+  dataCompleteness: 'complete' | 'partial' | 'unavailable';
   scope: 'global' | 'company';
   companyAvailable: boolean;
   company: { id: number; name: string } | null;
@@ -65,7 +81,7 @@ export interface RankingData {
   leaderboard: RankingEntry[];
   currentUser: RankingEntry | null;
   viewerParticipates: boolean;
-  season?: { name: string; startsAt: string; endsAt: string; status: 'upcoming' | 'active' } | null;
+  season?: { name: string; startsAt: string; endsAt: string; status: 'upcoming' | 'active' | 'closed' } | null;
   weeklyPositionChange?: number | null;
   weeklyDataAvailable?: boolean;
   weeklyHighlights?: Array<{
@@ -86,8 +102,15 @@ export interface RankingData {
 export async function getDashboardRanking(
   scope: 'global' | 'company' = 'global',
   companyId?: number,
+  mode: RankingMode = 'current',
+  season?: string,
 ): Promise<RankingData> {
-  const response = await api.get('/dashboard/ranking', { params: { scope, ...(companyId ? { companyId } : {}) } });
+  const response = await api.get('/dashboard/ranking', { params: {
+    scope,
+    ...(companyId ? { companyId } : {}),
+    ...(mode !== 'current' ? { mode } : {}),
+    ...(mode === 'season' && season ? { season } : {}),
+  } });
   return response.data;
 }
 
