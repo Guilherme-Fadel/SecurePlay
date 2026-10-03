@@ -7,6 +7,11 @@ import { Role } from '../auth/roles.enum';
 import * as bcrypt from 'bcrypt';
 import { createHash } from 'crypto';
 
+jest.mock('../dashboard/ranking-history', () => ({
+  ...jest.requireActual('../dashboard/ranking-history'),
+  ensurePendingRankingSeasonsClosed: jest.fn().mockResolvedValue(undefined),
+}));
+
 describe('Cadastro com confirmação por e-mail', () => {
   it('recusa apelido em convite de administrador antes de criar cadastro pendente', async () => {
     const invite = {

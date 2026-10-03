@@ -56,9 +56,10 @@ describe('DashboardService company parameters', () => {
       get: jest.fn().mockResolvedValue(null),
       mget: jest.fn((keys: string[]) => Promise.resolve(keys.map(() => null))),
     };
+    const dataSource = { getRepository: jest.fn(), query: jest.fn().mockResolvedValue([]), transaction: jest.fn() };
     const service = new DashboardService(
       repository as never,
-      { getRepository: jest.fn() } as never,
+      dataSource as never,
       {
         countCompleted: () => Promise.resolve(0),
         countTotalActive: () => Promise.resolve(0),
@@ -70,7 +71,7 @@ describe('DashboardService company parameters', () => {
       {} as never,
       companyFeatures as never,
     );
-    return { service, query, repository, redisService };
+    return { service, query, repository, redisService, dataSource };
   }
 
   it('forces institutional scope even for a global request when disabled', async () => {
@@ -181,6 +182,61 @@ describe('DashboardService company parameters', () => {
     expect(ranking.top[0]).toMatchObject({ id: 7, position: 1, points: 100 });
     expect(ranking.currentUser.points).toBe(100);
     expect(ranking.top[1]).toMatchObject({ id: 1, points: 0 });
+  });
+
+  it('orders total mode by lifetime XP', async () => {
+    const { service, query } = buildService({ id: 3, nome: 'Escola' });
+    query.getMany.mockResolvedValue([
+      { usuario_id: 1, total_points: 5000, usuario: { nickname: 'Líder' } },
+      { usuario_id: 7, total_points: 100, usuario: { nickname: 'Você' } },
+    ]);
+    const ranking = await service.getRanking(7, 'company', false, { mode: 'total' });
+    expect(ranking).toMatchObject({ mode: 'total', metric: 'totalXp', selectedSeason: null, dataCompleteness: 'complete' });
+    expect(ranking.top[0]).toMatchObject({ id: 1, position: 1, points: 5000 });
+    expect(ranking.currentUser?.points).toBe(100);
+  });
+
+  it('does not invent a podium for a season without complete coverage', async () => {
+    const { service, dataSource, query } = buildService({ id: 3, nome: 'Escola' });
+    dataSource.query.mockResolvedValue([{ start_local_at: '2026-10-03 00:00:00.000000' }]);
+    const ranking = await service.getRanking(7, 'company', false, { mode: 'season', selectedSeason: '2026-09' });
+    expect(ranking).toMatchObject({ mode: 'season', metric: 'seasonXp', selectedSeason: '2026-09', dataCompleteness: 'unavailable', top: [], leaderboard: [], currentUser: null });
+    expect(query.getMany).not.toHaveBeenCalled();
+  });
+
+  it('uses frozen global snapshots with tied positions and immutable names', async () => {
+    const { service, dataSource, query } = buildService(
+      { id: 3, nome: 'Escola atual' },
+      { globalRankingEnabled: true },
+    );
+    const frozen = [
+      { usuario_id: 1, points: 100, total_points: 200, display_name: 'Nome antigo 1', profile_image_key: null, empresa_id: 9, empresa_nome: 'Escola antiga' },
+      { usuario_id: 2, points: 100, total_points: 300, display_name: 'Nome antigo 2', profile_image_key: null, empresa_id: 9, empresa_nome: 'Escola antiga' },
+      { usuario_id: 7, points: 50, total_points: 120, display_name: 'Eu antes', profile_image_key: null, empresa_id: 9, empresa_nome: 'Escola antiga' },
+    ];
+    dataSource.query.mockImplementation(async (sql: string) =>
+      sql.includes('ranking_season_snapshot') ? frozen : [{ start_local_at: '2026-09-01 00:00:00.000000' }],
+    );
+    const manager = { query: jest.fn(async (sql: string) => sql.includes('SELECT season_id') ? [{ season_id: '2026-09' }] : []) };
+    dataSource.transaction.mockImplementation(async (callback) => callback(manager));
+
+    const ranking = await service.getRanking(7, 'global', false, { mode: 'season', selectedSeason: '2026-09' });
+    expect(ranking).toMatchObject({ mode: 'season', scope: 'global', dataCompleteness: 'complete', totalParticipants: 3 });
+    expect(ranking.top.map((entry) => [entry.id, entry.position])).toEqual([[1, 1], [2, 1], [7, 3]]);
+    expect(ranking.currentUser).toMatchObject({ name: 'Eu antes', companyName: 'Escola antiga', position: 3 });
+    expect(ranking.top[0]).toMatchObject({ name: 'Nome antigo 1', companyName: 'Escola antiga' });
+    expect(dataSource.query).toHaveBeenCalledWith(expect.stringContaining('global_eligible = 1'), ['2026-09']);
+    expect(query.getMany).not.toHaveBeenCalled();
+  });
+
+  it('filters historical company ranking by the authorized company', async () => {
+    const { service, dataSource } = buildService({ id: 3, nome: 'Escola' });
+    dataSource.query.mockImplementation(async (sql: string) =>
+      sql.includes('ranking_season_snapshot') ? [] : [{ start_local_at: '2026-09-01 00:00:00.000000' }],
+    );
+    dataSource.transaction.mockImplementation(async (callback) => callback({ query: jest.fn().mockResolvedValue([{ season_id: '2026-09' }]) }));
+    await service.getRanking(7, 'company', false, { mode: 'season', selectedSeason: '2026-09' });
+    expect(dataSource.query).toHaveBeenCalledWith(expect.stringContaining('empresa_id = ?'), ['2026-09', 3]);
   });
 
   it('does not calculate global statistics when disabled', async () => {

@@ -17,6 +17,7 @@ import {
 } from '../conteudo/s3/upload-policy';
 import { randomUUID } from 'crypto';
 import { Role } from '../auth/roles.enum';
+import { ensurePendingRankingSeasonsClosed } from '../dashboard/ranking-history';
 import {
   noCompanyParameters,
   platformAdminParameters,
@@ -169,6 +170,7 @@ export class UsuarioService {
 
     const usuario = await this.getUsuarioById(userId);
     if (!usuario) throw new NotFoundException('Usuário não encontrado');
+    await ensurePendingRankingSeasonsClosed(this.usuarioRepository.manager.connection);
     usuario.profile_image_key = key;
     await this.usuarioRepository.save(usuario);
 
@@ -192,6 +194,7 @@ export class UsuarioService {
         email: data.email,
         password: senhaHash,
       });
+      await ensurePendingRankingSeasonsClosed(this.usuarioRepository.manager.connection);
       await this.usuarioRepository.save(usuario);
       return {
         sucesso: true,

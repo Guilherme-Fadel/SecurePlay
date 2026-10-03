@@ -23,6 +23,7 @@ import { SubmitQuizDto } from '../aula-quiz/dto/aula-quiz.dto';
 import { NotificationService } from '../../notification/notification.service';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { sortAulasByModuleSequence } from './aula-order';
+import { creditSeasonXp } from '../../common/gamification/credit-season-xp';
 
 @Injectable()
 export class AulaService {
@@ -437,15 +438,8 @@ export class AulaService {
   }
 
   private async creditarXp(usuario_id: number, xp: number): Promise<void> {
-    let stats = await this.statsRepository.findOne({ where: { usuario_id } });
-
-    if (!stats) {
-      stats = this.statsRepository.create({ usuario_id, total_points: 0 });
-    }
-
-    const previousPoints = stats.total_points;
-    stats.total_points += xp;
-    await this.statsRepository.save(stats);
+    if (xp <= 0) return;
+    const previousPoints = await creditSeasonXp(this.statsRepository, usuario_id, xp);
     await this.redisService.recordRankingXp(usuario_id, previousPoints, xp);
 
     const xpKey = `xp-today:${usuario_id}`;

@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { XpService } from './xp.service';
 import { RedisService } from '../../redis/redis.service';
 import { EventEmitter2 } from '@nestjs/event-emitter';
+import { UsuarioStats } from '../../usuario-stats/usuario-stats.entity';
 
 describe('XpService', () => {
   let service: XpService;
@@ -19,6 +20,14 @@ describe('XpService', () => {
       create: jest.fn(),
       save: jest.fn(),
     };
+    const userLock = { setLock: jest.fn().mockReturnThis(), where: jest.fn().mockReturnThis(), getOneOrFail: jest.fn().mockResolvedValue({ id: 1 }) };
+    const manager = {
+      query: jest.fn().mockResolvedValue([]),
+      connection: { query: jest.fn(async (sql: string) => sql.includes('DATE_FORMAT') ? [{ start_local_at: '2026-10-03 00:00:00.000000' }] : [{ id: 1 }]) },
+      getRepository: jest.fn((entity) => entity === UsuarioStats ? statsRepository : { createQueryBuilder: () => userLock }),
+      transaction: jest.fn(async (callback) => callback(manager)),
+    };
+    Object.assign(statsRepository, { manager });
     redisService = { incrBy: jest.fn(), recordRankingXp: jest.fn() };
     eventEmitter = { emitAsync: jest.fn().mockResolvedValue([]) };
 
@@ -67,7 +76,7 @@ describe('XpService', () => {
 
     await service.creditXp(2, 40);
 
-    expect(statsRepository.create).toHaveBeenCalledWith({ usuario_id: 2 });
+    expect(statsRepository.create).toHaveBeenCalledWith({ usuario_id: 2, total_points: 0 });
     expect(created.total_points).toBe(40);
     expect(statsRepository.save).toHaveBeenCalledWith(created);
   });

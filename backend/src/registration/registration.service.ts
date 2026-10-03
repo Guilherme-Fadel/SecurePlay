@@ -17,6 +17,7 @@ import { getLocalDateKey } from '../common/utils/date.utils';
 import { TrialRegisterDto } from './dto/trial-register.dto';
 import { EmailService } from './email.service';
 import { PendingRegistration } from './pending-registration.entity';
+import { ensurePendingRankingSeasonsClosed } from '../dashboard/ranking-history';
 
 const CONFIRMATION_HOURS = 24;
 const TRIAL_DAYS = 7;
@@ -188,6 +189,7 @@ export class RegistrationService {
   }
 
   async confirm(token: string) {
+    await ensurePendingRankingSeasonsClosed(this.dataSource);
     return this.dataSource.transaction(async (manager) => {
       const pending = await manager
         .getRepository(PendingRegistration)

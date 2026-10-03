@@ -1,4 +1,4 @@
-import { Injectable, Inject, Logger, NotFoundException } from '@nestjs/common';
+import { Injectable, Inject, Logger, NotFoundException, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
 import { DataSource, Repository, SelectQueryBuilder } from 'typeorm';
 import { UsuarioStats } from '../usuario-stats/usuario-stats.entity';
 import { Usuario } from '../usuario/usuario.entity';
@@ -22,9 +22,14 @@ import { Role } from '../auth/roles.enum';
 import { loadRankingWeek, unavailableRankingWeek } from './ranking-weekly';
 import { getRankingSeason, getSeasonXpByUser } from './ranking-season';
 import { Empresa } from '../empresa/empresa.entity';
+import { creditSeasonXp } from '../common/gamification/credit-season-xp';
+import { closeRankingSeason, ensurePendingRankingSeasonsClosed, historicalSeason, loadSeasonPoints, rankingHistoryContext, RankingMode } from './ranking-history';
 @Injectable()
-export class DashboardService {
+export class DashboardService implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(DashboardService.name);
+  private closeTimer: NodeJS.Timeout | null = null;
+  private closeTask: Promise<void> | null = null;
+  private shuttingDown = false;
 
   constructor(
     @Inject('USUARIO_STATS_REPOSITORY')
@@ -38,6 +43,39 @@ export class DashboardService {
     private moduloService: ModuloService,
     private readonly companyFeatures: CompanyFeaturesService,
   ) {}
+  async onModuleInit(): Promise<void> {
+    // Conclui temporadas pendentes antes que a aplicação aceite requests.
+    await ensurePendingRankingSeasonsClosed(this.dataSource);
+    this.scheduleNextClose();
+  }
+  async onModuleDestroy(): Promise<void> {
+    this.shuttingDown = true;
+    if (this.closeTimer) clearTimeout(this.closeTimer);
+    this.closeTimer = null;
+    if (this.closeTask) await this.closeTask;
+  }
+  private scheduleNextClose(retryDelay?: number): void {
+    if (this.shuttingDown) return;
+    const nextMonth = new Date(getRankingSeason().endsAt).getTime();
+    // Um mês excede o limite seguro de setTimeout; rearmamos a cada 24 horas.
+    const delay = retryDelay ?? Math.max(1000, Math.min(24 * 60 * 60 * 1000, nextMonth - Date.now() + 1000));
+    this.closeTimer = setTimeout(() => { void this.runScheduledClose(); }, delay);
+    this.closeTimer.unref?.();
+  }
+  private async runScheduledClose(): Promise<void> {
+    this.closeTimer = null;
+    this.closeTask = ensurePendingRankingSeasonsClosed(this.dataSource);
+    let failed = false;
+    try {
+      await this.closeTask;
+    } catch (error) {
+      failed = true;
+      this.logger.error('Falha no fechamento agendado do ranking', error);
+    } finally {
+      this.closeTask = null;
+      this.scheduleNextClose(failed ? 60_000 : undefined);
+    }
+  }
   private async resolveProfileImageUrl(
     key: string | null | undefined,
   ): Promise<string | null> {
@@ -74,8 +112,10 @@ export class DashboardService {
     usuario_id: number,
     requestedScope: 'global' | 'company' = 'global',
     includeWeekly = true,
-    options: { includeImages?: boolean; includeEntries?: boolean; companyId?: number } = {},
+    options: { includeImages?: boolean; includeEntries?: boolean; companyId?: number; mode?: RankingMode; selectedSeason?: string | null } = {},
   ) {
+    const mode = options.mode ?? 'current';
+    const selectedSeason = options.selectedSeason ?? (mode === 'current' ? getRankingSeason().startsAt.slice(0, 7) : null);
     const includeImages = options.includeImages ?? true;
     const includeEntries = options.includeEntries ?? true;
     const parameters = await this.companyFeatures.requireFeature(
@@ -124,16 +164,38 @@ export class DashboardService {
       }
       return query;
     };
-    const allStats = await applyScope(
-      this.statsRepository
-        .createQueryBuilder('s')
-        .leftJoinAndSelect('s.usuario', 'u')
-        .leftJoinAndSelect('u.empresa', 'e'),
-    ).getMany();
-    const seasonPoints = await getSeasonXpByUser(
-      this.redisService,
-      allStats.map((entry) => entry.usuario_id),
-    );
+    if (mode === 'season' && selectedSeason) await closeRankingSeason(this.dataSource, selectedSeason);
+    const history = await rankingHistoryContext(this.dataSource, mode, selectedSeason);
+    let allStats: UsuarioStats[];
+    let seasonPoints: Map<number, number>;
+    const historicalCompanies = new Map<number, string | null>();
+    if (mode === 'season') {
+      const rows = history.dataCompleteness === 'complete'
+        ? await this.dataSource.query(
+            `SELECT * FROM ranking_season_snapshot WHERE season_id = ? AND ${scope === 'company' ? 'empresa_id = ?' : 'global_eligible = 1'}`,
+            scope === 'company' ? [selectedSeason, company?.id ?? -1] : [selectedSeason],
+          ) as Array<{ usuario_id: number; points: number; total_points: number; display_name: string; profile_image_key: string | null; empresa_id: number | null; empresa_nome: string | null }>
+        : [];
+      allStats = rows.map((row) => ({
+        usuario_id: row.usuario_id,
+        total_points: row.total_points,
+        usuario: { nickname: row.display_name, name: row.display_name, profile_image_key: row.profile_image_key },
+      }) as UsuarioStats);
+      rows.forEach((row) => historicalCompanies.set(Number(row.usuario_id), row.empresa_nome));
+      seasonPoints = new Map(rows.map((row) => [Number(row.usuario_id), Number(row.points)]));
+    } else {
+      allStats = await applyScope(
+        this.statsRepository
+          .createQueryBuilder('s')
+          .leftJoinAndSelect('s.usuario', 'u')
+          .leftJoinAndSelect('u.empresa', 'e'),
+      ).getMany();
+      seasonPoints = mode === 'total'
+        ? new Map(allStats.map((entry) => [entry.usuario_id, entry.total_points]))
+        : history.dataCompleteness === 'complete'
+          ? await loadSeasonPoints(this.dataSource, selectedSeason!, allStats.map((entry) => entry.usuario_id))
+          : await getSeasonXpByUser(this.redisService, allStats.map((entry) => entry.usuario_id));
+    }
     const leaderboardEntries = [...allStats]
       .sort(
         (a, b) =>
@@ -142,6 +204,7 @@ export class DashboardService {
           a.usuario_id - b.usuario_id,
       )
       .slice(0, 50);
+    const historicalCurrentEntry = mode === 'season' ? allStats.find((entry) => entry.usuario_id === usuario_id) : null;
     let previousPoints: number | null = null;
     let previousPosition = 0;
     const leaderboard = includeEntries
@@ -156,7 +219,9 @@ export class DashboardService {
               id: entry.usuario_id,
               position: previousPosition,
               name:
-                entry.usuario_id === usuario_id
+                mode === 'season'
+                  ? (entry.usuario?.nickname ?? `Aventureiro ${entry.usuario_id}`)
+                  : entry.usuario_id === usuario_id
                   ? (currentEntry?.usuario?.nickname ??
                     currentEntry?.usuario?.name ??
                     'Você')
@@ -164,7 +229,7 @@ export class DashboardService {
                     `Aventureiro ${entry.usuario_id}`),
               points,
               level: calcLevel(entry.total_points),
-              companyName: null,
+              companyName: mode === 'season' ? historicalCompanies.get(entry.usuario_id) ?? null : null,
               isCurrentUser: entry.usuario_id === usuario_id,
               profileImageUrl: includeImages
                 ? await this.resolveProfileImageUrl(
@@ -175,8 +240,9 @@ export class DashboardService {
           }),
         )
       : [];
+    const viewerInRanking = allStats.some((entry) => entry.usuario_id === usuario_id);
     const currentSeasonPoints = isManagementUser ? 0 : (seasonPoints.get(usuario_id) ?? 0);
-    const currentPosition = isManagementUser ? null : allStats.filter((entry) => (seasonPoints.get(entry.usuario_id) ?? 0) > currentSeasonPoints).length + 1;
+    const currentPosition = isManagementUser || (mode === 'season' && !viewerInRanking) ? null : allStats.filter((entry) => (seasonPoints.get(entry.usuario_id) ?? 0) > currentSeasonPoints).length + 1;
     const totalParticipants = allStats.length;
     const nextPoints = allStats.reduce((next, entry) => {
       const points = seasonPoints.get(entry.usuario_id) ?? 0;
@@ -198,25 +264,23 @@ export class DashboardService {
                 100,
             ),
           );
-    const currentUser = isManagementUser ? null : {
+    const currentUser = isManagementUser || (mode === 'season' && !viewerInRanking) ? null : {
       id: usuario_id,
       position: currentPosition,
-      name:
-        currentEntry?.usuario?.nickname ??
-        currentEntry?.usuario?.name ??
-        'Você',
+      name: mode === 'season' ? historicalCurrentEntry?.usuario?.nickname ?? 'Você' :
+        currentEntry?.usuario?.nickname ?? currentEntry?.usuario?.name ?? 'Você',
       points: currentSeasonPoints,
-      level: calcLevel(currentStats!.total_points),
-      companyName: company?.nome ?? null,
+      level: calcLevel(mode === 'season' ? historicalCurrentEntry?.total_points ?? 0 : currentStats!.total_points),
+      companyName: mode === 'season' ? historicalCompanies.get(usuario_id) ?? null : company?.nome ?? null,
       isCurrentUser: true,
       profileImageUrl: includeImages
         ? await this.resolveProfileImageUrl(
-            currentEntry?.usuario?.profile_image_key,
+            mode === 'season' ? historicalCurrentEntry?.usuario?.profile_image_key : currentEntry?.usuario?.profile_image_key,
           )
         : null,
     };
     let weekly = unavailableRankingWeek();
-    if (includeWeekly) {
+    if (includeWeekly && mode === 'current') {
       try {
         weekly = await loadRankingWeek({
           redis: this.redisService,
@@ -237,7 +301,12 @@ export class DashboardService {
       companyAvailable,
       company: company ? { id: company.id, name: company.nome } : null,
       totalParticipants,
-      season: getRankingSeason(),
+      season: mode === 'season' && selectedSeason ? historicalSeason(selectedSeason) : getRankingSeason(),
+      mode,
+      metric: mode === 'total' ? 'totalXp' as const : 'seasonXp' as const,
+      selectedSeason,
+      availableSeasons: history.availableSeasons,
+      dataCompleteness: history.dataCompleteness,
       top: top.map((entry) => ({
         ...entry,
         weeklyChange: weekly.changes?.get(entry.id) ?? null,
@@ -247,8 +316,8 @@ export class DashboardService {
         weeklyChange: weekly.changes?.get(entry.id) ?? null,
       })),
       currentUser,
-      viewerParticipates: !isManagementUser,
-      weeklyPositionChange: isManagementUser ? null : (weekly.changes?.get(usuario_id) ?? null),
+      viewerParticipates: !isManagementUser && (mode !== 'season' || viewerInRanking),
+      weeklyPositionChange: isManagementUser || mode !== 'current' ? null : (weekly.changes?.get(usuario_id) ?? null),
       weeklyDataAvailable: weekly.available,
       weeklyHighlights: weekly.highlights,
       summary: {
@@ -297,10 +366,8 @@ export class DashboardService {
     };
   }
   async addPoints(usuario_id: number, points: number): Promise<void> {
-    const stats = await this.getOrCreateStats(usuario_id);
-    const previousPoints = stats.total_points;
-    stats.total_points += points;
-    await this.statsRepository.save(stats);
+    if (!Number.isSafeInteger(points) || points <= 0) throw new Error('XP deve ser positivo');
+    const previousPoints = await creditSeasonXp(this.statsRepository, usuario_id, points);
     await this.redisService.recordRankingXp(usuario_id, previousPoints, points);
     await this.incrementRedisXpToday(usuario_id, points);
     await this.eventEmitter.emitAsync('progress.changed', {
@@ -375,9 +442,7 @@ export class DashboardService {
       await this.addPoints(usuario_id, bonusXp);
     } else {
       // credita direto (sem emitir progress.changed) para nao reentrar no handler
-      const previousPoints = stats.total_points;
-      stats.total_points += bonusXp;
-      await this.statsRepository.save(stats);
+      const previousPoints = await creditSeasonXp(this.statsRepository, usuario_id, bonusXp);
       await this.redisService.recordRankingXp(
         usuario_id,
         previousPoints,

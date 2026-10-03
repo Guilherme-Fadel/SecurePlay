@@ -15,6 +15,7 @@ import { Convite } from './entities/convite.entity';
 import { RegistrationService } from '../registration/registration.service';
 import { AdminAuditService } from './admin-audit.service';
 import { EventEmitter2 } from '@nestjs/event-emitter';
+import { ensurePendingRankingSeasonsClosed } from '../dashboard/ranking-history';
 
 type ConviteFiltros = { page?: number; pageSize?: number; search?: string; sort?: 'asc' | 'desc' };
 
@@ -321,6 +322,7 @@ export class ConvitesService {
     }
 
     const apelido = usuario.nickname_pending;
+    await ensurePendingRankingSeasonsClosed(this.usuarioRepository.manager.connection);
     usuario.nickname = apelido;
     usuario.nickname_pending = null;
     usuario.nickname_request_status = 'approved';

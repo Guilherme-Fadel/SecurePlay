@@ -20,6 +20,7 @@ import { resolveCompanyParameters } from '../config/features';
 import { EmpresaParametrosAudit } from '../empresa/empresa-parametros-audit.entity';
 import { UpdateCompanySettingsDto } from './dto/update-company-settings.dto';
 import { UpdateCompanyParametersDto } from './dto/update-company-parameters.dto';
+import { ensurePendingRankingSeasonsClosed } from '../dashboard/ranking-history';
 
 @Injectable()
 export class AdminService {
@@ -237,6 +238,7 @@ export class AdminService {
     userId: number,
     dto: UpdateCompanyParametersDto,
   ) {
+    await ensurePendingRankingSeasonsClosed(this.dataSource);
     return this.dataSource.transaction(async (manager) => {
       const empresa = await manager.findOne(Empresa, {
         where: { id: empresaId },
@@ -272,6 +274,7 @@ export class AdminService {
     userId: number,
     dto: UpdateCompanySettingsDto,
   ) {
+    await ensurePendingRankingSeasonsClosed(this.dataSource);
     const empresa = await this.dataSource.transaction(async (manager) => {
       const target = await manager.findOne(Empresa, {
         where: { id: empresaId },

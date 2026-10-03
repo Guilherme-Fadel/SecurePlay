@@ -13,6 +13,7 @@ import { RedisService } from '../redis/redis.service';
 import { getLocalDateKey, ttlUntilEndOfDay } from '../common/utils/date.utils';
 import { SubmitChallengeDto } from './dto/challenge.dto';
 import { EventEmitter2 } from '@nestjs/event-emitter';
+import { creditSeasonXp } from '../common/gamification/credit-season-xp';
 
 @Injectable()
 export class ChallengeService {
@@ -332,13 +333,7 @@ export class ChallengeService {
     await this.redisService.recordRankingChallenge(usuario_id);
 
     if (pointsEarned > 0) {
-      let stats = await this.statsRepository.findOne({ where: { usuario_id } });
-      if (!stats) {
-        stats = this.statsRepository.create({ usuario_id });
-      }
-      const before = stats.total_points;
-      stats.total_points += pointsEarned;
-      await this.statsRepository.save(stats);
+      const before = await creditSeasonXp(this.statsRepository, usuario_id, pointsEarned);
       await this.redisService.recordRankingXp(usuario_id, before, pointsEarned);
 
       const xpKey = `xp-today:${usuario_id}`;

@@ -1,4 +1,5 @@
 import { DashboardService } from './dashboard.service';
+import { UsuarioStats } from '../usuario-stats/usuario-stats.entity';
 
 /**
  * Regressao do check-in automatico: ao concluir qualquer atividade (aula, quiz,
@@ -17,6 +18,14 @@ describe('DashboardService check-in automatico', () => {
       create: jest.fn((v) => v),
       save: jest.fn(async (v) => v),
     };
+    const userLock = { setLock: jest.fn().mockReturnThis(), where: jest.fn().mockReturnThis(), getOneOrFail: jest.fn().mockResolvedValue({ id: 7 }) };
+    const manager = {
+      query: jest.fn().mockResolvedValue([]),
+      connection: { query: jest.fn(async (sql: string) => sql.includes('DATE_FORMAT') ? [{ start_local_at: '2026-10-03 00:00:00.000000' }] : [{ id: 1 }]) },
+      getRepository: jest.fn((entity) => entity === UsuarioStats ? statsRepository : { createQueryBuilder: () => userLock }),
+      transaction: jest.fn(async (callback) => callback(manager)),
+    };
+    Object.assign(statsRepository, { manager });
     const redisService = {
       get: jest.fn(async (key: string) => redisStore[key] ?? null),
       set: jest.fn(async (key: string, value: string) => {

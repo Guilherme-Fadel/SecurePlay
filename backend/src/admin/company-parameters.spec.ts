@@ -7,6 +7,12 @@ import { Empresa } from '../empresa/empresa.entity';
 import { EmpresaParametrosAudit } from '../empresa/empresa-parametros-audit.entity';
 import { resolveCompanyParameters } from '../config/features';
 import { UpdateCompanyParametersDto } from './dto/update-company-parameters.dto';
+import { ensurePendingRankingSeasonsClosed } from '../dashboard/ranking-history';
+
+jest.mock('../dashboard/ranking-history', () => ({
+  ...jest.requireActual('../dashboard/ranking-history'),
+  ensurePendingRankingSeasonsClosed: jest.fn().mockResolvedValue(undefined),
+}));
 
 describe('Administração de parâmetros da empresa', () => {
   it('grava layout e parâmetros com auditoria na mesma transação', async () => {
@@ -33,6 +39,9 @@ describe('Administração de parâmetros da empresa', () => {
       parametros,
     });
     expect(transaction).toHaveBeenCalledTimes(1);
+    expect(ensurePendingRankingSeasonsClosed).toHaveBeenCalled();
+    expect((ensurePendingRankingSeasonsClosed as jest.Mock).mock.invocationCallOrder[0])
+      .toBeLessThan(transaction.mock.invocationCallOrder[0]);
     expect(result).toMatchObject({
       tema: { nome: 'Escola piloto' },
       parametros,
