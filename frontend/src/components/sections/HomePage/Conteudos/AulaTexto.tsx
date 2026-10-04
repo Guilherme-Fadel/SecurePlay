@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { BookOpen, CheckCircle2, ChevronLeft, ChevronRight, FileQuestion, Sparkles } from 'lucide-react';
+import { BookOpen, CheckCircle2, ChevronLeft, ChevronRight, Sparkles } from 'lucide-react';
 import { AppButton } from '@/components/ui/buttons/AppButton';
 import { useAula } from '@/hooks/useAula';
 import { useAulaProgress } from '@/hooks/useAulaProgress';
@@ -67,7 +67,6 @@ export function AulaTexto({ aulaId, moduloId, onBack, onSelectAula }: AulaTextoP
       eyebrow={modulo?.title ?? 'Leitura guiada'}
       title={showQuiz ? `Avaliação · ${aula.title}` : aula.title}
       description={showQuiz ? 'Responda às perguntas para concluir esta fase.' : aula.description}
-      icon={showQuiz ? FileQuestion : BookOpen}
       onBack={onBack}
       progress={showQuiz ? 100 : readerProgress}
       progressLabel={showQuiz ? 'Leitura concluída · avaliação em andamento' : `Página ${pages.length ? currentPage + 1 : 0} de ${pages.length}`}

@@ -353,9 +353,7 @@
 .module-book-category { margin-top:12px; color:var(--primary); font-size:9px; font-weight:850; letter-spacing:.08em; text-transform:uppercase; }
 .module-book-summary h1 { margin:3px 0; font-size:clamp(23px,2vw,34px); font-weight:850; letter-spacing:-.035em; }
 .module-book-summary > p { max-width:440px; margin:0; color:#5f5870; font-size:12px; line-height:1.45; }
-.module-book-progress-title { display:flex; width:78%; align-items:center; gap:7px; margin-top:13px; color:var(--primary); font-size:9px; }
-.module-book-progress-title i { height:1px; flex:1; background:#d9c7a4; }
-.module-book-progress { display:flex; width:70%; align-items:center; justify-content:space-between; margin:7px 0; }
+.module-book-progress { display:flex; width:70%; align-items:center; justify-content:space-between; margin:16px 0 7px; }
 .module-book-progress > strong { font-size:28px; }
 .module-book-stars { display:flex; gap:9px; color:#c8c3bc; }
 .module-book-stars svg { width:28px; height:28px; }

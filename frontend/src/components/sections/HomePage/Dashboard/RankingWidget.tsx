@@ -29,7 +29,7 @@ export function RankingWidget() {
   return (
     <InfoCard variant="accent" raised className="dashboard-ranking-card flex flex-col h-full min-h-0 overflow-hidden">
       <div className="dashboard-ranking-body">
-        <span className="academy-ranking-preview-scope"><i aria-hidden="true" />{scopeLabel}</span>
+        <span className="academy-ranking-preview-scope">{scopeLabel}</span>
         <ol className="academy-ranking-preview" aria-label="Três primeiros colocados">
           {leaders.map((entry) => (
             <li key={entry.id} className={`academy-ranking-preview-row rank-${entry.position}`}>

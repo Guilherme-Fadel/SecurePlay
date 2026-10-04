@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { CheckCircle2, Clock3, PlayCircle, Sparkles, Video } from 'lucide-react';
+import { CheckCircle2, Clock3, PlayCircle, Sparkles } from 'lucide-react';
 import { AppButton } from '@/components/ui/buttons/AppButton';
 import { useAula } from '@/hooks/useAula';
 import { useAulaProgress } from '@/hooks/useAulaProgress';
@@ -76,7 +76,6 @@ export function AulaVideo({ aulaId, moduloId, onBack, onSelectAula, onTypeResolv
       eyebrow={modulo?.title ?? 'Treinamento em andamento'}
       title={aula.title}
       description={aula.description}
-      icon={Video}
       onBack={onBack}
       progress={videoProgress}
       progressLabel={aula.completed ? 'Aula concluída' : `${videoProgress}% assistido`}

@@ -1,6 +1,5 @@
-import type { LucideIcon } from 'lucide-react';
-import { ArrowLeft, Maximize, Minimize } from 'lucide-react';
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { ArrowLeft, ChevronDown, ChevronLeft, ChevronRight, ChevronUp, Maximize, Minimize } from 'lucide-react';
+import { useEffect, useId, useRef, useState, type ReactNode } from 'react';
 import { AppButton } from '@/components/ui/buttons/AppButton';
 import { missionRoomAssets } from '@/lib/staticArtwork';
 import '@/styles/classroom-library.css';
@@ -9,7 +8,6 @@ interface LearningShellProps {
   eyebrow: string;
   title: string;
   description?: string | null;
-  icon: LucideIcon;
   onBack: () => void;
   progress: number;
   progressLabel: string;
@@ -25,7 +23,6 @@ export function LearningShell({
   eyebrow,
   title,
   description,
-  icon: Icon,
   onBack,
   progress,
   progressLabel,
@@ -38,20 +35,29 @@ export function LearningShell({
 }: LearningShellProps) {
   const safeProgress = Math.max(0, Math.min(100, progress));
   const [focused, setFocused] = useState(false);
+  const [asideOpen, setAsideOpen] = useState(false);
+  const asideId = useId();
   const shellRef = useRef<HTMLDivElement>(null);
   const focusButtonRef = useRef<HTMLButtonElement>(null);
+  const asideButtonRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
-    if (!focused) return;
+    if (!focused && !asideOpen) return;
     const handleEscape = (event: KeyboardEvent) => {
-      if (event.key !== 'Escape') return;
-      setFocused(false);
-      focusButtonRef.current?.focus();
+      if (event.key !== 'Escape' || event.defaultPrevented) return;
+      if (focused) {
+        setFocused(false);
+        focusButtonRef.current?.focus();
+      } else {
+        if (!(event.target instanceof Node) || !shellRef.current?.contains(event.target)) return;
+        setAsideOpen(false);
+        asideButtonRef.current?.focus();
+      }
     };
     window.addEventListener('keydown', handleEscape);
-    shellRef.current?.scrollIntoView({ block: 'start', behavior: 'instant' });
+    if (focused) shellRef.current?.scrollIntoView({ block: 'start', behavior: 'instant' });
     return () => window.removeEventListener('keydown', handleEscape);
-  }, [focused]);
+  }, [focused, asideOpen]);
 
   return (
     <div ref={shellRef} className={`learning-shell classroom-library ${focused ? 'is-focused' : ''}`}>
@@ -70,30 +76,43 @@ export function LearningShell({
         </div>
 
         <div className="learning-shell-meta">
-          {meta.map((item) => (
-            <div key={item.label}>
-              {item.label === 'Recompensa'
-                ? <img src={missionRoomAssets['icon-star']} alt="" />
-                : <Icon size={22} aria-hidden="true" />}
+          {meta.filter((item) => item.label === 'Recompensa').map((item) => (
+            <div className="learning-shell-reward" key={item.label}>
+              <img src={missionRoomAssets['icon-star']} alt="" />
               <span>{item.label}</span><strong>{item.value}</strong>
             </div>
           ))}
         </div>
       </header>
 
-      <main className={`learning-shell-stage ${aside ? 'has-aside' : ''}`}>
+      <main className={`learning-shell-stage ${aside && asideOpen ? 'has-aside' : ''}`}>
         <section className="learning-shell-content" aria-label={title}>
           <div className="classroom-reader-tools">
             {readerTools}
             {!hideReaderProgressLabel && <span aria-live="polite">{focused && <strong>{title} · </strong>}{progressLabel}</span>}
-            <button ref={focusButtonRef} type="button" aria-pressed={focused} onClick={() => setFocused((value) => !value)}>
+            {aside && !focused && <button
+              ref={asideButtonRef}
+              className="classroom-aside-toggle"
+              type="button"
+              aria-expanded={asideOpen}
+              aria-controls={asideId}
+              onClick={() => setAsideOpen((value) => !value)}
+            >
+              {asideOpen ? <ChevronLeft className="classroom-aside-icon-desktop" size={16} aria-hidden="true" /> : <ChevronRight className="classroom-aside-icon-desktop" size={16} aria-hidden="true" />}
+              {asideOpen ? <ChevronUp className="classroom-aside-icon-mobile" size={16} aria-hidden="true" /> : <ChevronDown className="classroom-aside-icon-mobile" size={16} aria-hidden="true" />}
+              {asideOpen ? 'Ocultar aulas' : 'Ver aulas do módulo'}
+            </button>}
+            <button ref={focusButtonRef} type="button" aria-pressed={focused} onClick={() => {
+              setFocused((value) => !value);
+              if (!focused) setAsideOpen(false);
+            }}>
               {focused ? <Minimize size={17} /> : <Maximize size={17} />}
               {focused ? 'Sair do modo foco' : 'Modo foco'}
             </button>
           </div>
           {children}
         </section>
-        {aside && <aside className="learning-shell-aside">{aside}</aside>}
+        {aside && <aside id={asideId} className="learning-shell-aside" hidden={!asideOpen || focused}>{aside}</aside>}
       </main>
 
       {footer && <footer className="learning-shell-footer">{footer}

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
-import { BookOpen, CheckCircle2, ChevronLeft, ChevronRight, FileQuestion, Info, Sparkles } from 'lucide-react';
+import { BookOpen, CheckCircle2, ChevronLeft, ChevronRight, Info, Sparkles } from 'lucide-react';
 import { AppButton } from '@/components/ui/buttons/AppButton';
 import { useAula } from '@/hooks/useAula';
 import { useAulaProgress } from '@/hooks/useAulaProgress';
@@ -97,7 +97,6 @@ export function AulaQuadrinho({ aulaId, moduloId, onBack, onSelectAula }: AulaQu
       eyebrow={modulo?.title ?? 'Leitura guiada'}
       title={showQuiz ? `Avaliação · ${aula.title}` : aula.title}
       description={showQuiz ? 'Responda às perguntas para concluir esta fase.' : aula.description}
-      icon={showQuiz ? FileQuestion : BookOpen}
       onBack={onBack}
       progress={showQuiz ? 100 : readerProgress}
       progressLabel={showQuiz ? 'Leitura concluída · avaliação em andamento' : `Página ${Math.min(currentPage + 1, pages.length || 1)} de ${pages.length}`}
@@ -109,7 +108,6 @@ export function AulaQuadrinho({ aulaId, moduloId, onBack, onSelectAula }: AulaQu
       ]}
       aside={showQuiz ? undefined : <LessonNavigator modulo={modulo} activeAulaId={aulaId} onSelectAula={onSelectAula} />}
       readerTools={!showQuiz ? <div className="classroom-lesson-tools">
-        {usingPlaceholders && <span className="comic-reader-demo-label">Conteúdo demonstrativo</span>}
         {aula.description && <button aria-expanded={showBriefing} onClick={() => setShowBriefing((visible) => !visible)}><Info size={14} /> Sobre a aula</button>}
       </div> : undefined}
       footer={!showQuiz ? (

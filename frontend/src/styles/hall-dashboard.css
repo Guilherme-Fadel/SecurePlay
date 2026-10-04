@@ -200,8 +200,8 @@
 .hall-achievements-panel .academy-achievement-date { display: none; }
 
 .hall-ranking-panel .dashboard-ranking-body { display:flex; flex:1; min-height:0; flex-direction:column; justify-content:center; gap:7px; padding:7px 10px 5px !important; }
-.hall-ranking-panel .academy-ranking-preview-scope { display:inline-flex; width:fit-content; min-height:16px; align-items:center; gap:5px; padding:2px 7px; border:1px solid rgba(var(--primary-rgb),.16); border-radius:999px; background:rgba(var(--primary-rgb),.06); color:var(--hall-brand); font-size:7px; font-weight:900; letter-spacing:.06em; line-height:1; text-transform:uppercase; }
-.hall-ranking-panel .academy-ranking-preview-scope i { width:5px; height:5px; border-radius:50%; background:var(--hall-brand); }
+.hall-ranking-panel .academy-ranking-preview-scope { display:flex; width:100%; align-items:center; gap:8px; color:var(--hall-ink); font-size:10px; font-weight:750; line-height:1.2; }
+.hall-ranking-panel .academy-ranking-preview-scope::after { height:1px; flex:1; background:rgba(var(--primary-rgb),.16); content:''; }
 .hall-ranking-panel .academy-ranking-preview { display:flex; min-height:0; flex:1; flex-direction:column; justify-content:center; gap:3px; margin:0; padding:0; list-style:none; }
 .hall-ranking-panel .academy-ranking-preview-row { display:grid; min-width:0; min-height:35px; align-items:center; grid-template-columns:28px 30px minmax(0,1fr) auto; gap:7px; padding:4px 7px; border:1px solid rgba(var(--primary-rgb),.1); border-radius:8px; background:linear-gradient(90deg,rgba(var(--primary-rgb),.055),transparent); }
 .hall-ranking-panel .academy-ranking-preview-position { color:var(--hall-brand); font-size:11px; font-weight:900; font-variant-numeric:tabular-nums; }

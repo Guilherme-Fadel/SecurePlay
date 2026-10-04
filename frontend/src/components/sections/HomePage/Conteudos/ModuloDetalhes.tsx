@@ -1,7 +1,7 @@
 import { useModulo } from '@/hooks/useModulo';
 import { AulaListItem } from './AulaListItem';
 import { AulaResumo } from '@/services/conteudo';
-import { ArrowLeft, CheckCircle2, Play, Sparkles, Star, Trophy } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, Play, Star, Trophy } from 'lucide-react';
 import { AppButton } from '@/components/ui/buttons/AppButton';
 import { MissionRoomAssets, useMissionRoomAssets } from '@/hooks/useMissionRoomAssets';
 import { ProgressiveImage } from '@/components/ui/visuals/ProgressiveImage';
@@ -29,7 +29,6 @@ export function ModuloDetalhes({ moduloId, onBack, onSelectAula }: ModuloDetalhe
           <div className="module-book-cover"><ProgressiveImage src={getModuleArtwork(modulo)} alt="" /></div>
           <span className="module-book-category">{modulo.category}</span>
           <h1>{modulo.title}</h1><p>{modulo.description}</p>
-          <div className="module-book-progress-title"><i /><Sparkles size={14} /><strong>PROGRESSO DA MISSÃO</strong><Sparkles size={14} /><i /></div>
           <div className="module-book-progress"><div className="module-book-stars" aria-label={`${stars} estrelas de dificuldade`}>{Array.from({ length: 3 }).map((_, index) => <Star key={index} className={index < Math.max(stars, Math.ceil(modulo.progress / 34)) ? 'is-filled' : ''} />)}</div><strong>{modulo.progress}%</strong></div>
           <div className="module-book-reward"><Trophy size={22} /><span>RECOMPENSA<strong>+{modulo.xp_bonus} XP</strong></span></div>
           {nextAula ? <AppButton icon={<Play size={17} />} onClick={() => onSelectAula(nextAula.id)}>{nextAula.progress_percent > 0 ? 'Continuar próxima aula' : 'Iniciar próxima aula'}</AppButton> : <div className="learning-module-complete"><CheckCircle2 size={16} /> Missão concluída</div>}

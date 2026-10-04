@@ -42,7 +42,7 @@ export function AulaListItem({ aula, onClick, index = 0, active = false, artSrc 
       </div>
 
       <div className="learning-lesson-meta">
-        <span><Clock3 size={11} /> {aula.type === 'video' ? `${aula.duration} min` : `${aula.page_count ?? aula.duration} pág`}</span>
+        {aula.type === 'video' && <span><Clock3 size={11} /> {aula.duration} min</span>}
         <strong>{aula.xp} XP</strong>
         {!isLocked && <ArrowRight size={15} />}
       </div>

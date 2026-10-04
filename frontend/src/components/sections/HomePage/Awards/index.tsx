@@ -1,25 +1,16 @@
-import { useMemo, useState, type ComponentType, type CSSProperties } from 'react';
+import { useMemo, useState, type CSSProperties } from 'react';
 import {
   Award,
-  BadgeCheck,
   Check,
-  ChevronsUp,
   CircleHelp,
-  Crown,
-  Flame,
   Gamepad2,
   Gem,
-  GraduationCap,
   Loader2,
   LockKeyhole,
   Medal,
   RefreshCw,
   RotateCcw,
-  Search,
-  ShieldCheck,
   Sparkles,
-  Target,
-  type LucideProps,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { PageTransition } from '@/components/shared/PageTransition';
@@ -42,12 +33,12 @@ import '@/styles/awards-ui.css';
 
 type AwardsView = 'trail' | 'shop';
 
-const categoryMeta: Record<AchievementCategory, { label: string; description: string; icon: ComponentType<LucideProps> }> = {
-  sentinel: { label: 'Sentinela', description: 'Desafios e proteção', icon: ShieldCheck },
-  specialist: { label: 'Especialista', description: 'Conteúdos e aprendizado', icon: GraduationCap },
-  investigator: { label: 'Investigador', description: 'Jogos e precisão', icon: Search },
-  consistency: { label: 'Consistência', description: 'Hábitos e sequência', icon: Flame },
-  elite: { label: 'Elite', description: 'XP e evolução', icon: Crown },
+const categoryMeta: Record<AchievementCategory, { label: string; description: string }> = {
+  sentinel: { label: 'Sentinela', description: 'Desafios e proteção' },
+  specialist: { label: 'Especialista', description: 'Conteúdos e aprendizado' },
+  investigator: { label: 'Investigador', description: 'Jogos e precisão' },
+  consistency: { label: 'Consistência', description: 'Hábitos e sequência' },
+  elite: { label: 'Elite', description: 'XP e evolução' },
 };
 
 const rarityLabels: Record<AchievementRarity, string> = {
@@ -88,10 +79,10 @@ export function Awards() {
 
         <div className="achievements-view-switch" role="tablist" aria-label="Áreas de conquistas">
           <button type="button" role="tab" aria-selected={view === 'trail'} className={view === 'trail' ? 'is-active' : ''} onClick={() => setView('trail')}>
-            <Award size={17} /> Conquistas
+            Conquistas
           </button>
           <button type="button" role="tab" aria-selected={view === 'shop'} className={view === 'shop' ? 'is-active' : ''} onClick={() => setView('shop')}>
-            <Gem size={17} /> Colecionáveis
+            Colecionáveis
           </button>
         </div>
 
@@ -127,23 +118,14 @@ function TrailView({ trail, loading, error, refetch }: {
 
   return (
     <>
-      <InfoCard raised className="achievements-summary-card">
-        <div className="achievements-summary-copy">
-          <span className="achievements-eyebrow"><Sparkles size={14} /> Progresso de maestria</span>
-          <h3>{trail.summary.unlocked} de {trail.summary.total} conquistas desbloqueadas</h3>
-          <p>Cada caminho avança automaticamente conforme suas atividades reais na plataforma.</p>
-        </div>
-        <div className="achievements-summary-progress">
-          <div className="achievements-summary-stat"><ChevronsUp size={18} /><span>Seu nível<strong>{trail.summary.level}</strong></span></div>
-          <div className="achievements-summary-stat"><DigitalKeyIcon size={32} /><span>Chaves conquistadas<strong>{trail.summary.prestigeEarned}</strong></span></div>
-        </div>
-      </InfoCard>
-
       <InfoCard raised className="achievement-map-card">
         <div className="achievement-map-main scrollbar-thin">
           <div className="achievement-map-heading">
-            <div><h3>Seus caminhos</h3><p>Selecione um marco para acompanhar os detalhes.</p></div>
-            <span><Target size={15} /> {trail.nodes.filter((node) => node.status === 'in_progress').length} em progresso</span>
+            <div>
+              <h3>Seus caminhos</h3>
+              <p className="achievement-map-metrics">{trail.summary.unlocked} de {trail.summary.total} conquistas · Nível {trail.summary.level} · {trail.summary.prestigeEarned} Chaves conquistadas</p>
+            </div>
+            <span>{trail.nodes.filter((node) => node.status === 'in_progress').length} em progresso</span>
           </div>
           <div className="achievement-branches">
             {categories.map(({ category, nodes }) => (
@@ -164,11 +146,9 @@ function AchievementBranch({ category, nodes, selectedSlug, onSelect }: {
   onSelect: (slug: string) => void;
 }) {
   const meta = categoryMeta[category];
-  const CategoryIcon = meta.icon;
   return (
     <section className={`achievement-branch branch-${category}`}>
       <div className="achievement-branch-label">
-        <span><CategoryIcon size={18} /></span>
         <div><strong>{meta.label}</strong><small>{meta.description}</small></div>
       </div>
       <div className="achievement-node-track">
@@ -176,7 +156,7 @@ function AchievementBranch({ category, nodes, selectedSlug, onSelect }: {
           return (
             <div className="achievement-node-slot" key={node.slug}>
               {index > 0 && <span className={`achievement-connector ${node.status === 'unlocked' ? 'is-complete' : ''}`} />}
-              <button type="button" className={`achievement-node is-${node.status} rarity-${node.rarity} ${selectedSlug === node.slug ? 'is-selected' : ''}`} onClick={() => onSelect(node.slug)} aria-label={node.name}>
+              <button type="button" className={`achievement-node is-${node.status} rarity-${node.rarity} ${selectedSlug === node.slug ? 'is-selected' : ''}`} onClick={() => onSelect(node.slug)} aria-pressed={selectedSlug === node.slug} aria-label={`${node.name}, nível ${node.tier}, ${node.status === 'unlocked' ? 'desbloqueada' : node.status === 'in_progress' ? 'em progresso' : 'bloqueada'}`}>
                 <span className="achievement-node-progress" style={{ '--node-progress': `${node.progressPercent * 3.6}deg` } as CSSProperties} />
                 <AchievementIcon slug={node.slug} icon={node.iconName ?? node.icon} artworkUrl={node.artworkUrl} size={22} />
                 {node.status === 'unlocked' && <Check className="achievement-node-check" size={12} strokeWidth={3} />}
@@ -202,16 +182,18 @@ function AchievementDetail({ node }: { node: AchievementNode | null }) {
       <span className="achievement-detail-path">{category.label} · Nível {node.tier}</span>
       <h3>{node.name}</h3>
       <p>{node.description}</p>
-      <div className="achievement-detail-progress">
-        <div><span>{node.status === 'unlocked' ? 'Concluída' : 'Progresso'}</span><strong>{node.target === null ? '?' : `${node.progress}/${node.target}`}</strong></div>
-        <div className="achievement-detail-bar"><span style={{ width: `${node.progressPercent}%` }} /></div>
+      <div className={`achievement-status-message is-${node.status}`}>
+        {node.status === 'unlocked' ? 'Desbloqueada' : node.status === 'in_progress' ? 'Continue avançando' : 'Complete o marco anterior'}
       </div>
       <div className="achievement-detail-reward">
-        <DigitalKeyIcon size={36} />
-        <div><span>Recompensa</span><strong>{node.rewardPrestige ?? '?'} Chaves Digitais</strong></div>
+        <DigitalKeyIcon size={24} />
+        <div><span>Recompensa</span><strong>{node.rewardPrestige ?? '?'} {node.rewardPrestige === 1 ? 'Chave Digital' : 'Chaves Digitais'}</strong></div>
       </div>
-      <div className={`achievement-status-message is-${node.status}`}>
-        {node.status === 'unlocked' ? <><BadgeCheck size={17} /> Desbloqueada</> : node.status === 'in_progress' ? <><Target size={17} /> Continue avançando</> : <><LockKeyhole size={17} /> Complete o marco anterior</>}
+      <div className="achievement-detail-progress">
+        <div><span>{node.status === 'unlocked' ? 'Concluída' : 'Progresso'}</span><strong>{node.target === null ? '?' : `${node.progress}/${node.target}`}</strong></div>
+        <div className="achievement-detail-bar" role="progressbar" aria-label="Progresso da conquista" aria-valuemin={0} aria-valuemax={100} aria-valuenow={node.progressPercent}>
+          <span style={{ width: `${node.progressPercent}%` }} />
+        </div>
       </div>
     </aside>
   );
