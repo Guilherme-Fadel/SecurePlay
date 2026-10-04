@@ -95,8 +95,8 @@ export function ModuloList({ onSelectModulo }: ModuloListProps) {
       </section>
 
       <section className="missions-shelf-section">
-        <div className="missions-shelf-heading"><h2>Missões deste nível</h2></div>
         <div className="missions-filter-bar">
+          <h2>Missões deste nível</h2>
           <div>{statusFilters.map((filter) => <AppFilterChip key={filter.key} selected={filterStatus === filter.key} onClick={() => setFilterStatus(filter.key)}>{filter.label}</AppFilterChip>)}</div>
         </div>
         <div className="missions-carousel">
@@ -109,7 +109,6 @@ export function ModuloList({ onSelectModulo }: ModuloListProps) {
               </div>
             ) : (
               <>
-              {levelModules.length > MODULES_PER_PAGE && <button type="button" className="missions-carousel-arrow is-prev" disabled={carouselStart === 0} onClick={() => { setCarouselDirection('prev'); setCarouselStart((current) => Math.max(0, current - MODULES_PER_PAGE)); }} aria-label="Ver página anterior de missões"><ChevronLeft size={24} /></button>}
               <AnimatePresence initial={false} custom={carouselDirection} mode="popLayout">
                 {visibleModules.map((modulo, index) => (
                   <motion.div
@@ -127,10 +126,15 @@ export function ModuloList({ onSelectModulo }: ModuloListProps) {
                   </motion.div>
                 ))}
               </AnimatePresence>
-              {levelModules.length > MODULES_PER_PAGE && <button type="button" className="missions-carousel-arrow is-next" disabled={carouselStart >= carouselMax} onClick={() => { setCarouselDirection('next'); setCarouselStart((current) => Math.min(carouselMax, current + MODULES_PER_PAGE)); }} aria-label="Ver próxima página de missões"><ChevronRight size={24} /></button>}
               </>
             )}
           </div>
+          {levelModules.length > MODULES_PER_PAGE && (
+            <nav className="missions-carousel-controls" aria-label="Navegação das missões deste nível">
+              <button type="button" className="missions-carousel-arrow is-prev" disabled={carouselStart === 0} onClick={() => { setCarouselDirection('prev'); setCarouselStart((current) => Math.max(0, current - MODULES_PER_PAGE)); }} aria-label="Ver página anterior de missões"><ChevronLeft size={24} /></button>
+              <button type="button" className="missions-carousel-arrow is-next" disabled={carouselStart >= carouselMax} onClick={() => { setCarouselDirection('next'); setCarouselStart((current) => Math.min(carouselMax, current + MODULES_PER_PAGE)); }} aria-label="Ver próxima página de missões"><ChevronRight size={24} /></button>
+            </nav>
+          )}
         </div>
       </section>
     </div>

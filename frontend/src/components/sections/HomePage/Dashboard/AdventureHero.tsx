@@ -16,12 +16,11 @@ interface AdventureHeroProps {
   onContinue: () => void;
 }
 
-export function AdventureHero({ user, stats, streak, currentModule, onContinue }: AdventureHeroProps) {
+export function AdventureHero({ stats, streak, currentModule, onContinue }: AdventureHeroProps) {
   const totalPoints = stats?.totalPoints ?? 0;
   const levelTarget = totalPoints + (stats?.xpToNextLevel ?? 0);
   const xpPercent = levelTarget ? Math.round((totalPoints / levelTarget) * 100) : 0;
   const moduleProgress = currentModule?.progress ?? 0;
-  const firstName = user?.name?.trim().split(/\s+/)[0] || 'Agente';
   const checkedDays = streak?.checkedDays ?? weekDays.map(() => false);
   const missionArtwork = currentModule
     ? getModuleArtwork({ title: currentModule.title, artworkUrl: currentModule.artworkUrl, thumbnail: null })
@@ -36,7 +35,6 @@ export function AdventureHero({ user, stats, streak, currentModule, onContinue }
             <img src={missionPageTab} alt="" aria-hidden="true" />
             <span>Continue sua aventura</span>
           </div>
-          <p className="hall-hero-greeting">Olá, {firstName}!</p>
           <h1 id="hall-hero-title">{currentModule?.title ?? 'Sua próxima missão espera por você'}</h1>
           <p className="hall-lesson-line">
             <BookOpen size={16} aria-hidden="true" />

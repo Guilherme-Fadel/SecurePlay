@@ -7,7 +7,7 @@ import { useState, useEffect } from 'react';
 import { getChallengeStatus, getChallengeQuestions, QuestionResponse } from '@/services/challenge';
 import { getCached, setCache } from '@/lib/queryCache';
 import { getChallengeArtwork } from '@/lib/challengeArtwork';
-import { Sparkles } from 'lucide-react';
+import { CircleCheck, Sparkles } from 'lucide-react';
 
 export function DailyChallenge() {
   const { challenge, loading } = useDailyChallenge();
@@ -107,10 +107,15 @@ export function DailyChallenge() {
             }} />
             <div className="dashboard-daily-summary shrink-0">
               <h3>{challenge.title}</h3>
-              <p>{!completed && totalObjectives > 0 && doneObjectives === totalObjectives
-                ? 'Refaça o quiz para concluir o envio.'
-                : 'Complete hoje e mantenha sua aventura em movimento.'}</p>
-              {completed && <span className="hall-daily-complete">Missão concluída</span>}
+              {!completed ? (
+                <p>{totalObjectives > 0 && doneObjectives === totalObjectives
+                  ? 'Refaça o quiz para concluir o envio.'
+                  : 'Complete hoje e mantenha sua aventura em movimento.'}</p>
+              ) : (
+                <span className="hall-daily-complete" role="status">
+                  <CircleCheck size={12} aria-hidden="true" /> Concluída hoje
+                </span>
+              )}
             </div>
             {doneObjectives > 0 && totalObjectives > 0 && (
               <div className="academy-mission-completion">

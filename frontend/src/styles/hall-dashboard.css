@@ -49,7 +49,6 @@
 .hall-ribbon { position: relative; width: 250px; aspect-ratio: 1000 / 219; margin: -7px 0 0 -10px; }
 .hall-ribbon img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; }
 .hall-ribbon span { position: absolute; z-index: 1; top: 52%; left: 59%; max-width: 72%; color: #fff; font-size: 11px; font-weight: 850; line-height: 1; text-align: center; text-shadow: 0 1px 2px #32116e; white-space: nowrap; transform: translate(-50%, -50%); }
-.hall-hero-greeting { margin: 1px 0 2px; color: var(--primary); font-size: 13px; font-weight: 800; }
 .hall-mission-card h1 { max-width: 540px; margin: 0; color: var(--hall-ink); font-size: clamp(25px, 2.25vw, 34px); font-weight: 900; letter-spacing: -.045em; line-height: 1.06; }
 .hall-lesson-line { display: flex; align-items: center; gap: 7px; margin: 10px 0 6px; color: #4e4969; font-size: 12px; }
 .hall-mission-progress-row { display: flex; max-width: 330px; align-items: center; gap: 10px; }
@@ -183,7 +182,7 @@
 .hall-daily-hitarea.is-clickable:focus-within .dashboard-daily-card { border-color: var(--primary) !important; box-shadow: 0 12px 26px rgba(var(--primary-rgb), .24) !important; transform: translateY(-2px); }
 .hall-daily-overlay { position: absolute; z-index: 3; inset: 0; width: 100%; border: 0; border-radius: inherit; background: transparent; cursor: pointer; }
 .hall-daily-overlay:focus-visible { outline: 3px solid var(--primary); outline-offset: 3px; }
-.hall-daily-complete { display: inline-block; margin-top: 5px; color: var(--secondary-dark); font-size: 9px; font-weight: 800; }
+.hall-daily-panel .dashboard-daily-summary > span.hall-daily-complete { display: inline-flex; width: max-content; max-width: 100%; min-height: 20px; align-items: center; justify-content: center; flex-wrap: nowrap; gap: 4px; margin-top: 5px; padding: 2px 7px; border: 1px solid rgba(32,142,128,.32); border-radius: 999px; background: rgba(32,142,128,.11); color: #147264 !important; font-size: 9px !important; font-weight: 800; line-height: 1; white-space: nowrap; }
 @media (prefers-reduced-motion: reduce) {
   .hall-daily-hitarea.is-clickable:hover .dashboard-daily-card,
   .hall-daily-hitarea.is-clickable:focus-within .dashboard-daily-card { transform: none; }
@@ -294,10 +293,10 @@
 :root:not([data-theme='light']) .hall-dashboard { --hall-ink: #f6f2ff; --hall-muted: #b9b2cc; }
 :root:not([data-theme='light']) .hall-mission-card,
 :root:not([data-theme='light']) .hall-player-card { background: linear-gradient(145deg,#241b43,#30234d); border-color: rgba(242,181,46,.35); }
-:root:not([data-theme='light']) .hall-hero-greeting,
 :root:not([data-theme='light']) .hall-lesson-line,
 :root:not([data-theme='light']) .hall-level-copy span,
 :root:not([data-theme='light']) .hall-week-row small { color: #d1c9e0; }
+:root:not([data-theme='light']) .hall-daily-panel .dashboard-daily-summary > span.hall-daily-complete { border-color: rgba(90,220,190,.38); background: rgba(28,154,128,.2); color: #8fe6cf !important; }
 :root:not([data-theme='light']) .hall-reward { background: rgba(80,58,28,.65); }
 :root:not([data-theme='light']) .hall-reward strong { color: #fff; }
 @media (prefers-reduced-motion: reduce) { .hall-progress-track i { transition: none; } }

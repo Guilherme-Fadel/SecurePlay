@@ -12,7 +12,7 @@ Referência metodológica: [Geist Design System](https://vercel.com/geist/introd
 
 - `src/styles/theme.css` define marca, fontes e cores base. `src/styles/app-ui.css` define cores de superfície e texto dos temas claro/escuro e as primitivas de controle. As paletas da empresa continuam chegando por `useEmpresaTema`.
 - Para controles, use `--app-control-height`, `--app-control-radius`, `--app-control-focus`, `--dashboard-border`, `--dashboard-surface-soft`, `--dashboard-text` e `--dashboard-muted`. Títulos administrativos usam `--admin-title-size` e descrições usam `--admin-copy-size`.
-- `AppInput` cobre texto, e-mail e URL; `AppSearchInput` cobre busca e exige `label`; `AppSelect` cobre escolhas nativas, com seta uniforme em `app-ui.css`. Todos têm altura, borda, tipografia, foco, hover e desabilitado em `app-ui.css`. Campos de cor, arquivo, checkbox e switches mantêm suas estruturas próprias.
+- `AppInput` cobre texto, e-mail e URL; `AppSearchInput` cobre busca e exige `label`; `AppSelect` apresenta opções em lista própria com tema claro/escuro, mantendo um select oculto para valor de formulário e evento `onChange`. O controle visível aceita clique, setas, Home/End, busca por letras, Enter, Escape e Tab. Todos têm altura, borda, tipografia, foco, hover e desabilitado em `app-ui.css`. Campos de cor, arquivo, checkbox e switches mantêm suas estruturas próprias.
 - `AppButton` usa variantes `primary`, `secondary`, `soft` e `ghost`, com tamanhos `sm`, `control` e `md`. `AppFilterChip` é para filtros categóricos curtos com `aria-pressed`; não substitui select com muitas opções. `AppSectionHeader` é para seções internas, não para o título de página.
 
 ## Listagens administrativas

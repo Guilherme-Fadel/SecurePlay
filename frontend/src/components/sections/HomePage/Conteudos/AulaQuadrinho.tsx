@@ -101,6 +101,7 @@ export function AulaQuadrinho({ aulaId, moduloId, onBack, onSelectAula }: AulaQu
       onBack={onBack}
       progress={showQuiz ? 100 : readerProgress}
       progressLabel={showQuiz ? 'Leitura concluída · avaliação em andamento' : `Página ${Math.min(currentPage + 1, pages.length || 1)} de ${pages.length}`}
+      hideReaderProgressLabel={!showQuiz}
       meta={[
         { label: 'Páginas', value: pages.length },
         { label: 'Recompensa', value: `${aula.xp} XP` },

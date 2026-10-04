@@ -101,7 +101,7 @@ function RankingContent({ scope, companyId, companies, onCompanyChange, onScopeC
             {viewMode === 'current' && <div className="ranking-season-pill" title={season ? undefined : 'Nenhuma temporada configurada'}><CalendarDays size={17} />{seasonLabel(season)}</div>}
             {viewMode === 'season' && selectedSeason && <div className="ranking-season-pill"><CalendarDays size={17} />{selectedSeason.name}{selectedSeason.completeness === 'complete' ? ' · completa' : selectedSeason.completeness === 'partial' ? ' · parcial' : ' · sem histórico completo'}</div>}
             {viewMode === 'total' && <div className="ranking-season-pill"><Medal size={17} />Pontuação acumulada</div>}
-            <button className="ranking-refresh" type="button" onClick={refetch} disabled={loading} aria-label="Atualizar ranking" title="Atualizar ranking"><RefreshCw size={17} /></button>
+            <button className="ranking-refresh" type="button" onClick={refetch} disabled={loading} aria-label="Atualizar ranking" title="Atualizar ranking"><RefreshCw size={16} /></button>
           </div>
         </header>
         {waitingForSeasonChoice ? <div className="ranking-history-empty" role="status"><h2>Nenhum histórico completo disponível</h2><p>{closedSeasons.length === 0 ? 'Ainda não há uma temporada encerrada para consultar.' : 'Escolha uma temporada encerrada para verificar os dados disponíveis. Os períodos sem histórico completo serão identificados e não exibidos como resultados finais.'}</p></div> :
@@ -110,7 +110,7 @@ function RankingContent({ scope, companyId, companies, onCompanyChange, onScopeC
           viewMode === 'season' && ranking.dataCompleteness === 'unavailable' ? <div className="ranking-history-empty" role="status"><h2>Histórico não disponível</h2><p>Não há dados completos para montar a classificação final desta temporada.</p></div> :
           <div className="ranking-content">
             {!ranking.companyAvailable && <p className="ranking-scope-hint">Você ainda não faz parte de uma instituição. Exibindo o ranking disponível.</p>}
-            <RankingHero top={ranking.top} scopeLabel={scopeLabel} xpLabel={xpLabel} xpQualifier={viewMode === 'total' ? 'acumulado' : 'na temporada'} />
+            <RankingHero top={ranking.top} scopeLabel={scopeLabel} xpLabel={xpLabel} />
             {viewMode !== 'current' && ranking.dataCompleteness === 'partial' && !(viewMode === 'season' && !hasCompleteClosedSeason && closedSeasons.length > 0) && <p className="ranking-history-notice" role="status">Este histórico é parcial e não representa o resultado completo deste período.</p>}
             {viewMode === 'season' && !hasCompleteClosedSeason && closedSeasons.length > 0 && <p className="ranking-history-notice" role="status">Ainda não há temporada encerrada com histórico completo. Os períodos incompletos estão identificados no seletor.</p>}
             {viewMode !== 'current' && ranking.dataCompleteness === 'unavailable' && <p className="ranking-history-notice" role="status">Os dados deste ranking não estão disponíveis.</p>}
@@ -125,24 +125,24 @@ function RankingContent({ scope, companyId, companies, onCompanyChange, onScopeC
   );
 }
 
-function RankingHero({ top, scopeLabel, xpLabel, xpQualifier }: { top: RankingEntry[]; scopeLabel: string; xpLabel: string; xpQualifier: string }) {
+function RankingHero({ top, scopeLabel, xpLabel }: { top: RankingEntry[]; scopeLabel: string; xpLabel: string }) {
   return <section className="ranking-hero" aria-label={`Galeria de Honra — ${scopeLabel}, ${xpLabel}`}>
     <img className="ranking-hero-art" src={hallArtwork} alt="" />
     <div className="ranking-hero-light" aria-hidden="true" />
     <div className="ranking-podium" role="list" aria-label="Três primeiros colocados">
-      {top.slice(0, 3).map((entry, index) => <LeaderBanner key={entry.id} entry={entry} place={index + 1} xpQualifier={xpQualifier} />)}
+      {top.slice(0, 3).map((entry, index) => <LeaderBanner key={entry.id} entry={entry} place={index + 1} />)}
     </div>
     {top.length === 0 && <p className="ranking-hero-empty">A galeria está esperando seus primeiros participantes.</p>}
   </section>;
 }
 
-function LeaderBanner({ entry, place, xpQualifier }: { entry: RankingEntry; place: number; xpQualifier: string }) {
-  return <div className={`ranking-leader ranking-leader-${place}`} role="listitem" aria-label={`${entry.position}º lugar: ${entry.name}, ${formatXp(entry.points)} ${xpQualifier}`}>
+function LeaderBanner({ entry, place }: { entry: RankingEntry; place: number }) {
+  return <div className={`ranking-leader ranking-leader-${place}`} role="listitem" aria-label={`${entry.position}º lugar: ${entry.name}, ${formatXp(entry.points)}`}>
     <img className="ranking-leader-art" src={bannerByPosition[place - 1]} alt="" />
     {place === 1 && <Crown className="ranking-leader-crown" size={32} aria-hidden="true" />}
     <span className="ranking-leader-medal">{entry.position}</span>
     <Avatar name={entry.name} imageUrl={entry.profileImageUrl} className="ranking-leader-avatar" />
-    <span className="ranking-leader-details"><strong title={entry.name}>{entry.name}</strong><b>{formatXp(entry.points)}</b><small>{xpQualifier}</small></span>
+    <span className="ranking-leader-details"><strong title={entry.name}>{entry.name}</strong><b>{formatXp(entry.points)}</b></span>
   </div>;
 }
 
