@@ -46,12 +46,7 @@ import {
   CheckCircle2,
   Link2,
   LayoutTemplate,
-  Palette,
-  RotateCcw,
-  SlidersHorizontal,
-  Upload,
   UsersRound,
-  WandSparkles,
 } from "lucide-react";
 import "@/styles/app-ui.css";
 import "./admin-ui.css";
@@ -86,6 +81,7 @@ const Admin = forwardRef<AdminSaveHandle, AdminProps>(function Admin(
   );
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
+  const [failedLogoPreview, setFailedLogoPreview] = useState<string | null>(null);
   const [empresaNome, setEmpresaNome] = useState<string>("");
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
@@ -262,7 +258,7 @@ const Admin = forwardRef<AdminSaveHandle, AdminProps>(function Admin(
         const nextPalette = data.paleta ?? DEFAULT_PALETTES[0].paleta;
         setPaleta(nextPalette);
         setLogoUrl(data.logo_url ?? null);
-        setLogoPreview(data.logo_url ?? null);
+        setLogoPreview(data.logo_preview_url ?? null);
         setParameters(nextParameters);
         setBaseline(
           JSON.stringify({
@@ -299,9 +295,18 @@ const Admin = forwardRef<AdminSaveHandle, AdminProps>(function Admin(
     setMessage("Paleta resetada para o padrão");
     setTimeout(() => setMessage(null), 3000);
   };
+  const handleRemoveLogo = () => {
+    if (logoPreviewObjectUrlRef.current) {
+      URL.revokeObjectURL(logoPreviewObjectUrlRef.current);
+      logoPreviewObjectUrlRef.current = null;
+    }
+    setLogoUrl(null);
+    setLogoPreview(null);
+  };
   const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    e.target.value = "";
     const allowedTypes = ["image/png", "image/webp", "image/jpeg"];
     if (!allowedTypes.includes(file.type)) {
       setMessage("Formato inválido. Use PNG, WEBP ou JPEG.");
@@ -363,18 +368,23 @@ const Admin = forwardRef<AdminSaveHandle, AdminProps>(function Admin(
           ? await updateCompanySettings(empresaAlvoId, {
               nome: empresaNome.trim(),
               paleta,
-              logo_url: logoUrl ?? undefined,
+              logo_url: logoUrl,
               parametros: parameters,
             })
           : {
               tema: await updateTema({
                 paleta,
-                logo_url: logoUrl ?? undefined,
+                logo_url: logoUrl,
               }),
               parametros: parameters,
             };
       const updatedTema = result.tema;
       setEmpresaNome(updatedTema.nome);
+      if (logoPreviewObjectUrlRef.current) {
+        URL.revokeObjectURL(logoPreviewObjectUrlRef.current);
+        logoPreviewObjectUrlRef.current = null;
+      }
+      setLogoPreview(updatedTema.logo_preview_url ?? null);
       setBaseline(
         JSON.stringify({
           paleta: updatedTema.paleta ?? paleta,
@@ -399,7 +409,7 @@ const Admin = forwardRef<AdminSaveHandle, AdminProps>(function Admin(
         setSession({
           ...user,
           empresa_paleta: updatedTema.paleta,
-          empresa_logo: updatedTema.logo_url,
+          empresa_logo: updatedTema.logo_preview_url,
           empresa_nome: updatedTema.nome,
         });
       }
@@ -659,7 +669,7 @@ const Admin = forwardRef<AdminSaveHandle, AdminProps>(function Admin(
                       description="Ajuste a marca e as cores usadas na experiência SecurePlay."
                       action={
                         <div className="admin-heading-actions">
-                          <AppButton variant="ghost" icon={<RotateCcw size={16} />} onClick={handleReset}>
+                          <AppButton variant="ghost" onClick={handleReset}>
                             Restaurar padrão
                           </AppButton>
                         </div>
@@ -677,18 +687,17 @@ const Admin = forwardRef<AdminSaveHandle, AdminProps>(function Admin(
                             <InfoCard.Header
                               title="Logotipo"
                               action={<AdminHelpTip label="Logotipo" text="Use uma versão legível em fundos claros e escuros." />}
-                              icon={Building2}
-                              variant="primary"
                             />
                             <InfoCard.Section className="admin-logo-content">
                               <div className="admin-logo-preview">
-                                {logoPreview ? (
+                                {logoPreview && logoPreview !== failedLogoPreview ? (
                                   <img
                                     src={logoPreview}
                                     alt="Logo atual da empresa"
+                                    onError={() => setFailedLogoPreview(logoPreview)}
                                   />
                                 ) : (
-                                  <Building2 size={25} aria-hidden="true" />
+                                  <span>{logoUrl ? "Logo indisponível" : "Sem logotipo"}</span>
                                 )}
                               </div>
                               <div className="admin-logo-copy">
@@ -696,25 +705,31 @@ const Admin = forwardRef<AdminSaveHandle, AdminProps>(function Admin(
                                 <p>
                                   PNG, WEBP ou JPEG. Tamanho máximo de 2 MB.
                                 </p>
-                                <label
-                                  className={cn(
-                                    "app-button app-button--soft app-button--sm admin-upload-button",
-                                    uploading && "is-disabled",
+                                <div className="admin-logo-actions">
+                                  <label
+                                    className={cn(
+                                      "app-button app-button--soft app-button--sm admin-upload-button",
+                                      uploading && "is-disabled",
+                                    )}
+                                  >
+                                    <span>
+                                      {uploading
+                                        ? "Enviando..."
+                                        : "Selecionar arquivo"}
+                                    </span>
+                                    <input
+                                      type="file"
+                                      accept="image/png,image/webp,image/jpeg"
+                                      onChange={handleLogoUpload}
+                                      disabled={uploading}
+                                    />
+                                  </label>
+                                  {logoUrl && (
+                                    <AppButton variant="ghost" size="sm" onClick={handleRemoveLogo} disabled={uploading || saving}>
+                                      Remover logotipo
+                                    </AppButton>
                                   )}
-                                >
-                                  <Upload size={15} />
-                                  <span>
-                                    {uploading
-                                      ? "Enviando..."
-                                      : "Selecionar arquivo"}
-                                  </span>
-                                  <input
-                                    type="file"
-                                    accept="image/png,image/webp,image/jpeg"
-                                    onChange={handleLogoUpload}
-                                    disabled={uploading}
-                                  />
-                                </label>
+                                </div>
                               </div>
                             </InfoCard.Section>
                           </InfoCard>
@@ -728,8 +743,6 @@ const Admin = forwardRef<AdminSaveHandle, AdminProps>(function Admin(
                           <InfoCard raised className="admin-colors-card">
                             <InfoCard.Header
                               title="Paletas sugeridas"
-                              icon={Palette}
-                              variant="secondary"
                             />
                             <InfoCard.Section className="admin-palette-section">
                               <div className="admin-palette-grid">
@@ -787,9 +800,6 @@ const Admin = forwardRef<AdminSaveHandle, AdminProps>(function Admin(
 
                             <InfoCard.Section className="admin-color-generator">
                               <div className="admin-subsection-heading">
-                                <div className="admin-subsection-icon is-primary">
-                                  <WandSparkles size={17} />
-                                </div>
                                 <div className="admin-subsection-copy">
                                   <strong>Gerar paleta automaticamente</strong>
                                   <AdminHelpTip label="Gerar paleta automaticamente" text="Selecione uma cor principal para gerar combinações equilibradas." />
@@ -813,9 +823,6 @@ const Admin = forwardRef<AdminSaveHandle, AdminProps>(function Admin(
 
                             <InfoCard.Section className="admin-manual-colors">
                               <div className="admin-subsection-heading">
-                                <div className="admin-subsection-icon is-secondary">
-                                  <SlidersHorizontal size={17} />
-                                </div>
                                 <div className="admin-subsection-copy">
                                   <strong>Ajuste manual</strong>
                                   <AdminHelpTip label="Ajuste manual" text="Refine as cores individuais usadas pela marca." />
@@ -881,7 +888,8 @@ const Admin = forwardRef<AdminSaveHandle, AdminProps>(function Admin(
                       <aside className="admin-preview-column">
                         <AdminThemePreview
                           paleta={paleta}
-                          logoPreview={logoPreview}
+                          logoPreview={logoPreview && logoPreview !== failedLogoPreview ? logoPreview : null}
+                          onLogoError={setFailedLogoPreview}
                           empresaNome={empresaNome}
                           userInitial={user.name?.charAt(0).toUpperCase() ?? ""}
                         />
@@ -889,7 +897,6 @@ const Admin = forwardRef<AdminSaveHandle, AdminProps>(function Admin(
                         <div className="admin-mobile-actions">
                           <AppButton
                             variant="ghost"
-                            icon={<RotateCcw size={16} />}
                             onClick={handleReset}
                           >
                             Restaurar

@@ -119,10 +119,18 @@
 }
 
 .admin-logo-preview img {
+  display: block;
   width: 100%;
   height: 100%;
-  padding: 10px;
+  min-width: 0;
+  min-height: 0;
   object-fit: contain;
+}
+
+.admin-logo-preview span {
+  color: var(--dashboard-muted);
+  font-size: 11px;
+  font-weight: 600;
 }
 
 .admin-logo-copy {
@@ -147,6 +155,13 @@
 
 .admin-upload-button {
   width: fit-content;
+}
+
+.admin-logo-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
 }
 
 .admin-upload-button.is-disabled {
@@ -235,30 +250,9 @@
 }
 
 .admin-subsection-heading {
-  position: relative;
   display: flex;
   align-items: flex-start;
-  gap: 11px;
   margin-bottom: 16px;
-}
-
-.admin-subsection-icon {
-  display: grid;
-  width: 36px;
-  height: 36px;
-  flex: 0 0 36px;
-  place-items: center;
-  border-radius: 10px;
-}
-
-.admin-subsection-icon.is-primary {
-  background: rgba(var(--primary-rgb), 0.1);
-  color: var(--primary);
-}
-
-.admin-subsection-icon.is-secondary {
-  background: rgba(var(--secondary-rgb), 0.1);
-  color: var(--secondary-dark);
 }
 
 .admin-subsection-heading strong {
@@ -287,6 +281,23 @@
   border-radius: 9px;
   background: transparent;
   cursor: pointer;
+}
+
+.admin-generator-control input[type='color']::-webkit-color-swatch-wrapper,
+.admin-color-field input[type='color']::-webkit-color-swatch-wrapper {
+  padding: 0;
+}
+
+.admin-generator-control input[type='color']::-webkit-color-swatch,
+.admin-color-field input[type='color']::-webkit-color-swatch {
+  border: 0;
+  border-radius: inherit;
+}
+
+.admin-generator-control input[type='color']::-moz-color-swatch,
+.admin-color-field input[type='color']::-moz-color-swatch {
+  border: 0;
+  border-radius: inherit;
 }
 
 .admin-generator-control input[type='color'] {
@@ -397,6 +408,7 @@
 }
 
 .admin-preview-company-mark {
+  position: relative;
   display: grid;
   width: 30px;
   height: 30px;
@@ -409,10 +421,12 @@
 }
 
 .admin-preview-company-mark img {
+  position: absolute;
+  inset: 0;
+  display: block;
   width: 100%;
   height: 100%;
-  padding: 4px;
-  object-fit: contain;
+  object-fit: cover;
 }
 
 .admin-preview-sidebar > i {

@@ -154,7 +154,7 @@ function HomeContent() {
 
         <div className="secure-home flex h-screen overflow-hidden">
 
-          <Sidebar>
+          <Sidebar logoUrl={user?.empresa_logo}>
             <SidebarItem id="dashboard" icon={<LayoutDashboard />} text="Início" active={activeSection === 'dashboard'} onSelect={setActiveSection}/>
             <SidebarItem id="conteudos" icon={<BookOpenIcon />} text="Aprender" active={activeSection === 'conteudos'} onSelect={setActiveSection}/>
             <SidebarItem id="desafios" icon={<Gamepad2 />} text="Jogos" active={activeSection === 'desafios'} onSelect={setActiveSection}/>

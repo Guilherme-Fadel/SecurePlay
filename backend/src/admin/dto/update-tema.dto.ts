@@ -32,5 +32,5 @@ export class UpdateTemaDto {
 
   @IsOptional()
   @IsString()
-  logo_url?: string;
+  logo_url?: string | null;
 }

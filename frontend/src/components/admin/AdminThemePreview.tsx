@@ -1,5 +1,4 @@
 import type { CSSProperties } from 'react';
-import { Eye, ShieldCheck } from 'lucide-react';
 import { EmpresaPaleta } from '@/services/me';
 import { InfoCard } from '@/components/ui/visuals/InfoCard';
 import { AppSectionHeader } from '@/components/ui/visuals/AppSectionHeader';
@@ -8,6 +7,7 @@ import { AdminHelpTip } from './AdminHelpTip';
 interface AdminThemePreviewProps {
   paleta: EmpresaPaleta;
   logoPreview: string | null;
+  onLogoError: (url: string) => void;
   empresaNome: string;
   userInitial: string;
 }
@@ -16,11 +16,11 @@ interface AdminThemePreviewProps {
  * Amostra do dashboard com a paleta selecionada. Componente de apresentacao:
  * nao busca dados e nao decide nada, so reflete a paleta recebida.
  */
-export function AdminThemePreview({ paleta, logoPreview, empresaNome, userInitial }: AdminThemePreviewProps) {
+export function AdminThemePreview({ paleta, logoPreview, onLogoError, empresaNome, userInitial }: AdminThemePreviewProps) {
     return (<section className="admin-settings-section admin-preview-section">
       <AppSectionHeader title="Pré-visualização" action={<AdminHelpTip label="Pré-visualização" text="Uma amostra do dashboard com a paleta selecionada." />}/>
       <InfoCard raised className="admin-preview-card">
-        <InfoCard.Header title="Dashboard da empresa" icon={Eye} variant="accent"/>
+        <InfoCard.Header title="Dashboard da empresa"/>
         <InfoCard.Section>
           <div className="admin-interface-preview" style={{
             '--preview-primary': paleta.primary,
@@ -33,7 +33,7 @@ export function AdminThemePreview({ paleta, logoPreview, empresaNome, userInitia
         } as CSSProperties}>
             <div className="admin-preview-sidebar">
               <div className="admin-preview-company-mark">
-                {logoPreview ? <img src={logoPreview} alt=""/> : <ShieldCheck size={16}/>}
+                {logoPreview ? <img src={logoPreview} alt="" onError={() => onLogoError(logoPreview)}/> : <span aria-hidden="true">{empresaNome.charAt(0).toUpperCase() || 'S'}</span>}
               </div>
               <i className="is-active"/><i /><i /><i />
             </div>

@@ -48,3 +48,11 @@ export function extensionForLogo(contentType: string) {
   }
   return EXTENSIONS[contentType];
 }
+
+export function isCompanyLogoKey(companyId: number, source: string) {
+  const prefix = `empresas/${companyId}/`;
+  return (
+    source.startsWith(prefix) &&
+    /^logo-[0-9a-f]{24}\.(png|jpg|webp)$/.test(source.slice(prefix.length))
+  );
+}

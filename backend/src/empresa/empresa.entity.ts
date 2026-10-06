@@ -23,8 +23,8 @@ export class Empresa {
   @Column({ type: 'json', nullable: true })
   parametros_funcionalidades: CompanyParameters | null;
 
-  @Column({ length: 500, nullable: true })
-  logo_url: string;
+  @Column({ type: 'varchar', length: 500, nullable: true })
+  logo_url: string | null;
 
   @Column({ type: 'json', nullable: true })
   paleta: {

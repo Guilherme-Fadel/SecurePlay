@@ -467,6 +467,7 @@
 }
 
 .secure-sidebar-logo-icon {
+  position: relative;
   display: grid;
   width: 40px;
   height: 40px;
@@ -476,6 +477,16 @@
   background: var(--primary);
   box-shadow: 0 6px 14px rgba(var(--primary-rgb), 0.18);
   color: #fff;
+}
+
+.secure-sidebar-logo-icon img {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: inherit;
+  object-fit: cover;
 }
 
 .secure-sidebar-logo-copy {

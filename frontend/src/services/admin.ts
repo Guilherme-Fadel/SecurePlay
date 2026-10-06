@@ -5,10 +5,11 @@ import type { CompanyParameters } from "@/config/features";
 export interface TemaEmpresa {
   nome: string;
   logo_url: string | null;
+  logo_preview_url: string | null;
   paleta: EmpresaPaleta | null;
 }
 
-export interface EmpresaAdministravel extends TemaEmpresa {
+export interface EmpresaAdministravel extends Omit<TemaEmpresa, 'logo_preview_url'> {
   id: number;
 }
 
@@ -120,7 +121,7 @@ export async function updateCompanySettings(
   data: {
     nome: string;
     paleta: EmpresaPaleta;
-    logo_url?: string;
+    logo_url?: string | null;
     parametros: CompanyParameters;
   },
 ): Promise<{ tema: TemaEmpresa; parametros: CompanyParameters }> {
@@ -132,7 +133,7 @@ export async function updateCompanySettings(
 }
 
 export async function updateTema(
-  data: { paleta?: EmpresaPaleta; logo_url?: string },
+  data: { paleta?: EmpresaPaleta; logo_url?: string | null },
   empresaId?: number,
 ): Promise<TemaEmpresa> {
   const response = await api.put(`${empresaPath(empresaId)}/tema`, data);

@@ -12,6 +12,7 @@ import { UpdateTemaDto } from './dto/update-tema.dto';
 import { S3Service } from '../conteudo/s3/s3.service';
 import {
   extensionForLogo,
+  isCompanyLogoKey,
   MAX_UPLOAD_BYTES,
 } from '../conteudo/s3/upload-policy';
 import { Usuario } from '../usuario/usuario.entity';
@@ -148,7 +149,7 @@ export class AdminService {
     });
 
     return {
-      empresa: { id: empresa.id, ...this.toTema(empresa) },
+      empresa: { id: empresa.id, ...(await this.toTema(empresa)) },
       token,
     };
   }
@@ -264,7 +265,10 @@ export class AdminService {
   async updateTemaDaEmpresa(empresaId: number, dto: UpdateTemaDto) {
     const empresa = await this.getEmpresa(empresaId);
     if (dto.paleta) empresa.paleta = dto.paleta;
-    if (dto.logo_url !== undefined) empresa.logo_url = dto.logo_url;
+    if (dto.logo_url !== undefined) {
+      this.assertLogoBelongsToEmpresa(empresa, dto.logo_url);
+      empresa.logo_url = dto.logo_url;
+    }
     await this.empresaRepository.save(empresa);
     return this.toTema(empresa);
   }
@@ -286,7 +290,10 @@ export class AdminService {
       );
       if (dto.nome !== undefined) target.nome = dto.nome.trim();
       if (dto.paleta) target.paleta = dto.paleta;
-      if (dto.logo_url !== undefined) target.logo_url = dto.logo_url;
+      if (dto.logo_url !== undefined) {
+        this.assertLogoBelongsToEmpresa(target, dto.logo_url);
+        target.logo_url = dto.logo_url;
+      }
       if (dto.parametros)
         target.parametros_funcionalidades = resolveCompanyParameters(
           dto.parametros,
@@ -343,10 +350,19 @@ export class AdminService {
     return empresa;
   }
 
-  private toTema(empresa: Empresa) {
+  private assertLogoBelongsToEmpresa(empresa: Empresa, logoUrl: string | null) {
+    if (logoUrl !== null && logoUrl !== empresa.logo_url && !isCompanyLogoKey(empresa.id, logoUrl)) {
+      throw new BadRequestException('Logo não pertence à empresa');
+    }
+  }
+
+  private async toTema(empresa: Empresa) {
     return {
       nome: empresa.nome,
       logo_url: empresa.logo_url,
+      logo_preview_url: empresa.logo_url
+        ? await this.s3Service.resolveCompanyLogoUrl(empresa.id, empresa.logo_url)
+        : null,
       paleta: empresa.paleta,
     };
   }

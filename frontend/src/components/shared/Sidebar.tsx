@@ -21,10 +21,12 @@ function useSidebar() {
 
 interface SidebarProps {
   children: ReactNode
+  logoUrl?: string | null
 }
 
-export function Sidebar({ children }: SidebarProps) {
+export function Sidebar({ children, logoUrl }: SidebarProps) {
   const [expanded, setExpanded] = useState<boolean>(true)
+  const [failedLogoUrl, setFailedLogoUrl] = useState<string | null>(null)
 
 
   return (
@@ -35,7 +37,11 @@ export function Sidebar({ children }: SidebarProps) {
             {expanded && (
 
                 <div className="secure-sidebar-logo">
-                  <span className="secure-sidebar-logo-icon" aria-hidden="true"><ShieldCheck size={21} /></span>
+                  <span className="secure-sidebar-logo-icon" aria-hidden="true">
+                    {logoUrl && logoUrl !== failedLogoUrl
+                      ? <img src={logoUrl} alt="" onError={() => setFailedLogoUrl(logoUrl)} />
+                      : <ShieldCheck size={21} />}
+                  </span>
                   <span className="secure-sidebar-logo-copy">
                     <strong>SecurePlay</strong>
                     <small>Academy</small>

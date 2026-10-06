@@ -33,6 +33,21 @@ describe('S3 image references', () => {
     await expect(service.resolveImageUrl('s3://test-media/')).rejects.toThrow();
     expect(sign).not.toHaveBeenCalled();
   });
+
+  it('resolves company logos only within the company and keeps legacy URLs', async () => {
+    const ownKey = 'empresas/4/logo-1234567890abcdef12345678.webp';
+    const otherKey = 'empresas/5/logo-1234567890abcdef12345678.webp';
+    expect(await service.resolveCompanyLogoUrl(4, ownKey)).toBe(
+      'https://signed.example/image',
+    );
+    expect(sign).toHaveBeenCalledWith(ownKey);
+    sign.mockClear();
+    expect(await service.resolveCompanyLogoUrl(4, otherKey)).toBeNull();
+    expect(await service.resolveCompanyLogoUrl(4, 'empresas/4/other.webp')).toBeNull();
+    expect(await service.resolveCompanyLogoUrl(4, 'https://cdn.example/logo.png'))
+      .toBe('https://cdn.example/logo.png');
+    expect(sign).not.toHaveBeenCalled();
+  });
 });
 
 describe('S3 signed GET cache', () => {

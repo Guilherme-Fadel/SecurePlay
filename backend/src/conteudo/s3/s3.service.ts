@@ -7,7 +7,7 @@ import {
 } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { createPresignedPost } from '@aws-sdk/s3-presigned-post';
-import { extensionForUpload } from './upload-policy';
+import { extensionForUpload, isCompanyLogoKey } from './upload-policy';
 
 @Injectable()
 export class S3Service {
@@ -58,6 +58,24 @@ export class S3Service {
       throw new BadRequestException('Referência de imagem S3 inválida');
     }
     return this.generatePresignedGetUrl(source.slice(prefix.length));
+  }
+
+  async resolveCompanyLogoUrl(
+    companyId: number,
+    source: string | null | undefined,
+  ): Promise<string | null> {
+    if (!source) return null;
+    if (isCompanyLogoKey(companyId, source)) {
+      try {
+        return await this.generatePresignedGetUrl(source);
+      } catch {
+        // Falha de mídia opcional não impede carregar a sessão ou as configurações.
+        return null;
+      }
+    }
+    // URLs legadas permanecem legíveis; novas alterações só aceitam chaves da empresa.
+    if (/^https?:\/\//i.test(source) || source.startsWith('/')) return source;
+    return null;
   }
 
   async generatePresignedUploadUrl(

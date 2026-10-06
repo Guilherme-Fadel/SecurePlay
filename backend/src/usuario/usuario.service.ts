@@ -55,7 +55,12 @@ export class UsuarioService {
       role: usuario.role,
       empresa_id: usuario.empresa_id ?? null,
       empresa_paleta: usuario.empresa?.paleta || null,
-      empresa_logo: usuario.empresa?.logo_url || null,
+      empresa_logo: usuario.empresa?.logo_url
+        ? await this.s3Service.resolveCompanyLogoUrl(
+            usuario.empresa.id,
+            usuario.empresa.logo_url,
+          )
+        : null,
       empresa_nome: usuario.empresa?.nome || null,
       empresa_parametros:
         usuario.role === Role.PLATFORM_ADMIN
