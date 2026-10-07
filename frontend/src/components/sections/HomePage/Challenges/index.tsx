@@ -15,6 +15,29 @@ import { AppButton } from '@/components/ui/buttons/AppButton';
 import { getChallengeArtwork } from '@/lib/challengeArtwork';
 import { useCompanyFeatures } from '@/hooks/useCompanyFeatures';
 
+const CHILD_GAME_COPY: Record<string, { title: string; description: string; tag: string }> = {
+  'quiz-relampago': {
+    title: 'Quiz Relâmpago',
+    description: 'Responda perguntas rápidas antes que o tempo acabe.',
+    tag: 'Desafio',
+  },
+  'caca-phishing': {
+    title: 'Detetives de Mensagens',
+    description: 'Encontre pistas e descubra se um recado é confiável.',
+    tag: 'Investigação',
+  },
+  'classificacao-dados': {
+    title: 'Escudos dos Segredos',
+    description: 'Escolha o escudo certo para proteger cada informação.',
+    tag: 'Proteção',
+  },
+  termotech: {
+    title: 'Palavra Secreta',
+    description: 'Use as pistas para descobrir a palavra de cinco letras.',
+    tag: 'Palavras',
+  },
+};
+
 export function Challenges() {
     const features = useCompanyFeatures();
     const [active, setActive] = useState<string | null>(null);
@@ -29,12 +52,12 @@ export function Challenges() {
           .filter((game) => features.games.some((slug) => slug === game.slug))
           .map((g) => ({
             id: g.slug,
-            title: g.title,
-            description: g.description,
+            title: CHILD_GAME_COPY[g.slug]?.title ?? g.title,
+            description: CHILD_GAME_COPY[g.slug]?.description ?? g.description,
             image: getChallengeArtwork(g.image, g.slug),
             xp: g.xp,
             status: g.status,
-            tag: g.tag,
+            tag: CHILD_GAME_COPY[g.slug]?.tag ?? g.tag,
             color: g.color,
             colorDark: g.colorDark,
             gameType: g.gameType,
@@ -75,16 +98,16 @@ export function Challenges() {
     }
     return (<div className="app-page challenges-page">
       <div className="challenges-heading-row">
-        <AppSectionHeader title="Jogos" subtitle="Pratique habilidades de segurança em experiências rápidas e interativas." className="app-page-heading"/>
+        <AppSectionHeader title="Jogos" subtitle="Entre no castelo, descubra pistas e proteja seus amigos brincando." className="app-page-heading"/>
         <TokenBar tokens={tokens} secondsLeft={secondsLeft}/>
       </div>
 
       <section className="challenge-arena-section">
         <div className="challenge-arena-heading">
           <div>
-            <span>Arcade de segurança</span>
-            <h3>Explore as experiências</h3>
-            <p>Selecione um cartão para consultar detalhes e iniciar.</p>
+            <span>Salão de aventuras</span>
+            <h3>Escolha sua missão</h3>
+            <p>Toque em um jogo para conhecer a missão e começar.</p>
           </div>
           <div className="challenge-navigation-hint">
             <ArrowLeft size={13}/>

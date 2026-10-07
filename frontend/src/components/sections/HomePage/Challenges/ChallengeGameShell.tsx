@@ -1,11 +1,5 @@
 import type { LucideIcon } from 'lucide-react';
-import {
-  AlertTriangle,
-  ArrowLeft,
-  LoaderCircle,
-  Trophy,
-  Zap,
-} from 'lucide-react';
+import { AlertTriangle, ArrowLeft, LoaderCircle } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { AppButton } from '@/components/ui/buttons/AppButton';
 import { cn } from '@/lib/utils';
@@ -20,7 +14,7 @@ interface ChallengeGameShellProps {
   title: string;
   eyebrow: string;
   description: string;
-  icon: LucideIcon;
+  artwork: string;
   onExit: () => void;
   children: ReactNode;
   metrics?: MissionMetric[];
@@ -33,7 +27,7 @@ export function ChallengeGameShell({
   title,
   eyebrow,
   description,
-  icon: Icon,
+  artwork,
   onExit,
   children,
   metrics = [],
@@ -57,7 +51,7 @@ export function ChallengeGameShell({
         </AppButton>
 
         <div className="arcade-mission-identity">
-          <div className="arcade-mission-icon"><Icon size={22} /></div>
+          <img className="arcade-mission-artwork" src={artwork} alt="" aria-hidden="true" />
           <div>
             <span>{eyebrow}</span>
             <h1>{title}</h1>
@@ -76,7 +70,14 @@ export function ChallengeGameShell({
       </header>
 
       {progress !== undefined && (
-        <div className="arcade-mission-progress" aria-label={progressLabel}>
+        <div
+          className="arcade-mission-progress"
+          role="progressbar"
+          aria-label={progressLabel || 'Progresso da missão'}
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-valuenow={safeProgress}
+        >
           <div style={{ width: `${safeProgress}%` }} />
           {progressLabel && <span>{progressLabel}</span>}
         </div>
@@ -131,11 +132,10 @@ export function ChallengeGameResult({
   return (
     <div className="arcade-result-screen">
       <div className="arcade-result-summary">
-        <div className="arcade-result-emblem"><Trophy size={28} /></div>
         <span>Missão concluída</span>
         <h2>{title}</h2>
         <p>{description}</p>
-        <div className="arcade-result-xp"><Zap size={19} /><strong>+{xp} XP</strong></div>
+        <div className="arcade-result-xp"><strong>+{xp} XP</strong></div>
         {note && <div className="arcade-result-note">{note}</div>}
         <AppButton onClick={onExit} icon={<ArrowLeft size={15} />}>Voltar aos jogos</AppButton>
       </div>

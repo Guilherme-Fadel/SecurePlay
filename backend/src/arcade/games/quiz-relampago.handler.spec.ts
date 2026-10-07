@@ -1,9 +1,10 @@
 import { QuizRelampagoHandler } from './quiz-relampago.handler';
 import { Question } from '../../question/question.entity';
+import { Repository } from 'typeorm';
 class TestQuizHandler extends QuizRelampagoHandler {
   public fixture: Question[] = [];
-  protected async pickQuestions(): Promise<Question[]> {
-    return this.fixture;
+  protected pickQuestions(): Promise<Question[]> {
+    return Promise.resolve(this.fixture);
   }
 }
 function makeQuestion(id: number, correctIndex: number): Question {
@@ -20,18 +21,69 @@ function makeQuestion(id: number, correctIndex: number): Question {
 describe('QuizRelampagoHandler', () => {
   let handler: TestQuizHandler;
   beforeEach(() => {
-    handler = new TestQuizHandler({} as any);
+    handler = new TestQuizHandler({} as Repository<Question>);
   });
   it('nao expoe correct_index no payload da partida', async () => {
     handler.fixture = [makeQuestion(1, 2), makeQuestion(2, 0)];
     const run = await handler.buildRun();
     const payload = run.payload as {
-      questions: any[];
+      questions: Array<{ id: number; text: string; options: string[] }>;
     };
     for (const q of payload.questions) {
       expect(q).not.toHaveProperty('correct_index');
       expect(q).not.toHaveProperty('correctIndex');
     }
+  });
+  it('adapta pergunta legada preservando ordem das alternativas e resposta correta', async () => {
+    const legacy = makeQuestion(40, 1);
+    legacy.text = 'O que MFA adiciona a autenticacao?';
+    legacy.options = [
+      'Mais senhas',
+      'Uma camada extra de verificacao',
+      'Menos seguranca',
+      'Nada',
+    ];
+    const custom = makeQuestion(41, 2);
+    custom.text = 'Como proteger seu desenho?';
+    const customizedLegacy = makeQuestion(42, 0);
+    customizedLegacy.text = legacy.text;
+    customizedLegacy.options = [...legacy.options];
+    handler.fixture = [legacy, custom, customizedLegacy];
+
+    const run = await handler.buildRun();
+    const payload = run.payload as {
+      questions: Array<{ id: number; text: string; options: string[] }>;
+    };
+    expect(payload.questions[0]).toEqual({
+      id: 40,
+      text: 'O que ajuda a proteger uma conta além da senha?',
+      options: [
+        'Mais senhas',
+        'Uma etapa extra de confirmação',
+        'Menos segurança',
+        'Nada',
+      ],
+    });
+    expect(payload.questions[0]).not.toHaveProperty('correct_index');
+    expect(payload.questions[1].text).toBe(custom.text);
+    expect(payload.questions[2].text).toBe(legacy.text);
+    expect(payload.questions[2].options).toEqual(legacy.options);
+
+    const result = handler.correct(run.answerKey, {
+      quizAnswers: [{ questionId: 40, selectedIndex: 1 }],
+    });
+    const feedback = result.feedback as {
+      items: Array<{
+        questionId: number;
+        correct: boolean;
+        correctIndex: number;
+      }>;
+    };
+    expect(feedback.items[0]).toMatchObject({
+      questionId: 40,
+      correct: true,
+      correctIndex: 1,
+    });
   });
   it('todas corretas resultam em score 100 (com combo limitado a 100)', async () => {
     handler.fixture = [makeQuestion(1, 1), makeQuestion(2, 2)];

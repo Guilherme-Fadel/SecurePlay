@@ -1,25 +1,25 @@
-import { useEffect, useState, useCallback } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
-import { Check, Eye, Flag, Globe, Mail, MessageSquare, Radar, ShieldAlert, ShieldCheck, X } from 'lucide-react';
+import { useEffect, useState, useCallback, useRef } from 'react';
+import { motion, AnimatePresence, useReducedMotion } from 'motion/react';
+import { Check, Radar, X } from 'lucide-react';
 import { startRun, submitRun, type PhishingSampleView, type PhishingAnswer, type SubmitRunResponse, type TokenState, } from '@/services/arcade';
 import { ChallengeGameResult, ChallengeGameShell, ChallengeGameState, } from '../ChallengeGameShell';
+import { getChallengeArtwork } from '@/lib/challengeArtwork';
 interface PhishingHuntProps {
     onExit: () => void;
     onFinished?: (tokens: TokenState | null) => void;
 }
-type Phase = 'loading' | 'error' | 'playing' | 'result';
+type Phase = 'loading' | 'error' | 'playing' | 'submitting' | 'result';
 const SIGNALS: {
     key: string;
     label: string;
 }[] = [
-    { key: 'sender', label: 'Remetente suspeito' },
-    { key: 'url', label: 'Link/URL estranho' },
-    { key: 'urgency', label: 'Urgencia/pressao' },
-    { key: 'attachment', label: 'Anexo inesperado' },
-    { key: 'reward', label: 'Premio/recompensa' },
-    { key: 'spelling', label: 'Erros de escrita' },
+    { key: 'sender', label: 'Quem enviou parece falso' },
+    { key: 'url', label: 'Endereço estranho' },
+    { key: 'urgency', label: 'Pede pressa' },
+    { key: 'attachment', label: 'Anexo surpresa' },
+    { key: 'reward', label: 'Prêmio fácil' },
+    { key: 'spelling', label: 'Palavras diferentes' },
 ];
-const kindIcon = { email: Mail, site: Globe, message: MessageSquare } as const;
 const kindLabel = { email: 'E-mail', site: 'Site', message: 'Mensagem' } as const;
 interface FeedbackItem {
     sampleId: number;
@@ -30,14 +30,18 @@ interface FeedbackItem {
     explanation: string;
 }
 export function PhishingHunt({ onExit, onFinished }: PhishingHuntProps) {
+    const reduceMotion = useReducedMotion();
     const [phase, setPhase] = useState<Phase>('loading');
     const [errorMsg, setErrorMsg] = useState('');
     const [runId, setRunId] = useState<string | null>(null);
     const [samples, setSamples] = useState<PhishingSampleView[]>([]);
     const [index, setIndex] = useState(0);
     const [answers, setAnswers] = useState<PhishingAnswer[]>([]);
+    const [submissionFailed, setSubmissionFailed] = useState(false);
     const [marked, setMarked] = useState<Set<string>>(new Set());
     const [result, setResult] = useState<SubmitRunResponse | null>(null);
+    const isSubmittingRef = useRef(false);
+    const decidedSampleRef = useRef<number | null>(null);
     useEffect(() => {
         let alive = true;
         startRun('caca-phishing')
@@ -60,8 +64,11 @@ export function PhishingHunt({ onExit, onFinished }: PhishingHuntProps) {
         };
     }, []);
     const finish = useCallback(async (finalAnswers: PhishingAnswer[]) => {
-        if (!runId)
+        if (!runId || isSubmittingRef.current)
             return;
+        isSubmittingRef.current = true;
+        setSubmissionFailed(false);
+        setPhase('submitting');
         try {
             const res = await submitRun(runId, { phishingAnswers: finalAnswers });
             setResult(res);
@@ -69,14 +76,19 @@ export function PhishingHunt({ onExit, onFinished }: PhishingHuntProps) {
             onFinished?.(res.tokens);
         }
         catch {
-            setErrorMsg('Erro ao enviar respostas.');
+            setErrorMsg('A confirmação não chegou. Sua missão pode ter sido registrada; volte aos jogos e confira seu saldo antes de iniciar outra.');
+            setSubmissionFailed(true);
             setPhase('error');
+        }
+        finally {
+            isSubmittingRef.current = false;
         }
     }, [runId, onFinished]);
     const decide = (report: boolean) => {
         const current = samples[index];
-        if (!current)
+        if (!current || phase !== 'playing' || isSubmittingRef.current || decidedSampleRef.current === current.id)
             return;
+        decidedSampleRef.current = current.id;
         const next = [...answers, { sampleId: current.id, report, signals: Array.from(marked) }];
         setAnswers(next);
         setMarked(new Set());
@@ -88,6 +100,7 @@ export function PhishingHunt({ onExit, onFinished }: PhishingHuntProps) {
         }
     };
     const toggleSignal = (key: string) => {
+        if (phase !== 'playing' || isSubmittingRef.current) return;
         setMarked((prev) => {
             const next = new Set(prev);
             if (next.has(key))
@@ -98,49 +111,35 @@ export function PhishingHunt({ onExit, onFinished }: PhishingHuntProps) {
         });
     };
     const current = samples[index];
-    const KindIcon = current ? kindIcon[current.kind] : Mail;
-    return (<ChallengeGameShell title="Caça ao Phishing" eyebrow="Central de triagem" description="Inspecione comunicações, marque sinais suspeitos e tome uma decisão segura." icon={ShieldAlert} onExit={onExit} progress={phase === 'result' ? 100 : samples.length ? (index / samples.length) * 100 : 0} progressLabel={samples.length ? `Caso ${Math.min(index + 1, samples.length)} de ${samples.length}` : 'Abrindo central de análise'} metrics={[
-            { icon: current ? KindIcon : Mail, label: 'Canal', value: current ? kindLabel[current.kind] : '—' },
-            { icon: Radar, label: 'Sinais', value: marked.size },
-            { icon: Eye, label: 'Analisados', value: answers.length },
-        ]} className="phishing-mission">
-      {phase === 'loading' && (<ChallengeGameState title="Abrindo a central de triagem" description="Carregando comunicações para análise segura."/>)}
+    return (<ChallengeGameShell title="Detetives de Mensagens" eyebrow="Mensagens misteriosas" description="Leia as pistas e descubra se a mensagem é segura." artwork={getChallengeArtwork(null, 'caca-phishing')} onExit={onExit} progress={samples.length ? (answers.length / samples.length) * 100 : 0} progressLabel={samples.length ? `Mensagem ${Math.min(Math.max(index + 1, answers.length), samples.length)} de ${samples.length}` : 'Abrindo as mensagens'} className="phishing-mission">
+      {phase === 'loading' && (<ChallengeGameState title="Abrindo o correio do castelo" description="Buscando as mensagens da missão."/>)}
 
-      {phase === 'error' && (<ChallengeGameState tone="error" title="Não foi possível iniciar" description={errorMsg} onExit={onExit}/>)}
+      {phase === 'error' && (<ChallengeGameState tone="error" title={submissionFailed ? 'Não foi possível confirmar a missão' : 'Não foi possível iniciar'} description={errorMsg} onExit={onExit}/>)}
 
-      {phase === 'playing' && !current && (<ChallengeGameState tone="empty" title="Fila de triagem vazia" description="Nenhuma amostra está disponível no momento." onExit={onExit}/>)}
+      {phase === 'submitting' && (<ChallengeGameState title="Guardando suas escolhas" description="Só um instante. Estamos conferindo a missão."/>)}
+
+      {phase === 'playing' && !current && (<ChallengeGameState tone="empty" title="Nenhuma mensagem por aqui" description="Volte mais tarde para outra missão." onExit={onExit}/>)}
 
       {phase === 'playing' && current && (<div className="phishing-mission-workspace">
-          <aside className="phishing-inspector-rail">
-            <div className="phishing-case-emblem"><KindIcon size={30}/></div>
-            <span>CASO {String(index + 1).padStart(2, '0')}</span>
-            <h2>{kindLabel[current.kind]} sob análise</h2>
-            <p>Observe o remetente, o contexto e a linguagem antes de liberar ou denunciar.</p>
-            <div className="phishing-scan-status">
-              <Radar size={18}/>
-              <div><span>Marcadores ativos</span><strong>{marked.size} sinal(is)</strong></div>
-            </div>
-          </aside>
-
           <AnimatePresence mode="wait">
-            <motion.section key={current.id} className="phishing-message-console" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -12 }} transition={{ duration: 0.2 }}>
+            <motion.section key={current.id} className="phishing-message-console" initial={reduceMotion ? false : { opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={reduceMotion ? undefined : { opacity: 0, y: -12 }} transition={{ duration: reduceMotion ? 0 : 0.2 }}>
               <div className="phishing-console-bar">
-                <div><i /><i /><i /></div>
-                <span><KindIcon size={13}/> {kindLabel[current.kind]} recebido</span>
-                <small>AMOSTRA #{current.id}</small>
+                <strong>Mensagem {index + 1} de {samples.length}</strong>
+                <span>{kindLabel[current.kind]} em análise</span>
+                <span className="phishing-scan-status" aria-live="polite">{marked.size} {marked.size === 1 ? 'pista marcada' : 'pistas marcadas'}</span>
               </div>
 
               <div className="phishing-message-content">
-                <div className="phishing-message-metadata">
-                  {current.content.sender && <p><span>Remetente</span><strong>{current.content.sender}</strong></p>}
-                  {current.content.subject && <p><span>Assunto</span><strong>{current.content.subject}</strong></p>}
-                  {current.content.url && <p><span>Endereço</span><strong>{current.content.url}</strong></p>}
+                <div className="phishing-message-metadata" role="group" aria-label="Detalhes da mensagem">
+                  {current.content.sender && <div className="phishing-message-metadata-row"><span>De</span><strong>{current.content.sender}</strong></div>}
+                  {current.content.subject && <div className="phishing-message-metadata-row"><span>Assunto</span><strong>{current.content.subject}</strong></div>}
+                  {current.content.url && <div className="phishing-message-metadata-row"><span>Endereço</span><strong>{current.content.url}</strong></div>}
                 </div>
                 <div className="phishing-message-body">{current.content.body}</div>
               </div>
 
               <div className="phishing-signal-panel">
-                <div><strong>O que chamou sua atenção?</strong><span>Marcação opcional</span></div>
+                <div><strong>Marque as pistas que encontrar</strong></div>
                 <div className="phishing-signal-list">
                   {SIGNALS.map((signal) => {
                 const active = marked.has(signal.key);
@@ -152,27 +151,29 @@ export function PhishingHunt({ onExit, onFinished }: PhishingHuntProps) {
               </div>
 
               <div className="phishing-decision-bar">
-                <div><span>Decisão final</span><strong>Esta comunicação é segura?</strong></div>
-                <button onClick={() => decide(false)} className="is-trust"><ShieldCheck size={18}/> Liberar</button>
-                <button onClick={() => decide(true)} className="is-report"><Flag size={18}/> Denunciar</button>
+                <div><strong>É uma mensagem segura?</strong></div>
+                <button type="button" onClick={() => decide(false)} className="is-trust">Parece segura</button>
+                <button type="button" onClick={() => decide(true)} className="is-report">Parece suspeita</button>
               </div>
             </motion.section>
           </AnimatePresence>
         </div>)}
 
-      {phase === 'result' && result && (<ChallengeGameResult title="Triagem concluída" description={`A central processou ${answers.length} comunicações e registrou seu diagnóstico.`} xp={result.xpEarned} onExit={onExit} note={result.multiplier < 1
+      {phase === 'result' && result && (<ChallengeGameResult title="Mensagens investigadas!" description={`Você analisou ${answers.length} mensagens. Veja quais pistas encontrou.`} xp={result.xpEarned} onExit={onExit} note={result.multiplier < 1
                 ? `${result.playsToday}ª vez hoje: XP reduzido para ${Math.round(result.multiplier * 100)}%.`
                 : undefined}>
           <div className="phishing-review-list">
-            <div className="phishing-review-heading"><Radar size={19}/><div><h3>Relatório de triagem</h3><p>Confira o diagnóstico oficial de cada amostra.</p></div></div>
+            <div className="phishing-review-heading"><Radar size={19}/><div><h3>O que descobrimos?</h3><p>Confira as respostas e as pistas da missão.</p></div></div>
             {(result.feedback as {
                 items?: FeedbackItem[];
             })?.items?.map((item, itemIndex) => {
                 const ok = item.decisionRight && item.signalsRight;
+                const chosen = answers.find((answer) => answer.sampleId === item.sampleId);
+                const signalNames = (keys: string[]) => keys.map((key) => SIGNALS.find((signal) => signal.key === key)?.label ?? key).join(', ');
                 return (<div key={item.sampleId} className={`phishing-review-row ${ok ? 'is-correct' : 'is-wrong'}`}>
                   <div>{ok ? <Check size={16}/> : <X size={16}/>}</div>
                   <span>Caso {String(itemIndex + 1).padStart(2, '0')}</span>
-                  <section><strong>{item.isPhishing ? 'Era phishing' : 'Era legítimo'}</strong><p>{item.explanation}</p></section>
+                  <section><strong>{ok ? 'Pistas certas!' : 'Vamos olhar de novo'}</strong><p>{item.isPhishing ? 'Mensagem suspeita' : 'Mensagem segura'}. Você marcou como {chosen?.report ? 'suspeita' : 'segura'}.</p><p>{item.explanation}</p><p>Pistas importantes: {signalNames(item.correctSignals) || 'nenhuma'}.</p></section>
                 </div>);
             })}
           </div>

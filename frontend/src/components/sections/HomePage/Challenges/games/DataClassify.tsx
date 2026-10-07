@@ -1,22 +1,23 @@
-import { useEffect, useState, useCallback } from 'react';
-import { Building2, Check, Files, Globe, Layers3, Lock, Shield, X } from 'lucide-react';
+import { useEffect, useState, useCallback, useRef } from 'react';
+import { Check, X } from 'lucide-react';
 import { startRun, submitRun, type DataItemView, type DataAnswer, type SubmitRunResponse, type TokenState, } from '@/services/arcade';
 import { AppButton } from '@/components/ui/buttons/AppButton';
 import { ChallengeGameResult, ChallengeGameShell, ChallengeGameState, } from '../ChallengeGameShell';
+import { getChallengeArtwork } from '@/lib/challengeArtwork';
 interface DataClassifyProps {
     onExit: () => void;
     onFinished?: (tokens: TokenState | null) => void;
 }
-type Phase = 'loading' | 'error' | 'playing' | 'result';
+type Phase = 'loading' | 'error' | 'playing' | 'submitting' | 'result';
 const LEVELS: {
     key: string;
     label: string;
-    icon: React.ElementType;
+    hint: string;
 }[] = [
-    { key: 'publico', label: 'Publico', icon: Globe },
-    { key: 'interno', label: 'Interno', icon: Building2 },
-    { key: 'confidencial', label: 'Confidencial', icon: Shield },
-    { key: 'secreto', label: 'Secreto', icon: Lock },
+    { key: 'publico', label: 'Público', hint: 'Todos podem ver' },
+    { key: 'interno', label: 'Interno', hint: 'Só o grupo' },
+    { key: 'confidencial', label: 'Confidencial', hint: 'Poucas pessoas' },
+    { key: 'secreto', label: 'Secreto', hint: 'Só quem precisa' },
 ];
 interface FeedbackItem {
     itemId: number;
@@ -32,7 +33,9 @@ export function DataClassify({ onExit, onFinished }: DataClassifyProps) {
     const [runId, setRunId] = useState<string | null>(null);
     const [items, setItems] = useState<DataItemView[]>([]);
     const [choices, setChoices] = useState<Record<number, string>>({});
+    const [submissionFailed, setSubmissionFailed] = useState(false);
     const [result, setResult] = useState<SubmitRunResponse | null>(null);
+    const isSubmittingRef = useRef(false);
     useEffect(() => {
         let alive = true;
         startRun('classificacao-dados')
@@ -55,15 +58,20 @@ export function DataClassify({ onExit, onFinished }: DataClassifyProps) {
         };
     }, []);
     const classify = (itemId: number, level: string) => {
+        if (phase !== 'playing' || isSubmittingRef.current)
+            return;
         setChoices((prev) => ({ ...prev, [itemId]: level }));
     };
     const finish = useCallback(async () => {
-        if (!runId)
+        if (!runId || isSubmittingRef.current)
             return;
         const dataAnswers: DataAnswer[] = Object.entries(choices).map(([itemId, level]) => ({
             itemId: Number(itemId),
             level,
         }));
+        isSubmittingRef.current = true;
+        setSubmissionFailed(false);
+        setPhase('submitting');
         try {
             const res = await submitRun(runId, { dataAnswers });
             setResult(res);
@@ -71,52 +79,49 @@ export function DataClassify({ onExit, onFinished }: DataClassifyProps) {
             onFinished?.(res.tokens);
         }
         catch {
-            setErrorMsg('Erro ao enviar respostas.');
+            setErrorMsg('A confirmação não chegou. Suas escolhas podem ter sido registradas; volte aos jogos e confira seu saldo antes de iniciar outra missão.');
+            setSubmissionFailed(true);
             setPhase('error');
+        }
+        finally {
+            isSubmittingRef.current = false;
         }
     }, [runId, choices, onFinished]);
     const allClassified = items.length > 0 && items.every((it) => choices[it.id]);
     const classifiedCount = Object.keys(choices).length;
-    return (<ChallengeGameShell title="Classificação de Dados" eyebrow="Controle da informação" description="Aplique o nível de proteção adequado a cada documento da fila." icon={Shield} onExit={onExit} progress={phase === 'result' ? 100 : items.length ? (classifiedCount / items.length) * 100 : 0} progressLabel={items.length ? `${classifiedCount} de ${items.length} documentos classificados` : 'Preparando documentos'} metrics={[
-            { icon: Files, label: 'Documentos', value: items.length || '—' },
-            { icon: Check, label: 'Classificados', value: classifiedCount },
-            { icon: Layers3, label: 'Níveis', value: LEVELS.length },
-        ]} className="data-mission">
-      {phase === 'loading' && (<ChallengeGameState title="Organizando a fila" description="Carregando os documentos que precisam de classificação."/>)}
+    return (<ChallengeGameShell title="Escudos dos Segredos" eyebrow="Guardiões dos segredos" description="Escolha qual escudo protege cada informação." artwork={getChallengeArtwork(null, 'classificacao-dados')} onExit={onExit} progress={items.length ? (classifiedCount / items.length) * 100 : 0} progressLabel={items.length ? `${classifiedCount} de ${items.length} informações protegidas` : 'Preparando informações'} className="data-mission">
+      {phase === 'loading' && (<ChallengeGameState title="Preparando os segredos" description="Escolhendo as informações da missão."/>)}
 
-      {phase === 'error' && (<ChallengeGameState tone="error" title="Não foi possível iniciar" description={errorMsg} onExit={onExit}/>)}
+      {phase === 'error' && (<ChallengeGameState tone="error" title={submissionFailed ? 'Não foi possível confirmar a missão' : 'Não foi possível iniciar'} description={errorMsg} onExit={onExit}/>)}
 
-      {phase === 'playing' && items.length === 0 && (<ChallengeGameState tone="empty" title="Fila vazia" description="Nenhum documento está disponível no momento." onExit={onExit}/>)}
+      {phase === 'submitting' && (<ChallengeGameState title="Guardando suas escolhas" description="Só um instante. Estamos conferindo a missão."/>)}
+
+      {phase === 'playing' && items.length === 0 && (<ChallengeGameState tone="empty" title="Nenhuma informação por aqui" description="Volte mais tarde para outra missão." onExit={onExit}/>)}
 
       {phase === 'playing' && items.length > 0 && (<div className="data-mission-workspace">
-          <aside className="data-level-rail">
-            <span>PROTOCOLO DE SIGILO</span>
-            <h2>Legenda de acesso</h2>
-            <p>Escolha o nível considerando o impacto de uma exposição indevida.</p>
+          <section className="data-document-console" aria-label="Missão de proteger informações">
+            <header>
+              <div><span>ARQUIVO DO CASTELO</span><h2>Quem pode ver cada informação?</h2></div>
+              <strong aria-label={`${classifiedCount} de ${items.length} prontas`}>{classifiedCount}/{items.length}</strong>
+            </header>
+            <details className="data-level-legend-disclosure">
+              <summary>Ver legenda dos escudos</summary>
             <div className="data-level-legend">
-              {LEVELS.map((level, index) => {
-                const Icon = level.icon;
-                return <div key={level.key}><i>{index + 1}</i><Icon size={16}/><strong>{level.label}</strong></div>;
+              {LEVELS.map((level) => {
+                return <div key={level.key} className={`data-level-legend--${level.key}`}><strong>{level.label}</strong><span>{level.hint}</span></div>;
             })}
             </div>
-          </aside>
-
-          <section className="data-document-console">
-            <header>
-              <div><span>FILA DE DOCUMENTOS</span><h2>Materiais aguardando decisão</h2></div>
-              <strong>{classifiedCount}/{items.length}</strong>
-            </header>
+            </details>
 
             <div className="data-document-list">
               {items.map((item, itemIndex) => (<div key={item.id} className={`data-document-row ${choices[item.id] ? 'is-classified' : ''}`}>
                   <div className="data-document-index">{String(itemIndex + 1).padStart(2, '0')}</div>
-                  <div className="data-document-name"><Files size={17}/><strong>{item.label}</strong></div>
-                  <div className="data-level-selector" aria-label={`Classificar ${item.label}`}>
+                  <div className="data-document-name"><strong>{item.label}</strong><span>{choices[item.id] ? `Escolhido: ${LEVELS.find((level) => level.key === choices[item.id])?.label}` : 'Escolha um escudo'}</span></div>
+                  <div className="data-level-selector" role="group" aria-label={`Classificar ${item.label}`}>
                     {LEVELS.map((level) => {
                     const active = choices[item.id] === level.key;
-                    const Icon = level.icon;
-                    return (<button key={level.key} onClick={() => classify(item.id, level.key)} aria-pressed={active} className={active ? 'is-active' : ''}>
-                          <Icon size={14}/><span>{level.label}</span>
+                    return (<button type="button" key={level.key} onClick={() => classify(item.id, level.key)} aria-pressed={active} className={`data-level--${level.key}${active ? ' is-active' : ''}`}>
+                          <span>{level.label}</span>{active && <small>Escolhido</small>}
                         </button>);
                 })}
                   </div>
@@ -124,19 +129,19 @@ export function DataClassify({ onExit, onFinished }: DataClassifyProps) {
             </div>
 
             <footer className="data-submit-bar">
-              <div><span>Status da análise</span><strong>{allClassified ? 'Pronta para envio' : `Restam ${items.length - classifiedCount} decisões`}</strong></div>
-              <AppButton onClick={finish} disabled={!allClassified} icon={<Check size={16}/>}>
+              <div role="status" aria-live="polite"><span>Progresso da missão</span><strong>{allClassified ? 'Tudo pronto para conferir!' : `Faltam ${items.length - classifiedCount} escolhas`}</strong></div>
+              <AppButton onClick={() => void finish()} disabled={!allClassified}>
                 Enviar classificação
               </AppButton>
             </footer>
           </section>
         </div>)}
 
-      {phase === 'result' && result && (<ChallengeGameResult title="Classificação concluída" description={`Você finalizou a análise de ${items.length} documentos do protocolo.`} xp={result.xpEarned} onExit={onExit} note={result.multiplier < 1
+      {phase === 'result' && result && (<ChallengeGameResult title="Segredos protegidos!" description={`Você escolheu escudos para ${items.length} informações. Confira suas respostas.`} xp={result.xpEarned} onExit={onExit} note={result.multiplier < 1
                 ? `${result.playsToday}ª vez hoje: XP reduzido para ${Math.round(result.multiplier * 100)}%.`
                 : undefined}>
           <div className="data-review-list">
-            <div className="data-review-heading"><Layers3 size={19}/><div><h3>Auditoria das decisões</h3><p>Compare sua escolha com a classificação oficial.</p></div></div>
+            <div className="data-review-heading"><div><h3>Confira os escudos</h3><p>Veja se cada informação ficou bem protegida.</p></div></div>
             {(result.feedback as {
                 items?: FeedbackItem[];
             })?.items?.map((item, itemIndex) => {
@@ -144,7 +149,7 @@ export function DataClassify({ onExit, onFinished }: DataClassifyProps) {
                 return (<div key={item.itemId} className={`data-review-row ${item.correct ? 'is-correct' : 'is-wrong'}`}>
                   <div>{item.correct ? <Check size={16}/> : <X size={16}/>}</div>
                   <span>{String(itemIndex + 1).padStart(2, '0')}</span>
-                  <section><strong>{item.label}</strong><p>Nível correto: {levelLabel}. {item.explanation}</p></section>
+                  <section><strong>{item.correct ? 'Bem protegido!' : 'Vamos escolher outro escudo'}</strong><p>{item.label}</p><p>Você escolheu: {LEVELS.find((level) => level.key === item.chosenLevel)?.label ?? 'nenhum'}. Nível recomendado: {levelLabel}.</p><p>{item.explanation}</p></section>
                 </div>);
             })}
           </div>

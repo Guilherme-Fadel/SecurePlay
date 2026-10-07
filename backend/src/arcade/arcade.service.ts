@@ -9,10 +9,6 @@ import {
 import { Repository } from 'typeorm';
 import { randomUUID } from 'crypto';
 import { ArcadeGame, ArcadeGameType } from './entities/arcade-game.entity';
-import {
-  PhishingSample,
-  PhishingKind,
-} from './entities/phishing-sample.entity';
 import { DataItem, DataLevel } from './entities/data-item.entity';
 import { RedisService } from '../redis/redis.service';
 import { XpService } from '../common/gamification/xp.service';
@@ -45,8 +41,6 @@ export class ArcadeService implements OnModuleInit {
     private readonly quizHandler: QuizRelampagoHandler,
     private readonly phishingHandler: PhishingHandler,
     private readonly dataClassifyHandler: DataClassifyHandler,
-    @Inject('PHISHING_SAMPLE_REPOSITORY')
-    private readonly phishingRepository: Repository<PhishingSample>,
     @Inject('DATA_ITEM_REPOSITORY')
     private readonly dataItemRepository: Repository<DataItem>,
     @Inject('USUARIO_ARCADE_STATS_REPOSITORY')
@@ -121,7 +115,6 @@ export class ArcadeService implements OnModuleInit {
         await this.gameRepository.save(existing);
       }
     }
-    await this.seedPhishingSamples();
     await this.seedDataItems();
   }
   private async seedDataItems() {
@@ -129,118 +122,54 @@ export class ArcadeService implements OnModuleInit {
     if (count > 0) return;
     const items: Partial<DataItem>[] = [
       {
-        label: 'Comunicado publicado no site institucional',
+        label: 'Aviso da feira de ciências no mural da turma',
         correct_level: DataLevel.PUBLICO,
-        explanation: 'Informacao ja divulgada abertamente ao publico.',
+        explanation: 'O aviso foi feito para toda a comunidade da escola.',
       },
       {
-        label: 'Organograma interno da empresa',
+        label: 'Lista de tarefas do grupo para o trabalho',
         correct_level: DataLevel.INTERNO,
-        explanation: 'De uso interno; nao deve circular fora da organizacao.',
+        explanation:
+          'É uma combinação do grupo e deve ficar entre os participantes.',
       },
       {
-        label: 'CPF e dados pessoais de um cliente',
-        correct_level: DataLevel.CONFIDENCIAL,
-        explanation: 'Dado pessoal protegido pela LGPD; acesso restrito.',
-      },
-      {
-        label: 'Senha de acesso ao servidor de producao',
-        correct_level: DataLevel.SECRETO,
-        explanation: 'Credencial critica; vazamento compromete todo o sistema.',
-      },
-      {
-        label: 'Cardapio do refeitorio da semana',
-        correct_level: DataLevel.PUBLICO,
-        explanation: 'Sem sensibilidade; pode ser divulgado livremente.',
-      },
-      {
-        label: 'Relatorio financeiro trimestral nao divulgado',
+        label: 'Endereço e telefone de um colega',
         correct_level: DataLevel.CONFIDENCIAL,
         explanation:
-          'Informacao sensivel do negocio antes da divulgacao oficial.',
+          'Dados pessoais só devem ser vistos por quem precisa deles.',
       },
       {
-        label: 'Chave privada de assinatura de certificados',
+        label: 'Senha secreta do baú da equipe',
         correct_level: DataLevel.SECRETO,
-        explanation: 'Segredo criptografico; nunca deve ser compartilhado.',
+        explanation:
+          'Uma senha deve ficar em segredo e nunca ser compartilhada.',
       },
       {
-        label: 'Ata de reuniao de equipe',
+        label: 'Cardápio da merenda desta semana',
+        correct_level: DataLevel.PUBLICO,
+        explanation: 'A escola pode divulgar o cardápio para todos.',
+      },
+      {
+        label: 'Resultado da votação da turma antes do anúncio',
+        correct_level: DataLevel.CONFIDENCIAL,
+        explanation:
+          'O resultado ainda não foi anunciado; espere a divulgação oficial.',
+      },
+      {
+        label: 'Código secreto para abrir a sala de jogos',
+        correct_level: DataLevel.SECRETO,
+        explanation:
+          'Quem conhece o código consegue entrar; mantenha-o protegido.',
+      },
+      {
+        label: 'Plano da apresentação do grupo',
         correct_level: DataLevel.INTERNO,
-        explanation: 'Uso interno da equipe; sem exposicao externa.',
+        explanation:
+          'O plano é para as pessoas que estão preparando a apresentação.',
       },
     ];
     await this.dataItemRepository.save(
       items.map((i) => this.dataItemRepository.create(i)),
-    );
-  }
-  private async seedPhishingSamples() {
-    const count = await this.phishingRepository.count();
-    if (count > 0) return;
-    const samples: Partial<PhishingSample>[] = [
-      {
-        kind: PhishingKind.EMAIL,
-        content: {
-          sender: 'suporte@bancoseguro-alertas.com',
-          subject: 'ACAO URGENTE: sua conta sera bloqueada em 24h',
-          body: 'Detectamos acesso suspeito. Confirme seus dados imediatamente no link abaixo para evitar o bloqueio.',
-          url: 'http://bancoseguro-verificacao.link/login',
-        },
-        is_phishing: true,
-        signals: ['sender', 'url', 'urgency'],
-        explanation:
-          'Dominio do remetente e da URL nao sao oficiais, e a mensagem usa urgencia para pressionar. Bancos nao pedem confirmacao de dados por link.',
-      },
-      {
-        kind: PhishingKind.EMAIL,
-        content: {
-          sender: 'rh@suaempresa.com.br',
-          subject: 'Holerite de referencia disponivel',
-          body: 'Ola, seu holerite deste mes ja esta disponivel no portal interno. Acesse pelo sistema habitual.',
-        },
-        is_phishing: false,
-        signals: [],
-        explanation:
-          'Remetente do dominio corporativo, sem link suspeito e sem pressao. Comunicacao interna legitima.',
-      },
-      {
-        kind: PhishingKind.MESSAGE,
-        content: {
-          sender: '+55 11 90000-0000',
-          body: 'Voce ganhou um premio! Clique para resgatar agora: bit.ly/premio-vc',
-          url: 'http://bit.ly/premio-vc',
-        },
-        is_phishing: true,
-        signals: ['url', 'reward'],
-        explanation:
-          'Premio inesperado e link encurtado escondendo o destino real sao sinais classicos de golpe.',
-      },
-      {
-        kind: PhishingKind.SITE,
-        content: {
-          url: 'https://login-microsft365.com',
-          body: 'Pagina de login identica a da Microsoft pedindo email e senha corporativos.',
-        },
-        is_phishing: true,
-        signals: ['url'],
-        explanation:
-          'O dominio esta escrito errado (microsft) imitando o oficial. Sempre confira o endereco antes de digitar credenciais.',
-      },
-      {
-        kind: PhishingKind.EMAIL,
-        content: {
-          sender: 'no-reply@github.com',
-          subject: 'Novo login na sua conta',
-          body: 'Detectamos um login no seu dispositivo. Se foi voce, ignore este email.',
-        },
-        is_phishing: false,
-        signals: [],
-        explanation:
-          'Notificacao informativa de um dominio oficial, sem pedir clique nem dados. Comportamento legitimo.',
-      },
-    ];
-    await this.phishingRepository.save(
-      samples.map((s) => this.phishingRepository.create(s)),
     );
   }
   private handlerFor(type: ArcadeGameType): GameHandler {

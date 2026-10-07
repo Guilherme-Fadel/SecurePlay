@@ -16,9 +16,9 @@
   gap: 20px;
   margin-bottom: 14px;
   padding: 16px 20px;
-  border: 1px solid rgba(210, 154, 40, .3);
+  border: 1px solid rgba(var(--accent-rgb), .3);
   border-radius: 16px;
-  background: linear-gradient(135deg, rgba(255,254,251,.98), rgba(250,247,238,.94));
+  background: linear-gradient(135deg, var(--dashboard-surface), var(--dashboard-surface-soft));
   box-shadow: 0 10px 24px rgba(57, 36, 92, .06);
 }
 
@@ -32,9 +32,9 @@
 
 .challenge-arena-section {
   overflow: hidden;
-  border: 1px solid rgba(210, 154, 40, .36);
+  border: 1px solid rgba(var(--accent-rgb), .36);
   border-radius: 18px;
-  background: linear-gradient(145deg, #fffefa, #f6f2e8);
+  background: linear-gradient(145deg, var(--dashboard-surface), var(--dashboard-surface-soft));
   box-shadow: 0 14px 30px rgba(57, 36, 92, .09);
 }
 
@@ -48,6 +48,7 @@
   gap: 18px;
   padding: 14px 20px;
   border-bottom: 1px solid var(--dashboard-border);
+  background: linear-gradient(100deg, rgba(255, 248, 231, .98), rgba(250, 237, 207, .94));
 }
 
 .challenge-arena-heading::before {
@@ -57,7 +58,7 @@
   left: 0;
   width: 3px;
   border-radius: 0 4px 4px 0;
-  background: var(--secondary);
+  background: var(--primary);
   content: '';
 }
 
@@ -74,7 +75,7 @@
 .challenge-arena-heading h3 {
   margin: 0;
   color: var(--dashboard-text);
-  font-size: 17px;
+  font-size: 22px;
   font-weight: 700;
   line-height: 1.25;
 }
@@ -82,7 +83,7 @@
 .challenge-arena-heading p {
   margin: 3px 0 0;
   color: var(--dashboard-muted);
-  font-size: 10px;
+  font-size: 13px;
 }
 
 .challenge-navigation-hint {
@@ -105,12 +106,12 @@
 .challenge-arena-body {
   position: relative;
   display: flex;
-  min-height: 445px;
+  min-height: 520px;
   align-items: center;
   justify-content: center;
   overflow: hidden;
-  padding: 4px 0 14px;
-  background: linear-gradient(135deg, rgba(255,254,251,.9), rgba(244,241,233,.78));
+  padding: 14px 0 22px;
+  background: linear-gradient(135deg, var(--dashboard-surface), var(--dashboard-surface-soft));
 }
 
 .challenge-arena-body::before,
@@ -148,33 +149,88 @@
 }
 
 .challenge-carousel-stage {
-  width: min(720px, calc(100vw - 430px)) !important;
-  height: 390px !important;
+  width: min(720px, calc(100vw - 260px)) !important;
+  height: 450px !important;
 }
+.challenge-carousel-item { display: flex; width: 344px; height: 420px; align-items: center; justify-content: center; }
+
+.challenge-carousel > div:first-child > .app-button {
+  width: 44px;
+  height: 44px;
+  flex: 0 0 44px;
+  border: 1px solid var(--dashboard-border);
+  border-radius: 50%;
+  background: var(--dashboard-surface);
+  box-shadow: none;
+  color: var(--dashboard-muted);
+}
+.challenge-carousel > div:first-child > .app-button:hover:not(:disabled) {
+  border-color: var(--primary);
+  background: var(--dashboard-surface-soft);
+  color: var(--primary);
+}
+.challenge-carousel > div:first-child > .app-button:focus-visible { outline: var(--app-control-focus); outline-offset: 3px; }
 
 .challenge-carousel .app-game-card {
-  width: 300px !important;
+  width: 344px !important;
+  height: 420px;
+  overflow: hidden;
+  border: 2px solid #d0ae70 !important;
+  border-radius: 24px !important;
+  background: #fff7e4 !important;
+  box-shadow: 0 18px 32px rgba(20, 14, 28, .34) !important;
+  transition: width .9s cubic-bezier(.25, .8, .25, 1), height .9s cubic-bezier(.25, .8, .25, 1), border-radius .9s ease, border-color .9s ease, box-shadow .9s ease, transform 180ms ease;
 }
 
 .challenge-carousel .app-game-card.is-focused {
-  border-color: rgba(210, 154, 40, .58) !important;
-  box-shadow: 0 16px 30px rgba(57, 36, 92, .18) !important;
+  border-color: #f0d28e !important;
+  box-shadow: 0 20px 42px rgba(20, 14, 28, .44) !important;
 }
+
+.challenge-carousel-stage:focus-visible { outline: var(--app-control-focus); outline-offset: 4px; border-radius: 14px; }
+.challenge-carousel .challenge-card-scene { height: 190px; flex: 0 0 auto; background-position: center; background-size: cover; transition: height .9s cubic-bezier(.25, .8, .25, 1); }
+.challenge-carousel .challenge-card-scene img { position: absolute; inset: 0; display: block; width: 100%; height: 100%; object-fit: contain; transition: transform 220ms ease; }
+.challenge-carousel .challenge-card-scene img.challenge-pixel-art { image-rendering: pixelated; }
+.challenge-carousel .app-game-card.is-focused:hover .challenge-card-scene img { transform: scale(1.045); }
+.challenge-carousel .challenge-card-scene::after { position: absolute; inset: 35% 0 0; background: linear-gradient(transparent, rgba(29, 20, 39, .52)); content: ''; pointer-events: none; }
+.challenge-carousel .challenge-card-scene-caption { position: absolute; z-index: 1; right: 12px; bottom: 12px; left: 12px; color: white; font-size: 14px; font-weight: 800; text-shadow: 0 2px 4px rgba(15, 12, 18, .8); }
+.challenge-carousel .challenge-card-xp { position: absolute; z-index: 1; top: 12px; right: 12px; display: flex; align-items: center; gap: 4px; padding: 5px 9px; border-radius: 999px; background: rgba(0, 0, 0, .55); color: #fff; font-family: var(--font-family-inter); font-size: 12px; font-weight: 700; }
+.challenge-carousel .challenge-card-xp svg { fill: var(--accent); color: var(--accent); }
+.challenge-carousel .challenge-card-art-fallback { display: grid; width: 100%; height: 100%; place-items: center; padding: 20px; color: #fff3cd; font-size: 20px; font-weight: 800; text-align: center; }
+.challenge-carousel .challenge-card-locked { position: absolute; z-index: 2; inset: 0; display: flex; align-items: center; justify-content: center; gap: 8px; background: rgba(31, 22, 40, .78); color: white; font-weight: 800; }
+.challenge-carousel .challenge-card-copy { display: flex; min-height: 225px; flex: 1; flex-direction: column; padding: 18px 20px 20px; background: var(--dashboard-surface); color: var(--dashboard-text); opacity: 1; transition: opacity .3s ease .55s; }
+.challenge-carousel .challenge-card-title-row { display: flex; align-items: flex-start; gap: 10px; }
+.challenge-carousel .app-game-card h4 { margin: 0 0 2px; color: var(--dashboard-text); font-family: var(--font-family-base); font-size: 18px; font-weight: 700; line-height: 1.3; text-wrap: balance; }
+.challenge-carousel .app-game-card p { min-height: 42px; margin: 8px 0 10px; color: var(--dashboard-muted); font-family: var(--font-family-inter); font-size: 14px; line-height: 1.4; }
+.challenge-carousel .challenge-card-play { width: 100%; min-height: 52px; margin-top: auto; border-radius: 14px; font-size: 16px; font-weight: 800; }
+.challenge-carousel .challenge-card-play:focus-visible { outline: var(--app-control-focus); outline-offset: 3px; }
+.challenge-carousel .challenge-card--quiz-relampago .challenge-card-scene { background-color: #5d467b; }
+.challenge-carousel .challenge-card--caca-phishing .challenge-card-scene { background-color: #2f6c64; }
+.challenge-carousel .challenge-card--classificacao-dados .challenge-card-scene { background-color: #8a6030; }
+.challenge-carousel .challenge-card--termotech .challenge-card-scene { background-color: #466b91; }
+.challenge-carousel-stage [aria-hidden='true'] .app-game-card { width: 210px !important; height: 180px; border-radius: 18px !important; }
+.challenge-carousel-stage [aria-hidden='true'] .challenge-card-scene { height: 180px; }
+.challenge-carousel-stage [aria-hidden='true'] .challenge-card-copy { opacity: 0; pointer-events: none; transition-duration: .18s; transition-delay: 0s; }
+.challenge-carousel-stage [aria-hidden='true'] .challenge-card-scene-caption { font-size: 12px; }
+.challenge-carousel-pagination .challenge-carousel-dot { position: relative; display: grid; width: 28px; height: 28px; flex: 0 0 28px; place-items: center; border: 0; border-radius: 50%; background: transparent; cursor: pointer; }
+.challenge-carousel-pagination .challenge-carousel-dot::before { width: 8px; height: 8px; border-radius: 99px; background: var(--border-light); content: ''; transition: width 300ms ease, background-color 300ms ease; }
+.challenge-carousel-pagination .challenge-carousel-dot[aria-current='true']::before { width: 24px; background: var(--primary); }
+.challenge-carousel-pagination .challenge-carousel-dot:focus-visible { outline: var(--app-control-focus); outline-offset: 0; }
 
 .challenge-carousel-pagination {
   display: flex;
   min-height: 22px;
   align-items: center;
-  gap: 11px;
+  gap: 7px;
   margin-top: 2px;
-  padding: 5px 9px;
+  padding: 2px 7px;
   border: 1px solid var(--dashboard-border);
   border-radius: 999px;
   background: var(--dashboard-surface);
 }
 
 .challenge-carousel-pagination > span {
-  padding-right: 9px;
+  padding-right: 7px;
   border-right: 1px solid var(--dashboard-border);
   color: var(--dashboard-muted);
   font-family: 'JetBrains Mono', monospace !important;
@@ -183,7 +239,7 @@
 }
 
 .challenge-carousel-pagination button {
-  height: 7px !important;
+  height: 28px;
 }
 
 .challenge-carousel-loading {
@@ -194,14 +250,14 @@
 
 .challenge-carousel-loading > div {
   width: 220px;
-  height: 310px;
+  height: 340px;
   border: 1px solid var(--dashboard-border);
   border-radius: 18px;
   background: linear-gradient(
     100deg,
-    var(--dashboard-surface) 20%,
-    var(--dashboard-surface-soft) 42%,
-    var(--dashboard-surface) 64%
+    #fff7e4 20%,
+    #efe2c4 42%,
+    #fff7e4 64%
   );
   background-size: 240% 100%;
   animation: challenge-loading 1.4s ease-in-out infinite;
@@ -209,8 +265,8 @@
 }
 
 .challenge-carousel-loading > div:nth-child(2) {
-  width: 290px;
-  height: 350px;
+  width: 330px;
+  height: 380px;
   opacity: 1;
 }
 
@@ -275,29 +331,66 @@
 }
 
 :root:not([data-theme='light']) .challenge-arena-body {
-  background: linear-gradient(135deg, var(--dashboard-surface-soft), #1a2435);
+  background: linear-gradient(135deg, var(--dashboard-surface-soft), var(--dashboard-surface));
 }
 
 :root:not([data-theme='light']) .challenge-arena-heading > div:first-child > span {
   color: #55d9df;
 }
+:root:not([data-theme='light']) .challenge-arena-heading { background: #30283a; }
+:root:not([data-theme='light']) .challenge-arena-heading h3,
+:root:not([data-theme='light']) .challenge-arena-heading p { color: #fff4dc; }
 
 @media (max-width: 520px) {
   .challenge-carousel > div:first-child > .app-button {
-    display: none;
+    display: flex;
+    width: 42px;
+    height: 42px;
+    flex: 0 0 42px;
+    position: absolute;
+    z-index: 20;
+    bottom: 0;
+    margin: 0;
   }
+  .challenge-carousel > div:first-child > .app-button:first-child { left: 8px; }
+  .challenge-carousel > div:first-child > .app-button:last-child { right: 8px; }
 
   .challenge-carousel-stage {
-    width: 100% !important;
+    width: calc(100vw - 128px) !important;
+    height: 430px !important;
+    -webkit-mask-image: none !important;
+    mask-image: none !important;
   }
 
   .challenge-carousel .app-game-card {
-    width: min(280px, calc(100vw - 90px)) !important;
+    width: min(340px, calc(100vw - 128px)) !important;
+    height: 405px;
   }
+  .challenge-carousel-stage [aria-hidden='true'] .app-game-card { width: 160px !important; height: 145px; }
+  .challenge-carousel .challenge-card-scene { height: 170px; }
+  .challenge-carousel-stage [aria-hidden='true'] .challenge-card-scene { height: 145px; }
+  .challenge-carousel .challenge-card-copy { min-height: 230px; padding: 14px; }
+  .challenge-carousel .app-game-card h4 { font-size: 19px; }
+  .challenge-carousel .app-game-card p { font-size: 14px; }
+  .challenge-arena-body { min-height: 470px; }
+}
+
+@media (max-width: 360px) {
+  .challenge-carousel > div:first-child > .app-button { width: 36px; height: 36px; flex-basis: 36px; }
+  .challenge-carousel-pagination .challenge-carousel-dot { width: 24px; flex-basis: 24px; }
+  .challenge-carousel-pagination .challenge-carousel-dot[aria-current='true']::before { width: 20px; }
+  .challenge-carousel-pagination > div { gap: 4px; }
+  .challenge-carousel-stage { width: calc(100vw - 92px) !important; }
+  .challenge-carousel .app-game-card { width: min(340px, calc(100vw - 92px)) !important; }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .challenge-carousel-loading > div {
     animation: none;
   }
+  .challenge-carousel .app-game-card,
+  .challenge-carousel .challenge-card-scene,
+  .challenge-carousel .challenge-card-copy,
+  .challenge-carousel-pagination .challenge-carousel-dot::before { transition: none; }
+  .challenge-carousel .challenge-card-scene img { transition: none; }
 }

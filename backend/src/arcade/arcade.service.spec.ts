@@ -30,11 +30,6 @@ describe('ArcadeService (ciclo start/submit e XP)', () => {
   let tokenService: { consume: jest.Mock; getState: jest.Mock };
   let quizHandler: { buildRun: jest.Mock; correct: jest.Mock };
   let phishingHandler: { buildRun: jest.Mock; correct: jest.Mock };
-  let phishingRepository: {
-    count: jest.Mock;
-    create: jest.Mock;
-    save: jest.Mock;
-  };
   let dataHandler: { buildRun: jest.Mock; correct: jest.Mock };
   let dataRepository: { count: jest.Mock; create: jest.Mock; save: jest.Mock };
   let arcadeStatsRepository: {
@@ -112,11 +107,6 @@ describe('ArcadeService (ciclo start/submit e XP)', () => {
       }),
       correct: jest.fn().mockReturnValue({ score: 100, feedback: {} }),
     };
-    phishingRepository = {
-      count: jest.fn().mockResolvedValue(1),
-      create: jest.fn((x: unknown) => x),
-      save: jest.fn(),
-    };
     dataRepository = {
       count: jest.fn().mockResolvedValue(1),
       create: jest.fn((x: unknown) => x),
@@ -139,7 +129,6 @@ describe('ArcadeService (ciclo start/submit e XP)', () => {
         { provide: QuizRelampagoHandler, useValue: quizHandler },
         { provide: PhishingHandler, useValue: phishingHandler },
         { provide: DataClassifyHandler, useValue: dataHandler },
-        { provide: 'PHISHING_SAMPLE_REPOSITORY', useValue: phishingRepository },
         { provide: 'DATA_ITEM_REPOSITORY', useValue: dataRepository },
         {
           provide: 'USUARIO_ARCADE_STATS_REPOSITORY',
