@@ -2,6 +2,7 @@ import type { LucideIcon } from 'lucide-react';
 import { AlertTriangle, ArrowLeft, LoaderCircle } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { AppButton } from '@/components/ui/buttons/AppButton';
+import { AdminHelpTip } from '@/components/admin/AdminHelpTip';
 import { cn } from '@/lib/utils';
 
 interface MissionMetric {
@@ -12,7 +13,6 @@ interface MissionMetric {
 
 interface ChallengeGameShellProps {
   title: string;
-  eyebrow: string;
   description: string;
   artwork: string;
   onExit: () => void;
@@ -25,7 +25,6 @@ interface ChallengeGameShellProps {
 
 export function ChallengeGameShell({
   title,
-  eyebrow,
   description,
   artwork,
   onExit,
@@ -53,9 +52,10 @@ export function ChallengeGameShell({
         <div className="arcade-mission-identity">
           <img className="arcade-mission-artwork" src={artwork} alt="" aria-hidden="true" />
           <div>
-            <span>{eyebrow}</span>
-            <h1>{title}</h1>
-            <p>{description}</p>
+            <div className="arcade-mission-title">
+              <h1>{title}</h1>
+              <AdminHelpTip label={title} text={description} />
+            </div>
           </div>
         </div>
 
@@ -79,7 +79,6 @@ export function ChallengeGameShell({
           aria-valuenow={safeProgress}
         >
           <div style={{ width: `${safeProgress}%` }} />
-          {progressLabel && <span>{progressLabel}</span>}
         </div>
       )}
 

@@ -89,7 +89,7 @@ export function DataClassify({ onExit, onFinished }: DataClassifyProps) {
     }, [runId, choices, onFinished]);
     const allClassified = items.length > 0 && items.every((it) => choices[it.id]);
     const classifiedCount = Object.keys(choices).length;
-    return (<ChallengeGameShell title="Escudos dos Segredos" eyebrow="Guardiões dos segredos" description="Escolha qual escudo protege cada informação." artwork={getChallengeArtwork(null, 'classificacao-dados')} onExit={onExit} progress={items.length ? (classifiedCount / items.length) * 100 : 0} progressLabel={items.length ? `${classifiedCount} de ${items.length} informações protegidas` : 'Preparando informações'} className="data-mission">
+    return (<ChallengeGameShell title="Escudos dos Segredos" description="Escolha qual escudo protege cada informação." artwork={getChallengeArtwork(null, 'classificacao-dados')} onExit={onExit} progress={items.length ? (classifiedCount / items.length) * 100 : 0} progressLabel={items.length ? `${classifiedCount} de ${items.length} informações protegidas` : 'Preparando informações'} className="data-mission">
       {phase === 'loading' && (<ChallengeGameState title="Preparando os segredos" description="Escolhendo as informações da missão."/>)}
 
       {phase === 'error' && (<ChallengeGameState tone="error" title={submissionFailed ? 'Não foi possível confirmar a missão' : 'Não foi possível iniciar'} description={errorMsg} onExit={onExit}/>)}
@@ -102,21 +102,21 @@ export function DataClassify({ onExit, onFinished }: DataClassifyProps) {
           <section className="data-document-console" aria-label="Missão de proteger informações">
             <header>
               <div><span>ARQUIVO DO CASTELO</span><h2>Quem pode ver cada informação?</h2></div>
+              <details className="data-level-legend-disclosure">
+                <summary>Ver legenda dos escudos</summary>
+                <div className="data-level-legend">
+                  {LEVELS.map((level) => (
+                    <div key={level.key} className={`data-level-legend--${level.key}`}><strong>{level.label}</strong><span>{level.hint}</span></div>
+                  ))}
+                </div>
+              </details>
               <strong aria-label={`${classifiedCount} de ${items.length} prontas`}>{classifiedCount}/{items.length}</strong>
             </header>
-            <details className="data-level-legend-disclosure">
-              <summary>Ver legenda dos escudos</summary>
-            <div className="data-level-legend">
-              {LEVELS.map((level) => {
-                return <div key={level.key} className={`data-level-legend--${level.key}`}><strong>{level.label}</strong><span>{level.hint}</span></div>;
-            })}
-            </div>
-            </details>
 
             <div className="data-document-list">
               {items.map((item, itemIndex) => (<div key={item.id} className={`data-document-row ${choices[item.id] ? 'is-classified' : ''}`}>
                   <div className="data-document-index">{String(itemIndex + 1).padStart(2, '0')}</div>
-                  <div className="data-document-name"><strong>{item.label}</strong><span>{choices[item.id] ? `Escolhido: ${LEVELS.find((level) => level.key === choices[item.id])?.label}` : 'Escolha um escudo'}</span></div>
+                  <div className="data-document-name"><strong>{item.label}</strong></div>
                   <div className="data-level-selector" role="group" aria-label={`Classificar ${item.label}`}>
                     {LEVELS.map((level) => {
                     const active = choices[item.id] === level.key;

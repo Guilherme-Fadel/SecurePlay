@@ -105,9 +105,7 @@ export function Challenges() {
       <section className="challenge-arena-section">
         <div className="challenge-arena-heading">
           <div>
-            <span>Salão de aventuras</span>
             <h3>Escolha sua missão</h3>
-            <p>Toque em um jogo para conhecer a missão e começar.</p>
           </div>
           <div className="challenge-navigation-hint">
             <ArrowLeft size={13}/>

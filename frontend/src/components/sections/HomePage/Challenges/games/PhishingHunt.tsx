@@ -111,7 +111,7 @@ export function PhishingHunt({ onExit, onFinished }: PhishingHuntProps) {
         });
     };
     const current = samples[index];
-    return (<ChallengeGameShell title="Detetives de Mensagens" eyebrow="Mensagens misteriosas" description="Leia as pistas e descubra se a mensagem é segura." artwork={getChallengeArtwork(null, 'caca-phishing')} onExit={onExit} progress={samples.length ? (answers.length / samples.length) * 100 : 0} progressLabel={samples.length ? `Mensagem ${Math.min(Math.max(index + 1, answers.length), samples.length)} de ${samples.length}` : 'Abrindo as mensagens'} className="phishing-mission">
+    return (<ChallengeGameShell title="Detetives de Mensagens" description="Leia as pistas e descubra se a mensagem é segura." artwork={getChallengeArtwork(null, 'caca-phishing')} onExit={onExit} progress={samples.length ? (answers.length / samples.length) * 100 : 0} progressLabel={samples.length ? `Mensagem ${Math.min(Math.max(index + 1, answers.length), samples.length)} de ${samples.length}` : 'Abrindo as mensagens'} className="phishing-mission">
       {phase === 'loading' && (<ChallengeGameState title="Abrindo o correio do castelo" description="Buscando as mensagens da missão."/>)}
 
       {phase === 'error' && (<ChallengeGameState tone="error" title={submissionFailed ? 'Não foi possível confirmar a missão' : 'Não foi possível iniciar'} description={errorMsg} onExit={onExit}/>)}
@@ -126,7 +126,6 @@ export function PhishingHunt({ onExit, onFinished }: PhishingHuntProps) {
               <div className="phishing-console-bar">
                 <strong>Mensagem {index + 1} de {samples.length}</strong>
                 <span>{kindLabel[current.kind]} em análise</span>
-                <span className="phishing-scan-status" aria-live="polite">{marked.size} {marked.size === 1 ? 'pista marcada' : 'pistas marcadas'}</span>
               </div>
 
               <div className="phishing-message-content">
@@ -152,8 +151,8 @@ export function PhishingHunt({ onExit, onFinished }: PhishingHuntProps) {
 
               <div className="phishing-decision-bar">
                 <div><strong>É uma mensagem segura?</strong></div>
-                <button type="button" onClick={() => decide(false)} className="is-trust">Parece segura</button>
-                <button type="button" onClick={() => decide(true)} className="is-report">Parece suspeita</button>
+                <button type="button" onClick={() => decide(false)} className="is-trust" aria-label="Sim, a mensagem é segura">Sim</button>
+                <button type="button" onClick={() => decide(true)} className="is-report" aria-label="Não, a mensagem é suspeita">Não</button>
               </div>
             </motion.section>
           </AnimatePresence>

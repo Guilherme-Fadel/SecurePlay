@@ -107,7 +107,7 @@ export function QuizBlitz({ onExit, onFinished }: QuizBlitzProps) {
         }
     };
     const timerPct = useMemo(() => Math.max(0, (secondsLeft / ROUND_SECONDS) * 100), [secondsLeft]);
-    return (<ChallengeGameShell title="Quiz Relâmpago" eyebrow="Desafio do castelo" description="Toque numa resposta e ganhe pontos antes do tempo acabar." artwork={getChallengeArtwork(null, 'quiz-relampago')} onExit={onExit} progress={questions.length ? (answers.length / questions.length) * 100 : 0} progressLabel={questions.length ? `${Math.min(Math.max(index + 1, answers.length), questions.length)} de ${questions.length} perguntas` : 'Preparando rodada'} metrics={[
+    return (<ChallengeGameShell title="Quiz Relâmpago" description="Toque numa resposta e ganhe pontos antes do tempo acabar." artwork={getChallengeArtwork(null, 'quiz-relampago')} onExit={onExit} progress={questions.length ? (answers.length / questions.length) * 100 : 0} progressLabel={questions.length ? `${Math.min(Math.max(index + 1, answers.length), questions.length)} de ${questions.length} perguntas` : 'Preparando rodada'} metrics={[
             { icon: ListChecks, label: 'Respondidas', value: answers.length },
         ]} className={`quiz-mission${phase === 'playing' ? ' is-playing' : ''}`}>
       {phase === 'loading' && (<ChallengeGameState title="Preparando a rodada" description="Aguarde enquanto as perguntas são embaralhadas."/>)}
@@ -121,18 +121,22 @@ export function QuizBlitz({ onExit, onFinished }: QuizBlitzProps) {
       {phase === 'playing' && current && (<div className="quiz-mission-workspace">
           <section className="quiz-question-workspace">
             <AnimatePresence mode="wait">
-              <motion.div key={current.id} initial={reduceMotion ? false : { opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={reduceMotion ? undefined : { opacity: 0, y: -12 }} transition={{ duration: reduceMotion ? 0 : 0.2 }}>
-                <div className="quiz-run-strip" role="group" aria-label="Tempo da rodada">
-                  <strong>{secondsLeft} segundos</strong>
-                  <div className="quiz-run-track" role="progressbar" aria-label="Tempo restante" aria-valuenow={secondsLeft} aria-valuemin={0} aria-valuemax={ROUND_SECONDS}><span style={{ width: `${timerPct}%` }}/></div>
+              <motion.div className="quiz-question-layout" key={current.id} initial={reduceMotion ? false : { opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={reduceMotion ? undefined : { opacity: 0, y: -12 }} transition={{ duration: reduceMotion ? 0 : 0.2 }}>
+                <div className="quiz-question-top">
+                  <div className="quiz-run-strip" role="group" aria-label="Tempo da rodada">
+                    <strong>{secondsLeft} segundos</strong>
+                    <div className="quiz-run-track" role="progressbar" aria-label="Tempo restante" aria-valuenow={secondsLeft} aria-valuemin={0} aria-valuemax={ROUND_SECONDS}><span style={{ width: `${timerPct}%` }}/></div>
+                  </div>
+                  <span className="quiz-question-kicker">Questão {index + 1} de {questions.length}</span>
                 </div>
-                <span className="quiz-question-kicker">Questão {index + 1} de {questions.length}</span>
-                <h2>{current.text}</h2>
-                <div className="quiz-answer-list">
-                  {current.options.map((option, optionIndex) => (<button type="button" key={optionIndex} onClick={() => answer(optionIndex)}>
-                      <span>{String.fromCharCode(65 + optionIndex)}</span>
-                      <strong>{option}</strong>
-                    </button>))}
+                <div className="quiz-question-main">
+                  <h2>{current.text}</h2>
+                  <div className="quiz-answer-list">
+                    {current.options.map((option, optionIndex) => (<button type="button" key={optionIndex} onClick={() => answer(optionIndex)}>
+                        <span>{String.fromCharCode(65 + optionIndex)}</span>
+                        <strong>{option}</strong>
+                      </button>))}
+                  </div>
                 </div>
               </motion.div>
             </AnimatePresence>

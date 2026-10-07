@@ -156,7 +156,11 @@ export function TermoTech({ onExit, onWin }: TermoTechProps) {
             if ((target?.matches('button, a, [role="button"]') && !cell && !virtualKey) || (target && !boardRef.current?.contains(target) && !virtualKey && target !== document.body)) return;
             const k = e.key.toUpperCase();
             if (virtualKey && k === 'ENTER') return;
-            if (k === 'ENTER')
+            if (status === 'playing' && (k === 'ARROWLEFT' || k === 'ARROWRIGHT')) {
+                e.preventDefault();
+                selectCell(Math.max(0, Math.min(WORD_LEN - 1, selectedCell + (k === 'ARROWRIGHT' ? 1 : -1))));
+            }
+            else if (k === 'ENTER')
                 press('ENTER');
             else if (k === 'BACKSPACE')
                 press('BACK');
@@ -165,9 +169,9 @@ export function TermoTech({ onExit, onWin }: TermoTechProps) {
         };
         window.addEventListener('keydown', onKey);
         return () => window.removeEventListener('keydown', onKey);
-    }, [press]);
-    const rows = Array.from({ length: status === 'playing' ? MAX_ATTEMPTS : guesses.length });
-    return (<ChallengeGameShell title="Palavra Secreta" eyebrow="Mistério do dia" description="Descubra a palavra em até seis tentativas." artwork={getChallengeArtwork(null, 'termotech')} onExit={onExit} progress={status === 'playing' ? (guesses.length / MAX_ATTEMPTS) * 100 : 100} progressLabel={status === 'playing' ? `${guesses.length} de ${MAX_ATTEMPTS} tentativas usadas` : 'Missão concluída'} className={`termotech-mission${status === 'playing' ? '' : ' is-complete'}`}>
+    }, [press, selectCell, selectedCell, status]);
+    const rows = Array.from({ length: MAX_ATTEMPTS });
+    return (<ChallengeGameShell title="Palavra Secreta" description="Descubra a palavra em até seis tentativas." artwork={getChallengeArtwork(null, 'termotech')} onExit={onExit} progress={status === 'playing' ? (guesses.length / MAX_ATTEMPTS) * 100 : 100} progressLabel={status === 'playing' ? `${guesses.length} de ${MAX_ATTEMPTS} tentativas usadas` : 'Missão concluída'} className="termotech-mission">
       <div className="termotech-workspace">
         <section className="termotech-briefing" aria-label="Dica da palavra">
           <span className="termotech-briefing-code">MISSÃO DO DIA · {WORD_LEN} LETRAS</span>
@@ -254,7 +258,7 @@ function Tile({ letter, state, filled, delay, revealed, selected, reduceMotion, 
     const accessibleLabel = letter
         ? `Casa ${cellIndex + 1}, ${letter}${state ? `: ${stateDescription[state]}` : ''}${selected ? ', selecionada' : ''}`
         : `Casa ${cellIndex + 1}, vazia${selected ? ', selecionada' : ''}`;
-    return (<motion.div role="gridcell" data-termo-cell="true" data-cell-index={cellIndex} tabIndex={interactive ? (selected ? 0 : -1) : undefined} aria-label={accessibleLabel} aria-selected={selected || undefined} onClick={interactive ? () => onSelect?.(cellIndex) : undefined} onKeyDown={interactive ? (event) => { if (event.key === ' ') { event.preventDefault(); event.stopPropagation(); onSelect?.(cellIndex); } else if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') { const nextIndex = Math.max(0, Math.min(WORD_LEN - 1, cellIndex + (event.key === 'ArrowRight' ? 1 : -1))); event.preventDefault(); event.stopPropagation(); onSelect?.(nextIndex); } } : undefined} className={`termotech-tile ${look}`} initial={revealed && !reduceMotion ? { rotateX: 0 } : false} animate={!reduceMotion && revealed ? { rotateX: [0, 90, 0] } : !reduceMotion && filled ? { scale: [1, 1.08, 1] } : {}} transition={{ duration: reduceMotion ? 0 : revealed ? 0.5 : 0.12, delay: reduceMotion ? 0 : delay }}>
+    return (<motion.div role="gridcell" data-termo-cell="true" data-cell-index={cellIndex} tabIndex={interactive ? (selected ? 0 : -1) : undefined} aria-label={accessibleLabel} aria-selected={selected || undefined} onClick={interactive ? () => onSelect?.(cellIndex) : undefined} onKeyDown={interactive ? (event) => { if (event.key === ' ') { event.preventDefault(); event.stopPropagation(); onSelect?.(cellIndex); } } : undefined} className={`termotech-tile ${look}`} initial={revealed && !reduceMotion ? { rotateX: 0 } : false} animate={!reduceMotion && revealed ? { rotateX: [0, 90, 0] } : !reduceMotion && filled ? { scale: [1, 1.08, 1] } : {}} transition={{ duration: reduceMotion ? 0 : revealed ? 0.5 : 0.12, delay: reduceMotion ? 0 : delay }}>
       <span>{letter}</span>{state && <small aria-hidden="true">{stateSymbol[state]}</small>}
     </motion.div>);
 }
