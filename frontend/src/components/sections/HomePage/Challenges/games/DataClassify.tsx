@@ -2,7 +2,7 @@ import { useEffect, useState, useCallback, useRef } from 'react';
 import { Check, X } from 'lucide-react';
 import { startRun, submitRun, type DataItemView, type DataAnswer, type SubmitRunResponse, type TokenState, } from '@/services/arcade';
 import { AppButton } from '@/components/ui/buttons/AppButton';
-import { ChallengeGameResult, ChallengeGameShell, ChallengeGameState, } from '../ChallengeGameShell';
+import { ChallengeGameResult, ChallengeGameShell, ChallengeGameState, GameReviewItems } from '../ChallengeGameShell';
 import { getChallengeArtwork } from '@/lib/challengeArtwork';
 interface DataClassifyProps {
     onExit: () => void;
@@ -142,6 +142,7 @@ export function DataClassify({ onExit, onFinished }: DataClassifyProps) {
                 : undefined}>
           <div className="data-review-list">
             <div className="data-review-heading"><div><h3>Confira os escudos</h3><p>Veja se cada informação ficou bem protegida.</p></div></div>
+            <GameReviewItems>
             {(result.feedback as {
                 items?: FeedbackItem[];
             })?.items?.map((item, itemIndex) => {
@@ -152,6 +153,7 @@ export function DataClassify({ onExit, onFinished }: DataClassifyProps) {
                   <section><strong>{item.correct ? 'Bem protegido!' : 'Vamos escolher outro escudo'}</strong><p>{item.label}</p><p>Você escolheu: {LEVELS.find((level) => level.key === item.chosenLevel)?.label ?? 'nenhum'}. Nível recomendado: {levelLabel}.</p><p>{item.explanation}</p></section>
                 </div>);
             })}
+            </GameReviewItems>
           </div>
         </ChallengeGameResult>)}
     </ChallengeGameShell>);

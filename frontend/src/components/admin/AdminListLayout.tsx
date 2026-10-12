@@ -36,9 +36,10 @@ interface AdminCardHeadingProps {
   description: string;
   icon: ReactNode;
   iconTone?: 'accent' | 'secondary';
+  action?: ReactNode;
 }
 
-export function AdminCardHeading({ title, description, icon, iconTone }: AdminCardHeadingProps) {
+export function AdminCardHeading({ title, description, icon, iconTone, action }: AdminCardHeadingProps) {
   return (
     <div className="admin-users-card-heading">
       <span className={cn('admin-users-heading-icon', iconTone && `is-${iconTone}`)} aria-hidden="true">{icon}</span>
@@ -46,6 +47,7 @@ export function AdminCardHeading({ title, description, icon, iconTone }: AdminCa
         <h2>{title}</h2>
         <AdminHelpTip label={title} text={description} />
       </div>
+      {action}
     </div>
   );
 }
@@ -99,12 +101,13 @@ interface AdminPaginationProps {
   onPageChange: (page: number) => void;
   disabled?: boolean;
   detail?: string;
+  adjacentButtons?: boolean;
 }
 
-export function AdminPagination({ page, totalPages, ariaLabel, onPageChange, disabled = false, detail }: AdminPaginationProps) {
+export function AdminPagination({ page, totalPages, ariaLabel, onPageChange, disabled = false, detail, adjacentButtons = false }: AdminPaginationProps) {
   if (totalPages <= 1) return null;
   return (
-    <nav className="admin-list-pagination" aria-label={ariaLabel}>
+    <nav className={cn('admin-list-pagination', adjacentButtons && 'admin-pagination-adjacent')} aria-label={ariaLabel}>
       <AppButton variant="ghost" size="sm" disabled={disabled || page <= 1} onClick={() => onPageChange(page - 1)}>Anterior</AppButton>
       <span>Página {page} de {Math.max(1, totalPages)}{detail ? ` · ${detail}` : ''}</span>
       <AppButton variant="ghost" size="sm" disabled={disabled || page >= totalPages} onClick={() => onPageChange(page + 1)}>Próxima</AppButton>

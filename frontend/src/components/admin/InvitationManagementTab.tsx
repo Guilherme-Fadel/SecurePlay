@@ -9,6 +9,7 @@ import { cn } from '@/lib/utils';
 import { AdminCardHeading, AdminListCard, AdminListContent, AdminListState, AdminPagination, AdminPageHeader, AdminListToolbar } from '@/components/admin/AdminListLayout';
 import { criarConvite, listarConvites, revogarConvite, type ConvitesPaginados } from '@/services/convites';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
+import { useNotebookLayout } from '@/hooks/useNotebookLayout';
 
 interface InvitationManagementTabProps {
   empresaId?: number;
@@ -21,6 +22,7 @@ function formatDate(value: string) {
 
 export function InvitationManagementTab({ empresaId, podeCriarAdministrador = false }: InvitationManagementTabProps) {
   const { user } = useCurrentUser();
+  const pageSize = useNotebookLayout() ? 3 : 25;
   const sessionKey = `secureplay-admin-invitations:${user?.userId ?? 'unknown'}:${empresaId ?? 'company'}`;
   const emptyResult: ConvitesPaginados = { items: [], page: 1, pageSize: 25, total: 0, totalPages: 0 };
   const [result, setResult] = useState(emptyResult);
@@ -87,12 +89,12 @@ export function InvitationManagementTab({ empresaId, podeCriarAdministrador = fa
     let cancelled = false;
     setLoading(true);
     setLoadError(false);
-    void listarConvites({ page, pageSize: 25, search: deferredSearch, sort }, empresaId)
+    void listarConvites({ page, pageSize, search: deferredSearch, sort }, empresaId)
       .then((next) => { if (!cancelled) setResult(next); })
       .catch(() => { if (!cancelled) setLoadError(true); })
       .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
-  }, [deferredSearch, empresaId, page, reload, restoredKey, search, sessionKey, sort]);
+  }, [deferredSearch, empresaId, page, pageSize, reload, restoredKey, search, sessionKey, sort]);
 
   const criar = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -149,7 +151,7 @@ export function InvitationManagementTab({ empresaId, podeCriarAdministrador = fa
           <AppButton type="submit" disabled={creating} icon={<Link2 size={16} />}>{creating ? 'Gerando...' : 'Gerar convite'}</AppButton>
         </form>
       </section>
-      <AdminListCard className="admin-invites-card" loading={loading}><AdminCardHeading title="Convites emitidos" description="Links com expiração e uso controlado." icon={<QrCode size={19} />} iconTone="accent" /><AdminListToolbar><AppSearchInput label="Buscar convites" value={search} onChange={(event) => { setSearch(event.target.value); setPage(1); }} placeholder="Buscar por e-mail" /><AppSelect aria-label="Ordenar convites por data" value={sort} onChange={(event) => { setSort(event.target.value as 'asc' | 'desc'); setPage(1); }}><option value="desc">Mais recentes</option><option value="asc">Mais antigos</option></AppSelect></AdminListToolbar><AdminListContent className="admin-invites-table">{loadError ? <AdminListState kind="error" onRetry={() => setReload((current) => current + 1)}>Não foi possível carregar os convites.</AdminListState> : loading ? <AdminListState kind="loading">Carregando convites...</AdminListState> : result.items.length === 0 ? <AdminListState kind="empty">{deferredSearch ? 'Nenhum convite corresponde à busca.' : 'Nenhum convite criado ainda.'}</AdminListState> : result.items.map((convite) => <div key={convite.id} className="admin-invite-row"><div><strong>{convite.email ?? 'Link aberto para a empresa'}{convite.role === 'admin' ? ' · Administrador' : ''}</strong><small>Expira em {formatDate(convite.expires_at)} · {convite.uses}/{convite.max_uses} usos</small></div><span className={`admin-invite-status is-${convite.status}`}>{convite.status}</span>{convite.status === 'ativo' && <AppButton variant="ghost" size="sm" icon={<Trash2 size={14} />} disabled={revoking === convite.id} onClick={() => void revogar(convite.id)}>Revogar</AppButton>}</div>)}</AdminListContent>{!loading && !loadError && <AdminPagination page={page} totalPages={result.totalPages} ariaLabel="Paginação de convites" disabled={loading} detail={`${result.total} convites`} onPageChange={setPage} />}</AdminListCard>
+      <AdminListCard className="admin-invites-card" loading={loading}><AdminCardHeading title="Convites emitidos" description="Links com expiração e uso controlado." icon={<QrCode size={19} />} iconTone="accent" action={<span className="admin-invites-total" aria-label="Total de convites">{loading || loadError ? '—' : `${result.total} convites`}</span>} /><AdminListToolbar><AppSearchInput label="Buscar convites" value={search} onChange={(event) => { setSearch(event.target.value); setPage(1); }} placeholder="Buscar por e-mail" /><AppSelect aria-label="Ordenar convites por data" value={sort} onChange={(event) => { setSort(event.target.value as 'asc' | 'desc'); setPage(1); }}><option value="desc">Mais recentes</option><option value="asc">Mais antigos</option></AppSelect></AdminListToolbar><AdminListContent className="admin-invites-table">{loadError ? <AdminListState kind="error" onRetry={() => setReload((current) => current + 1)}>Não foi possível carregar os convites.</AdminListState> : loading ? <AdminListState kind="loading">Carregando convites...</AdminListState> : result.items.length === 0 ? <AdminListState kind="empty">{deferredSearch ? 'Nenhum convite corresponde à busca.' : 'Nenhum convite criado ainda.'}</AdminListState> : result.items.map((convite) => <div key={convite.id} className="admin-invite-row"><div><strong>{convite.email ?? 'Link aberto para a empresa'}{convite.role === 'admin' ? ' · Administrador' : ''}</strong><small>Expira em {formatDate(convite.expires_at)} · {convite.uses}/{convite.max_uses} usos</small></div><span className={`admin-invite-status is-${convite.status}`}>{convite.status}</span>{convite.status === 'ativo' && <AppButton variant="ghost" size="sm" icon={<Trash2 size={14} />} disabled={revoking === convite.id} onClick={() => void revogar(convite.id)}>Revogar</AppButton>}</div>)}</AdminListContent>{!loading && !loadError && <AdminPagination page={page} totalPages={result.totalPages} ariaLabel="Paginação de convites" disabled={loading} adjacentButtons onPageChange={setPage} />}</AdminListCard>
     </div>
     {linkGerado && <div className="admin-qr-modal" role="dialog" aria-modal="true" aria-labelledby="invite-dialog-title"><div className="admin-qr-card" ref={dialogRef}><button ref={closeButtonRef} className="admin-qr-close" onClick={fecharConvite} aria-label="Fechar">×</button><div className="admin-qr-title"><QrCode size={20} /><div><strong id="invite-dialog-title">Convite pronto</strong><span>Compartilhe pelo link ou QR code.</span></div></div><div className="admin-qr-code"><QRCodeSVG value={linkGerado} size={172} level="M" includeMargin /></div><div className="admin-qr-link"><span>{linkGerado}</span><button onClick={() => void copiar(linkGerado)}><Copy size={15} /> Copiar</button></div></div></div>}
   </div>;

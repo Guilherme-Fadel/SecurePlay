@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react';
 import { ArrowDown, ArrowUp, BookOpen, Building2, CalendarDays, Crown, Flame, Globe2, Medal, RefreshCw, Shield, Zap } from 'lucide-react';
 import { PageTransition } from '@/components/shared/PageTransition';
 import { AppButton } from '@/components/ui/buttons/AppButton';
+import { PageControls } from '@/components/ui/navigation/PageControls';
+import { useNotebookLayout } from '@/hooks/useNotebookLayout';
 import { AppSelect } from '@/components/ui/forms/AppSelect';
 import { Avatar } from '@/components/ui/visuals/Avatar';
 import { useDashboardRanking } from '@/hooks/useDashboard';
@@ -181,7 +183,13 @@ function WeeklyHighlights({ ranking }: { ranking: RankingData }) {
 }
 
 function RankingSection({ ranking, scopeLabel, xpLabel }: { ranking: RankingData; scopeLabel: string; xpLabel: string }) {
+  const compact = useNotebookLayout();
+  const [page, setPage] = useState(0);
+  useEffect(() => setPage(0), [ranking.scope, ranking.mode, ranking.selectedSeason, ranking.company?.id]);
   const rest = (ranking.leaderboard ?? ranking.top).slice(3);
+  const totalPages = Math.ceil(rest.length / 4);
+  const safePage = Math.min(page, Math.max(0, totalPages - 1));
+  const visibleEntries = compact ? rest.slice(safePage * 4, safePage * 4 + 4) : rest;
   const showWeeklyChange = ranking.mode === 'current';
   const description = ranking.mode === 'total'
     ? 'Classificação pelo XP acumulado; o nível mostra a faixa alcançada.'
@@ -194,9 +202,10 @@ function RankingSection({ ranking, scopeLabel, xpLabel }: { ranking: RankingData
     <div className="ranking-card-heading"><div><h2 id="ranking-classification-title">Classificação</h2><p>{description}</p></div></div>
     {rest.length > 0 ? <div className={`ranking-table${showWeeklyChange ? '' : ' is-history'}`} role="table" aria-label={`Classificação ${scopeLabel}, ${xpLabel}, a partir do quarto colocado`}>
       <div className="ranking-table-head" role="row"><span role="columnheader">#</span><span role="columnheader">Jogador</span><span role="columnheader">Nível</span>{showWeeklyChange && <span role="columnheader">Variação (semana)</span>}<span role="columnheader">{xpLabel}</span></div>
-      {rest.map(entry => <RankingRow key={entry.id} entry={entry} showWeeklyChange={showWeeklyChange} />)}
+      {visibleEntries.map(entry => <RankingRow key={entry.id} entry={entry} showWeeklyChange={showWeeklyChange} />)}
     </div> : <p className="ranking-empty">{ranking.totalParticipants === 0 ? 'Ainda não há participantes nesta classificação.' : 'Todos os participantes desta classificação estão no pódio.'}</p>}
     {ranking.leaderboard?.length === 50 && ranking.totalParticipants > 50 && <p className="ranking-list-note">Exibindo os 50 primeiros de {ranking.totalParticipants.toLocaleString('pt-BR')} participantes.</p>}
+    {compact && <PageControls page={safePage} total={totalPages} onChange={setPage} label="Classificação" />}
   </section>;
 }
 

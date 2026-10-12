@@ -579,7 +579,7 @@
   text-transform: uppercase;
 }
 .termotech-tile.is-filled { border-color: var(--primary); background: rgba(var(--primary-rgb), 0.05); }
-.termotech-tile.is-selected { border-color: var(--primary); outline: var(--app-control-focus); outline-offset: 2px; background: rgba(var(--primary-rgb), .1); }
+.termotech-tile.is-selected { border-color: var(--primary); outline: none; background: rgba(var(--primary-rgb), .1); }
 .termotech-tile small { position: absolute; right: 4px; bottom: 1px; color: currentColor; font-size: 13px; font-weight: 900; }
 .termotech-tile.is-correct, .termotech-key.is-correct { border-color: #00a98f; background: #00a98f; color: #fff; }
 .termotech-tile.is-present, .termotech-key.is-present { border-color: var(--accent-dark); background: var(--accent-dark); color: #fff; }
@@ -882,6 +882,7 @@
 .termotech-board .termotech-hint { margin: 0 0 16px !important; padding: 12px 15px; border: 1px solid var(--arcade-paper-edge); border-radius: 14px; background: #f6e8c8; color: var(--arcade-ink) !important; font-size: 15px; }
 .termotech-board .termotech-grid { margin: 0 0 20px; }
 .termotech-board .termotech-tile { width: 58px; height: 58px; border: 2px solid var(--arcade-paper-edge); border-radius: 13px; background: var(--arcade-paper-raised); color: var(--arcade-ink); font-size: 25px; }
+.termotech-board .termotech-tile.is-selected { border-color: var(--primary); outline: none; background: rgba(var(--primary-rgb), .1); }
 .termotech-board .termotech-tile.is-correct,
 .termotech-board .termotech-tile.is-present,
 .termotech-board .termotech-tile.is-absent { color: #fff; }
@@ -1184,11 +1185,14 @@
 .phishing-mission .phishing-message-console { width: min(100%, 1120px); }
 .phishing-mission .phishing-decision-bar button { min-width: 88px; }
 
-@media (min-width: 1200px) and (min-height: 760px) {
-  .secure-home-main:has(> .arcade-mission-shell) { display: flex; flex-direction: column; overflow: hidden; }
-  .secure-home-main > .arcade-mission-shell { height: 100%; min-height: 0; flex: 1; }
-  .arcade-mission-stage { min-height: 0; flex: 1; padding: 10px; }
-  .arcade-mission-stage > :is(.quiz-mission-workspace, .phishing-mission-workspace, .data-mission-workspace, .termotech-workspace) { height: 100%; min-height: 0; }
+/* Use the browser viewport, including short notebook windows. Keep overflow
+   reachable when zoom, longer text or a trial banner leaves less room. */
+@media (min-width: 1101px) {
+  .secure-home-main:has(> .arcade-mission-shell) { display: flex; flex-direction: column; }
+  .secure-home-main > .arcade-mission-shell { min-height: 0; flex: 1 0 440px; }
+  .arcade-mission-header, .arcade-mission-progress { flex-shrink: 0; }
+  .arcade-mission-stage { min-height: 0; flex: 1; padding: 10px; overflow: auto; }
+  .arcade-mission-stage > :is(.quiz-mission-workspace, .phishing-mission-workspace, .data-mission-workspace, .termotech-workspace) { min-height: 0; flex: 1; }
   .arcade-mission-stage > :is(.arcade-game-state, .arcade-result-screen) { min-height: 0; max-height: 100%; overflow: auto; }
 
   .quiz-mission .quiz-question-workspace { width: min(100%, 1120px); height: 100%; min-height: 0; }
@@ -1196,14 +1200,14 @@
   .phishing-message-content { min-height: 0; flex: 1; }
 
   .data-mission .data-document-console { display: flex; width: min(100%, 1120px); height: 100%; min-height: 0; flex-direction: column; }
-  .data-mission .data-document-list { min-height: 0; flex: 1; grid-template-columns: repeat(3, minmax(0, 1fr)); grid-template-rows: repeat(2, minmax(0, 1fr)); gap: 8px; padding: 8px; }
+  .data-mission .data-document-list { min-height: 0; flex: 1; grid-template-columns: repeat(3, minmax(0, 1fr)); grid-template-rows: repeat(2, minmax(min-content, 1fr)); gap: 8px; padding: 8px; overflow: auto; }
   .data-mission .data-document-row { min-height: 0; align-content: start; gap: 14px 10px; padding: 14px 12px; }
   .data-mission .data-document-name strong { font-size: 14px; line-height: 1.25; }
   .data-mission .data-level-selector { gap: 10px 6px; }
   .data-mission .data-level-selector button { min-height: 40px; padding: 4px; font-size: 13px; }
   .data-mission .data-submit-bar { min-height: 60px; }
 
-  .quiz-mission .quiz-question-main { padding-bottom: clamp(72px, 13vh, 120px); }
+  .quiz-mission .quiz-question-main { padding-bottom: clamp(12px, 3vh, 32px); }
 
   .termotech-mission .termotech-workspace { display: flex; flex-direction: column; padding: 0; }
   .termotech-mission .termotech-briefing { flex: 0 0 auto; gap: 2px 12px; margin-bottom: 8px; padding: 8px 14px; }
@@ -1214,6 +1218,23 @@
   .termotech-mission .termotech-keyboard { gap: 5px; }
   .termotech-mission .termotech-keyboard > div { gap: 5px; }
   .termotech-mission .termotech-key { min-height: 42px; height: 42px; }
+}
+
+/* In HD notebooks the hint sits beside the board, leaving all six attempts
+   and the virtual keyboard visible without shrinking the whole application. */
+@media (min-width: 1101px) and (max-height: 820px) {
+  .termotech-mission .termotech-workspace { display: grid; grid-template-columns: minmax(220px, .7fr) minmax(0, 1.3fr); align-items: stretch; gap: 10px; }
+  .termotech-mission .termotech-briefing { display: flex; width: 100%; flex-direction: column; align-items: flex-start; justify-content: center; gap: 12px; margin: 0; padding: 18px; }
+  .termotech-mission .termotech-briefing .termotech-legend-disclosure { margin: 0; }
+  .termotech-mission .termotech-legend-disclosure .termotech-legend { right: auto; left: 0; min-width: 0; width: min(280px, 100%); }
+  .termotech-mission .termotech-board { justify-content: safe center; }
+  .termotech-mission .termotech-grid, .termotech-mission .termotech-keyboard { flex-shrink: 0; }
+  .termotech-mission .termotech-board .termotech-tile { width: clamp(36px, 6.5dvh, 46px); height: clamp(36px, 6.5dvh, 46px); }
+  .termotech-mission .termotech-key { min-width: 0; width: 34px; font-size: 14px; }
+  .termotech-mission .termotech-key.is-wide { width: 70px; font-size: 12px; }
+  .quiz-mission .quiz-question-workspace { padding: 12px 20px; }
+  .quiz-mission .quiz-question-workspace h2 { margin: 10px auto 14px; font-size: clamp(22px, 2vw, 28px); }
+  .quiz-mission .quiz-answer-list button { min-height: 56px; padding: 10px; }
 }
 @media (max-width: 420px) {
   .termotech-key.is-wide { width: 100%; font-size: 11px; }

@@ -8,16 +8,29 @@ import { ProgressiveImage } from '@/components/ui/visuals/ProgressiveImage';
 import { getModuleArtwork } from '@/lib/staticArtwork';
 import { groupAulasBySections, sortAulasByModuleSequence } from '@/lib/lessonOrder';
 import '@/styles/module-library-room.css';
+import { useEffect, useState } from 'react';
+import { useNotebookLayout } from '@/hooks/useNotebookLayout';
+import { PageControls } from '@/components/ui/navigation/PageControls';
 
 interface ModuloDetalhesProps { moduloId: number; onBack: () => void; onSelectAula: (aulaId: number) => void; }
 
 export function ModuloDetalhes({ moduloId, onBack, onSelectAula }: ModuloDetalhesProps) {
   const { modulo, loading } = useModulo(moduloId);
   const assets = useMissionRoomAssets();
+  const compact = useNotebookLayout();
+  const [page, setPage] = useState(0);
+  useEffect(() => setPage(0), [moduloId]);
   if (loading || !modulo || !assets['module-book-frame-clean']) return <div className="flex items-center justify-center h-64"><p className="text-[var(--text-secondary)]">Abrindo o livro da missão...</p></div>;
 
   const orderedAulas = sortAulasByModuleSequence(modulo.aulas);
   const sections = groupAulasBySections(orderedAulas);
+  const bookPages = sections.flatMap((section, sectionIndex) =>
+    Array.from({ length: Math.ceil(section.aulas.length / 2) }, (_, index) => ({
+      ...section, sectionIndex, offset: index * 2, aulas: section.aulas.slice(index * 2, index * 2 + 2),
+    })),
+  );
+  const safePage = Math.min(page, Math.max(0, bookPages.length - 1));
+  const visibleSections = compact ? bookPages.slice(safePage, safePage + 1) : sections.map((section, sectionIndex) => ({ ...section, sectionIndex, offset: 0 }));
   const nextAula = orderedAulas.find((aula) => aula.status === 'unlocked');
   const stars = modulo.difficulty === 'iniciante' ? 1 : modulo.difficulty === 'intermediario' ? 2 : 3;
 
@@ -35,12 +48,13 @@ export function ModuloDetalhes({ moduloId, onBack, onSelectAula }: ModuloDetalhe
         </section>
         <section className="module-book-route" aria-label="Capítulos e aulas do módulo">
           <div className="module-book-scroll">
-            {sections.map(({ name, aulas }, sectionIndex) => <section className="module-book-chapter" key={name || `section-${sectionIndex}`}>
+            {visibleSections.map(({ name, aulas, sectionIndex, offset }) => <section className="module-book-chapter" key={`${sectionIndex}-${offset}`}>
               <header><span>Capítulo {sectionIndex + 1}</span><i /><strong>{name || 'Aulas da missão'}</strong></header>
-              <div className="module-book-lessons">{aulas.map((aula, aulaIndex) => <AulaListItem key={aula.id} aula={aula} index={aulaIndex} artSrc={getLessonIcon(aula, aulaIndex, assets)} onClick={() => onSelectAula(aula.id)} />)}</div>
+              <div className="module-book-lessons">{aulas.map((aula, aulaIndex) => <AulaListItem key={aula.id} aula={aula} index={aulaIndex + offset} artSrc={getLessonIcon(aula, aulaIndex + offset, assets)} onClick={() => onSelectAula(aula.id)} />)}</div>
             </section>)}
-            <div className="module-book-finish"><Trophy size={18} /><span>Fim da missão</span></div>
+            {(!compact || safePage === bookPages.length - 1) && <div className="module-book-finish"><Trophy size={18} /><span>Fim da missão</span></div>}
           </div>
+          {compact && <PageControls page={safePage} total={bookPages.length} onChange={setPage} label="Aulas do livro" />}
         </section>
       </main>
     </div>

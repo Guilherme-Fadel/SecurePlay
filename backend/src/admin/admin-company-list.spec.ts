@@ -37,4 +37,11 @@ describe('AdminService.listarEmpresasPaginadas', () => {
     expect(query.orderBy).toHaveBeenCalledWith('empresa.nome', 'ASC');
     expect(query.take).toHaveBeenCalledWith(100);
   });
+
+  it('respeita paginas compactas sem pular empresas entre as paginas', async () => {
+    await expect(service.listarEmpresasPaginadas({ page: 2, pageSize: 3 }))
+      .resolves.toMatchObject({ page: 2, pageSize: 3, total: 31, totalPages: 11 });
+    expect(query.skip).toHaveBeenCalledWith(3);
+    expect(query.take).toHaveBeenCalledWith(3);
+  });
 });

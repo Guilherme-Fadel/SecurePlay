@@ -92,8 +92,9 @@ export async function getCompanyParameters(
 export async function listarAuditoriaEmpresa(
   empresaId: number,
   page: number,
+  pageSize = 25,
 ): Promise<AuditoriaPaginada> {
-  const params = new URLSearchParams({ page: String(page), pageSize: '25' });
+  const params = new URLSearchParams({ page: String(page), pageSize: String(pageSize) });
   const response = await api.get(`/platform/admin/empresas/${empresaId}/auditoria?${params}`);
   return response.data;
 }

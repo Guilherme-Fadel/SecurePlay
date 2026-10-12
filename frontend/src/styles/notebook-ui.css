@@ -1,0 +1,342 @@
+/* HD notebooks: size the composition to the browser's usable viewport.
+   Lists use their page controls; content is never hidden to simulate a fit. */
+.app-page-controls { display: flex; flex: 0 0 auto; align-items: center; justify-content: center; gap: 10px; padding: 4px 0; }
+.app-page-controls > span { font-size: 12px; white-space: nowrap; }
+.app-page-controls .app-button { min-height: 30px; padding: 4px 8px; font-size: 12px; }
+@media (min-width: 1101px) and (max-height: 820px) {
+  .secure-header { height: 56px !important; min-height: 56px; flex-shrink: 0; }
+  .secure-header .secure-user-menu-trigger { height: 44px; max-height: 44px; min-height: 0; padding: 4px 10px; gap: 8px; }
+  .secure-header .secure-user-avatar { width: 30px; height: 30px; }
+  .secure-header .secure-user-menu-trigger .text-left { line-height: 16px; }
+  .secure-header .secure-user-menu-trigger .text-left p { margin: 0; font-size: 13px; line-height: 16px; }
+  .secure-header .secure-user-menu-trigger .text-left p:last-child { font-size: 11px; line-height: 14px; }
+  .secure-home .secure-home-main { padding: 10px 18px !important; }
+  .secure-home .secure-home-main:has(.hall-dashboard) { padding: 16px 24px 18px !important; }
+  .secure-home-main > .arcade-mission-shell { min-height: 0; flex: 1 1 0; }
+  .arcade-mission-shell .arcade-mission-header { min-height: 56px; padding: 5px 12px; gap: 10px; }
+  .arcade-mission-shell .arcade-mission-artwork { width: 40px; height: 40px; flex-basis: 40px; }
+  .arcade-mission-shell .arcade-mission-identity h1 { font-size: 20px; }
+  .arcade-mission-shell .arcade-mission-stage { padding: 8px; }
+  .termotech-mission .termotech-board { padding: 8px; }
+  .termotech-mission .termotech-board .termotech-tile { width: clamp(28px, calc((100dvh - 340px) / 6), 44px); height: clamp(28px, calc((100dvh - 340px) / 6), 44px); border-radius: 9px; font-size: 20px; }
+  .termotech-mission .termotech-board .termotech-grid { margin-bottom: 8px; }
+  .termotech-mission .termotech-keyboard, .termotech-mission .termotech-keyboard > div { gap: 4px; }
+  .termotech-mission .termotech-key { min-height: 36px; height: 36px; }
+  .termotech-mission .termotech-briefing { padding: 14px; }
+  .termotech-mission .termotech-tile:focus-visible { outline: none; border-color: var(--primary); }
+  .arcade-mission-shell .arcade-game-state { min-height: 0; padding: 24px; }
+  .phishing-mission .phishing-mission-workspace { padding: 0; }
+  .phishing-mission .phishing-message-console { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(230px, .8fr); grid-template-rows: auto minmax(0, 1fr) auto; }
+  .phishing-mission .phishing-console-bar { grid-column: 1 / -1; min-height: 40px; padding: 7px 12px; }
+  .phishing-mission .phishing-message-content { grid-column: 1; min-height: 0; padding: 12px; }
+  .phishing-mission .phishing-message-metadata { padding: 8px; gap: 5px; }
+  .phishing-mission .phishing-message-metadata-row { font-size: 13px; }
+  .phishing-mission .phishing-message-body { min-height: 0; padding: 10px 0 0; font-size: 15px; line-height: 1.4; }
+  .phishing-mission .phishing-signal-panel { grid-column: 2; min-height: 0; padding: 12px; border-top: 0; border-left: 1px solid var(--arcade-paper-edge); }
+  .phishing-mission .phishing-signal-list { display: grid; grid-template-columns: minmax(0, 1fr); gap: 5px; }
+  .phishing-mission .phishing-signal-list button { min-height: 34px; font-size: 13px; }
+  .phishing-mission .phishing-decision-bar { grid-column: 1 / -1; padding: 7px 12px; }
+  .phishing-mission .phishing-decision-bar button { min-height: 36px; font-size: 14px; }
+  .data-mission .data-mission-workspace { padding: 0; }
+  .data-mission .data-document-console > header { min-height: 42px; padding: 7px 12px; }
+  .data-mission .data-document-console > header h2 { font-size: 16px; }
+  .data-mission .data-document-row { gap: 5px 7px; padding: 8px; }
+  .data-mission .data-document-name strong { font-size: 13px; line-height: 1.2; }
+  .data-mission .data-level-selector { gap: 5px; }
+  .data-mission .data-level-selector button { min-height: 32px; padding: 3px; font-size: 12px; }
+  .data-mission .data-level-selector button > small { font-size: 10px; }
+  .data-mission .data-submit-bar { min-height: 44px; padding: 5px 12px; }
+  .data-mission .data-submit-bar .app-button { min-height: 34px; font-size: 13px; }
+  .arcade-mission-shell .arcade-result-summary { padding: 18px; }
+  .arcade-mission-shell .arcade-result-summary h2 { font-size: 21px; }
+  .arcade-mission-shell .arcade-result-review { padding: 12px; }
+  .arcade-mission-shell .quiz-result-analysis { min-height: 0; }
+  .arcade-mission-shell .quiz-score-dial { width: 80px; height: 80px; }
+  .arcade-mission-shell .quiz-result-analysis h3 { margin: 8px 0 4px; }
+  .arcade-mission-shell .quiz-result-review { margin-top: 8px; }
+  .arcade-mission-shell .quiz-result-review li { padding: 8px; }
+
+  .missions-room-page { height: 100%; min-height: 0; gap: 6px; padding-bottom: 0; }
+  .missions-room-page .missions-room-title { min-height: 36px; }
+  .missions-room-page .missions-room-title h1 { font-size: 23px; }
+  .missions-room-page .missions-room-stage { min-height: 0; flex: 0 0 185px; padding: 12px 65px 22px; }
+  .missions-room-page .missions-level-board { min-height: 0; height: 100%; }
+  .missions-room-page .missions-level-copy { padding: 8px 16px; }
+  .missions-room-page .missions-level-copy h2 { margin: 2px 0; font-size: 23px; line-height: 1.1; }
+  .missions-room-page .missions-level-copy > p { line-height: 1.2; }
+  .missions-room-page .missions-level-metrics { margin-top: 3px; }
+  .missions-room-page .missions-level-metrics img { width: 24px; height: 24px; }
+  .missions-room-page .missions-level-copy .app-button { min-height: 30px; margin-top: 4px; }
+  .missions-room-page .missions-level-art img { height: 100px; }
+  .missions-room-page .missions-module-grid { height: auto; min-height: 0; flex: 1; padding: 10px 12px 14px; }
+  .missions-room-page .missions-carousel { min-height: 0; flex: 1; gap: 6px; }
+  .missions-room-page .mission-card { min-height: 0; padding: 5px 12px 30px; justify-content: center; }
+  .missions-room-page .mission-card-art { width: 48px; height: 48px; min-height: 48px; margin: 0; }
+  .missions-room-page .missions-carousel-arrow { width: 30px; height: 30px; border-width: 2px; }
+  .missions-room-page .missions-filter-bar { flex-shrink: 0; }
+
+  .app-page.module-book-page { height: 100%; min-height: 0; padding: 0; }
+  .module-book-page .module-book { padding: 4% 5.8% 5%; }
+  .module-book-page .module-book-cover { width: min(86%, 360px); max-width: 100%; height: 100px; flex-shrink: 0; }
+  .module-book-page .module-book-summary h1 { font-size: 22px; }
+  .module-book-page .module-book-summary > p { font-size: 11px; }
+  .module-book-page .module-book-progress { margin: 8px 0; }
+  .module-book-page .module-book-reward { padding: 5px 10px; }
+  .module-book-page .module-book-summary > .app-button { min-height: 34px; margin-top: 7px; }
+  .module-book-page .module-book-route { display: flex; min-height: 0; flex-direction: column; overflow: visible; }
+  .module-book-page .module-book-scroll { height: auto; min-height: 0; flex: 1; padding: 0 10px 0 2px; overflow: visible; }
+  .module-book-page .app-page-controls { position: relative; z-index: 2; }
+  .module-book-page .module-book-chapter > header { min-height: 30px; margin-bottom: 8px; padding: 5px 10px; font-size: 11px; }
+  .module-book-page .module-book-lessons { gap: 7px; }
+  .module-book-page .module-book-lessons .learning-lesson-row { min-height: 66px; gap: 6px; padding: 6px 10px; }
+  .module-book-page .module-book-finish { margin-top: 8px; padding: 5px 10px; }
+
+  .is-classroom-view .classroom-library .learning-shell-header { min-height: 64px; }
+  .is-classroom-view .classroom-library .learning-shell-identity h1 { font-size: 22px; }
+  .is-classroom-view .classroom-library .learning-shell-identity span { line-height: 1.2; }
+  .is-classroom-view .classroom-library .learning-shell-identity p { margin: 0; font-size: 11px; line-height: 1.3; }
+  .is-classroom-view .classroom-library .learning-shell-identity > div:first-child { width: 40px; height: 44px; flex-basis: 40px; }
+  .is-classroom-view .classroom-library .learning-shell-footer { min-height: 38px; padding: 4px 10px; margin-top: 6px; }
+  .is-classroom-view .classroom-library .learning-shell-content, .is-classroom-view .classroom-library .learning-shell-aside { padding: 10px; }
+  .is-classroom-view .classroom-library .classroom-reader-tools { gap: 6px; }
+  .is-classroom-view .classroom-library .classroom-reader-tools button { min-height: 30px; padding: 4px 8px; }
+  .is-classroom-view .classroom-library .comic-reader-navigation .classroom-page-button { min-height: 34px; padding: 5px 10px; }
+  .is-classroom-view .classroom-library .text-learning-page { padding: 8px; }
+  .is-classroom-view .classroom-library .text-learning-page p { font-size: 16px; line-height: 1.4; }
+  .is-classroom-view .classroom-library .classroom-lesson-trail { flex: 0 0 auto; max-height: none; overflow: visible; gap: 6px; padding-bottom: 3px; }
+  .is-classroom-view .classroom-library .classroom-lesson-trail button { min-height: 56px; padding: 6px; }
+  .is-classroom-view .classroom-library .classroom-module-count { margin: 6px 0; }
+  .is-classroom-view .classroom-library .lesson-navigator > header { padding-bottom: 6px; }
+  .is-classroom-view .classroom-library .lesson-navigator > header h2 { font-size: 17px; }
+  .secure-home-main.is-classroom-view .classroom-library .video-learning-player { width: 100%; min-height: 0; height: auto; flex: 1; align-self: stretch; aspect-ratio: auto; }
+  .secure-home-main.is-classroom-view .classroom-library .video-learning-stage { min-height: 0; gap: 6px; flex: 1; }
+  .is-classroom-view .classroom-library .video-learning-briefing { display: none; }
+  .is-classroom-view .classroom-library .learning-quiz-workspace { min-height: 0; flex: 1; grid-template-columns: minmax(180px, .65fr) minmax(0, 1.35fr); }
+  .is-classroom-view .classroom-library .learning-quiz-rail { padding: 12px; }
+  .is-classroom-view .classroom-library .learning-quiz-icon { width: 32px; height: 32px; margin-bottom: 8px; }
+  .is-classroom-view .classroom-library .learning-quiz-rail h2 { font-size: 18px; }
+  .is-classroom-view .classroom-library .learning-quiz-map { margin: 10px 0; }
+  .is-classroom-view .classroom-library .learning-quiz-question { min-height: 0; padding: 12px; }
+  .is-classroom-view .classroom-library .learning-quiz-question > h2 { margin: 8px 0; font-size: 20px; line-height: 1.3; }
+  .is-classroom-view .classroom-library .learning-quiz-options { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; border: 0; }
+  .is-classroom-view .classroom-library .learning-quiz-options button { min-height: 64px; gap: 7px; padding: 7px; border: 1px solid var(--dashboard-border); border-radius: 10px; }
+  .is-classroom-view .classroom-library .learning-quiz-options button > span { font-size: 13px; line-height: 1.3; }
+  .is-classroom-view .classroom-library .learning-quiz-action { margin-top: 8px; gap: 8px; }
+  .is-classroom-view .classroom-library .learning-quiz-action .app-button { min-height: 32px; }
+  .is-classroom-view .classroom-library .learning-quiz-result { min-height: 0; padding: 12px; }
+
+  .challenges-page { height: 100%; min-height: 0; padding: 0; }
+  .challenges-page .challenges-heading-row { flex-shrink: 0; margin-bottom: 8px; padding: 8px 14px; }
+  .challenges-page .challenge-arena-section { min-height: 0; }
+  .challenges-page .challenge-arena-heading { min-height: 40px; padding: 6px 14px; }
+  .challenges-page .challenge-arena-heading h3 { font-size: 17px; }
+  .challenges-page .challenge-arena-body { min-height: 0; padding: 6px 0; }
+  .challenges-page .challenge-carousel-stage { height: min(310px, calc(100dvh - 230px)) !important; }
+  .challenges-page .challenge-carousel-item { height: 100%; }
+  .challenges-page .challenge-carousel .app-game-card { height: min(290px, calc(100dvh - 250px)); }
+  .challenges-page .challenge-carousel .challenge-card-scene { height: 165px; }
+  .challenges-page .challenge-carousel .challenge-card-copy { min-height: 0; padding: 8px 12px; }
+  .challenges-page .challenge-carousel .app-game-card h4 { font-size: 17px; }
+  .challenges-page .challenge-carousel .app-game-card p { min-height: 0; margin: 4px 0; font-size: 12px; line-height: 1.3; }
+  .challenges-page .challenge-carousel .challenge-card-play { min-height: 36px; font-size: 14px; }
+
+  .achievements-page { height: 100%; min-height: 0; padding: 0; gap: 8px; }
+  .achievements-page .achievement-map-card { min-height: 0; flex: 1; }
+  .achievements-page .achievement-map-main { padding: 10px 14px; }
+  .achievements-page .achievement-map-heading { margin-bottom: 8px; }
+  .achievements-page .achievement-branches { gap: 3px; }
+  .achievements-page .achievement-branch { min-height: 0; padding: 1px 8px; grid-template-columns: 120px minmax(0, 1fr); }
+  .achievements-page .achievement-node { width: 44px; height: 44px; }
+  .achievements-page .achievement-node .achievement-artwork { width: 38px !important; height: 38px !important; }
+  .achievements-page .achievement-node-tier { margin-top: 3px; font-size: 8px; }
+  .achievements-page .achievement-connector { top: 22px; }
+  .achievements-page .achievement-detail { padding: 14px; }
+  .achievements-page .achievements-skeleton { min-height: 0; flex: 1; }
+  .achievements-page .achievement-shop-grid { min-height: 0; flex: 1; grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-rows: repeat(2, minmax(0, 1fr)); gap: 8px; }
+  .achievements-page .achievement-shop-item { min-height: 0; padding: 10px; }
+  .achievements-page .achievement-shop-item-main { gap: 8px; }
+  .achievements-page .achievement-shop-item-mark { width: 44px; height: 44px; flex-basis: 44px; }
+  .achievements-page .achievement-shop-item-mark img { width: 40px; height: 40px; }
+  .achievements-page .achievement-shop-item-actions { gap: 6px; margin-top: auto; padding-top: 6px; }
+  .achievements-page .achievement-shop-item-value { min-height: 28px; padding-top: 4px; }
+  .achievements-page .achievement-shop-item-footer { margin-top: 0; }
+  .achievements-page .achievement-shop-item-copy h3 { margin: 3px 0; font-size: 14px; }
+  .achievements-page .achievement-shop-item-copy p { font-size: 11px; line-height: 1.3; }
+
+  .app-page.ranking-page { display: flex; height: 100%; min-height: 0; flex-direction: column; padding: 0; }
+  .ranking-page .ranking-heading { display: grid; min-height: 82px; grid-template-columns: minmax(240px, .75fr) minmax(0, 1.8fr); align-items: center; flex-shrink: 0; gap: 10px; margin-bottom: 8px; }
+  .ranking-page .ranking-title-group { gap: 8px; }
+  .ranking-page .ranking-title-group > img { width: 36px; height: 36px; }
+  .ranking-page .ranking-title-group h1 { font-size: 24px; }
+  .ranking-page .ranking-title-group p { font-size: 11px; }
+  .ranking-page .ranking-toolbar { min-width: 0; min-height: 76px; align-content: center; gap: 6px; }
+  .ranking-page .ranking-company-select { min-width: 0; flex: 0 1 190px; }
+  .ranking-page .ranking-company-select .app-filter-select { min-width: 0; width: 160px; max-width: 160px; height: 36px; }
+  .ranking-page .ranking-season-select { min-width: 150px; }
+  .ranking-page .ranking-mode-select { min-width: 140px; }
+  .ranking-page .ranking-mode-select .app-filter-select { height: 36px; }
+  .ranking-page .ranking-scope-switch button { padding: 0 9px; min-height: 30px; font-size: 11px; }
+  .ranking-page .ranking-season-pill { min-height: 36px; padding: 0 8px; font-size: 11px; }
+  .ranking-page .ranking-content { display: grid; min-height: 0; flex: 1; grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr); gap: 10px; }
+  .ranking-page .ranking-content > p { grid-column: 1 / -1; margin: 0; }
+  .ranking-page .ranking-hero { height: 100%; min-height: 0; align-items: center; }
+  .ranking-page .ranking-content-grid { display: flex; min-height: 0; flex-direction: column; gap: 8px; margin: 0; }
+  .ranking-page .ranking-card { min-height: 0; padding: 10px; }
+  .ranking-page .ranking-classification { flex: 1; }
+  .ranking-page .ranking-card-heading { min-height: 0; margin-bottom: 6px; }
+  .ranking-page .ranking-card-heading h2 { font-size: 18px; }
+  .ranking-page .ranking-card-heading p { font-size: 11px; }
+  .ranking-page .ranking-leader { height: min(265px, calc(100dvh - 255px)); }
+  .ranking-page .ranking-leader-1 { height: min(316px, calc(100dvh - 205px)); }
+  .ranking-page .ranking-podium { width: 96%; height: min(340px, calc(100% - 32px)); align-self: center; }
+  .ranking-page .ranking-journey-panel { min-height: 0; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; padding: 7px; }
+  .ranking-page .ranking-journey-identity { padding: 0; border: 0; gap: 6px; }
+  .ranking-page .ranking-journey-progress { grid-column: 1 / -1; }
+  .ranking-page .ranking-journey-avatar { width: 34px; height: 34px; }
+  .ranking-page .ranking-journey-position { font-size: 22px; }
+  .ranking-page .ranking-table-head, .ranking-page .ranking-table-row { min-height: 32px; padding: 4px 6px; }
+  .ranking-page .ranking-table-avatar { width: 25px; height: 25px; }
+  .ranking-page .ranking-status { min-height: 0; flex: 1; }
+
+  .profile-page { display: flex; height: 100%; min-height: 0; flex-direction: column; padding: 0; }
+  .profile-page .profile-page-heading { margin-bottom: 8px; }
+  .profile-page .profile-page-heading h1 { margin: 2px 0; font-size: 22px; }
+  .profile-page .profile-page-heading p { line-height: 1.2; }
+  .profile-page .profile-eyebrow { font-size: 9px; line-height: 1.2; }
+  .profile-page .profile-hero { min-height: 94px; flex-shrink: 0; padding: 10px 14px; gap: 12px; }
+  .profile-page .profile-avatar { width: 58px; height: 58px; }
+  .profile-page .profile-hero-accent { top: 0; right: 0; width: 240px; height: 100%; }
+  .profile-page .profile-identity-heading h2 { font-size: 19px; }
+  .profile-page .profile-identity-meta, .profile-page .profile-email-line { margin-top: 5px; font-size: 12px; }
+  .profile-page .profile-identity-meta > span, .profile-page .profile-email-line > span { font-size: 12px; line-height: 1.3; }
+  .profile-page .profile-level-summary { padding: 8px; }
+  .profile-page .profile-layout { min-height: 0; flex: 1; margin-top: 8px; gap: 10px; grid-template-columns: minmax(0, 2fr) minmax(280px, 1fr); }
+  .profile-page .profile-main-column { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+  .profile-page .profile-side-column { gap: 6px; }
+  .profile-page .sp-card-header { padding: 8px 10px; }
+  .profile-page .sp-card-header h5 { font-size: 14px; }
+  .profile-page .sp-card-header p { font-size: 11px; }
+  .profile-page .sp-card-header .w-10 { width: 28px; height: 28px; }
+  .profile-page .sp-card-footer { padding: 8px 10px; flex-wrap: wrap; gap: 8px; }
+  .profile-page .profile-progress-card > .p-4, .profile-page .profile-account-card > .p-4 { padding: 10px; }
+  .profile-page .profile-stats-card { padding: 10px; }
+  .profile-page .profile-stats-heading { margin-bottom: 8px; }
+  .profile-page .profile-stats-grid { margin-top: 6px; }
+  .profile-page .profile-stat { min-height: 52px; padding: 6px; }
+  .profile-page .profile-stat > svg { margin-bottom: 3px; }
+  .profile-page .profile-next-card { padding: 8px; gap: 8px; }
+  .profile-page .profile-next-card h3 { margin: 3px 0; font-size: 14px; }
+  .profile-page .profile-next-card p { margin: 4px 0; font-size: 11px; line-height: 1.3; }
+  .profile-page .profile-next-card .app-button { min-height: 30px; margin-top: 0; padding: 5px 8px; font-size: 12px; }
+  .profile-page .profile-protection-note { padding: 2px 8px; font-size: 10px; }
+  .profile-page .profile-protection-note > span { font-size: inherit; }
+
+  .admin-page-embedded { --app-control-height: 36px; display: flex; height: auto; min-height: 0; flex-direction: column; }
+  .admin-page-embedded .app-button { min-height: 30px; }
+  .admin-page-embedded .admin-embedded-return { flex-shrink: 0; margin-bottom: 6px; }
+  .admin-page-embedded .admin-console.is-platform { min-height: 0; flex: none; gap: 12px; }
+  .admin-page-embedded .admin-company-toolbar { flex-shrink: 0; min-height: 46px; padding: 6px 10px; }
+  .admin-page-embedded .admin-workspace { min-height: 0; flex: none; grid-template-columns: 170px minmax(0, 1fr); grid-template-rows: auto; gap: 12px; }
+  .admin-page-embedded .admin-workspace-content { height: auto; min-height: 0; }
+  .admin-page-embedded .admin-tabs { padding: 5px; gap: 2px; }
+  .admin-page-embedded .admin-tab { min-height: 32px; padding: 6px 8px; font-size: 12px; }
+  .admin-page-embedded .admin-users-content { height: auto; min-height: 0; }
+  .admin-page-embedded .admin-list-header { margin-bottom: 8px; gap: 10px; }
+  .admin-page-embedded .admin-list-header h1 { font-size: 22px; }
+  .admin-page-embedded .admin-list-header p { font-size: 11px; }
+  .admin-page-embedded .admin-list-toolbar { padding: 6px 10px; gap: 6px; }
+  .admin-page-embedded .admin-list-table th, .admin-page-embedded .admin-list-table td { padding: 5px 10px; font-size: 11px; }
+  .admin-page-embedded .admin-list-pagination { padding: 5px 10px; gap: 8px; }
+  .admin-page-embedded .admin-list-card { margin-top: 8px; }
+  .admin-page-embedded .admin-list-state { min-height: 80px; padding: 12px; }
+  .admin-page-embedded .admin-users-card-heading { min-height: 44px; padding: 8px 10px; gap: 8px; }
+  .admin-page-embedded .admin-users-card-heading h2 { font-size: 14px; }
+  .admin-page-embedded .admin-users-heading-icon { width: 28px; height: 28px; }
+  .admin-page-embedded .admin-users-content:has(.admin-audit-events-card) { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-rows: auto minmax(0, 1fr); align-items: start; gap: 8px; }
+  .admin-page-embedded .admin-users-content:has(.admin-audit-events-card) > .admin-list-header { grid-column: 1 / -1; margin: 0; }
+  .admin-page-embedded .admin-users-content:has(.admin-audit-events-card) > .admin-list-card { margin: 0; }
+  .admin-page-embedded .admin-companies-content { display: grid; height: auto; min-height: 0; grid-template-columns: minmax(0, .9fr) minmax(0, 1.1fr); grid-template-rows: auto auto 1fr; align-content: start; gap: 8px; }
+  .admin-page-embedded .admin-companies-content > .admin-list-header { grid-column: 1 / -1; margin: 0; }
+  .admin-page-embedded .admin-company-form-card { grid-column: 1; margin-top: 0; padding: 10px; }
+  .admin-page-embedded .admin-company-form { margin-top: 8px; gap: 8px; }
+  .admin-page-embedded .admin-company-form-fields { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
+  .admin-page-embedded .admin-company-form-card .settings-select-field { margin-top: 8px; font-size: 11px; }
+  .admin-page-embedded .admin-company-form-fields label { gap: 3px; font-size: 11px; }
+  .admin-page-embedded .admin-company-list-card { min-height: 0; grid-column: 2; grid-row: 2 / span 2; margin-top: 0; }
+  .admin-page-embedded .admin-company-list-heading { padding: 8px 10px; }
+  .admin-page-embedded .admin-company-list { padding: 0 10px; }
+  .admin-page-embedded .admin-company-list li { padding: 7px 0; }
+  .admin-page-embedded .admin-invites-workspace { grid-template-columns: minmax(250px, .8fr) minmax(0, 1.2fr); align-items: stretch; gap: 10px; }
+  .admin-page-embedded .admin-invites-card { display: flex; flex-direction: column; }
+  .admin-page-embedded .admin-invites-card .admin-list-content { flex: 1; }
+  .admin-page-embedded .admin-invites-card .admin-list-pagination { margin-top: auto; }
+  .admin-page-embedded .admin-invite-form-card { padding: 10px; }
+  .admin-page-embedded .admin-invite-form { gap: 8px; }
+  .admin-page-embedded .admin-invite-row { padding: 7px 10px; }
+  .admin-page-embedded .admin-overview-grid { gap: 8px; }
+  .admin-page-embedded .admin-overview-card { padding: 10px; }
+  .admin-page-embedded .admin-overview-note { margin-top: 8px; }
+  .admin-page-embedded .settings-toggle-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .admin-page-embedded .settings-toggle-row { min-height: 66px; padding: 8px 10px; }
+  .admin-page-embedded .settings-toggle-copy strong { font-size: 12px; }
+  .admin-page-embedded .settings-toggle-copy small { font-size: 10px; }
+  .admin-page-embedded .admin-settings-subnav { min-height: 0; margin-bottom: 8px; padding: 4px; }
+  .admin-page-embedded .admin-settings-subnav button { min-height: 28px; padding: 4px 10px; }
+  .admin-page-embedded .admin-page-content:has(.settings-toggle-list) .sp-card-footer { padding: 5px 10px; font-size: 11px; }
+  .admin-page-embedded .settings-toggle-row { min-height: 54px; padding: 4px 10px; }
+  .admin-page-embedded .admin-page-content:has(.settings-toggle-list) .sp-card-footer > span { font-size: inherit; line-height: 1.3; }
+  .admin-notebook-editor-tabs { display: flex; gap: 4px; margin-bottom: 8px; }
+  .admin-notebook-editor-tabs button[aria-pressed='true'] { color: var(--primary); background: rgba(var(--primary-rgb), .1); }
+  .admin-page-embedded .admin-settings-grid { grid-template-columns: minmax(0, 1fr) minmax(260px, .85fr); gap: 12px; }
+  .admin-page-embedded .admin-settings-section[hidden] { display: none; }
+  .admin-page-embedded .admin-settings-section { gap: 6px; }
+  .admin-page-embedded .admin-settings-section > .app-section-header { margin-bottom: 0; }
+  .admin-page-embedded .admin-settings-section h2 { font-size: 14px; }
+  .admin-page-embedded .admin-settings-column, .admin-page-embedded .admin-preview-column { gap: 6px; }
+  .admin-page-embedded .admin-settings-grid .sp-card-header { min-height: 32px; padding: 6px 10px !important; }
+  .admin-page-embedded .admin-settings-grid .sp-card-header h5 { font-size: 13px; }
+  .admin-page-embedded .admin-settings-grid .sp-card-header .w-10 { width: 28px; height: 28px; }
+  .admin-page-embedded .admin-logo-content { padding: 10px; }
+  .admin-page-embedded .admin-palette-section { padding: 8px !important; }
+  .admin-page-embedded .admin-palette-grid { gap: 6px; }
+  .admin-page-embedded .admin-palette-option { min-height: 40px; padding: 5px 8px; }
+  .admin-page-embedded .admin-manual-colors, .admin-page-embedded .admin-color-generator { padding: 10px !important; }
+  .admin-page-embedded .admin-subsection-heading { margin-bottom: 8px; }
+  .admin-page-embedded .admin-color-field { gap: 4px; }
+  .admin-page-embedded .admin-color-field > span { line-height: 1.2; }
+  .admin-page-embedded .admin-color-field input[type='color'] { height: 32px; }
+  .admin-page-embedded .admin-card-divider { display: none; }
+  .admin-page-embedded .admin-preview-section { position: static; }
+  .admin-page-embedded .admin-preview-card > .sp-card-header { min-height: 30px; }
+  .admin-page-embedded .admin-preview-card > div:last-child { padding: 8px !important; }
+  .admin-page-embedded .admin-interface-preview { min-height: 0; height: 155px; }
+  .admin-page-embedded .admin-preview-workspace { padding: 6px; }
+  .admin-page-embedded .admin-preview-header { height: 24px; min-height: 24px; padding-bottom: 0; }
+  .admin-page-embedded .admin-preview-welcome { min-height: 36px; margin-top: 4px; padding: 5px; }
+  .admin-page-embedded .admin-preview-cards { margin-top: 5px; gap: 5px; }
+  .admin-page-embedded .admin-preview-cards > div { min-height: 60px; padding: 5px; }
+  .admin-page-embedded .admin-preview-user-icon { width: 24px; height: 24px; }
+  .admin-page-embedded .admin-preview-header strong, .admin-page-embedded .admin-preview-header span,
+  .admin-page-embedded .admin-preview-welcome strong, .admin-page-embedded .admin-preview-welcome span,
+  .admin-page-embedded .admin-preview-cards strong, .admin-page-embedded .admin-preview-cards span { line-height: 1.2; }
+  .admin-page-embedded .admin-preview-cards strong { margin-top: 3px; font-size: 10px; overflow-wrap: anywhere; }
+  .admin-page-embedded .admin-preview-cards button { height: 22px; min-height: 22px; }
+  .admin-page-embedded .admin-preview-legend { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px; margin-top: 6px; }
+  .admin-page-embedded .admin-preview-legend > div { padding: 3px; gap: 3px; }
+  .admin-page-embedded .admin-preview-legend code { font-size: 8px; }
+  .admin-page-embedded .admin-settings-grid:not(.notebook-editor-palettes) .admin-palette-section,
+  .admin-page-embedded .admin-settings-grid:not(.notebook-editor-palettes) .admin-colors-card > .sp-card-header,
+  .admin-page-embedded .admin-settings-grid:not(.notebook-editor-generator) .admin-color-generator,
+  .admin-page-embedded .admin-settings-grid:not(.notebook-editor-manual) .admin-manual-colors { display: none; }
+  .admin-page-embedded .admin-settings-grid { align-items: stretch; min-height: 248px; }
+  .admin-page-embedded .admin-settings-section:not([hidden]),
+  .admin-page-embedded .admin-preview-section { flex: 1; }
+  .admin-page-embedded .admin-settings-section > .sp-card,
+  .admin-page-embedded .admin-preview-card { flex: 1; }
+  .admin-page-embedded .admin-logo-card { display: flex; flex-direction: column; }
+  .admin-page-embedded .admin-logo-content { flex: 1; align-items: center; }
+  .admin-page-embedded .admin-company-list-card .admin-list-toolbar { flex-wrap: nowrap; align-items: center; }
+  .admin-page-embedded .admin-company-list-card .admin-company-filter-field { flex: 1 1 0; }
+  .admin-page-embedded .admin-company-list-card .admin-list-toolbar > label.admin-company-sort { flex: 0 0 84px; min-width: 0; width: 84px; margin-left: auto; }
+  .admin-page-embedded .admin-company-sort .app-select-wrap { min-width: 0; width: 84px; }
+}

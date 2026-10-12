@@ -43,6 +43,8 @@ import type {
   CosmeticType,
 } from '@/services/achievements';
 import '@/styles/awards-ui.css';
+import { useNotebookLayout } from '@/hooks/useNotebookLayout';
+import { PageControls } from '@/components/ui/navigation/PageControls';
 
 type AwardsView = 'trail' | 'shop';
 
@@ -239,6 +241,12 @@ function ShopView({ shopState }: { shopState: ReturnType<typeof useAchievementSh
   const previewDialogRef = useRef<HTMLDialogElement>(null);
   const previewTriggerRef = useRef<HTMLButtonElement | null>(null);
   const items = shop?.items.filter((item) => filter === 'all' || item.type === filter) ?? [];
+  const compact = useNotebookLayout();
+  const [page, setPage] = useState(0);
+  useEffect(() => setPage(0), [filter]);
+  const totalPages = Math.ceil(items.length / 4);
+  const safePage = Math.min(page, Math.max(0, totalPages - 1));
+  const visibleItems = compact ? items.slice(safePage * 4, safePage * 4 + 4) : items;
 
   useEffect(() => {
     if (previewItem && previewDialogRef.current && !previewDialogRef.current.open) previewDialogRef.current.showModal();
@@ -291,7 +299,7 @@ function ShopView({ shopState }: { shopState: ReturnType<typeof useAchievementSh
 
       {items.length === 0 ? <EmptyShop /> : (
         <div className="achievement-shop-grid">
-          {items.map((item) => (
+          {visibleItems.map((item) => (
             <InfoCard key={item.id} raised className={`achievement-shop-item rarity-${item.rarity} ${item.equipped ? 'is-equipped' : ''}`}>
               <div className="achievement-shop-item-main">
                 <div className="achievement-shop-item-mark" aria-hidden="true">
@@ -321,6 +329,7 @@ function ShopView({ shopState }: { shopState: ReturnType<typeof useAchievementSh
           ))}
         </div>
       )}
+      {compact && <PageControls page={safePage} total={totalPages} onChange={setPage} label="Colecionáveis" />}
       {previewItem && previewValues && (
         <dialog
           ref={previewDialogRef}
