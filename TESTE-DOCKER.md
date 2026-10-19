@@ -105,3 +105,12 @@ node -r ts-node/register scripts/smoke-docker-services.cjs
 ```
 
 O script usa os providers reais de MySQL e Redis, fixa valores locais de teste, recusa variáveis herdadas conflitantes e não carrega `.env`. Confere database/histórico de migrations e executa SET/GET/DEL em uma chave Redis aleatória, removendo-a ao terminar (com TTL de 60 segundos como proteção secundária). Não importa AppModule, não inicia servidor e não cria escolas/usuários. Saída esperada começa com `OK: MySQL 8.0.44 (secureplay_test); 13 migrations; Redis SET/GET/DEL`.
+
+
+## Cópia da base fictícia local
+
+Em 19/10/2026, a base local de desenvolvimento foi copiada para o database `secureplay_fixture_copy`, dentro do MySQL deste Compose. A origem foi confirmada em loopback e consultada em transação somente de leitura. O dump lógico temporário usou snapshot consistente de InnoDB e foi removido após a importação; nenhum dump, credencial ou registro foi incluído no Git.
+
+A verificação comparou os nomes das tabelas e a contagem exata de linhas de cada uma: 31 tabelas e 520 registros na origem e na cópia. A origem contém apenas tabelas InnoDB, sem views, triggers, rotinas ou eventos. O database `secureplay_test`, com seu histórico de migrations e catálogo, permaneceu separado e inalterado (32 tabelas, 13 migrations; `empresa` e `usuario` vazias).
+
+Esta cópia contém os dados fictícios já existentes no ambiente local; nenhuma escola ou conta foi criada nesta etapa. Ela ainda não foi aberta pela aplicação. A origem não tem histórico de migrations e usa `DB_SYNCHRONIZE=true`; portanto, não conecte o AppModule ou habilite sincronização/migrations contra a cópia antes de preparar configuração isolada e um plano compatível com esse schema. `docker compose -f compose.test.yaml down` preserva ambos os databases; `down --volumes` apaga os dois junto com todo o volume descartável.

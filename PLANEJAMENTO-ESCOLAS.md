@@ -393,3 +393,13 @@ O proprietário escolheu Docker para o ambiente descartável de E0.3. A primeira
 - Proteções verificadas antes das conexões: MySQL host/porta/database de teste, `DB_SSL=false`, `DB_SYNCHRONIZE=false`, `synchronize=false` e `migrationsRun=false` no DataSource; Redis host/porta local, TLS desligado e sem URL/usuário/senha alternativos.
 - Execução `node -r ts-node/register scripts/smoke-docker-services.cjs` na pasta `backend`: aprovada. Resultado: MySQL 8.0.44/database `secureplay_test` com 13 migrations; Redis executou SET/GET/DEL com chave aleatória e TTL de 60s. O fluxo apaga a chave e mantém TTL como limpeza secundária.
 - Nenhum usuário, empresa ou escola foi criado. Nenhum AppModule, controller, servidor HTTP, e-mail, S3 ou provedor externo foi iniciado. Conectividade local aprovada não valida tenant, API autenticada, fluxo escolar ou isolamento de egress do AppModule.
+
+
+## 16. E0.3 — cópia da base fictícia local para Docker — 19/10/2026
+
+- O proprietário esclareceu que já mantém dados fictícios no MySQL local e pediu a cópia para o ambiente Docker; essa orientação substitui a proposta anterior de criar contas sintéticas. A cópia não cria nem redefine escolas ou usuários.
+- A origem configurada localmente foi validada como loopback, MySQL 8.0.44, `DB_SYNCHRONIZE=true`. A leitura foi feita em transação `READ ONLY`; 31 tabelas, todas InnoDB, totalizaram 520 registros. Não foram consultados campos individuais. Não havia views, triggers, rotinas ou eventos.
+- Dump lógico de snapshot consistente foi criado temporariamente fora do repositório e importado no novo database `secureplay_fixture_copy` do MySQL Compose. Dump local e cópia temporária no container removidos após a validação; nenhum dado, senha ou dump foi versionado.
+- Verificação exata: nomes das 31 tabelas e contagens individuais coincidem; totais 520/520. A origem não foi alterada. O database preexistente `secureplay_test` continua separado: 32 tabelas, 13 migrations e nenhuma linha em `empresa` ou `usuario`.
+- O AppModule continua sem inicialização. A cópia é fiel ao schema local, sem tabela `migrations`; não habilitar sincronização/migrations até definir um processo de configuração isolada e compatibilidade do schema. `down --volumes` elimina tanto `secureplay_test` como `secureplay_fixture_copy`.
+- Próxima fatia: inspecionar a diferença entre o schema local copiado e as migrations do repositório; depois preparar variáveis locais exclusivas e uma verificação de inicialização sem egress externo, sem tocar na origem nem em Aiven.
