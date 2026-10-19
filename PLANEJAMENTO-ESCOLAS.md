@@ -254,7 +254,7 @@ Só perguntas do próximo trecho serão trazidas ao proprietário a cada vez. Es
 - Nenhuma iniciativa SP-01 a SP-18 está marcada como concluída por este documento.
 - Conferências pontuais anteriores sustentam os riscos de validação do desafio, sincronização declarada no Render e ausência de conteúdo enquanto a sessão carrega; não constituem reprodução integral nem validação do ambiente publicado.
 - E0.5 recebeu a primeira correção delimitada de dependências críticas, conforme seção 11. Alertas altos/moderados e dívida de lint continuam pendentes.
-- E0.3: preparação versionada em `compose.test.yaml` e `TESTE-DOCKER.md`; serviços ainda não iniciados porque Docker/WSL não estão instalados. A configuração mantém portas em loopback, rede interna e credenciais explícitas somente para testes. A massa sintética e conexão do backend continuam pendentes de ensaio real. E0.4 mantém decisões de produto abertas. Não aplicar migrations na base preservada antes de E1.
+- E0.3: preparação versionada em `compose.test.yaml` e `TESTE-DOCKER.md`; serviços agora ativos após instalação/inicialização de Docker Desktop e WSL, conforme seção 13. A configuração mantém portas em loopback e credenciais explícitas somente para testes. A massa sintética e conexão do backend continuam pendentes de ensaio real. E0.4 mantém decisões de produto abertas. Não aplicar migrations na base preservada antes de E1.
 
 ## 10. Evidências da primeira entrega de E0 — 19/10/2026
 
@@ -348,13 +348,31 @@ As entradas críticas passaram de 2 para 0 no backend completo e de 1 para 0 no 
 
 Dados, schema, .env e homologação permanecem preservados. Recuperação: reverter esta entrega em novo commit e reinstalar as dependências a partir dos locks anteriores no ambiente de desenvolvimento. Não há alteração de banco a reverter.
 
-O proprietário escolheu Docker para o ambiente descartável de E0.3. A preparação deverá separar MySQL/Redis, usar massa exclusivamente sintética de duas escolas e impedir dependência acidental dos serviços externos. A escolha não comprova instalação nem execução: Docker está ausente neste computador e nenhum container foi iniciado nesta parcela. Backup/restauração do Aiven continua em E1.
+O proprietário escolheu Docker para o ambiente descartável de E0.3. A primeira preparação registrou somente a configuração, sem serviço iniciado. O estado do ensaio do Desktop e dos containers está na seção 13. Massa exclusivamente sintética de duas escolas e proteção do `.env` continuam pendentes. Backup/restauração do Aiven continua em E1.
 
 
 ## 12. E0.3 — preparação inicial do ambiente descartável — 19/10/2026
 
-- `compose.test.yaml` define apenas MySQL 8.0.44 e Redis 7.4-alpine. O volume MySQL usa nome do projeto; Redis não persiste. Rede interna Docker; portas em loopback 13306/16379. Sem backend, `.env`, migrações, seeds, e-mail ou storage.
+- `compose.test.yaml` define apenas MySQL 8.0.44 e Redis 7.4-alpine. O volume MySQL usa nome do projeto; Redis não persiste. Bridge dedicada; portas em loopback 13306/16379. Sem backend, `.env`, migrações, seeds, e-mail ou storage.
 - `TESTE-DOCKER.md` documenta pré-requisitos, comandos, saúde dos serviços, preservação ou remoção exclusivamente do volume desse projeto e limites de dados/credenciais. Credenciais fixas ali são públicas e servem apenas para desenvolvimento descartável.
-- Escolha do proprietário: Docker. Ambiente observado: Docker command ausente; `wsl --version` informa que o WSL não está instalado.
-- Não foi possível validar `docker compose config`, baixar imagens, iniciar serviços, testar saúde ou conexões. Nenhuma massa sintética ou backend integrado foi criado. A entrega é preparação versionada, não ambiente operacional.
-- Próxima fatia E0.3: instalar/pré-requisitos de modo per-user quando viável, confirmar versão, Compose config e inicialização; então verificar conectividade e só depois criar massa sintética sem egress ou leitura do `.env` comum.
+- Preflight antes da instalação feita pelo proprietário: Docker CLI ausente; `wsl --version` indicava ausência da configuração WSL naquela tentativa. Estado posterior, com versão/kernel, engine e containers, registrado na seção 13.
+- A configuração foi corrigida durante o primeiro ensaio: `internal: true` impedia que o Docker publicasse as portas no host. A bridge dedicada permite os mapeamentos explícitos em `127.0.0.1`, porém permite egress do container.
+- Os containers passaram healthchecks e foram testados por loopback, sem backend ou `.env`. Não há massa sintética. Antes de adicionar/iniciar backend, definir processo para impedir leitura do `.env` comum e limitar egress; então criar massa sintética.
+
+
+### Ensaio inicial após instalação Docker — 19/10/2026
+
+- Verificados Docker CLI 29.9.1, Compose 5.6.0 e WSL versão padrão 2. O desktop-linux estava parado. Execução normal não conseguiu ler WSL/Docker; consulta elevada confirmou WSL sem distros listadas e engine parado. Abrir o executável encontrado do Docker Desktop levou o engine a `starting` e depois `Server 29.9.1`, com processo backend e `vmmemWSL`.
+- `docker compose -f compose.test.yaml config --quiet` passou. O primeiro `up --wait` iniciou imagens oficiais mysql:8.0.44 e redis:7.4-alpine; ambos ficaram healthy.
+- A primeira inspeção encontrou nenhum port publicado apesar do YAML conter `127.0.0.1`: `internal: true` impedia publicação efetiva na configuração em teste. Portas não alcançáveis. O volume novo era `secureplay-e0-003_mysql-data`, local, sem tabelas/dados; Redis DB size 0. Nenhum dado anterior tocado.
+- Correção para bridge dedicada com portas ainda restritas a loopback. Removido `internal: true`; documentado que bridges comuns permitem egress e que qualquer backend só poderá ser incluído com `.env` substituído e política explícita de saída. Recriar containers preserva volume do projeto.
+- Registro do primeiro ensaio antes da correção: a nova configuração ainda precisava ser aplicada e revalidada. A conclusão do segundo ensaio consta na seção 13. Não executar backend, migrations, seeds nem criar alunos nesta parcela.
+
+
+## 13. E0.3 — ensaio do Docker Desktop e serviços — 19/10/2026
+
+- O proprietário informou que instalou Docker e WSL. Verificações: CLI 29.9.1, Compose 5.6.0, WSL padrão 2/kernel 6.1.54. O Desktop estava parado. Consulta elevada confirmou WSL sem distribuições listadas e engine parado. Abrir o aplicativo instalado iniciou backend, `vmmemWSL` e o engine Linux Server 29.9.1.
+- `docker compose config --quiet` aprovado. `up --wait` baixou imagens oficiais MySQL 8.0.44/Redis 7.4-alpine e confirmou ambos `healthy`.
+- A rede `internal: true` impedia publicação: `docker port` sem portas e conexão host em loopback falhou. A mudança para bridge dedicada corrigiu mapeamentos. Recriar serviços preservou o volume `secureplay-e0-003_mysql-data`; não foi executado `down --volumes`.
+- Estado atual: portas loopback 127.0.0.1:13306/16379 alcançáveis; MySQL devolveu 8.0.44, `secureplay_test` e zero tabelas via SELECT; Redis PONG/DBSIZE 0; bridge Internal=false; volume Scope=local. Containers permanecem ativos.
+- Limite: a bridge permite egress. Somente serviços DB/Redis oficiais rodam sem credenciais de provedores da aplicação; backend, `.env`, migrations, seeds, contas sintéticas ou rede externa da aplicação não foram iniciados. Para executar app real, desenhar egress e fornecer env exclusivo antes de execução.

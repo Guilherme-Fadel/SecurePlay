@@ -40,7 +40,7 @@ services:
 
 networks:
   isolated:
-    internal: true
+    driver: bridge
 
 volumes:
   mysql-data:
