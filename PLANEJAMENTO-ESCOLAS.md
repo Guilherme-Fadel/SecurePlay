@@ -254,7 +254,7 @@ Só perguntas do próximo trecho serão trazidas ao proprietário a cada vez. Es
 - Nenhuma iniciativa SP-01 a SP-18 está marcada como concluída por este documento.
 - Conferências pontuais anteriores sustentam os riscos de validação do desafio, sincronização declarada no Render e ausência de conteúdo enquanto a sessão carrega; não constituem reprodução integral nem validação do ambiente publicado.
 - E0.5 recebeu a primeira correção delimitada de dependências críticas, conforme seção 11. Alertas altos/moderados e dívida de lint continuam pendentes.
-- E0.3: preparação versionada em `compose.test.yaml` e `TESTE-DOCKER.md`; serviços ativos após instalação de Docker Desktop/WSL, conforme seção 13. As 13 migrations foram aplicadas somente no banco descartável do Docker (seção 14), com catálogo fictício; nenhuma escola ou conta de usuário foi criada. Conexão do AppModule, massa sintética de duas escolas e política de egress continuam pendentes. E0.4 mantém decisões de produto abertas. Não aplicar migrations na base preservada antes de E1.
+- E0.3: preparação versionada em `compose.test.yaml` e `TESTE-DOCKER.md`; serviços ativos após instalação de Docker Desktop/WSL, conforme seção 13. As 13 migrations foram aplicadas somente no banco descartável do Docker (seção 14), com catálogo fictício; o smoke mínimo dos providers MySQL/Redis passou sem importar AppModule (seção 15). Nenhuma escola ou conta de usuário foi criada. AppModule, massa sintética de duas escolas e política de egress continuam pendentes. E0.4 mantém decisões de produto abertas. Não aplicar migrations na base preservada antes de E1.
 
 ## 10. Evidências da primeira entrega de E0 — 19/10/2026
 
@@ -384,4 +384,12 @@ O proprietário escolheu Docker para o ambiente descartável de E0.3. A primeira
 - `migration:show` apontou 13 migrations pendentes. A execução ocorreu na pasta `backend`, com variáveis temporárias explícitas para `127.0.0.1:13306`, usuário/database de teste declarados no Compose, `DB_SSL=false` e `DB_SYNCHRONIZE=false`. O comando não incluiu `--env-file`, não carregou `.env` e usou `migration-data-source.ts`, que mantém sincronização e execução automática desligadas. O guia agora fixa e valida o destino no próprio bloco de PowerShell, restaurando as variáveis anteriores ao terminar.
 - TypeORM reportou 13 migrations executadas. Verificação SQL somente de leitura confirmou 13 entradas em `migrations`, 32 tabelas, 6 módulos e 42 aulas do catálogo inicial; `empresa` e `usuario` seguem com zero linhas. Nenhum backend/AppModule, Redis de aplicação, migration na Aiven, escola ou usuário foi inicializado.
 - A migration `SeedCatalog` preenche conteúdo fictício e declara `down()` não reversível. Os dados pertencem ao ambiente descartável; para retorno completo ao estado vazio, `docker compose -f compose.test.yaml down --volumes` remove esse volume e apaga o schema/catálogo deste Compose. Esse comando não foi executado.
-- Próxima fatia: validar conexão mínima do backend com variáveis de teste sem importar AppModule, depois planejar e criar massa sintética de duas escolas. Definir controle de egress antes de iniciar qualquer aplicação que possa chamar provedores externos.
+- Próxima fatia após o smoke dos providers: planejar e criar massa sintética de duas escolas. Definir controle de egress antes de iniciar AppModule ou qualquer aplicação que possa chamar provedores externos.
+
+
+## 15. E0.3 — smoke dos providers MySQL/Redis — 19/10/2026
+
+- Criado `backend/scripts/smoke-docker-services.cjs`, usando `createDatabaseDataSource` e `RedisService` reais sem importar `AppModule`. O script aborta se variáveis herdadas divergirem do destino Docker de teste ou se existirem URLs/credenciais herdadas de serviços externos; não carrega `.env`.
+- Proteções verificadas antes das conexões: MySQL host/porta/database de teste, `DB_SSL=false`, `DB_SYNCHRONIZE=false`, `synchronize=false` e `migrationsRun=false` no DataSource; Redis host/porta local, TLS desligado e sem URL/usuário/senha alternativos.
+- Execução `node -r ts-node/register scripts/smoke-docker-services.cjs` na pasta `backend`: aprovada. Resultado: MySQL 8.0.44/database `secureplay_test` com 13 migrations; Redis executou SET/GET/DEL com chave aleatória e TTL de 60s. O fluxo apaga a chave e mantém TTL como limpeza secundária.
+- Nenhum usuário, empresa ou escola foi criado. Nenhum AppModule, controller, servidor HTTP, e-mail, S3 ou provedor externo foi iniciado. Conectividade local aprovada não valida tenant, API autenticada, fluxo escolar ou isolamento de egress do AppModule.

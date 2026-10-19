@@ -94,3 +94,14 @@ finally {
 ```
 
 A migration `SeedCatalog` inclui um catálogo fictício (atualmente 6 módulos/42 aulas) e não tem `down()` automático. A remoção completa deste banco de teste exige `docker compose -f compose.test.yaml down --volumes`, que apaga o volume MySQL nomeado pelo projeto. Não use esse comando se quiser preservar dados de teste criados depois.
+
+
+## Smoke dos providers backend sem AppModule
+
+Com os containers em execução e as migrations aplicadas, execute da pasta `backend`:
+
+```powershell
+node -r ts-node/register scripts/smoke-docker-services.cjs
+```
+
+O script usa os providers reais de MySQL e Redis, fixa valores locais de teste, recusa variáveis herdadas conflitantes e não carrega `.env`. Confere database/histórico de migrations e executa SET/GET/DEL em uma chave Redis aleatória, removendo-a ao terminar (com TTL de 60 segundos como proteção secundária). Não importa AppModule, não inicia servidor e não cria escolas/usuários. Saída esperada começa com `OK: MySQL 8.0.44 (secureplay_test); 13 migrations; Redis SET/GET/DEL`.
