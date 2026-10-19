@@ -1,6 +1,6 @@
 # SecurePlay — preparação para comercialização com escolas
 
-Versão inicial: 19/10/2026. Estado: planejamento para discussão; implementação não iniciada.
+Versão inicial: 19/10/2026. Estado: primeira entrega de E0 executada; demais etapas permanecem planejadas.
 
 Este roteiro cobre as 18 iniciativas e os 15 achados técnicos da avaliação fornecida pelo proprietário. Os identificadores SP-01 a SP-18 preservam a rastreabilidade com esse relatório; E0 a E10 indicam a ordem de trabalho proposta. São frentes de evolução, não funcionalidades prometidas nem prazos contratados.
 
@@ -63,6 +63,7 @@ Dependências principais: E0 → E1 → mudanças de persistência de E2/E3/E4; 
 - E0.2: conferir testes/build/lint existentes em ambiente apropriado, classificar falhas anteriores e verificar o E2E com bootstrap Fastify. Verificar vulnerabilidades de dependências quando o registro estiver disponível; separar alerta encontrado de atualização comprovadamente necessária.
 - E0.3: definir massa sintética com pelo menos duas escolas, alunos, administradores institucionais e internos, sem apagar os registros atuais. Definir onde rodar MySQL/Redis descartáveis e como limitar integrações de teste.
 - E0.4: registrar decisões iniciais de entrada assistida, responsabilidade por contas, visibilidade no trial, acessos internos e critério operacional do piloto.
+- E0.5: triar os alertas de dependências encontrados na auditoria, distinguindo produção/desenvolvimento e aplicabilidade; preparar atualizações delimitadas com testes em entrega própria. Priorizar alertas altos/críticos antes do marco de piloto real. Tratar também a dívida de lint por fatias, sem desabilitar regras para esconder o baseline.
 - Aceite: baseline e lacunas nomeadas; nenhum comando de escrita em homologação; próximos testes reproduzíveis. Corrigir fixtures apenas quando a expectativa continuar provando o comportamento correto.
 - Commits previstos: correções delimitadas de testes e bootstrap, se necessárias. Um levantamento sem alteração versionável não exige commit vazio.
 
@@ -247,9 +248,61 @@ Não declarar "testado" genericamente. `git diff --check` só verifica whitespac
 
 Só perguntas do próximo trecho serão trazidas ao proprietário a cada vez. Escolhas futuras permanecem abertas, sem bloquear correções técnicas independentes.
 
-## 9. Estado inicial
+## 9. Estado atual
 
-- Planejamento criado; aguardando discussão das decisões e alinhamento de E0.
+- E0 iniciada por autorização do proprietário. Primeira entrega: E0.1/E0.2, com inspeção segura dos ambientes, baseline e duas correções de testes; evidências abaixo.
 - Nenhuma iniciativa SP-01 a SP-18 está marcada como concluída por este documento.
 - Conferências pontuais anteriores sustentam os riscos de validação do desafio, sincronização declarada no Render e ausência de conteúdo enquanto a sessão carrega; não constituem reprodução integral nem validação do ambiente publicado.
-- Próxima entrega proposta: E0.1 + E0.2, inicialmente em leitura e checks sem banco compartilhado; definir os testes descartáveis antes de operações com persistência.
+- Próxima entrega proposta: preparar o ambiente descartável de E0.3 e triar dependências de E0.5. E0.4 mantém as decisões de produto ainda abertas. Não aplicar migrations na base preservada antes de E1.
+
+## 10. Evidências da primeira entrega de E0 — 19/10/2026
+
+### Alterações efetivas
+
+- A fixture HTTP de parâmetros passou a representar o tracking do ranking iniciado no dia do teste, sem temporadas anteriores completas. Isso permite executar a dependência real de fechamento sem mascarar consultas desconhecidas. Foram preservados os testes de permissão, rejeição de payload e isolamento por escola.
+- O teste de saúde foi atualizado de Express/contrato antigo para Fastify e a resposta atual `{ status: 'ok' }`, em `/` e `/health`, sem sessão. Importa somente controller e guard reais com Redis simulado; não importa AppModule nem inicializa banco, seeds, agendamentos ou serviços externos.
+- Esse smoke HTTP é isolado. O comando `test:e2e` ainda não representa um E2E completo com JWT, CSRF, Redis e MySQL reais; essa validação permanece em E4.
+- Nenhuma regra de negócio, configuração de ambiente, dependência ou dado de usuário foi alterado nesta entrega.
+
+### Verificações locais
+
+| Verificação | Resultado observado |
+| --- | --- |
+| `npm --prefix backend test -- --runInBand`, antes da correção | 44 suítes passaram e 1 falhou; 226 testes passaram e 3 falharam por `dataSource.query` ausente na fixture |
+| Mesmo comando, após a correção | 45 suítes e 229 testes aprovados |
+| Jest direcionado a parâmetros HTTP e histórico de ranking | 2 suítes, 17 testes aprovados |
+| `npm --prefix backend run test:e2e -- --runInBand` | Smoke isolado de saúde: 1 suíte, 2 testes aprovados |
+| `npm --prefix backend run build` | Aprovado |
+| `npm --prefix frontend run build` | Assets, tipos e build aprovados |
+| `npm --prefix frontend run test:api-proxy` | 10 testes aprovados |
+| `npm --prefix frontend run test:company-parameters` | 15 verificações aprovadas |
+| `npm --prefix frontend run test:termotech-dictionary` | 20.409 palavras verificadas |
+| Lint completo do frontend | Baseline pendente: 1 erro e 84 avisos; erro de tamanho em Admin.tsx |
+| Lint completo do backend | Baseline pendente: 918 erros e 121 avisos; sem limpeza global nesta entrega |
+| Lint dos arquivos de teste alterados comparado ao HEAD inicial | Fixture permanece com 18 erros e 4 avisos anteriores; smoke permanece sem erros/avisos. Nenhum novo diagnóstico por regra |
+
+Runtime local observado: Node 20.20.2/npm 10.8.2. O Dockerfile usa Node 22; execução em container/Node 22 não foi validada. Os testes também emitiram aviso de suporte futuro do AWS SDK; alinhar o runtime integra o preparo do ambiente descartável.
+
+### Ambiente e banco, sem credenciais
+
+- `.env` consultado com autorização, sem carregá-lo no processo da aplicação: MySQL aponta loopback e sincronização explícita está habilitada. Redis aponta endereço externo; não houve conexão a ele. Credenciais de e-mail/armazenamento presentes não comprovam funcionamento das integrações.
+- Consulta direta ao MySQL em transação somente de leitura: conexão aprovada, versão 8.0.44, banco selecionado corresponde à configuração, 31 tabelas e nenhuma tabela de histórico de migrations. A ausência do histórico não prova que o schema esteja incorreto, mas exige reconciliação antes de aplicar migrations.
+- O repositório possui 13 migrations com prefixo numérico. Nenhuma foi executada. A aplicação completa não foi iniciada, evitando sincronização e rotinas de startup sobre a base preservada.
+- O proprietário informou que o MySQL da homologação está no Aiven. Backup/restauração, configuração efetiva publicada e isolamento do Redis ainda não verificados. Nenhum painel do provedor foi acessado. Loopback não demonstra, sozinho, toda a independência entre ambientes.
+
+### Auditoria de dependências
+
+A consulta ao registro npm foi expressamente autorizada pelo proprietário. Nenhum pacote foi instalado/atualizado e nenhum `audit fix` foi executado. Os números abaixo são entradas de pacotes sinalizadas pelo registro na árvore de dependências; não equivalem a falhas exploráveis confirmadas na aplicação.
+
+| Escopo da consulta | Baixa | Moderada | Alta | Crítica | Total |
+| --- | --- | --- | --- | --- | --- |
+| Backend completo | 2 | 11 | 23 | 2 | 38 |
+| Backend com `--omit=dev` | 1 | 3 | 16 | 1 | 21 |
+| Frontend completo | 1 | 2 | 15 | 1 | 19 |
+| Frontend com `--omit=dev` | 0 | 1 | 7 | 0 | 8 |
+
+O crítico restante no backend com `--omit=dev` aponta `proxy-addr`, instalado pela cadeia de Express; o bootstrap observado usa Fastify. A aplicabilidade e a atualização compatível precisam de triagem, sem presumir exploração nem ignorar o alerta. No frontend estático, `--omit=dev` também não demonstra que cada pacote faça parte do JavaScript entregue ao navegador. Esses resultados abrem E0.5 e não encerram auditoria de segurança.
+
+### Limites e recuperação
+
+Sem validação visual/autenticada, envio real de e-mail, conexão Redis/S3, migrations, restauração, deploy ou mudança em homologação. Dados fictícios preservados. Recuperação desta entrega consiste em reverter somente as alterações dos testes e deste roteiro em novo commit, se necessário; não há alteração de schema a reverter.

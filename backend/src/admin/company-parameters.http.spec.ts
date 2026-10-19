@@ -19,6 +19,7 @@ import { AchievementsService } from '../achievements/achievements.service';
 import { S3Service } from '../conteudo/s3/s3.service';
 import { Empresa } from '../empresa/empresa.entity';
 import { resolveCompanyParameters } from '../config/features';
+import { getLocalDateKey } from '../common/utils/date.utils';
 
 // Teste HTTP em memória. A identidade é uma fixture, não substitui testes de JWT/CSRF.
 describe('HTTP — parâmetros institucionais', () => {
@@ -132,6 +133,22 @@ describe('HTTP — parâmetros institucionais', () => {
     };
     const dataSource = {
       getRepository: () => userRepository,
+      // Massa sem temporadas completas anteriores: o teste exercita parâmetros,
+      // enquanto fechamento e snapshots têm cobertura própria em ranking-history.
+      query: (sql: string) => {
+        if (sql === 'SELECT id FROM ranking_tracking WHERE id = 1') {
+          return Promise.resolve([{ id: 1 }]);
+        }
+        if (sql.startsWith('UPDATE ranking_tracking SET start_local_at')) {
+          return Promise.resolve([]);
+        }
+        if (sql.startsWith('SELECT DATE_FORMAT(start_local_at,')) {
+          return Promise.resolve([
+            { start_local_at: `${getLocalDateKey()} 00:00:00.000000` },
+          ]);
+        }
+        throw new Error('Consulta inesperada na fixture de parâmetros');
+      },
       transaction: async (callback) => {
         const staged = new Map(
           [...companies].map(([id, company]) => [id, { ...company }]),
