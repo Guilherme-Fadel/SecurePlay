@@ -61,7 +61,7 @@ Dependências principais: E0 → E1 → mudanças de persistência de E2/E3/E4; 
 
 - E0.1: inventariar desenvolvimento, homologação, dependências, configuração não secreta, versão do código e banco utilizado. Verificar se o backend local usa banco próprio ou o banco compartilhado. Não iniciar serviços que possam executar sincronização, agendamentos ou seeds antes disso.
 - E0.2: conferir testes/build/lint existentes em ambiente apropriado, classificar falhas anteriores e verificar o E2E com bootstrap Fastify. Verificar vulnerabilidades de dependências quando o registro estiver disponível; separar alerta encontrado de atualização comprovadamente necessária.
-- E0.3: definir massa sintética com pelo menos duas escolas, alunos, administradores institucionais e internos, sem apagar os registros atuais. Definir onde rodar MySQL/Redis descartáveis e como limitar integrações de teste.
+- E0.3: definir massa sintética com pelo menos duas escolas, alunos, administradores institucionais e internos, sem apagar os registros atuais. Definir onde rodar MySQL/Redis descartáveis e como limitar integrações de teste. Primeira parcela preparou `compose.test.yaml` e `TESTE-DOCKER.md`; ambiente e massa seguem pendentes até executar Docker em isolamento.
 - E0.4: registrar decisões iniciais de entrada assistida, responsabilidade por contas, visibilidade no trial, acessos internos e critério operacional do piloto.
 - E0.5: triar os alertas de dependências encontrados na auditoria, distinguindo produção/desenvolvimento e aplicabilidade; preparar atualizações delimitadas com testes em entrega própria. Priorizar alertas altos/críticos antes do marco de piloto real. Tratar também a dívida de lint por fatias, sem desabilitar regras para esconder o baseline.
 - Aceite: baseline e lacunas nomeadas; nenhum comando de escrita em homologação; próximos testes reproduzíveis. Corrigir fixtures apenas quando a expectativa continuar provando o comportamento correto.
@@ -254,7 +254,7 @@ Só perguntas do próximo trecho serão trazidas ao proprietário a cada vez. Es
 - Nenhuma iniciativa SP-01 a SP-18 está marcada como concluída por este documento.
 - Conferências pontuais anteriores sustentam os riscos de validação do desafio, sincronização declarada no Render e ausência de conteúdo enquanto a sessão carrega; não constituem reprodução integral nem validação do ambiente publicado.
 - E0.5 recebeu a primeira correção delimitada de dependências críticas, conforme seção 11. Alertas altos/moderados e dívida de lint continuam pendentes.
-- Próxima entrega: preparar o ambiente descartável de E0.3 com Docker, escolhido pelo proprietário. Docker ainda não está instalado neste computador; ambiente não iniciado. E0.4 mantém decisões de produto abertas. Não aplicar migrations na base preservada antes de E1.
+- E0.3: preparação versionada em `compose.test.yaml` e `TESTE-DOCKER.md`; serviços ainda não iniciados porque Docker/WSL não estão instalados. A configuração mantém portas em loopback, rede interna e credenciais explícitas somente para testes. A massa sintética e conexão do backend continuam pendentes de ensaio real. E0.4 mantém decisões de produto abertas. Não aplicar migrations na base preservada antes de E1.
 
 ## 10. Evidências da primeira entrega de E0 — 19/10/2026
 
@@ -349,3 +349,12 @@ As entradas críticas passaram de 2 para 0 no backend completo e de 1 para 0 no 
 Dados, schema, .env e homologação permanecem preservados. Recuperação: reverter esta entrega em novo commit e reinstalar as dependências a partir dos locks anteriores no ambiente de desenvolvimento. Não há alteração de banco a reverter.
 
 O proprietário escolheu Docker para o ambiente descartável de E0.3. A preparação deverá separar MySQL/Redis, usar massa exclusivamente sintética de duas escolas e impedir dependência acidental dos serviços externos. A escolha não comprova instalação nem execução: Docker está ausente neste computador e nenhum container foi iniciado nesta parcela. Backup/restauração do Aiven continua em E1.
+
+
+## 12. E0.3 — preparação inicial do ambiente descartável — 19/10/2026
+
+- `compose.test.yaml` define apenas MySQL 8.0.44 e Redis 7.4-alpine. O volume MySQL usa nome do projeto; Redis não persiste. Rede interna Docker; portas em loopback 13306/16379. Sem backend, `.env`, migrações, seeds, e-mail ou storage.
+- `TESTE-DOCKER.md` documenta pré-requisitos, comandos, saúde dos serviços, preservação ou remoção exclusivamente do volume desse projeto e limites de dados/credenciais. Credenciais fixas ali são públicas e servem apenas para desenvolvimento descartável.
+- Escolha do proprietário: Docker. Ambiente observado: Docker command ausente; `wsl --version` informa que o WSL não está instalado.
+- Não foi possível validar `docker compose config`, baixar imagens, iniciar serviços, testar saúde ou conexões. Nenhuma massa sintética ou backend integrado foi criado. A entrega é preparação versionada, não ambiente operacional.
+- Próxima fatia E0.3: instalar/pré-requisitos de modo per-user quando viável, confirmar versão, Compose config e inicialização; então verificar conectividade e só depois criar massa sintética sem egress ou leitura do `.env` comum.
