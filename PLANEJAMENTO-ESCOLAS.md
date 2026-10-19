@@ -1,6 +1,6 @@
 # SecurePlay — preparação para comercialização com escolas
 
-Versão inicial: 19/10/2026. Estado: primeira entrega de E0 executada; demais etapas permanecem planejadas.
+Versão inicial: 19/10/2026. Estado: entregas iniciais de E0.1/E0.2 e primeira correção de dependências em E0.5 executadas; demais parcelas permanecem planejadas.
 
 Este roteiro cobre as 18 iniciativas e os 15 achados técnicos da avaliação fornecida pelo proprietário. Os identificadores SP-01 a SP-18 preservam a rastreabilidade com esse relatório; E0 a E10 indicam a ordem de trabalho proposta. São frentes de evolução, não funcionalidades prometidas nem prazos contratados.
 
@@ -253,7 +253,8 @@ Só perguntas do próximo trecho serão trazidas ao proprietário a cada vez. Es
 - E0 iniciada por autorização do proprietário. Primeira entrega: E0.1/E0.2, com inspeção segura dos ambientes, baseline e duas correções de testes; evidências abaixo.
 - Nenhuma iniciativa SP-01 a SP-18 está marcada como concluída por este documento.
 - Conferências pontuais anteriores sustentam os riscos de validação do desafio, sincronização declarada no Render e ausência de conteúdo enquanto a sessão carrega; não constituem reprodução integral nem validação do ambiente publicado.
-- Próxima entrega proposta: preparar o ambiente descartável de E0.3 e triar dependências de E0.5. E0.4 mantém as decisões de produto ainda abertas. Não aplicar migrations na base preservada antes de E1.
+- E0.5 recebeu a primeira correção delimitada de dependências críticas, conforme seção 11. Alertas altos/moderados e dívida de lint continuam pendentes.
+- Próxima entrega: preparar o ambiente descartável de E0.3 com Docker, escolhido pelo proprietário. Docker ainda não está instalado neste computador; ambiente não iniciado. E0.4 mantém decisões de produto abertas. Não aplicar migrations na base preservada antes de E1.
 
 ## 10. Evidências da primeira entrega de E0 — 19/10/2026
 
@@ -306,3 +307,45 @@ O crítico restante no backend com `--omit=dev` aponta `proxy-addr`, instalado p
 ### Limites e recuperação
 
 Sem validação visual/autenticada, envio real de e-mail, conexão Redis/S3, migrations, restauração, deploy ou mudança em homologação. Dados fictícios preservados. Recuperação desta entrega consiste em reverter somente as alterações dos testes e deste roteiro em novo commit, se necessário; não há alteração de schema a reverter.
+
+
+## 11. E0.5 — primeira correção de dependências — 19/10/2026
+
+### Escopo e aplicabilidade
+
+Foram atualizadas somente três resoluções transitivas, sem modificar os manifests, versões principais, código da aplicação ou configurações de serviços:
+
+| Pacote | Antes → depois | Caminho e superfície observada |
+| --- | --- | --- |
+| proxy-addr | 2.0.7 → 2.0.8 | Backend: platform-express → Express. Instalado como dependência de produção; bootstrap usa Fastify e a exploração não foi demonstrada |
+| handlebars | 4.7.9 → 4.7.10 | Backend: ts-jest; ferramenta de testes, não dependência de produção |
+| tar | 7.5.7 → 7.5.22 | Frontend: Tailwind/oxide; ferramenta de build, não evidência de exposição no navegador |
+
+As versões corrigidas foram conferidas nos avisos de [proxy-addr](https://github.com/advisories/GHSA-jqcg-44mw-7w3h), [Handlebars](https://github.com/advisories/GHSA-p8wg-vrv2-v86f) e nos alertas de [tar](https://github.com/advisories/GHSA-23hp-3jrh-7fpw), incluindo os demais avisos retornados pelo npm. A árvore instalada foi conferida com npm ls. A atualização respeita as faixas já declaradas pelos pacotes que os utilizam; não adiciona overrides.
+
+O npm também completou seis registros de metadados de dependências já embarcadas na variante opcional WASI de Tailwind/oxide 4.1.12 no lockfile do frontend. Esse pacote e suas declarações de dependências não mudaram de versão; nenhuma outra resolução existente mudou. Foram preservados os metadados gerados pelo gerenciador.
+
+### Evidências após a atualização
+
+- Instalação local com ignore-scripts, sem audit fix. Somente dois pacotes alterados no backend e um no frontend. Nenhum script de instalação executado.
+- Backend: 45 suítes/229 testes aprovados; smoke Fastify de saúde: 1 suíte/2 testes aprovados; build aprovado.
+- Frontend: assets, tipos e build aprovados; proxy com 10 testes, parâmetros/cache com 15 verificações e dicionário com 20.409 palavras aprovados.
+- Nenhum arquivo de código/configuração de lint ou pacote de lint mudou: baseline de lint da seção 10 permanece pendente e não foi reexecutado nesta entrega de lockfiles.
+- Runtime desta validação: Node 20.20.2. Paridade com Node 22/container continua pendente. Sem validação visual ou E2E autenticado com serviços reais.
+
+Nova consulta npm audit autorizada, no mesmo dia:
+
+| Árvore | Baixa | Moderada | Alta | Crítica | Total |
+| --- | --- | --- | --- | --- | --- |
+| Backend completo | 2 | 11 | 23 | 0 | 36 |
+| Backend omitindo dev | 1 | 3 | 16 | 0 | 20 |
+| Frontend completo | 1 | 2 | 15 | 0 | 18 |
+| Frontend omitindo dev | 0 | 1 | 7 | 0 | 8 |
+
+As entradas críticas passaram de 2 para 0 no backend completo e de 1 para 0 no frontend completo. Essas contagens são do registro e não certificam segurança ou explorabilidade. Os alertas restantes exigem triagem/atualizações por fatias antes do marco de piloto real; E0.5 não está encerrada.
+
+### Continuidade e recuperação
+
+Dados, schema, .env e homologação permanecem preservados. Recuperação: reverter esta entrega em novo commit e reinstalar as dependências a partir dos locks anteriores no ambiente de desenvolvimento. Não há alteração de banco a reverter.
+
+O proprietário escolheu Docker para o ambiente descartável de E0.3. A preparação deverá separar MySQL/Redis, usar massa exclusivamente sintética de duas escolas e impedir dependência acidental dos serviços externos. A escolha não comprova instalação nem execução: Docker está ausente neste computador e nenhum container foi iniciado nesta parcela. Backup/restauração do Aiven continua em E1.
