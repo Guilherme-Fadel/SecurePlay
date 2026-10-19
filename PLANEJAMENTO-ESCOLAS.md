@@ -1,0 +1,255 @@
+# SecurePlay — preparação para comercialização com escolas
+
+Versão inicial: 19/10/2026. Estado: planejamento para discussão; implementação não iniciada.
+
+Este roteiro cobre as 18 iniciativas e os 15 achados técnicos da avaliação fornecida pelo proprietário. Os identificadores SP-01 a SP-18 preservam a rastreabilidade com esse relatório; E0 a E10 indicam a ordem de trabalho proposta. São frentes de evolução, não funcionalidades prometidas nem prazos contratados.
+
+## 1. Decisões confirmadas e limites
+
+- O primeiro comprador será a escola.
+- Desenvolvimento local e homologação publicada existem; os dados atuais são fictícios e devem ser preservados.
+- O proprietário indicou banco separado no `.env` e autorizou sua consulta para preparar os testes. Conferir destino e isolamento antes de conectar/escrever; credenciais não entram em documentos, logs ou commits. Backup/restauração da homologação permanecem desconhecidos.
+- O acesso inicial será assistido: criação pela equipe ou solicitação de piloto seguida de liberação. A escolha entre os dois caminhos permanece aberta.
+- Pessoas da equipe SecurePlay terão acesso administrativo interno; a escola piloto também terá seu administrador institucional. Reutilizar inicialmente os papéis existentes e validar a amplitude de cada acesso.
+- Aulas, quadrinhos e videoaulas estão em produção editorial separada. Este plano não inclui produzir esse conteúdo. Inclui corrigir os mecanismos de acesso, validação e progresso desses formatos.
+- Um piloto com participantes reais exige conteúdo mínimo aprovado e condições operacionais e de privacidade verificadas. Dados fictícios permitem ensaiar a jornada, mas não comprovam aprendizagem ou conformidade.
+- Cada entrega concreta deve ser pequena, revisável, testada conforme o risco e registrada em commit local com evidências. Push, deploy, merge, mudanças em serviços publicados e operações sobre banco compartilhado exigem autorização específica.
+- Preservar identidade visual, pixel art, registros, progresso e alterações anteriores fora do escopo.
+
+## 2. Como vamos trabalhar
+
+Para cada entrega:
+
+1. Explicar o problema, conferir a evidência atual e delimitar o comportamento esperado.
+2. Registrar decisões necessárias e consultar o proprietário antes de implementar escolhas de produto ainda abertas. Avançar nas verificações independentes.
+3. Inspecionar Git e separar mudanças anteriores. Definir caminhos da entrega, contratos, riscos e recuperação.
+4. Implementar uma fatia funcional com teste de comportamento proporcional. Uma etapa ampla pode gerar vários commits, cada um coerente.
+5. Validar o diff final, incluindo arquivos novos, e executar build/checks dos módulos afetados. Fazer revisão independente no fechamento intermediário/crítico; auditorias especializadas apenas quando necessárias.
+6. Apresentar resultado, evidências, limitações e decisões pendentes. Corrigir achados antes de declarar a fatia concluída.
+7. Stage explícito somente dos arquivos da entrega, conferir o staged diff e criar commit local. Registrar o SHA e sua evidência. Não agregar arquivos alheios, segredos, dumps ou configuração local de agentes.
+8. Encerrar a entrega com um ponto de discussão. A etapa seguinte começa após alinharmos seu escopo; o roteiro inteiro não dispara uma implementação contínua automática.
+
+Os resultados da avaliação original são históricos: falhas e contagens de testes precisam ser conferidas antes de orientar uma correção. Uma tarefa pode terminar como "já atendida", "corrigida", "depende de ambiente" ou "adiada por decisão", com justificativa. Não refazer componentes existentes sem necessidade.
+
+O documento de produto é versionado. Demandas, steering, registros internos e guias do ecossistema de agentes continuam locais conforme as instruções do projeto. Evidências publicáveis ficam na descrição do commit ou em documentação técnica da entrega; capturas e logs só entram no Git quando necessários e sem identificação pessoal.
+
+## 3. Sequência proposta
+
+Não há estimativa de calendário nesta versão. Cada fatia terá estimativa após a inspeção do código, das dependências e do ambiente. "Grande" significa que será dividida, não um único commit.
+
+| Etapa | Resultado esperado | Iniciativas | Condição de saída |
+| --- | --- | --- | --- |
+| E0 — Diagnóstico e decisões iniciais | Baseline reproduzível e mapa dos ambientes | SP-01, SP-07; preparação de SP-02 | Sabemos o que pode ser testado sem tocar a homologação e quais falhas já existem |
+| E1 — Banco e implantação previsíveis | Schema controlado e recuperação ensaiada | SP-01 | Criação limpa, atualização de cópia e restauração verificadas; plano de aplicação separado |
+| E2 — Progresso e recompensas corretos | Finalizações únicas e estados recuperáveis | SP-03; parte de SP-16 | Repetições, concorrência e falhas não duplicam nem perdem efeitos obrigatórios |
+| E3 — Entrada, conta, sessão e e-mail | Acesso compreensível e recuperável | SP-04, SP-08, SP-09 | Jornadas de acesso e revogação verificadas, inclusive rejeições e falhas |
+| E4 — Administração e isolamento | Equipe interna e escola operam apenas seu escopo | SP-05, SP-06, SP-15 | Matriz de autorização, auditoria e reversão administrativa aprovadas |
+| E5 — Preparação para dados infantis reais | Responsabilidades e fluxos de dados definidos | SP-02 | Decisões e validação aplicável concluídas antes do uso infantil real |
+| E6 — Captação e piloto assistido | Escola entra, convida e acompanha participantes | SP-10, SP-11; coleta mínima de SP-13 | Jornada completa ensaiada com dados fictícios e pronta para validação com escola |
+| E7 — Operação global e contratos | Organização, piloto e situação comercial com significado | SP-12, SP-14 | Operação rotineira pelo painel, acesso contratual com política explícita |
+| E8 — Métricas e capacidade operacional | Indicadores confiáveis e diagnóstico de falhas | SP-13, SP-16 | Totais reconciliados, consultas limitadas e falhas acionáveis |
+| E9 — Acessibilidade, persistência e descoberta | Uso consistente em teclado, celular e dispositivo compartilhado | SP-17 | Jornadas verificadas nas condições previstas e metadados adequados |
+| E10 — Automação e cobrança condicionais | Automatizar necessidades demonstradas | SP-18 | Decisão fundamentada de implementar, adiar ou descartar cada automação |
+
+SP-07 acompanha todas as etapas. E5 começa pela definição de responsabilidades em E0; sua posição na tabela não permite adiar privacidade até depois da coleta real. A instrumentação mínima entra junto de E6, sem esperar E8. Correções de acessibilidade que bloqueiem um fluxo entram na própria entrega, sem esperar E9.
+
+Dependências principais: E0 → E1 → mudanças de persistência de E2/E3/E4; E2 + E3 + E4 + E5 → piloto real de E6; dados de E6 → consolidação de E7/E8; contratos e demanda comprovada → E10. Correções isoladas sem mudança de schema podem avançar após E0 com testes locais. Não é necessário terminar E8/E9/E10 para um piloto seguro, desde que seus requisitos essenciais estejam atendidos.
+
+## 4. Entregas concretas e evidências
+
+### E0 — Estabelecer o ponto de partida
+
+- E0.1: inventariar desenvolvimento, homologação, dependências, configuração não secreta, versão do código e banco utilizado. Verificar se o backend local usa banco próprio ou o banco compartilhado. Não iniciar serviços que possam executar sincronização, agendamentos ou seeds antes disso.
+- E0.2: conferir testes/build/lint existentes em ambiente apropriado, classificar falhas anteriores e verificar o E2E com bootstrap Fastify. Verificar vulnerabilidades de dependências quando o registro estiver disponível; separar alerta encontrado de atualização comprovadamente necessária.
+- E0.3: definir massa sintética com pelo menos duas escolas, alunos, administradores institucionais e internos, sem apagar os registros atuais. Definir onde rodar MySQL/Redis descartáveis e como limitar integrações de teste.
+- E0.4: registrar decisões iniciais de entrada assistida, responsabilidade por contas, visibilidade no trial, acessos internos e critério operacional do piloto.
+- Aceite: baseline e lacunas nomeadas; nenhum comando de escrita em homologação; próximos testes reproduzíveis. Corrigir fixtures apenas quando a expectativa continuar provando o comportamento correto.
+- Commits previstos: correções delimitadas de testes e bootstrap, se necessárias. Um levantamento sem alteração versionável não exige commit vazio.
+
+### E1 — SP-01: banco, migrations, backup e implantação
+
+- Comparar entidades, migrations e schema observado por inspeção autorizada. O arquivo do Render declara sincronização habilitada; a configuração efetiva publicada ainda precisa de verificação.
+- Definir baseline sem reescrever migrations aplicadas. Auditar duplicidades antes de propor restrições de integridade.
+- Ensaiar criação do zero, atualização de cópia, backup/restauração e compatibilidade com versões da aplicação. Proteger cópias e não commitá-las.
+- Preparar execução explícita de migrations e retirada controlada de sincronização. Não alterar apenas a flag presumindo que o schema está pronto.
+- Definir sequência de release: backup → verificação de versão/schema → migration compatível → aplicação → smoke tests → monitoramento. Validar a ordem para cada mudança.
+- Aceite: aplicação opera na base restaurada; restrições e dados preservados; rollback ou correção progressiva documentados, incluindo limites de perda de dados.
+- Commits previstos: baseline/migrations verificadas; configuração e procedimento de implantação coerentes. Aplicação em homologação é uma ação posterior autorizada e verificada separadamente.
+
+### E2 — SP-03: integridade de atividades e recompensas
+
+- E2.1: desafio diário exige exatamente uma resposta por questão autorizada, IDs únicos, índices inteiros dentro das opções e conjunto completo. Rejeitar entradas inválidas antes de salvar ou premiar.
+- E2.2: finalização do desafio e crédito obrigatório ocorrem uma única vez; tratar duplicidades existentes antes de criar restrições. Preservar respostas parciais e impedir sobrescrita tardia da conclusão.
+- E2.3: partidas Arcade são finalizadas uma única vez, inclusive com requisições concorrentes e repetidas. A leitura/consumo de tentativas deve ser atômica. A estratégia entre Redis e MySQL precisa permitir recuperação após falha entre os dois sistemas; consumir a partida no Redis, sozinho, não garante a recompensa persistida.
+- E2.4: conclusão de aula, XP e bônus de módulo têm concessão única e unidade consistente. Notificações, cache e eventos podem ser repetidos com segurança e recuperados sem premiar novamente.
+- E2.5: concessão de moeda virtual persiste lançamento e carteira atomicamente, com concorrência entre origens diferentes e compra existente preservada.
+- E2.6: padronizar a fronteira de crédito de XP apenas onde necessário; preservar ranking mensal, elegibilidade e snapshots fechados. Reduzir o acoplamento de cadastro/configuração ao fechamento de temporadas sem perder o congelamento histórico.
+- Aceite: zero duplicação ou perda de efeitos obrigatórios nos cenários de repetição, concorrência e falha parcial; conclusão final confirmada pelo servidor; progresso parcial continua retomável.
+- Evidências: regressão de entradas inválidas, teste de concorrência com MySQL/Redis quando pertinente, injeção de falhas e reconciliação de progresso/XP/carteira/ranking. Mocks não comprovam atomicidade real.
+- Commits previstos: validação do desafio; finalização do desafio; Arcade/tentativas; aula/bônus; carteira; integração de XP, em fatias compatíveis.
+
+### E3 — SP-04, SP-08 e SP-09: acesso e recuperação
+
+- E3.1: rotas públicas, sessão e rotas lazy exibem carregamento, limite de espera, erro e nova tentativa; indisponibilidade não resulta em tela vazia nem em acesso indevido. Verificar a jornada atrás do proxy publicado quando autorizado.
+- E3.2: política de sessão explícita para troca de senha, logout, inativação, expiração e revogação; incluir sockets já conectados. Não acrescentar refresh token sem necessidade demonstrada.
+- E3.3: recuperação de senha de conta ativa com resposta que não revele existência da conta, limitação de abuso, token protegido de uso único e expiração. Separar recuperação de definição inicial de senha.
+- E3.4: reforço administrativo: política de senha, MFA e reautenticação de operações sensíveis, conforme desenho aprovado; testar recuperação para evitar bloquear os proprietários. Não impor o mesmo fluxo às crianças.
+- E3.5: entrega de e-mail com estado persistido, tentativas e reprocessamento; confirmar/redefinir/reenvio preservam a jornada após falha. Diferenciar aceitação pelo provedor de entrega confirmada; não registrar sucesso sem evidência correspondente.
+- Aceite: entrada e recuperação completas; revogação afeta HTTP e tempo real conforme política; falha do provedor fica visível e recuperável, sem exposição de tokens ou dados pessoais.
+- Evidências: testes de expiração, replay, abuso, falha/timeout de envio, sessão e socket; ensaio no navegador; envio real somente para destinatários de teste autorizados.
+- Commits previstos: estados de entrada; revogação; recuperação de senha; MFA; entrega/reprocessamento de e-mail. Política compartilhada definida antes dos fluxos dependentes.
+
+### E4 — SP-05, SP-06 e SP-15: administração segura
+
+- E4.1: matriz com aluno, administrador da escola e administrador global, em duas escolas; testar JWT real, CSRF, Redis, persistência, URLs, filtros e IDs de payload. Separar catálogo global de dados privados.
+- E4.2: reativação autorizada, proteção do último administrador institucional e auditoria persistida junto de ações críticas. Definir ator, alvo, motivo e campos relevantes, sem copiar payloads sensíveis.
+- E4.3: desativação de módulo nega acesso direto às aulas e operações dependentes conforme semântica escolhida. Verificar conteúdo legado antes de restringir.
+- E4.4: DTO concreto de atualização de quiz, índices válidos, quantidade/opções consistentes e confirmação de exclusões destrutivas. Não expor respostas corretas na listagem do aluno.
+- Aceite: administrador institucional não consulta/administra outra escola; usuário institucional não usa rotas globais; flags desabilitadas são negadas no backend; reversões administrativas autorizadas funcionam e deixam histórico.
+- Evidências: E2E negativo e positivo com banco e identidade reais de teste; correções de conteúdo sem alterar arquivos editoriais em andamento; UI em desktop/celular e por teclado quando alterada.
+- Commits previstos: cobertura/correções de isolamento; reativação/auditoria; disponibilidade do conteúdo; validação de questões.
+
+### E5 — SP-02: condições para participantes reais
+
+- Mapear dados, finalidades, responsáveis, acessos, operadores, retenção, exclusão/exportação e resposta a incidentes/solicitações. Identificar contato do controlador e responsabilidades de escola/plataforma/responsável conforme avaliação aplicável.
+- Decidir quem cria contas de alunos e quais dados são necessários; revisar necessidade de nascimento, e-mail próprio, apelido, imagem e ranking. Teste coletivo não equivale a escola isolada.
+- Definir tratamento de solicitações de responsáveis/escola, prazos e execução operacional; adaptar avisos e termos ao fluxo implementado. Não considerar um checkbox suficiente para resolver o desenho.
+- Consultar fontes oficiais atuais e obter avaliação jurídica pertinente antes de afirmar adequação às regras do público infantil. Este roteiro não declara conformidade jurídica.
+- Aceite: matriz de dados e responsabilidades aprovada; fluxos testados; minimização aplicada; papéis e avisos correspondem à operação; nenhuma restrição nova bloqueia retroativamente contas antigas sem decisão explícita.
+- Commits previstos: adaptações de cadastro/convite; controles de dados e atendimento; textos públicos revisados. Conteúdo jurídico depende da validação indicada.
+
+### E6 — SP-10, SP-11 e início de SP-13: escola interessada até piloto
+
+- E6.1: escolher entre criação assistida direta e formulário de solicitação. Se houver formulário: contato adulto, escola e objetivo, finalidade clara, antispam e persistência anterior a qualquer automação.
+- E6.2: lead com origem, etapa, interações e próximo passo; deduplicação por e-mail normalizado e contexto, sem inferir escola por domínio nem transformar aluno em lead.
+- E6.3: piloto vinculado à organização própria, contato adulto, datas, objetivo e estado. Criar/liberar organização após qualificação, sem criação automática por cada formulário.
+- E6.4: administrador institucional acessa, convida participantes e acompanha a primeira conclusão. Reutilizar administração e convites existentes. Turmas/matrículas e novo papel de professor só se requisito concreto exigir.
+- E6.5: definir início e extensão do piloto/trial, fim, preservação do histórico e próximo contato. Avaliar se o teste individual de sete dias continua como demonstração distinta, se muda ou se é retirado; não convertê-lo silenciosamente em piloto escolar.
+- E6.6: instrumentar marcos/eventos mínimos com versão, horário, contexto autorizado e deduplicação; definir retenção e evitar dados sensíveis no payload analítico.
+- E6.7: antes do piloto real, definir responsável e canal de suporte para a escola, registro mínimo de solicitações, encaminhamento de falhas de acesso e procedimento de incidente. Ensaiar um pedido de ajuda e sua resolução; não depende de criar módulo de atendimento.
+- Aceite técnico: adulto solicita/é cadastrado → equipe acompanha → escola acessa → convida → aluno conclui atividade sintética → escola vê participação → encerramento tem próximo passo. Conteúdo real e avaliação pedagógica são dependências para o piloto real, fora da produção desta etapa.
+- Commits previstos: captação; acompanhamento; piloto/entrada institucional; relatório mínimo e marcos. Eventos entram junto do fluxo correspondente.
+
+### E7 — SP-12 e SP-14: operação global e acordos
+
+- Evoluir o painel existente por responsabilidade: visão geral, organizações, interessados/pilotos, acessos internos, auditoria e operação. Comercial cresce quando seus dados existirem. Usar componentes/tokens existentes, sem reconstrução visual ampla.
+- Ficha da escola: contatos adultos, classificação, estado operacional separado do comercial, usuários, convites, funcionalidades, atividade agregada, piloto/acordo, histórico e próxima ação.
+- Definir permissões internas conforme as pessoas e tarefas reais; evitar conceder acesso global amplo por conveniência. Proprietário, operação e consulta são possibilidades a justificar, não novos papéis automáticos.
+- Acordo comercial inicial manual: vigência, condição e referência externa, política de extensão, suspensão e recuperação. Definir preço/unidade antes de modelar plano e limites; acesso não depende de uma inferência de pagamento.
+- Exportações têm finalidade, campos mínimos e autorização própria. Não exportar dados infantis em relatórios comerciais por padrão. Atendimento pode começar com histórico de contato; casos de suporte separados apenas quando houver necessidade.
+- Aceite: tarefas rotineiras sem intervenção no banco, ações críticas com contexto/motivo/auditoria, situação comercial não confundida com habilitação técnica. Piloto convertido preserva vínculos e histórico.
+- Commits previstos: ficha consolidada; visão global; acordos/direitos de uso; ações operacionais e filtros necessários.
+
+### E8 — SP-13 e SP-16: métricas, desempenho e operação
+
+- Definir dicionário de indicadores: significado, fonte, denominador, coorte/período, filtros, dono da decisão e limitações. Dados desconhecidos aparecem indisponíveis, sem inventar datas históricas.
+- Cobrir: organizações elegíveis, novas organizações, contas habilitadas por papel, trials vigentes, convites válidos, conclusões, última atividade conhecida, onboarding, ativação/conversão de pilotos, organizações com uso e leads sem próximo passo.
+- Receita recorrente e churn só após fonte contratual e definição de cliente; avaliar se servem ao modelo escolhido. Não confundir empresa com cliente, conta habilitada com uso, convite com ativação, XP com aprendizagem ou valor contratual com caixa recebido.
+- Reconciliar eventos com operações persistidas; excluir contas técnicas/testes conforme a consulta; registrar limites de histórico disponível. Indicadores pedagógicos dependem de objetivos e conteúdo definidos em trilha própria.
+- Paginar/agregar ranking e listagens no banco com campos e índices adequados; medir consultas antes/depois. Preservar elegibilidade, classificação e histórico congelado.
+- Separar administração em responsabilidades sem refatoração geral. Padronizar fronteiras de XP e reduzir efeitos de fechamento de temporada ainda pendentes de E2.
+- Diferenciar saúde do processo de prontidão de dependências; logs correlacionáveis sem segredos; alertas externos acionáveis e acompanhamento de falhas de e-mail/integrações. Diagnóstico sensível não é exposto em health público.
+- Aceite: totais conferem com consultas de referência, duplicação não altera conversão, consultas têm trabalho limitado e falhas são identificáveis. Monitoramento não substitui testes de restauração.
+- Commits previstos: definições/agregações; painel com indicadores existentes; consultas; diagnóstico e alertas; refatorações delimitadas com contrato preservado.
+
+### E9 — SP-17: acessibilidade, jogo local e SEO
+
+- Corrigir semântica de diálogo, contenção/restauração de foco, navegação por teclado, labels e foco visível; estados de rota e movimento reduzido; verificar contraste nas paletas suportadas.
+- Validar telas afetadas em desktop e larguras de 320/390 px, overflow, cortes e controles. Preservar identidade/pixel art e progressos salvos.
+- Persistência de Palavra Secreta/TermoTech por usuário: alternar contas no mesmo dispositivo não reaproveita indevidamente a partida. Definir migração segura de chaves legadas e informar persistência local.
+- Metadados, títulos e indexação apropriada da landing; avaliar pré-renderização com medida do problema antes de adicionar infraestrutura. Remover ou identificar componentes órfãos com estatísticas/depoimentos fictícios se ainda existirem, sem apresentar prova social inventada.
+- Aceite: jornadas críticas completas por teclado e celular; teste com leitor de tela/dispositivo real explicitamente registrado quando executado; troca de usuário preserva isolamento; rastreabilidade dos limites não testados.
+- Commits previstos: modal/foco; movimento/estados e contraste; jogo local; metadados e limpeza pertinente. Reaproveitar evidências de correções já feitas em outras etapas.
+
+### E10 — SP-18: decisões condicionais
+
+- Avaliar cobrança automática somente com modelo comercial, processo manual e necessidade comprovados. Se adotada: provedor escolhido, portal, verificação de origem, eventos persistidos, idempotência, reconciliação, falha/repetição/ordem trocada e recuperação de acesso.
+- n8n ou outra automação pode avisar sobre lead ou pendência após persistência no produto. Automação desligada não perde lead nem controla a autorização essencial.
+- Registrar custo/benefício e decisão para cada automação; suporte estruturado, CRM externo complexo, data warehouse, impersonação, banco por escola e usuário multi-organização dependem de necessidade demonstrada.
+- Não migrar hospedagem por aparência ou preferência de ferramenta. Se houver problema mensurado, abrir avaliação específica.
+- Aceite: decisão explícita e rastreável. Adiar é um resultado válido; implementação só começa quando critérios e autorização correspondentes existirem.
+
+## 5. Matriz de cobertura do relatório
+
+| Iniciativa original | Cobertura neste roteiro | Achados/áreas relacionados |
+| --- | --- | --- |
+| SP-01 — Deploy/schema | E0, E1 | T06; backup, migrations e restauração |
+| SP-02 — Governança infantil | E0, E5; critérios de E6/E7 | Dados, entrada por adulto, privacidade e responsabilidades |
+| SP-03 — Integridade | E2 | T01, T02, T03, T04, T05 |
+| SP-04 — Acesso administrativo | E3 | T07, T08; recuperação administrativa e sockets |
+| SP-05 — Isolamento | E4 | T15; duas escolas, autenticação real e testes negativos |
+| SP-06 — Auditoria/recuperação | E4, E7 | T09; reativação, último administrador e ações críticas |
+| SP-07 — Qualidade das verificações | E0 e fechamento de todas as entregas | Fixtures, E2E, lint, dependências e checks reproduzíveis |
+| SP-08 — Entrada e recuperação | E3 | Tela vazia, sessão, senha e indisponibilidade |
+| SP-09 — E-mail recuperável | E3 | T10; estado, reenvio e reprocessamento |
+| SP-10 — Captação comercial | E6 | Landing, lead adulto, interações e próximo passo |
+| SP-11 — Piloto/educador | E6 | Organização própria, marcos, convite e participação |
+| SP-12 — Painel global | E7 | Ficha, navegação, filtros, ações e permissões |
+| SP-13 — Funil/atividade | E6 para coleta, E8 para consolidação | Eventos, privacidade, indicadores e reconciliação |
+| SP-14 — Acordos/limites | E7 | Estados, vigência, unidade de venda e direitos de acesso |
+| SP-15 — Conteúdo/DTOs | E4 | T11, T12; mecanismos técnicos, sem produção editorial |
+| SP-16 — Acoplamento/operação | E2, E8 | T13, T14; XP/ranking, consultas, admin e dependências |
+| SP-17 — Acessibilidade/local/SEO | E3/E4/E6 nas jornadas; consolidação em E9 | Modal, rotas, motion, contraste, jogo e landing |
+| SP-18 — Cobrança/automações | E10 | Webhooks/portal condicionais, n8n periférico |
+
+As seções de inventário, maturidade e funcionalidades da avaliação são o ponto de partida a reconferir em E0, não uma instrução para reconstruir o sistema. O modelo de dados proposto é candidato: Lead/LeadInteraction/Pilot em E6; acordos em E7; marcos/eventos em E6/E8; entrega de e-mail em E3; evolução da auditoria em E4. Reutilizar estruturas existentes antes de criar entidades. Turmas, planos, assinaturas e suporte permanecem condicionais.
+
+Referências de mercado do relatório servem como princípios: etapas comerciais simples, marcos de onboarding, relatórios úteis, permissões e auditoria. Fontes e documentação técnica/jurídica devem ser atualizadas na etapa correspondente; o roteiro não certifica as conclusões externas do relatório original.
+
+## 6. Critérios para avançar entre marcos
+
+| Marco | Exigências |
+| --- | --- |
+| Pronto para desenvolvimento seguro | Ambientes separados, destino dos comandos conhecido e dados atuais protegidos |
+| Núcleo confiável em teste | Respostas inválidas rejeitadas; repetição/concorrência/falha preservam estado, XP e saldo; schema/restauração verificados |
+| Pronto para piloto com pessoas reais | Acesso/recuperação/e-mail, isolamento, auditoria crítica, governança, conteúdo mínimo aprovado, acompanhamento escolar e procedimento de suporte; validação apropriada do ambiente alvo |
+| Pronto para contratação assistida | Condições comerciais explícitas, responsável adulto, vigência/acesso e histórico preservados; regras de privacidade e atendimento aplicáveis verificadas |
+| Pronto para ampliar operação | Métricas reconciliadas, observabilidade, consultas proporcionais, recuperação ensaiada e UX sem bloqueios conhecidos nos fluxos essenciais |
+
+Homologação aprovada não equivale a produção aprovada. Validar configuração efetiva e jornada do ambiente alvo antes de qualquer promoção autorizada.
+
+## 7. Padrão de evidência e commit
+
+Cada entrega deve permitir responder: o que falhava/faltava; qual comportamento mudou; em quais arquivos; como foi verificado; em qual ambiente; o que não foi verificado; como recuperar; qual commit contém a mudança.
+
+- Backend: Jest direcionado à regra, build e lint pertinente; concorrência/transação com infraestrutura real descartável quando exigidas. E2E usa bootstrap compatível com Fastify.
+- Frontend: build (inclui assets e tipos), lint pertinente e scripts existentes do proxy, parâmetros ou dicionário quando afetados; navegador em desktop/mobile/teclado para UI alterada.
+- Banco: migration do zero e sobre cópia, preservação, restrições e restauração; reversão avaliada com perda explícita quando inevitável. Reinício do Redis não pode eliminar dados que precisam ser permanentes.
+- Segurança: permissões positivas/negativas, tenant, sessão, CSRF, revogação e dados mínimos conforme o fluxo.
+- Ambiente: distinguir teste isolado, ensaio integrado, observação no navegador, homologação, deploy e produção. Um resultado não substitui outro.
+- Git: conferir status/diff, arquivos novos e staged; stage explícito. Resultados válidos podem ser reutilizados enquanto código, dependências e ambiente pertinentes não mudarem.
+
+Formato sugerido para descrição de commit:
+
+```text
+fix(desafio): rejeita respostas repetidas antes da pontuacao
+
+Problema: ...
+Comportamento: ...
+Evidencias: comandos/cenarios executados e resultados resumidos.
+Limites: verificacoes pendentes e ambiente ainda nao validado.
+Recuperacao: estrategia pertinente; omitir se nao se aplicar.
+```
+
+Não declarar "testado" genericamente. `git diff --check` só verifica whitespace. Falha anterior não é atribuída à entrega sem evidência; falha nova relevante impede seu fechamento. Uma entrega dependente de validação de ambiente pode ter código commitado com limite explícito, mas continua pendente desse aceite e não libera o próximo marco de uso real.
+
+## 8. Perguntas por momento de decisão
+
+| Momento | Perguntas que precisam de resposta |
+| --- | --- |
+| Antes de E0/E1 escrever em infraestrutura | Conferir o banco separado indicado no `.env` (consulta autorizada), seu isolamento e onde ficam MySQL/Redis. Há backup e restauração já testados? Quais integrações estão efetivamente funcionando? |
+| Antes de E3/E4 definir política | Quem da equipe precisa consultar ou alterar escolas? Quantos administradores iniciais? Qual método de MFA e recuperação é viável? Qual efeito esperado de revogação/inativação? |
+| Antes de E5/E6 | Quem cria contas infantis? E-mail de aluno é necessário? Escola, responsável ou ambos autorizam/acompanham? Qual visibilidade do trial e ranking? |
+| Antes de E6 desenhar a entrada | Criação direta ou formulário para adulto? Existe acompanhamento comercial externo? O piloto precisa de turmas? Qual duração e qual primeiro resultado o educador deve observar? Quem atende a escola, por qual canal e como encaminha falhas/incidentes? |
+| Antes de E7 | Venda por escola, aluno, turma, período ou projeto? Quais condições, limites, extensão e suspensão? O atendimento mínimo do piloto precisa evoluir? |
+| Antes do piloto real | Há conteúdo mínimo aprovado e objetivos de aprendizagem definidos? Quem valida os resultados pedagógicos e as condições jurídicas/operacionais? |
+| Antes de E8/E10 | Quais decisões cada indicador deve apoiar? Que trabalho manual se repete e justifica automação? Qual forma de cobrança e volume esperado? |
+
+Só perguntas do próximo trecho serão trazidas ao proprietário a cada vez. Escolhas futuras permanecem abertas, sem bloquear correções técnicas independentes.
+
+## 9. Estado inicial
+
+- Planejamento criado; aguardando discussão das decisões e alinhamento de E0.
+- Nenhuma iniciativa SP-01 a SP-18 está marcada como concluída por este documento.
+- Conferências pontuais anteriores sustentam os riscos de validação do desafio, sincronização declarada no Render e ausência de conteúdo enquanto a sessão carrega; não constituem reprodução integral nem validação do ambiente publicado.
+- Próxima entrega proposta: E0.1 + E0.2, inicialmente em leitura e checks sem banco compartilhado; definir os testes descartáveis antes de operações com persistência.
