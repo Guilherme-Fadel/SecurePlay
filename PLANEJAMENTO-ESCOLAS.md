@@ -254,7 +254,7 @@ Só perguntas do próximo trecho serão trazidas ao proprietário a cada vez. Es
 - Nenhuma iniciativa SP-01 a SP-18 está marcada como concluída por este documento.
 - Conferências pontuais anteriores sustentam os riscos de validação do desafio, sincronização declarada no Render e ausência de conteúdo enquanto a sessão carrega; não constituem reprodução integral nem validação do ambiente publicado.
 - E0.5 recebeu a primeira correção delimitada de dependências críticas, conforme seção 11. Alertas altos/moderados e dívida de lint continuam pendentes.
-- E0.3: preparação versionada em `compose.test.yaml` e `TESTE-DOCKER.md`; serviços agora ativos após instalação/inicialização de Docker Desktop e WSL, conforme seção 13. A configuração mantém portas em loopback e credenciais explícitas somente para testes. A massa sintética e conexão do backend continuam pendentes de ensaio real. E0.4 mantém decisões de produto abertas. Não aplicar migrations na base preservada antes de E1.
+- E0.3: preparação versionada em `compose.test.yaml` e `TESTE-DOCKER.md`; serviços ativos após instalação de Docker Desktop/WSL, conforme seção 13. As 13 migrations foram aplicadas somente no banco descartável do Docker (seção 14), com catálogo fictício; nenhuma escola ou conta de usuário foi criada. Conexão do AppModule, massa sintética de duas escolas e política de egress continuam pendentes. E0.4 mantém decisões de produto abertas. Não aplicar migrations na base preservada antes de E1.
 
 ## 10. Evidências da primeira entrega de E0 — 19/10/2026
 
@@ -288,7 +288,7 @@ Runtime local observado: Node 20.20.2/npm 10.8.2. O Dockerfile usa Node 22; exec
 
 - `.env` consultado com autorização, sem carregá-lo no processo da aplicação: MySQL aponta loopback e sincronização explícita está habilitada. Redis aponta endereço externo; não houve conexão a ele. Credenciais de e-mail/armazenamento presentes não comprovam funcionamento das integrações.
 - Consulta direta ao MySQL em transação somente de leitura: conexão aprovada, versão 8.0.44, banco selecionado corresponde à configuração, 31 tabelas e nenhuma tabela de histórico de migrations. A ausência do histórico não prova que o schema esteja incorreto, mas exige reconciliação antes de aplicar migrations.
-- O repositório possui 13 migrations com prefixo numérico. Nenhuma foi executada. A aplicação completa não foi iniciada, evitando sincronização e rotinas de startup sobre a base preservada.
+- Naquela etapa, o repositório possuía 13 migrations com prefixo numérico e nenhuma havia sido executada. A aplicação completa não foi iniciada, evitando sincronização e rotinas de startup sobre a base preservada.
 - O proprietário informou que o MySQL da homologação está no Aiven. Backup/restauração, configuração efetiva publicada e isolamento do Redis ainda não verificados. Nenhum painel do provedor foi acessado. Loopback não demonstra, sozinho, toda a independência entre ambientes.
 
 ### Auditoria de dependências
@@ -374,5 +374,14 @@ O proprietário escolheu Docker para o ambiente descartável de E0.3. A primeira
 - O proprietário informou que instalou Docker e WSL. Verificações: CLI 29.9.1, Compose 5.6.0, WSL padrão 2/kernel 6.1.54. O Desktop estava parado. Consulta elevada confirmou WSL sem distribuições listadas e engine parado. Abrir o aplicativo instalado iniciou backend, `vmmemWSL` e o engine Linux Server 29.9.1.
 - `docker compose config --quiet` aprovado. `up --wait` baixou imagens oficiais MySQL 8.0.44/Redis 7.4-alpine e confirmou ambos `healthy`.
 - A rede `internal: true` impedia publicação: `docker port` sem portas e conexão host em loopback falhou. A mudança para bridge dedicada corrigiu mapeamentos. Recriar serviços preservou o volume `secureplay-e0-003_mysql-data`; não foi executado `down --volumes`.
-- Estado atual: portas loopback 127.0.0.1:13306/16379 alcançáveis; MySQL devolveu 8.0.44, `secureplay_test` e zero tabelas via SELECT; Redis PONG/DBSIZE 0; bridge Internal=false; volume Scope=local. Containers permanecem ativos.
-- Limite: a bridge permite egress. Somente serviços DB/Redis oficiais rodam sem credenciais de provedores da aplicação; backend, `.env`, migrations, seeds, contas sintéticas ou rede externa da aplicação não foram iniciados. Para executar app real, desenhar egress e fornecer env exclusivo antes de execução.
+- Estado ao final do ensaio inicial dos containers e antes das migrations da seção 14: portas loopback 127.0.0.1:13306/16379 alcançáveis; MySQL devolveu 8.0.44, `secureplay_test` e zero tabelas via SELECT; Redis PONG/DBSIZE 0; bridge Internal=false; volume Scope=local. Os containers permaneceram ativos.
+- Estado naquele primeiro ensaio: a bridge permite egress. Somente serviços DB/Redis oficiais rodam sem credenciais de provedores da aplicação; backend, `.env`, migrations, seeds e contas sintéticas ainda não tinham sido iniciados. A etapa posterior de migrations consta na seção 14. Para executar AppModule, desenhar egress e fornecer env exclusivo antes de execução.
+
+
+## 14. E0.3 — migrations no banco Docker descartável — 19/10/2026
+
+- Antes da escrita: Compose identificou MySQL/Redis ativos e saudáveis, portas limitadas a loopback e volume `secureplay-e0-003_mysql-data` local. Consulta somente de metadados confirmou MySQL 8.0.44 e zero tabelas no database `secureplay_test`.
+- `migration:show` apontou 13 migrations pendentes. A execução ocorreu na pasta `backend`, com variáveis temporárias explícitas para `127.0.0.1:13306`, usuário/database de teste declarados no Compose, `DB_SSL=false` e `DB_SYNCHRONIZE=false`. O comando não incluiu `--env-file`, não carregou `.env` e usou `migration-data-source.ts`, que mantém sincronização e execução automática desligadas. O guia agora fixa e valida o destino no próprio bloco de PowerShell, restaurando as variáveis anteriores ao terminar.
+- TypeORM reportou 13 migrations executadas. Verificação SQL somente de leitura confirmou 13 entradas em `migrations`, 32 tabelas, 6 módulos e 42 aulas do catálogo inicial; `empresa` e `usuario` seguem com zero linhas. Nenhum backend/AppModule, Redis de aplicação, migration na Aiven, escola ou usuário foi inicializado.
+- A migration `SeedCatalog` preenche conteúdo fictício e declara `down()` não reversível. Os dados pertencem ao ambiente descartável; para retorno completo ao estado vazio, `docker compose -f compose.test.yaml down --volumes` remove esse volume e apaga o schema/catálogo deste Compose. Esse comando não foi executado.
+- Próxima fatia: validar conexão mínima do backend com variáveis de teste sem importar AppModule, depois planejar e criar massa sintética de duas escolas. Definir controle de egress antes de iniciar qualquer aplicação que possa chamar provedores externos.
