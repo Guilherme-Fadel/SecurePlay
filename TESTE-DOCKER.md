@@ -119,3 +119,11 @@ Uma comparação somente de leitura, usando o schema builder do TypeORM com `syn
 
 
 Com o mesmo ambiente isolado, `Fastify.inject` no AppModule real respondeu `GET /health` com 200 e `GET /home` sem sessão com 401. Nenhuma porta foi aberta; os fluxos de e-mail e S3 não foram chamados. Depois dos ensaios, os checksums das 31 tabelas continuaram idênticos aos da origem. A rede do processo host não foi bloqueada no nível do sistema, portanto isso não certifica isolamento geral de egress. No harness foi necessário destruir explicitamente o `DataSource` após `app.close()` para o processo sair; shutdown do servidor HTTP permanece não testado. O runtime Node 20 emitiu o aviso de suporte futuro do AWS SDK já registrado no planejamento.
+
+## Login autenticado na cópia Docker
+
+Em 19/10/2026, após autorização do proprietário, a senha do admin existente da empresa 1 foi redefinida somente em `secureplay_fixture_copy`, com uma senha temporária digitada localmente em prompts mascarados. Nenhuma conta foi criada; a origem permaneceu somente leitura. O texto da senha e o hash não foram registrados.
+
+O AppModule real foi iniciado sem listener de rede, com MySQL e Redis do Compose, cwd temporário sem `.env`, `DB_SYNCHRONIZE=false` e migrations desabilitadas. `POST /auth/login` respondeu 200 e emitiu cookie; `GET /auth/me` com esse cookie respondeu 200 e confirmou `role=admin`, `empresa_id=1`. Não houve chamadas a e-mail ou S3.
+
+Após o teste, uma comparação somente de leitura guardada para a origem local confirmou os mesmos nomes de 31 tabelas e 520 linhas em cada base. Todo o conteúdo comparável coincide, exceto o campo `usuario.password`; os demais campos do admin e as outras 30 tabelas coincidem. O hash do admin difere como autorizado. Isso demonstra login e identificação da empresa nessa rota, mas não valida autorização de outras rotas nem isolamento entre tenants. A cópia Docker agora tem uma senha diferente da origem; não use `down --volumes` sem lembrar que o volume contém os dois databases.
