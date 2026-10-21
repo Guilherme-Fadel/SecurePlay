@@ -400,7 +400,7 @@ export class ConvitesService {
         ? Math.max(1, Math.floor(filtros.page as number))
         : 1,
       pageSize: Number.isFinite(filtros.pageSize)
-        ? Math.min(100, Math.max(10, Math.floor(filtros.pageSize as number)))
+        ? Math.min(100, Math.max(1, Math.floor(filtros.pageSize as number)))
         : 25,
       search: filtros.search?.trim().slice(0, 100),
     };

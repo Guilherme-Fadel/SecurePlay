@@ -18,6 +18,7 @@ import '@/styles/app-ui.css';
 import '@/styles/profile-ui.css';
 import '@/styles/dashboard-ui.css';
 import '@/styles/academy-dashboard.css';
+import '@/styles/notebook-ui.css';
 import { AppButton } from '@/components/ui/buttons/AppButton';
 import { useCompanyFeatures } from '@/hooks/useCompanyFeatures';
 import { companyIdentityKey } from '@/config/features';
@@ -152,7 +153,7 @@ function HomeContent() {
         <LoadingScreen ready={bootstrapReady}/>
         <Toaster position="top-right" richColors/>
 
-        <div className="secure-home flex h-screen overflow-hidden">
+        <div className="secure-home flex h-dvh overflow-hidden">
 
           <Sidebar logoUrl={user?.empresa_logo}>
             <SidebarItem id="dashboard" icon={<LayoutDashboard />} text="Início" active={activeSection === 'dashboard'} onSelect={setActiveSection}/>

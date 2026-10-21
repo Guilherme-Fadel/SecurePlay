@@ -7,12 +7,14 @@ import { AdminListCard, AdminListContent, AdminListState, AdminListToolbar, Admi
 import { cn } from '@/lib/utils';
 import { inativarUsuario, listarUsuarios, type UsuarioEmpresa, type UsuariosPaginados } from '@/services/convites';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
+import { useNotebookLayout } from '@/hooks/useNotebookLayout';
 
 interface UserManagementTabProps { empresaId?: number; }
 const emptyResult: UsuariosPaginados = { items: [], page: 1, pageSize: 25, total: 0, totalPages: 0 };
 
 export function UserManagementTab({ empresaId }: UserManagementTabProps) {
   const { user } = useCurrentUser();
+  const pageSize = useNotebookLayout() ? 4 : 25;
   const sessionKey = `secureplay-admin-users:${user?.userId ?? 'unknown'}:${empresaId ?? 'company'}`;
   const [usuarios, setUsuarios] = useState<UsuariosPaginados>(emptyResult);
   const [search, setSearch] = useState('');
@@ -55,7 +57,7 @@ export function UserManagementTab({ empresaId }: UserManagementTabProps) {
     let cancelled = false;
     setLoading(true);
     setLoadError(false);
-    void listarUsuarios({ page, search: deferredSearch, status: status || undefined, sort }, empresaId)
+    void listarUsuarios({ page, pageSize, search: deferredSearch, status: status || undefined, sort }, empresaId)
       .then((next) => {
         if (cancelled) return;
         if (page > Math.max(1, next.totalPages)) { setPage(Math.max(1, next.totalPages)); return; }
@@ -64,7 +66,7 @@ export function UserManagementTab({ empresaId }: UserManagementTabProps) {
       .catch(() => { if (!cancelled) setLoadError(true); })
       .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
-  }, [deferredSearch, empresaId, page, reload, restoredKey, search, sessionKey, status, sort]);
+  }, [deferredSearch, empresaId, page, pageSize, reload, restoredKey, search, sessionKey, status, sort]);
 
   const inativar = async (usuario: UsuarioEmpresa) => {
     if (!window.confirm(`Inativar o acesso de ${usuario.name}? Essa pessoa será desconectada e não poderá entrar novamente.`)) return;

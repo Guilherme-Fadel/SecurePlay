@@ -72,7 +72,7 @@ export class AdminService {
       ? Math.max(1, Math.floor(filtros.page as number))
       : 1;
     const pageSize = Number.isFinite(filtros.pageSize)
-      ? Math.min(100, Math.max(10, Math.floor(filtros.pageSize as number)))
+      ? Math.min(100, Math.max(1, Math.floor(filtros.pageSize as number)))
       : 25;
     const search = typeof filtros.search === 'string'
       ? filtros.search.trim().slice(0, 100)
@@ -179,7 +179,7 @@ export class AdminService {
       ? Math.max(1, Math.floor(filtros.page as number))
       : 1;
     const pageSize = Number.isFinite(filtros.pageSize)
-      ? Math.min(100, Math.max(10, Math.floor(filtros.pageSize as number)))
+      ? Math.min(100, Math.max(1, Math.floor(filtros.pageSize as number)))
       : 25;
     const [registros, total] = await this.dataSource
       .getRepository(EmpresaParametrosAudit)

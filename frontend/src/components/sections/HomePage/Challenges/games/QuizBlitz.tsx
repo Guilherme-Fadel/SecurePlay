@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState, useCallback, useRef } from 'react';
 import { motion, AnimatePresence, useReducedMotion } from 'motion/react';
 import { Check, ListChecks, X } from 'lucide-react';
 import { startRun, submitRun, type QuizQuestion, type QuizAnswer, type SubmitRunResponse, type TokenState, } from '@/services/arcade';
-import { ChallengeGameResult, ChallengeGameShell, ChallengeGameState, } from '../ChallengeGameShell';
+import { ChallengeGameResult, ChallengeGameShell, ChallengeGameState, GameReviewItems } from '../ChallengeGameShell';
 import { getChallengeArtwork } from '@/lib/challengeArtwork';
 interface QuizBlitzProps {
     onExit: () => void;
@@ -152,7 +152,7 @@ export function QuizBlitz({ onExit, onFinished }: QuizBlitzProps) {
             </div>
             <h3>Como foi sua aventura?</h3>
             <p>Você respondeu {answers.length} perguntas. Confira suas escolhas.</p>
-            <ol className="quiz-result-review" aria-label="Resultado de cada pergunta">
+            <GameReviewItems className="quiz-result-review" ordered>
               {(result.feedback as { items?: QuizFeedbackItem[] })?.items?.map((item, itemIndex) => {
                 const question = questions.find((candidate) => candidate.id === item.questionId);
                 if (!question) return null;
@@ -167,7 +167,7 @@ export function QuizBlitz({ onExit, onFinished }: QuizBlitzProps) {
                   </div>
                 </li>;
               })}
-            </ol>
+            </GameReviewItems>
           </div>
         </ChallengeGameResult>)}
     </ChallengeGameShell>);

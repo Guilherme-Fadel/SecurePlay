@@ -25,6 +25,7 @@ import { buildBrandVars } from "@/hooks/useEmpresaTema";
 import { AppButton } from "@/components/ui/buttons/AppButton";
 import { AppSearchInput } from "@/components/ui/forms/AppSearchInput";
 import { InfoCard } from "@/components/ui/visuals/InfoCard";
+import { useNotebookLayout } from '@/hooks/useNotebookLayout';
 import { AppSectionHeader } from "@/components/ui/visuals/AppSectionHeader";
 import { UserManagementTab } from "@/components/admin/UserManagementTab";
 import { PendingNicknamesTab } from "@/components/admin/PendingNicknamesTab";
@@ -80,6 +81,8 @@ const Admin = forwardRef<AdminSaveHandle, AdminProps>(function Admin(
     DEFAULT_PALETTES[0].paleta,
   );
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
+  const compact = useNotebookLayout();
+  const [layoutEditor, setLayoutEditor] = useState<'brand' | 'palettes' | 'generator' | 'manual'>('brand');
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const [failedLogoPreview, setFailedLogoPreview] = useState<string | null>(null);
   const [empresaNome, setEmpresaNome] = useState<string>("");
@@ -676,9 +679,14 @@ const Admin = forwardRef<AdminSaveHandle, AdminProps>(function Admin(
                       }
                     />
 
-                    <div className="admin-settings-grid">
+                    {compact && <nav className="admin-notebook-editor-tabs" aria-label="Editar aparência">
+                      {([['brand', 'Marca'], ['palettes', 'Paletas'], ['generator', 'Gerar cores'], ['manual', 'Ajuste manual']] as const).map(([value, label]) =>
+                        <AppButton key={value} variant="ghost" size="sm" aria-pressed={layoutEditor === value} onClick={() => setLayoutEditor(value)}>{label}</AppButton>,
+                      )}
+                    </nav>}
+                    <div className={`admin-settings-grid${compact ? ` notebook-editor-${layoutEditor}` : ''}`}>
                       <div className="admin-settings-column">
-                        <section className="admin-settings-section">
+                        <section className="admin-settings-section" hidden={compact && layoutEditor !== 'brand'}>
                           <AppSectionHeader
                             title="Marca da empresa"
                             action={<AdminHelpTip label="Marca da empresa" text="Identificação exibida nos pontos principais da plataforma." />}
@@ -735,7 +743,7 @@ const Admin = forwardRef<AdminSaveHandle, AdminProps>(function Admin(
                           </InfoCard>
                         </section>
 
-                        <section className="admin-settings-section">
+                        <section className="admin-settings-section" hidden={compact && layoutEditor === 'brand'}>
                           <AppSectionHeader
                             title="Cores da interface"
                             action={<AdminHelpTip label="Cores da interface" text="Escolha uma combinação pronta ou personalize cada papel da paleta." />}

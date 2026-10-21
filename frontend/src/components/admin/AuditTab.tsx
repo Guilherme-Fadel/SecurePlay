@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { ClipboardList, Settings2 } from 'lucide-react';
 import { AdminCardHeading, AdminListCard, AdminListContent, AdminListState, AdminPagination, AdminPageHeader } from '@/components/admin/AdminListLayout';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
+import { useNotebookLayout } from '@/hooks/useNotebookLayout';
 import { listarAuditoriaEmpresa, listarEventosAuditoriaEmpresa, type AuditoriaPaginada, type EventosAuditoriaPaginados } from '@/services/admin';
 
 interface AuditTabProps { empresaId?: number; empresaNome?: string; }
@@ -14,6 +15,7 @@ function formatDate(value: string) {
 
 export function AuditTab({ empresaId, empresaNome }: AuditTabProps) {
   const { user } = useCurrentUser();
+  const pageSize = useNotebookLayout() ? 2 : 25;
   const sessionKey = `secureplay-admin-audit:${user?.userId ?? 'unknown'}:${empresaId ?? 'none'}`;
   const [page, setPage] = useState(1);
   const [eventsPage, setEventsPage] = useState(1);
@@ -46,12 +48,12 @@ export function AuditTab({ empresaId, empresaNome }: AuditTabProps) {
     setLoading(true);
     setError(false);
     setAudit(emptyAudit);
-    void listarAuditoriaEmpresa(empresaId, page)
+    void listarAuditoriaEmpresa(empresaId, page, pageSize)
       .then((next) => { if (!cancelled) setAudit(next); })
       .catch(() => { if (!cancelled) setError(true); })
       .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
-  }, [auditReload, empresaId, page, restoredKey, sessionKey]);
+  }, [auditReload, empresaId, page, pageSize, restoredKey, sessionKey]);
   useEffect(() => {
     if (restoredKey !== sessionKey) return;
     if (!empresaId) return;
@@ -59,12 +61,12 @@ export function AuditTab({ empresaId, empresaNome }: AuditTabProps) {
     setEventsLoading(true);
     setEventsError(false);
     setEvents(emptyEvents);
-    void listarEventosAuditoriaEmpresa(empresaId, eventsPage)
+    void listarEventosAuditoriaEmpresa(empresaId, eventsPage, pageSize)
       .then((next) => { if (!cancelled) setEvents(next); })
       .catch(() => { if (!cancelled) setEventsError(true); })
       .finally(() => { if (!cancelled) setEventsLoading(false); });
     return () => { cancelled = true; };
-  }, [empresaId, eventsPage, eventsReload, restoredKey, sessionKey]);
+  }, [empresaId, eventsPage, pageSize, eventsReload, restoredKey, sessionKey]);
 
   const actionLabel: Record<string, string> = { 'usuario.inativado': 'Usuário inativado', 'convite.criado': 'Convite criado', 'convite.revogado': 'Convite revogado', 'apelido.aprovado': 'Apelido aprovado', 'apelido.rejeitado': 'Apelido rejeitado' };
 

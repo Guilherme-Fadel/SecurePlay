@@ -1,6 +1,8 @@
 import type { LucideIcon } from 'lucide-react';
 import { AlertTriangle, ArrowLeft, LoaderCircle } from 'lucide-react';
-import type { ReactNode } from 'react';
+import { Children, useState, type ReactNode } from 'react';
+import { useNotebookLayout } from '@/hooks/useNotebookLayout';
+import { PageControls } from '@/components/ui/navigation/PageControls';
 import { AppButton } from '@/components/ui/buttons/AppButton';
 import { AdminHelpTip } from '@/components/admin/AdminHelpTip';
 import { cn } from '@/lib/utils';
@@ -9,6 +11,18 @@ interface MissionMetric {
   icon: LucideIcon;
   label: string;
   value: ReactNode;
+}
+
+export function GameReviewItems({ children, className, ordered = false }: { children: ReactNode; className?: string; ordered?: boolean }) {
+  const compact = useNotebookLayout();
+  const [page, setPage] = useState(0);
+  const items = Children.toArray(children);
+  const safePage = Math.min(page, Math.max(0, items.length - 1));
+  const List = ordered ? 'ol' : 'div';
+  return <>
+    <List className={className} aria-label={ordered ? 'Resultado de cada pergunta' : undefined}>{compact ? items.slice(safePage, safePage + 1) : items}</List>
+    {compact && <PageControls page={safePage} total={items.length} onChange={setPage} label="Revisão da missão" />}
+  </>;
 }
 
 interface ChallengeGameShellProps {

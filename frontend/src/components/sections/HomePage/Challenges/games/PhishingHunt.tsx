@@ -2,7 +2,7 @@ import { useEffect, useState, useCallback, useRef } from 'react';
 import { motion, AnimatePresence, useReducedMotion } from 'motion/react';
 import { Check, Radar, X } from 'lucide-react';
 import { startRun, submitRun, type PhishingSampleView, type PhishingAnswer, type SubmitRunResponse, type TokenState, } from '@/services/arcade';
-import { ChallengeGameResult, ChallengeGameShell, ChallengeGameState, } from '../ChallengeGameShell';
+import { ChallengeGameResult, ChallengeGameShell, ChallengeGameState, GameReviewItems } from '../ChallengeGameShell';
 import { getChallengeArtwork } from '@/lib/challengeArtwork';
 interface PhishingHuntProps {
     onExit: () => void;
@@ -163,6 +163,7 @@ export function PhishingHunt({ onExit, onFinished }: PhishingHuntProps) {
                 : undefined}>
           <div className="phishing-review-list">
             <div className="phishing-review-heading"><Radar size={19}/><div><h3>O que descobrimos?</h3><p>Confira as respostas e as pistas da missão.</p></div></div>
+            <GameReviewItems>
             {(result.feedback as {
                 items?: FeedbackItem[];
             })?.items?.map((item, itemIndex) => {
@@ -175,6 +176,7 @@ export function PhishingHunt({ onExit, onFinished }: PhishingHuntProps) {
                   <section><strong>{ok ? 'Pistas certas!' : 'Vamos olhar de novo'}</strong><p>{item.isPhishing ? 'Mensagem suspeita' : 'Mensagem segura'}. Você marcou como {chosen?.report ? 'suspeita' : 'segura'}.</p><p>{item.explanation}</p><p>Pistas importantes: {signalNames(item.correctSignals) || 'nenhuma'}.</p></section>
                 </div>);
             })}
+            </GameReviewItems>
           </div>
         </ChallengeGameResult>)}
     </ChallengeGameShell>);

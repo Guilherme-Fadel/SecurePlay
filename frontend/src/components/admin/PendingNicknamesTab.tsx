@@ -6,6 +6,7 @@ import { AppSelect } from '@/components/ui/forms/AppSelect';
 import { AdminListCard, AdminListContent, AdminListState, AdminListToolbar, AdminPageHeader, AdminPagination } from './AdminListLayout';
 import { cn } from '@/lib/utils';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
+import { useNotebookLayout } from '@/hooks/useNotebookLayout';
 import {
   aprovarApelido,
   listarApelidosPendentes,
@@ -23,6 +24,7 @@ const emptyResult: ApelidosPendentesPaginados = {
 
 export function PendingNicknamesTab({ empresaId }: PendingNicknamesTabProps) {
   const { user } = useCurrentUser();
+  const pageSize = useNotebookLayout() ? 4 : 25;
   const sessionKey = `secureplay-admin-nicknames:${user?.userId ?? 'unknown'}:${empresaId ?? 'company'}`;
   const [search, setSearch] = useState('');
   const [sort, setSort] = useState<'default' | 'asc' | 'desc'>('default');
@@ -59,7 +61,7 @@ export function PendingNicknamesTab({ empresaId }: PendingNicknamesTabProps) {
     let cancelled = false;
     setLoading(true);
     setLoadError(false);
-    void listarApelidosPendentes({ page, search: deferredSearch, sort }, empresaId)
+    void listarApelidosPendentes({ page, pageSize, search: deferredSearch, sort }, empresaId)
       .then((next) => {
         if (cancelled) return;
         if (page > Math.max(1, next.totalPages)) { setPage(Math.max(1, next.totalPages)); return; }
@@ -70,7 +72,7 @@ export function PendingNicknamesTab({ empresaId }: PendingNicknamesTabProps) {
       })
       .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
-  }, [deferredSearch, empresaId, page, reload, restoredKey, search, sessionKey, sort]);
+  }, [deferredSearch, empresaId, page, pageSize, reload, restoredKey, search, sessionKey, sort]);
 
   const revisar = async (usuarioId: number, aprovado: boolean) => {
     setReviewing(usuarioId);

@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useNotebookLayout } from '@/hooks/useNotebookLayout';
 import { AlertCircle, CheckCircle2, Copy, Plus } from "lucide-react";
 import { AppButton } from "@/components/ui/buttons/AppButton";
 import { AppSearchInput } from "@/components/ui/forms/AppSearchInput";
@@ -22,6 +23,7 @@ export function CompanyManagementTab({
   onNomeChange,
 }: CompanyManagementTabProps) {
   const [nome, setNome] = useState("");
+  const pageSize = useNotebookLayout() ? 3 : 25;
   const [emailAdministrador, setEmailAdministrador] = useState("");
   const [salvando, setSalvando] = useState(false);
   const [mensagem, setMensagem] = useState<string | null>(null);
@@ -69,7 +71,7 @@ export function CompanyManagementTab({
     let cancelled = false;
     setLoadingList(true);
     setListError(false);
-    void listarEmpresasPaginadas({ page, pageSize: 25, search, sort })
+    void listarEmpresasPaginadas({ page, pageSize, search, sort })
       .then((data) => {
         if (cancelled) return;
         if (page > Math.max(1, data.totalPages)) {
@@ -81,7 +83,7 @@ export function CompanyManagementTab({
       .catch(() => { if (!cancelled) { setList(null); setListError(true); } })
       .finally(() => { if (!cancelled) setLoadingList(false); });
     return () => { cancelled = true; };
-  }, [page, search, sort, reload, restoredKey, storageKey]);
+  }, [page, pageSize, search, sort, reload, restoredKey, storageKey]);
 
   const cadastrar = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -229,12 +231,12 @@ export function CompanyManagementTab({
           <span aria-label="Total de empresas encontradas">{loadingList || listError ? "—" : list?.total ?? "—"}</span>
         </div>
         <AdminListToolbar onSubmit={(event) => { event.preventDefault(); setPage(1); setSearch(searchInput.trim()); }}>
-          <div className="admin-company-filter-field"><span>Buscar por nome</span>
+          <div className="admin-company-filter-field">
             <AppSearchInput label="Buscar empresas por nome" value={searchInput} onChange={(event) => setSearchInput(event.target.value)} placeholder="Nome da empresa" maxLength={100} />
           </div>
           <AppButton type="submit" size="control" variant="ghost">Buscar</AppButton>
-          <label>Ordenar por nome
-            <AppSelect value={sort} onChange={(event) => { setPage(1); setSort(event.target.value as "asc" | "desc"); }}>
+          <label className="admin-company-sort"><span className="sr-only">Ordenar por nome</span>
+            <AppSelect aria-label="Ordenar por nome" value={sort} onChange={(event) => { setPage(1); setSort(event.target.value as "asc" | "desc"); }}>
               <option value="asc">A–Z</option><option value="desc">Z–A</option>
             </AppSelect>
           </label>
