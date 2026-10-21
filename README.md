@@ -1,171 +1,178 @@
-<p align="center">
-  <img src="./docs/screenshots/login.png" width="600" alt="SecurePlay - Tela de Login" />
-</p>
-
 <h1 align="center">SecurePlay</h1>
 
 <p align="center">
-  Plataforma gamificada de treinamento em Segurança da Informação.<br/>
-  Aprenda sobre governança, proteção de dados e resposta a incidentes — jogando.
+  Segurança digital que vira aventura.<br />
+  Aprendizado gamificado para crianças de 6 a 10 anos, pensado para escolas e educadores.
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/React-18-61DAFB?logo=react&logoColor=white" />
-  <img src="https://img.shields.io/badge/NestJS-10-E0234E?logo=nestjs&logoColor=white" />
-  <img src="https://img.shields.io/badge/TypeScript-5-3178C6?logo=typescript&logoColor=white" />
-  <img src="https://img.shields.io/badge/MySQL-8-4479A1?logo=mysql&logoColor=white" />
-  <img src="https://img.shields.io/badge/Redis-7-DC382D?logo=redis&logoColor=white" />
+  <img src="https://img.shields.io/badge/React-18-61DAFB?logo=react&logoColor=white" alt="React 18" />
+  <img src="https://img.shields.io/badge/NestJS-11-E0234E?logo=nestjs&logoColor=white" alt="NestJS 11" />
+  <img src="https://img.shields.io/badge/TypeScript-5-3178C6?logo=typescript&logoColor=white" alt="TypeScript 5" />
+  <img src="https://img.shields.io/badge/MySQL-4479A1?logo=mysql&logoColor=white" alt="MySQL" />
+  <img src="https://img.shields.io/badge/Redis-DC382D?logo=redis&logoColor=white" alt="Redis" />
 </p>
 
----
+<p align="center">
+  <img src="./assets/readme/landing.jpg" width="900" alt="Apresentação da SecurePlay: segurança digital para escolas" />
+</p>
 
-## Sobre o Projeto
+## O projeto
 
-SecurePlay transforma o aprendizado de segurança da informação em uma experiência interativa com mecânicas de jogos. Usuários progridem por módulos de conteúdo, respondem quizzes contextualizados, completam desafios diários e acumulam XP para subir de nível — tudo dentro de uma interface temática inspirada em terminais e operações de segurança.
+A SecurePlay transforma temas de segurança digital em uma jornada de descobertas. Missões, leituras, quadrinhos, vídeos e jogos ajudam a trabalhar proteção de informações, convivência online e reconhecimento de situações suspeitas.
 
-**Público-alvo:** Colaboradores de empresas e estudantes que precisam aprender boas práticas de segurança de forma engajante.
+O projeto combina desenvolvimento full stack com uma experiência visual própria: academia de missões, mapas em pixel art, progressão por níveis e recompensas. Escolas e organizações podem personalizar a identidade visual e os recursos disponíveis para seus alunos.
 
----
+Este repositório apresenta o produto e sua implementação técnica como projeto de portfólio. A documentação pública se concentra nas funcionalidades e nas soluções de engenharia; credenciais, dados pessoais e procedimentos dos ambientes operacionais não fazem parte desta apresentação.
 
 ## Funcionalidades
 
-| Feature | Descrição |
-|---------|-----------|
-|  Dashboard personalizado | Visão geral de progresso, XP, ranking e desafio do dia |
-|  Módulos de conteúdo | Operações temáticas com vídeo-aulas e materiais em fases |
-|  Quizzes interativos | Perguntas baseadas em frameworks reais (NIST, ISO 27001) |
-|  Sistema de XP e Níveis | Gamificação com pontuação, conquistas e ranking |
-|  Desafios diários | Exercícios com recompensa para manter a sequência |
-|  Sequência semanal | Check-in diário para incentivar constância |
-|  Vídeo-aulas | Player integrado com briefing e progresso por aula |
-|  Notificações em tempo real | WebSocket para alertas e atualizações |
+| Área | Experiência |
+| --- | --- |
+| **Jornada do aluno** | Dashboard, mapa de missões, progresso, XP, níveis e sequência de atividades |
+| **Aprendizado** | Módulos por dificuldade, aulas em vídeo, quadrinhos e texto, quizzes e desbloqueio progressivo |
+| **Prática** | Missões diárias e jogos de perguntas, investigação de mensagens, proteção de informações e descoberta de palavras |
+| **Conquistas** | Trilhas de desbloqueio, recompensas e colecionáveis para personalizar o perfil |
+| **Ranking** | Classificações por instituição, ranking global quando habilitado e histórico de temporadas |
+| **Administração** | Gestão de instituições, usuários, convites, identidade visual e disponibilidade de recursos |
+| **Acesso** | Perfis de aluno, administrador da instituição e administrador da plataforma, com fluxos de convite e confirmação de e-mail |
+| **Interface** | Navegação responsiva, temas claro/escuro e notificações em tempo real |
 
----
+### Jogos
 
-## Screenshots
+- **Quiz Relâmpago:** perguntas rápidas para praticar conhecimentos.
+- **Detetives de Mensagens:** investigação de pistas em mensagens suspeitas.
+- **Escudos dos Segredos:** classificação e proteção de informações.
+- **Palavra Secreta:** descoberta de palavras a partir de tentativas e pistas.
+
+Os três primeiros jogos integram correção e recompensas pela API. Palavra Secreta mantém a partida no navegador. Essa distinção acompanha as necessidades de cada experiência.
+
+## Interface
+
+Capturas das telas atuais, com foco na jornada de aprendizado, nas recompensas e na personalização da plataforma.
 
 <details>
-<summary><strong>Dashboard</strong></summary>
-<br/>
-<img src="./docs/screenshots/dashboard.png" width="800" alt="Dashboard" />
+<summary><strong>Acesso à Academia de Missões</strong></summary>
+
+<p><img src="./assets/readme/login.jpg" width="900" alt="Tela de login da SecurePlay com os campos vazios" /></p>
 </details>
 
 <details>
-<summary><strong>Central de Operações (Conteúdos)</strong></summary>
-<br/>
-<img src="./docs/screenshots/conteudos.png" width="800" alt="Central de Operações" />
+<summary><strong>Resumo da aventura e mapa da jornada</strong></summary>
+
+<p><img src="./assets/readme/dashboard.jpg" width="1000" alt="Resumo da aventura, evolução de nível e mapa de missões" /></p>
 </details>
 
 <details>
-<summary><strong>Seleção de Aula</strong></summary>
-<br/>
-<img src="./docs/screenshots/selecao-aula.png" width="800" alt="Seleção de Aula" />
+<summary><strong>Jogos</strong></summary>
+
+<p><img src="./assets/readme/jogos.jpg" width="1000" alt="Seleção de jogos com destaque para o Quiz Relâmpago" /></p>
 </details>
 
 <details>
-<summary><strong>Quiz Interativo</strong></summary>
-<br/>
-<img src="./docs/screenshots/quiz.png" width="800" alt="Modal de Quiz" />
+<summary><strong>Sala de Missões</strong></summary>
+
+<p><img src="./assets/readme/conteudos.jpg" width="1000" alt="Sala de Missões com níveis e módulos de aprendizado" /></p>
 </details>
 
 <details>
-<summary><strong>Vídeo-aula</strong></summary>
-<br/>
-<img src="./docs/screenshots/video-aula.png" width="800" alt="Modal de Vídeo Aula" />
+<summary><strong>Livro de conteúdos</strong></summary>
+
+<p><img src="./assets/readme/livro-conteudo.jpg" width="1000" alt="Livro de conteúdos em pixel art com capítulos, aulas e progresso do módulo" /></p>
 </details>
 
----
+<details>
+<summary><strong>Ambiente de aula</strong></summary>
 
-## Arquitetura & Stack
+<p><img src="./assets/readme/aula.jpg" width="1000" alt="Ambiente de aula com briefing, recompensa e status de conclusão; vídeo ainda indisponível" /></p>
+</details>
 
+<details>
+<summary><strong>Trilhas de conquistas</strong></summary>
+
+<p><img src="./assets/readme/conquistas.jpg" width="1000" alt="Trilhas de conquistas com estados de desbloqueio e progresso" /></p>
+</details>
+
+<details>
+<summary><strong>Colecionáveis e personalização do perfil</strong></summary>
+
+<p><img src="./assets/readme/colecionaveis.jpg" width="1000" alt="Catálogo de colecionáveis com bordas, planos de fundo, títulos e requisitos de desbloqueio" /></p>
+</details>
+
+<details>
+<summary><strong>Personalização visual da instituição</strong></summary>
+
+<p><img src="./assets/readme/painel-layout.jpg" width="1000" alt="Painel de personalização da instituição com logotipo, paletas de cores e pré-visualização do dashboard" /></p>
+</details>
+
+## Arquitetura e tecnologias
+
+```mermaid
+flowchart LR
+    Web[Frontend React / Vite] -->|REST e eventos| API[Backend NestJS / Fastify]
+    API -->|TypeORM| DB[(MySQL)]
+    API --> Cache[(Redis)]
+    API --> Media[Armazenamento de mídia]
+    API --> Email[E-mail transacional]
 ```
-┌─────────────┐       ┌─────────────┐       ┌───────────┐
-│   Frontend  │◄─────►│   Backend   │◄─────►│   MySQL   │
-│  React/Vite │  REST │   NestJS    │       │  TypeORM  │
-│  Tailwind   │  + WS │  Fastify    │       └───────────┘
-└─────────────┘       │  JWT + RBAC │       ┌───────────┐
-                      │             │◄─────►│   Redis   │
-                      └─────────────┘       │  Sessions │
-                                            └───────────┘
+
+| Camada | Tecnologias |
+| --- | --- |
+| **Frontend** | React 18, TypeScript 5, Vite 6, Tailwind CSS 4, React Router 7, Axios e Motion/Framer Motion |
+| **Backend** | NestJS 11, Fastify, TypeORM, MySQL2, JWT e class-validator |
+| **Dados e estado temporário** | MySQL e Redis/Valkey |
+| **Integrações** | Socket.IO, armazenamento compatível com S3 e e-mail transacional |
+| **Qualidade** | TypeScript, ESLint, Jest e verificações específicas com Node.js |
+
+### Soluções de engenharia
+
+- **Separação de responsabilidades:** frontend organizado em componentes, hooks, contexts e services; backend dividido em módulos de domínio, com DTOs, serviços e persistência.
+- **Escopo por instituição:** permissões e recursos disponíveis são verificados no backend. A interface acompanha esses parâmetros para apresentar a experiência adequada a cada perfil.
+- **Progressão consistente:** o servidor valida os resultados das atividades e calcula as recompensas nos fluxos integrados à API, mantendo o progresso persistido.
+- **Histórico de ranking:** temporadas encerradas preservam a classificação registrada no fechamento. A interface distingue histórico completo de dados indisponíveis.
+- **Conteúdo extensível:** uma mesma jornada admite vídeo, quadrinhos e texto, com quizzes associados e acompanhamento de conclusão.
+- **Interface reutilizável:** componentes compartilhados e tokens de tema dão consistência às áreas de aprendizado e administração, preservando suas diferenças funcionais.
+- **Testes por comportamento:** testes unitários no backend e verificações específicas para o proxy de API, parâmetros de instituições e dicionário do jogo de palavras.
+
+## Organização do código
+
+```text
+SecurePlay/
+├── frontend/
+│   ├── src/           # Interface, estado e integração com a API
+│   ├── public/        # Recursos públicos da aplicação
+│   ├── functions/     # Proxy de API
+│   └── scripts/       # Verificações específicas do frontend
+├── backend/
+│   ├── src/           # Domínios, regras de negócio e persistência
+│   └── test/          # Estrutura de testes E2E
+└── assets/readme/      # Imagens da apresentação pública
 ```
 
-**Frontend:** React 18, TypeScript, Vite, TailwindCSS, Radix UI, Framer Motion, React Router, Axios
+Para explorar a implementação: [frontend](frontend/src/), [backend](backend/src/), [testes de ranking](backend/src/dashboard/) e [testes e lógica de jogos](backend/src/arcade/).
 
-**Backend:** NestJS, TypeORM, Fastify, JWT Authentication com RBAC (Role-Based Access Control), Class Validator, WebSocket Gateway
+## Validação técnica
 
-**Infraestrutura:** MySQL 8, Redis (gerenciamento de tokens e sessões), AWS S3 (upload de conteúdo)
-
----
-
-## Destaques Técnicos
-
-- **Autenticação JWT com refresh token** gerenciado via Redis
-- **Controle de acesso por roles** (Admin, Usuário) com guards customizados
-- **Ownership guard** — usuários só acessam seus próprios recursos
-- **WebSocket** para notificações em tempo real
-- **Upload de mídia** via AWS S3
-- **Arquitetura modular** — cada domínio isolado em seu próprio módulo NestJS
-- **Validação de entrada** com class-validator e DTOs tipados
-
----
-
-## Como Executar
-
-<details>
-<summary><strong>Pré-requisitos</strong></summary>
-
-- Node.js >= 20
-- MySQL 8
-- Redis
-- npm
-
-</details>
-
-<details>
-<summary><strong>Instalação</strong></summary>
+Os comandos abaixo permitem avaliar o código em um ambiente de desenvolvimento preparado com dependências próprias. Não exigem acesso aos ambientes operacionais do projeto.
 
 ```bash
-git clone https://github.com/Guilherme-Fadel/SecurePlay.git
-cd SecurePlay
+# Frontend: assets, tipos e build
+npm --prefix frontend run build
 
-# Frontend
-cd frontend
-npm install
+# Verificações de integração e regras do frontend
+npm --prefix frontend run test:api-proxy
+npm --prefix frontend run test:company-parameters
+npm --prefix frontend run test:termotech-dictionary
 
-# Backend
-cd ../backend
-npm install
+# Backend: build e testes unitários
+npm --prefix backend run build
+npm --prefix backend test -- --runInBand
 ```
 
-Configure as variáveis de ambiente no `backend/.env`:
+Esses são comandos disponíveis no repositório, não uma declaração de execução ou cobertura integral. Testes E2E e fluxos completos precisam de um ambiente isolado com as dependências apropriadas.
 
-```env
-DATABASE_HOST=
-DATABASE_PORT=
-DATABASE_USER=
-DATABASE_PASSWORD=
-DATABASE_NAME=
+## Estado do projeto
 
-REDIS_HOST=
-REDIS_PORT=
-REDIS_PASSWORD=
+**Em desenvolvimento.** A implementação reúne a jornada de aprendizado, jogos, conquistas, rankings e administração. O catálogo pedagógico e as experiências continuam em evolução; o suporte técnico a um formato de aula não significa que todo o conteúdo planejado já esteja produzido.
 
-JWT_SECRET=
-```
-
-</details>
-
-<details>
-<summary><strong>Executando</strong></summary>
-
-```bash
-# Frontend (porta 5173)
-cd frontend
-npm run dev
-
-# Backend (porta 3000)
-cd backend
-npm run start:dev
-```
-
-</details>
+O código e as imagens permitem conhecer o trabalho sem acesso a contas reais. Não há credenciais de demonstração nem endereços dos ambientes operacionais nesta apresentação.
