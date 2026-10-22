@@ -269,7 +269,33 @@ describe('HTTP — parâmetros institucionais', () => {
     ]);
   });
 
+  it('reserva a leitura de eventos de auditoria ao platform_admin e passa a empresa selecionada', async () => {
+    const schoolAdmin = await app.inject({
+      method: 'GET',
+      url: '/platform/admin/empresas/20/auditoria/eventos?page=2&pageSize=5',
+      headers: { origin: 'http://localhost:5173', 'x-fixture-user': '1' },
+    });
+    expect(schoolAdmin.statusCode).toBe(403);
+
+    const student = await app.inject({
+      method: 'GET',
+      url: '/platform/admin/empresas/20/auditoria/eventos',
+      headers: { origin: 'http://localhost:5173', 'x-fixture-user': '3' },
+    });
+    expect(student.statusCode).toBe(403);
+
+    const platformAdmin = await app.inject({
+      method: 'GET',
+      url: '/platform/admin/empresas/20/auditoria/eventos?page=2&pageSize=5',
+      headers: { origin: 'http://localhost:5173', 'x-fixture-user': '9' },
+    });
+    expect(platformAdmin.statusCode).toBe(200);
+    expect(platformAdmin.json()).toEqual({ items: [], total: 0 });
+    expect(adminAuditListMock).toHaveBeenCalledWith(20, 2, 5);
+  });
+
   let app: NestFastifyApplication;
+  let adminAuditListMock: jest.Mock;
   let convitesServiceMock: {
     inativarUsuario: jest.Mock;
     inativarUsuarioDaEmpresa: jest.Mock;
@@ -294,6 +320,7 @@ describe('HTTP — parâmetros institucionais', () => {
   ]);
 
   beforeEach(async () => {
+    adminAuditListMock = jest.fn().mockResolvedValue({ items: [], total: 0 });
     convitesServiceMock = {
       inativarUsuario: jest.fn().mockResolvedValue({ id: 22, active: false }),
       inativarUsuarioDaEmpresa: jest
@@ -403,7 +430,10 @@ describe('HTTP — parâmetros institucionais', () => {
         { provide: 'DATA_SOURCE', useValue: dataSource },
         { provide: S3Service, useValue: {} },
         { provide: ConvitesService, useValue: convitesServiceMock },
-        { provide: AdminAuditService, useValue: {} },
+        {
+          provide: AdminAuditService,
+          useValue: { listarDaEmpresa: adminAuditListMock },
+        },
         {
           provide: AchievementsService,
           useValue: { getTrail: async () => ({ available: true }) },
