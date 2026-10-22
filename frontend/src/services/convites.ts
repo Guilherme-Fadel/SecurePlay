@@ -142,12 +142,12 @@ export async function rejeitarApelido(usuarioId: number, empresaId?: number): Pr
   return response.data;
 }
 
-export async function inativarUsuario(usuarioId: number, empresaId?: number): Promise<UsuarioEmpresa> {
-  const response = await api.post(`${empresaPath(empresaId)}/usuarios/${usuarioId}/inativar`);
+export async function inativarUsuario(usuarioId: number, motivo: string, empresaId?: number): Promise<UsuarioEmpresa> {
+  const response = await api.post(`${empresaPath(empresaId)}/usuarios/${usuarioId}/inativar`, { motivo });
   return response.data;
 }
 
-export async function reativarUsuario(usuarioId: number, empresaId?: number): Promise<UsuarioEmpresa> {
-  const response = await api.post(`${empresaPath(empresaId)}/usuarios/${usuarioId}/reativar`);
+export async function reativarUsuario(usuarioId: number, motivo: string, empresaId?: number): Promise<UsuarioEmpresa> {
+  const response = await api.post(`${empresaPath(empresaId)}/usuarios/${usuarioId}/reativar`, { motivo });
   return response.data;
 }

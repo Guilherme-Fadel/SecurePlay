@@ -70,9 +70,15 @@ export function UserManagementTab({ empresaId }: UserManagementTabProps) {
 
   const inativar = async (usuario: UsuarioEmpresa) => {
     if (!window.confirm(`Inativar o acesso de ${usuario.name}? Essa pessoa será desconectada e não poderá entrar novamente.`)) return;
+    const motivo = window.prompt('Informe o motivo da inativação (5 a 300 caracteres). Não inclua dados pessoais sensíveis.');
+    if (motivo === null) return;
+    if (motivo.trim().length < 5 || motivo.trim().length > 300) {
+      setFeedback('Informe um motivo entre 5 e 300 caracteres.');
+      return;
+    }
     setUpdatingUser(usuario.id);
     try {
-      const updated = await inativarUsuario(usuario.id, empresaId);
+      const updated = await inativarUsuario(usuario.id, motivo.trim(), empresaId);
       setUsuarios((current) => ({ ...current, items: current.items.map((item) => item.id === usuario.id ? updated : item) }));
       setReload((current) => current + 1);
       setFeedback('Acesso inativado. Novas requisições dessa conta serão bloqueadas.');
@@ -83,9 +89,15 @@ export function UserManagementTab({ empresaId }: UserManagementTabProps) {
 
   const reativar = async (usuario: UsuarioEmpresa) => {
     if (!window.confirm(`Reativar o acesso de ${usuario.name}? A conta existente manterá os dados e a senha atuais.`)) return;
+    const motivo = window.prompt('Informe o motivo da reativação (5 a 300 caracteres). Não inclua dados pessoais sensíveis.');
+    if (motivo === null) return;
+    if (motivo.trim().length < 5 || motivo.trim().length > 300) {
+      setFeedback('Informe um motivo entre 5 e 300 caracteres.');
+      return;
+    }
     setUpdatingUser(usuario.id);
     try {
-      const updated = await reativarUsuario(usuario.id, empresaId);
+      const updated = await reativarUsuario(usuario.id, motivo.trim(), empresaId);
       setUsuarios((current) => ({ ...current, items: current.items.map((item) => item.id === usuario.id ? updated : item) }));
       setReload((current) => current + 1);
       setFeedback('Acesso reativado. O usuário poderá entrar com a conta existente.');

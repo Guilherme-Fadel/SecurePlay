@@ -357,41 +357,43 @@ export class ConvitesService {
     return this.toUsuarioResumo(usuario);
   }
 
-  async inativarUsuario(userId: number, usuarioId: number) {
+  async inativarUsuario(userId: number, usuarioId: number, motivo: string) {
     const empresa = await this.getEmpresaDoAdministrador(userId);
-    return this.inativarUsuarioDaEmpresa(empresa.id, userId, usuarioId);
+    return this.inativarUsuarioDaEmpresa(empresa.id, userId, usuarioId, motivo);
   }
 
-  async reativarUsuario(userId: number, usuarioId: number) {
+  async reativarUsuario(userId: number, usuarioId: number, motivo: string) {
     const empresa = await this.getEmpresaDoAdministrador(userId);
-    return this.reativarUsuarioDaEmpresa(empresa.id, userId, usuarioId);
+    return this.reativarUsuarioDaEmpresa(empresa.id, userId, usuarioId, motivo);
   }
 
   async inativarUsuarioDaEmpresa(
     empresaId: number,
     atorId: number,
     usuarioId: number,
+    motivo: string,
   ) {
-    return this.alterarAtivo(usuarioId, atorId, empresaId, false);
+    return this.alterarAtivo(usuarioId, atorId, empresaId, false, motivo);
   }
 
   async reativarUsuarioDaEmpresa(
     empresaId: number,
     atorId: number,
     usuarioId: number,
+    motivo: string,
   ) {
-    return this.alterarAtivo(usuarioId, atorId, empresaId, true);
+    return this.alterarAtivo(usuarioId, atorId, empresaId, true, motivo);
   }
 
-  async inativarUsuarioGlobal(atorId: number, usuarioId: number) {
+  async inativarUsuarioGlobal(atorId: number, usuarioId: number, motivo: string) {
     const usuario = await this.usuarioRepository.findOne({
       where: { id: usuarioId },
     });
     if (!usuario) throw new NotFoundException('Usuário não encontrado');
-    return this.alterarAtivo(usuarioId, atorId, usuario.empresa_id, false);
+    return this.alterarAtivo(usuarioId, atorId, usuario.empresa_id, false, motivo);
   }
 
-  async reativarUsuarioGlobal(atorId: number, usuarioId: number) {
+  async reativarUsuarioGlobal(atorId: number, usuarioId: number, motivo: string) {
     const usuario = await this.usuarioRepository.findOne({
       where: { id: usuarioId },
     });
@@ -401,7 +403,7 @@ export class ConvitesService {
         'Somente contas vinculadas a uma escola podem ser reativadas por aqui',
       );
     }
-    return this.alterarAtivo(usuarioId, atorId, usuario.empresa_id, true);
+    return this.alterarAtivo(usuarioId, atorId, usuario.empresa_id, true, motivo);
   }
 
   private async getEmpresaDoAdministrador(userId: number) {
@@ -469,7 +471,13 @@ export class ConvitesService {
     atorId: number,
     empresaId: number | null,
     active: boolean,
+    motivo: string,
   ) {
+    const motivoNormalizado = motivo?.trim();
+    if (!motivoNormalizado || motivoNormalizado.length < 5 || motivoNormalizado.length > 300) {
+      throw new BadRequestException('Informe um motivo entre 5 e 300 caracteres');
+    }
+
     const usuario = await this.dataSource.transaction(async (manager) => {
       if (empresaId) {
         const empresa = await manager.findOne(Empresa, {
@@ -522,7 +530,11 @@ export class ConvitesService {
           acao: active ? 'usuario.reativado' : 'usuario.inativado',
           alvo_tipo: 'usuario',
           alvo_id: target.id,
-          detalhes: { email: target.email, role: target.role },
+          detalhes: {
+            email: target.email,
+            role: target.role,
+            motivo: motivoNormalizado,
+          },
         });
       }
       return target;

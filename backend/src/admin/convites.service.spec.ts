@@ -59,7 +59,7 @@ describe('ConvitesService.inativarUsuarioGlobal', () => {
     };
     const { service, usuarioRepository, adminAuditService, eventEmitter, manager } = buildService(user);
 
-    await expect(service.inativarUsuarioGlobal(1, 12)).resolves.toMatchObject({
+    await expect(service.inativarUsuarioGlobal(1, 12, 'Fim do vínculo escolar')).resolves.toMatchObject({
       id: 12,
       active: false,
     });
@@ -69,7 +69,12 @@ describe('ConvitesService.inativarUsuarioGlobal', () => {
     );
     expect(manager.save).toHaveBeenCalledWith(
       AdminAuditEvent,
-      expect.objectContaining({ acao: 'usuario.inativado', alvo_id: 12, ator_id: 1 }),
+      expect.objectContaining({
+        acao: 'usuario.inativado',
+        alvo_id: 12,
+        ator_id: 1,
+        detalhes: expect.objectContaining({ motivo: 'Fim do vínculo escolar' }),
+      }),
     );
     expect(adminAuditService.registrar).not.toHaveBeenCalled();
     expect(eventEmitter.emit).toHaveBeenCalledWith('usuario.inativado', { userId: 12 });
@@ -82,7 +87,7 @@ describe('ConvitesService.inativarUsuarioGlobal', () => {
       active: true,
     });
 
-    await expect(service.inativarUsuarioGlobal(12, 12)).rejects.toBeInstanceOf(
+    await expect(service.inativarUsuarioGlobal(12, 12, 'Ajuste administrativo')).rejects.toBeInstanceOf(
       BadRequestException,
     );
     expect(usuarioRepository.save).not.toHaveBeenCalled();
@@ -95,7 +100,7 @@ describe('ConvitesService.inativarUsuarioGlobal', () => {
       active: true,
     });
 
-    await expect(service.inativarUsuarioGlobal(1, 12)).rejects.toBeInstanceOf(
+    await expect(service.inativarUsuarioGlobal(1, 12, 'Ajuste administrativo')).rejects.toBeInstanceOf(
       BadRequestException,
     );
     expect(usuarioRepository.save).not.toHaveBeenCalled();
@@ -110,11 +115,25 @@ describe('ConvitesService.inativarUsuarioGlobal', () => {
       active: true,
     }, 1);
 
-    await expect(service.inativarUsuarioGlobal(1, 12)).rejects.toThrow(
+    await expect(service.inativarUsuarioGlobal(1, 12, 'Ajuste administrativo')).rejects.toThrow(
       'A escola precisa manter ao menos um administrador ativo',
     );
     expect(manager.save).not.toHaveBeenCalled();
     expect(eventEmitter.emit).not.toHaveBeenCalled();
+  });
+
+  it('exige motivo não vazio dentro do limite antes de abrir a transação', async () => {
+    const { service, dataSource } = buildService({
+      id: 12,
+      empresa_id: 7,
+      role: Role.USER,
+      active: true,
+    });
+
+    await expect(service.inativarUsuarioGlobal(1, 12, '   ')).rejects.toThrow(
+      'Informe um motivo entre 5 e 300 caracteres',
+    );
+    expect(dataSource.transaction).not.toHaveBeenCalled();
   });
 
   it('aborta a inativação se a auditoria transacional falhar', async () => {
@@ -130,7 +149,7 @@ describe('ConvitesService.inativarUsuarioGlobal', () => {
       jest.fn().mockRejectedValue(new Error('audit failed')),
     );
 
-    await expect(service.inativarUsuarioGlobal(1, 12)).rejects.toThrow('audit failed');
+    await expect(service.inativarUsuarioGlobal(1, 12, 'Ajuste administrativo')).rejects.toThrow('audit failed');
     expect(manager.save).toHaveBeenCalledTimes(2);
     expect(eventEmitter.emit).not.toHaveBeenCalled();
   });
@@ -148,7 +167,7 @@ describe('ConvitesService.inativarUsuarioGlobal', () => {
     };
     const { service, manager, eventEmitter } = buildService(user);
 
-    await expect(service.reativarUsuarioGlobal(1, 12)).resolves.toMatchObject({
+    await expect(service.reativarUsuarioGlobal(1, 12, 'Retorno autorizado')).resolves.toMatchObject({
       id: 12,
       active: true,
     });
@@ -159,7 +178,11 @@ describe('ConvitesService.inativarUsuarioGlobal', () => {
     );
     expect(manager.save).toHaveBeenCalledWith(
       AdminAuditEvent,
-      expect.objectContaining({ acao: 'usuario.reativado', alvo_id: 12 }),
+      expect.objectContaining({
+        acao: 'usuario.reativado',
+        alvo_id: 12,
+        detalhes: expect.objectContaining({ motivo: 'Retorno autorizado' }),
+      }),
     );
     expect(eventEmitter.emit).toHaveBeenCalledWith('usuario.reativado', { userId: 12 });
   });
@@ -173,7 +196,7 @@ describe('ConvitesService.inativarUsuarioGlobal', () => {
     };
     const { service, manager } = buildService(user);
 
-    await expect(service.reativarUsuarioDaEmpresa(7, 1, 12)).rejects.toThrow(
+    await expect(service.reativarUsuarioDaEmpresa(7, 1, 12, 'Retorno autorizado')).rejects.toThrow(
       'Usuário não encontrado',
     );
     expect(manager.save).not.toHaveBeenCalled();
@@ -188,7 +211,7 @@ describe('ConvitesService.inativarUsuarioGlobal', () => {
     };
     const { service, manager } = buildService(user);
 
-    await expect(service.inativarUsuarioDaEmpresa(7, 1, 12)).rejects.toThrow(
+    await expect(service.inativarUsuarioDaEmpresa(7, 1, 12, 'Fim do vínculo escolar')).rejects.toThrow(
       'Usuário não encontrado',
     );
     expect(manager.save).not.toHaveBeenCalled();

@@ -11,6 +11,7 @@ import { AdminService } from './admin.service';
 import { AdminAuditService } from './admin-audit.service';
 import { ConvitesService } from './convites.service';
 import { RolesGuard } from '../auth/roles.guard';
+import { CsrfGuard } from '../auth/csrf.guard';
 import { Role } from '../auth/roles.enum';
 import { FeatureGuard } from '../common/features/feature.guard';
 import { CompanyFeaturesService } from '../common/features/company-features.service';
@@ -35,7 +36,7 @@ describe('HTTP — parâmetros institucionais', () => {
     const result = await app.inject({
       method: 'PUT',
       url: '/platform/admin/empresas/10/configuracoes',
-      headers: { 'x-fixture-user': '9' },
+      headers: { origin: 'http://localhost:5173', 'x-fixture-user': '9' },
       payload: { nome: 'Escola piloto', paleta, parametros },
     });
     expect(result.statusCode).toBe(200);
@@ -54,7 +55,7 @@ describe('HTTP — parâmetros institucionais', () => {
       const result = await app.inject({
         method: 'PUT',
         url: '/platform/admin/empresas/10/configuracoes',
-        headers: { 'x-fixture-user': identity },
+        headers: { origin: 'http://localhost:5173', 'x-fixture-user': identity },
         payload: { nome: 'Não permitido' },
       });
       expect(result.statusCode).toBe(403);
@@ -66,7 +67,7 @@ describe('HTTP — parâmetros institucionais', () => {
     const result = await app.inject({
       method: 'PUT',
       url: '/platform/admin/empresas/10/configuracoes',
-      headers: { 'x-fixture-user': '9' },
+      headers: { origin: 'http://localhost:5173', 'x-fixture-user': '9' },
       payload: {
         nome: 'Nome alterado',
         parametros: {
@@ -83,17 +84,43 @@ describe('HTTP — parâmetros institucionais', () => {
     const allowed = await app.inject({
       method: 'POST',
       url: '/admin/empresa/usuarios/22/reativar',
-      headers: { 'x-fixture-user': '1' },
+      headers: { origin: 'http://localhost:5173', 'x-fixture-user': '1' },
+      payload: { motivo: 'Retorno autorizado pela escola' },
     });
     expect(allowed.statusCode).toBe(201);
-    expect(convitesServiceMock.reativarUsuario).toHaveBeenCalledWith(1, 22);
+    expect(convitesServiceMock.reativarUsuario).toHaveBeenCalledWith(
+      1,
+      22,
+      'Retorno autorizado pela escola',
+    );
 
     const denied = await app.inject({
       method: 'POST',
       url: '/admin/empresa/usuarios/22/reativar',
-      headers: { 'x-fixture-user': '3' },
+      headers: { origin: 'http://localhost:5173', 'x-fixture-user': '3' },
+      payload: { motivo: 'Retorno autorizado pela escola' },
     });
     expect(denied.statusCode).toBe(403);
+    expect(convitesServiceMock.reativarUsuario).toHaveBeenCalledTimes(1);
+
+    const missingReason = await app.inject({
+      method: 'POST',
+      url: '/admin/empresa/usuarios/24/reativar',
+      headers: { origin: 'http://localhost:5173', 'x-fixture-user': '1' },
+    });
+    expect(missingReason.statusCode).toBe(400);
+    expect(convitesServiceMock.reativarUsuario).toHaveBeenCalledTimes(1);
+
+    const csrfDenied = await app.inject({
+      method: 'POST',
+      url: '/admin/empresa/usuarios/23/reativar',
+      headers: {
+        origin: 'https://origem-invalida.example',
+        'x-fixture-user': '1',
+      },
+      payload: { motivo: 'Retorno autorizado pela escola' },
+    });
+    expect(csrfDenied.statusCode).toBe(403);
     expect(convitesServiceMock.reativarUsuario).toHaveBeenCalledTimes(1);
   });
 
@@ -101,20 +128,23 @@ describe('HTTP — parâmetros institucionais', () => {
     const denied = await app.inject({
       method: 'POST',
       url: '/platform/admin/usuarios/22/reativar',
-      headers: { 'x-fixture-user': '1' },
+      headers: { origin: 'http://localhost:5173', 'x-fixture-user': '1' },
+      payload: { motivo: 'Retorno autorizado pela escola' },
     });
     expect(denied.statusCode).toBe(403);
 
     const allowed = await app.inject({
       method: 'POST',
       url: '/platform/admin/empresas/20/usuarios/22/reativar',
-      headers: { 'x-fixture-user': '9' },
+      headers: { origin: 'http://localhost:5173', 'x-fixture-user': '9' },
+      payload: { motivo: 'Retorno autorizado pela escola' },
     });
     expect(allowed.statusCode).toBe(201);
     expect(convitesServiceMock.reativarUsuarioDaEmpresa).toHaveBeenCalledWith(
       20,
       9,
       22,
+      'Retorno autorizado pela escola',
     );
     expect(convitesServiceMock.reativarUsuarioGlobal).not.toHaveBeenCalled();
   });
@@ -247,6 +277,7 @@ describe('HTTP — parâmetros institucionais', () => {
           },
         },
         { provide: APP_GUARD, useClass: RolesGuard },
+        { provide: APP_GUARD, useClass: CsrfGuard },
         { provide: APP_GUARD, useClass: FeatureGuard },
       ],
     }).compile();
@@ -268,12 +299,12 @@ describe('HTTP — parâmetros institucionais', () => {
     const first = await app.inject({
       method: 'GET',
       url: '/admin/empresa/parametros',
-      headers: { 'x-fixture-user': '1' },
+      headers: { origin: 'http://localhost:5173', 'x-fixture-user': '1' },
     });
     const second = await app.inject({
       method: 'GET',
       url: '/admin/empresa/parametros',
-      headers: { 'x-fixture-user': '2' },
+      headers: { origin: 'http://localhost:5173', 'x-fixture-user': '2' },
     });
     expect(first.statusCode).toBe(200);
     expect(second.statusCode).toBe(200);
@@ -285,12 +316,12 @@ describe('HTTP — parâmetros institucionais', () => {
     const denied = await app.inject({
       method: 'GET',
       url: '/achievements?empresa_id=20',
-      headers: { 'x-fixture-user': '1' },
+      headers: { origin: 'http://localhost:5173', 'x-fixture-user': '1' },
     });
     const allowed = await app.inject({
       method: 'GET',
       url: '/achievements',
-      headers: { 'x-fixture-user': '2' },
+      headers: { origin: 'http://localhost:5173', 'x-fixture-user': '2' },
     });
     expect(denied.statusCode).toBe(404);
     expect(allowed.statusCode).toBe(200);
@@ -304,7 +335,7 @@ describe('HTTP — parâmetros institucionais', () => {
     const result = await app.inject({
       method: 'PUT',
       url: '/platform/admin/empresas/10/parametros',
-      headers: { 'x-fixture-user': '9' },
+      headers: { origin: 'http://localhost:5173', 'x-fixture-user': '9' },
       payload: { ...updated, empresa_id: 20 },
     });
     expect(result.statusCode).toBe(200);
@@ -315,7 +346,7 @@ describe('HTTP — parâmetros institucionais', () => {
     const resource = await app.inject({
       method: 'GET',
       url: '/achievements',
-      headers: { 'x-fixture-user': '1' },
+      headers: { origin: 'http://localhost:5173', 'x-fixture-user': '1' },
     });
     expect(resource.statusCode).toBe(200);
   });
@@ -324,13 +355,13 @@ describe('HTTP — parâmetros institucionais', () => {
     const student = await app.inject({
       method: 'PUT',
       url: '/admin/empresa/parametros',
-      headers: { 'x-fixture-user': '3' },
+      headers: { origin: 'http://localhost:5173', 'x-fixture-user': '3' },
       payload: resolveCompanyParameters(),
     });
     const admin = await app.inject({
       method: 'PUT',
       url: '/platform/admin/empresas/20/parametros',
-      headers: { 'x-fixture-user': '1' },
+      headers: { origin: 'http://localhost:5173', 'x-fixture-user': '1' },
       payload: resolveCompanyParameters(),
     });
     expect(student.statusCode).toBe(404);
@@ -341,7 +372,7 @@ describe('HTTP — parâmetros institucionais', () => {
     const result = await app.inject({
       method: 'PUT',
       url: '/platform/admin/empresas/20/parametros',
-      headers: { 'x-fixture-user': '9' },
+      headers: { origin: 'http://localhost:5173', 'x-fixture-user': '9' },
       payload: resolveCompanyParameters({ enabledGames: [] }),
     });
     expect(result.statusCode).toBe(200);
@@ -357,7 +388,7 @@ describe('HTTP — parâmetros institucionais', () => {
     const result = await app.inject({
       method: 'PUT',
       url: '/platform/admin/empresas/10/parametros',
-      headers: { 'x-fixture-user': '9' },
+      headers: { origin: 'http://localhost:5173', 'x-fixture-user': '9' },
       payload: {
         ...resolveCompanyParameters(),
         rankingEnabled: 'false',
@@ -376,7 +407,7 @@ describe('HTTP — parâmetros institucionais', () => {
         await app.inject({
           method: 'GET',
           url: '/achievements',
-          headers: { 'x-fixture-user': '9' },
+          headers: { origin: 'http://localhost:5173', 'x-fixture-user': '9' },
         })
       ).statusCode,
     ).toBe(200);
@@ -385,7 +416,7 @@ describe('HTTP — parâmetros institucionais', () => {
         await app.inject({
           method: 'GET',
           url: '/achievements',
-          headers: { 'x-fixture-user': '1' },
+          headers: { origin: 'http://localhost:5173', 'x-fixture-user': '1' },
         })
       ).statusCode,
     ).toBe(404);
@@ -397,7 +428,7 @@ describe('HTTP — parâmetros institucionais', () => {
         await app.inject({
           method: 'GET',
           url: '/admin/empresa/parametros',
-          headers: { 'x-fixture-user': '1' },
+          headers: { origin: 'http://localhost:5173', 'x-fixture-user': '1' },
         })
       ).statusCode,
     ).toBe(200);
@@ -406,7 +437,7 @@ describe('HTTP — parâmetros institucionais', () => {
         await app.inject({
           method: 'GET',
           url: '/admin/empresa/parametros',
-          headers: { 'x-fixture-user': '3' },
+          headers: { origin: 'http://localhost:5173', 'x-fixture-user': '3' },
         })
       ).statusCode,
     ).toBe(403);
@@ -415,7 +446,7 @@ describe('HTTP — parâmetros institucionais', () => {
         await app.inject({
           method: 'PUT',
           url: '/admin/empresa/parametros',
-          headers: { 'x-fixture-user': '1' },
+          headers: { origin: 'http://localhost:5173', 'x-fixture-user': '1' },
           payload: resolveCompanyParameters(),
         })
       ).statusCode,

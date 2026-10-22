@@ -16,6 +16,7 @@ import { PresignLogoDto } from './dto/presign-logo.dto';
 import { Roles } from '../auth/roles.decorator';
 import { Role } from '../auth/roles.enum';
 import { Throttle } from '@nestjs/throttler';
+import { ChangeUserStatusDto } from './dto/change-user-status.dto';
 
 @Controller('admin/empresa')
 @Roles(Role.ADMIN)
@@ -125,12 +126,28 @@ export class AdminController {
   }
 
   @Post('usuarios/:id/inativar')
-  async inativarUsuario(@Request() req: any, @Param('id') id: string) {
-    return this.convitesService.inativarUsuario(req.user.userId, Number(id));
+  async inativarUsuario(
+    @Request() req: any,
+    @Param('id') id: string,
+    @Body() dto: ChangeUserStatusDto,
+  ) {
+    return this.convitesService.inativarUsuario(
+      req.user.userId,
+      Number(id),
+      dto.motivo,
+    );
   }
 
   @Post('usuarios/:id/reativar')
-  async reativarUsuario(@Request() req: any, @Param('id') id: string) {
-    return this.convitesService.reativarUsuario(req.user.userId, Number(id));
+  async reativarUsuario(
+    @Request() req: any,
+    @Param('id') id: string,
+    @Body() dto: ChangeUserStatusDto,
+  ) {
+    return this.convitesService.reativarUsuario(
+      req.user.userId,
+      Number(id),
+      dto.motivo,
+    );
   }
 }

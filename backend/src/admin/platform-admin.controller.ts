@@ -21,6 +21,7 @@ import { UpdateTemaDto } from './dto/update-tema.dto';
 import { UpdateCompanyParametersDto } from './dto/update-company-parameters.dto';
 import { UpdateCompanySettingsDto } from './dto/update-company-settings.dto';
 import { AdminAuditService } from './admin-audit.service';
+import { ChangeUserStatusDto } from './dto/change-user-status.dto';
 
 @Controller('platform/admin')
 @Roles(Role.PLATFORM_ADMIN)
@@ -70,16 +71,26 @@ export class PlatformAdminController {
   async inativarUsuarioGlobal(
     @Request() req: any,
     @Param('usuarioId', ParseIntPipe) usuarioId: number,
+    @Body() dto: ChangeUserStatusDto,
   ) {
-    return this.convitesService.inativarUsuarioGlobal(req.user.userId, usuarioId);
+    return this.convitesService.inativarUsuarioGlobal(
+      req.user.userId,
+      usuarioId,
+      dto.motivo,
+    );
   }
 
   @Post('usuarios/:usuarioId/reativar')
   async reativarUsuarioGlobal(
     @Request() req: any,
     @Param('usuarioId', ParseIntPipe) usuarioId: number,
+    @Body() dto: ChangeUserStatusDto,
   ) {
-    return this.convitesService.reativarUsuarioGlobal(req.user.userId, usuarioId);
+    return this.convitesService.reativarUsuarioGlobal(
+      req.user.userId,
+      usuarioId,
+      dto.motivo,
+    );
   }
 
   @Get('empresas/:empresaId/tema')
@@ -264,11 +275,13 @@ export class PlatformAdminController {
     @Param('empresaId', ParseIntPipe) empresaId: number,
     @Param('usuarioId', ParseIntPipe) usuarioId: number,
     @Request() req: any,
+    @Body() dto: ChangeUserStatusDto,
   ) {
     return this.convitesService.inativarUsuarioDaEmpresa(
       empresaId,
       req.user.userId,
       usuarioId,
+      dto.motivo,
     );
   }
 
@@ -277,11 +290,13 @@ export class PlatformAdminController {
     @Param('empresaId', ParseIntPipe) empresaId: number,
     @Param('usuarioId', ParseIntPipe) usuarioId: number,
     @Request() req: any,
+    @Body() dto: ChangeUserStatusDto,
   ) {
     return this.convitesService.reativarUsuarioDaEmpresa(
       empresaId,
       req.user.userId,
       usuarioId,
+      dto.motivo,
     );
   }
 }
