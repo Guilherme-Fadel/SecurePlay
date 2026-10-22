@@ -126,6 +126,9 @@ export class ModuloService {
   ): Promise<void> {
     const modulos = await this.findAll(usuario_id);
     const alvo = modulos.find((modulo) => modulo.id === modulo_id);
+    if (!alvo) {
+      throw new NotFoundException('Módulo não encontrado');
+    }
     if (alvo?.locked) {
       throw new ForbiddenException(
         'Módulo bloqueado. Conclua o módulo anterior para liberá-lo.',

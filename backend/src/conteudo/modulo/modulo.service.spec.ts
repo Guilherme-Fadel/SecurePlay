@@ -167,6 +167,14 @@ describe('ModuloService bloqueio sequencial de modulo', () => {
       service.assertModuloDesbloqueado(2, 7),
     ).resolves.toBeUndefined();
   });
+
+  it('nega o acesso direto quando o modulo-alvo nao esta ativo', async () => {
+    jest.spyOn(service, 'findAll').mockResolvedValue([] as never);
+
+    await expect(service.assertModuloDesbloqueado(50, 7)).rejects.toThrow(
+      /módulo não encontrado/i,
+    );
+  });
 });
 
 describe('ModuloService findAll calcula locked', () => {

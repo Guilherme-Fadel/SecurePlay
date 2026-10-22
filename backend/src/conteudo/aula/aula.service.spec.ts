@@ -1,5 +1,5 @@
 import { AulaService } from './aula.service';
-import { BadRequestException } from '@nestjs/common';
+import { BadRequestException, NotFoundException } from '@nestjs/common';
 
 describe('AulaService (progresso parcial)', () => {
   let service: AulaService;
@@ -145,6 +145,25 @@ describe('AulaService (progresso parcial)', () => {
     await expect(service.findOne(7, 3)).rejects.toBeInstanceOf(
       BadRequestException,
     );
+  });
+
+  it('nao grava progresso de aula quando o modulo esta inativo', async () => {
+    aulaRepository.findOne.mockResolvedValueOnce({
+      id: 7,
+      modulo_id: 50,
+      order: 1,
+      active: true,
+    });
+    moduloService.assertModuloDesbloqueado.mockRejectedValueOnce(
+      new NotFoundException('Módulo não encontrado'),
+    );
+
+    await expect(
+      service.updateProgress(7, 3, { progress_percent: 50 }),
+    ).rejects.toBeInstanceOf(NotFoundException);
+
+    expect(usuarioAulaRepository.create).not.toHaveBeenCalled();
+    expect(usuarioAulaRepository.save).not.toHaveBeenCalled();
   });
 
   it('entrega páginas textuais e quiz sem resolver texto como URL nem expor o gabarito', async () => {
