@@ -508,6 +508,7 @@
 
 @media (max-width: 760px) {
   .kids-landing { --kids-layout: calc(100% - 40px); }
+  .kids-scroll-top { display: none; }
   .kids-header { padding: 16px 0; }
   .kids-brand { font-size: 21px; }
   .kids-nav,
