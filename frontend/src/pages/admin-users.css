@@ -277,50 +277,38 @@
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
-.school-pilot-grid {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  gap: 18px;
-  align-items: start;
-}
-
 .school-pilot-list {
   display: grid;
-  gap: 10px;
+  gap: 0;
   margin: 0;
   padding: 0;
   list-style: none;
 }
 
-.school-pilot-list-item {
-  display: grid;
-  width: 100%;
-  gap: 7px;
+.school-pilot-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
   padding: 14px;
-  border: 1px solid var(--dashboard-border);
-  border-radius: 12px;
-  background: var(--dashboard-surface-soft);
-  color: var(--dashboard-text);
-  text-align: left;
-  cursor: pointer;
+  border-bottom: 1px solid var(--dashboard-border);
 }
 
-.school-pilot-list-item:hover,
-.school-pilot-list-item[aria-current="true"] {
-  border-color: var(--secondary);
+.school-pilot-row:last-child { border-bottom: 0; }
+
+.school-pilot-summary {
+  display: grid;
+  min-width: 0;
+  gap: 6px;
 }
 
-.school-pilot-list-item:focus-visible {
-  outline: var(--app-control-focus);
-  outline-offset: 2px;
-}
-
-.school-pilot-list-item strong {
+.school-pilot-summary strong {
   overflow-wrap: anywhere;
+  color: var(--dashboard-text);
   font-size: 0.95rem;
 }
 
-.school-pilot-list-item small {
+.school-pilot-summary small {
   color: var(--dashboard-muted);
 }
 
@@ -371,13 +359,75 @@
 .school-pilot-form-actions {
   display: flex;
   grid-column: 1 / -1;
+  gap: 10px;
   justify-content: flex-end;
+}
+
+.school-pilot-form-error {
+  grid-column: 1 / -1;
+  margin: 0;
+  color: var(--dashboard-danger, #ef4444);
+  font-size: .9rem;
 }
 
 .school-pilot-feedback {
   margin: 0 0 14px;
   color: var(--dashboard-text);
 }
+
+.school-pilot-dialog {
+  position: fixed;
+  inset: 0;
+  width: min(720px, calc(100% - 32px));
+  max-width: none;
+  max-height: min(90dvh, 900px);
+  margin: auto;
+  padding: 0;
+  overflow: visible;
+  border: 1px solid var(--dashboard-border);
+  border-radius: 16px;
+  background: var(--dashboard-surface);
+  color: var(--dashboard-text);
+  box-shadow: 0 24px 70px rgba(0, 0, 0, .38);
+}
+
+.school-pilot-dialog::backdrop { background: rgba(8, 13, 25, .68); }
+
+.school-pilot-dialog-card {
+  max-height: min(90dvh, 900px);
+  overflow-y: auto;
+}
+
+.school-pilot-dialog-header {
+  position: sticky;
+  z-index: 1;
+  top: 0;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 20px 22px;
+  border-bottom: 1px solid var(--dashboard-border);
+  background: var(--dashboard-surface);
+}
+
+.school-pilot-dialog-header h2 { margin: 0; color: var(--dashboard-text); font-size: 1.15rem; }
+.school-pilot-dialog-header p { margin: 6px 0 0; color: var(--dashboard-muted); font-size: .88rem; }
+
+.school-pilot-dialog-close {
+  display: grid;
+  flex: 0 0 auto;
+  width: 36px;
+  height: 36px;
+  place-items: center;
+  border: 1px solid var(--dashboard-border);
+  border-radius: 9px;
+  background: var(--dashboard-surface-soft);
+  color: var(--dashboard-text);
+  cursor: pointer;
+}
+
+.school-pilot-dialog-close:focus-visible { outline: var(--app-control-focus); outline-offset: 2px; }
 
 @media (max-width: 680px) {
   .school-pilot-metrics .admin-overview-grid {
@@ -389,13 +439,18 @@
     padding: 16px;
   }
 
+  .school-pilot-form-error { grid-column: auto; }
+
   .school-pilot-field-wide,
   .school-pilot-form-actions {
     grid-column: auto;
   }
 
-  .school-pilot-form-actions > button {
-    width: 100%;
-    justify-content: center;
-  }
+  .school-pilot-row { align-items: flex-start; }
+  .school-pilot-row > button { flex: 0 0 auto; }
+  .school-pilot-dialog { width: calc(100% - 20px); max-height: 94dvh; }
+  .school-pilot-dialog-card { max-height: 94dvh; }
+  .school-pilot-dialog-header { padding: 16px; }
+  .school-pilot-form-actions { flex-wrap: wrap; }
+  .school-pilot-form-actions > button { flex: 1 1 130px; justify-content: center; }
 }

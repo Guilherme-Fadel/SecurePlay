@@ -1,9 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import type { FormEvent } from 'react';
-import { CalendarDays, Plus } from 'lucide-react';
+import { CalendarDays, Pencil, Plus } from 'lucide-react';
 import { AppButton } from '@/components/ui/buttons/AppButton';
-import { AppInput } from '@/components/ui/forms/AppInput';
-import { AppSelect } from '@/components/ui/forms/AppSelect';
+import { EMPTY_PILOT_FORM, SchoolPilotFormDialog, type PilotForm } from '@/components/admin/SchoolPilotFormDialog';
 import {
   atualizarPilotoDaEmpresa,
   criarPilotoDaEmpresa,
@@ -22,28 +21,6 @@ import {
   AdminListState,
   AdminPageHeader,
 } from '@/components/admin/AdminListLayout';
-
-type PilotForm = {
-  objective: string;
-  status: SchoolPilotStatus;
-  contactAdminUserId: string;
-  startDate: string;
-  agreedEndDate: string;
-  nextWeeklyMeetingAt: string;
-  nextAction: string;
-  nextActionAt: string;
-};
-
-const EMPTY_FORM: PilotForm = {
-  objective: '',
-  status: 'planned',
-  contactAdminUserId: '',
-  startDate: '',
-  agreedEndDate: '',
-  nextWeeklyMeetingAt: '',
-  nextAction: '',
-  nextActionAt: '',
-};
 
 const STATUS_LABELS: Record<SchoolPilotStatus, string> = {
   planned: 'Planejado',
@@ -106,12 +83,6 @@ function formatDateTime(value: string | null) {
   }).format(new Date(value));
 }
 
-function focusPilotObjective(form: HTMLFormElement | null) {
-  window.requestAnimationFrame(() => {
-    form?.querySelector<HTMLInputElement>('[name="objective"]')?.focus();
-  });
-}
-
 function SchoolPilotMetrics({ empresaId }: { empresaId?: number }) {
   const [summary, setSummary] = useState<ResumoAdministrativo | null>(null);
   const [loading, setLoading] = useState(true);
@@ -164,21 +135,28 @@ function SchoolPilotMetrics({ empresaId }: { empresaId?: number }) {
 export function SchoolPilotManagementTab({ empresaId, empresaNome }: { empresaId?: number; empresaNome?: string }) {
   const [items, setItems] = useState<SchoolPilot[]>([]);
   const [contacts, setContacts] = useState<Awaited<ReturnType<typeof listarPilotosDaEmpresa>>['contacts']>([]);
-  const [form, setForm] = useState<PilotForm>(EMPTY_FORM);
+  const [form, setForm] = useState<PilotForm>(EMPTY_PILOT_FORM);
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(false);
   const [feedback, setFeedback] = useState<string | null>(null);
+  const [formError, setFormError] = useState<string | null>(null);
+  const [dialogOpen, setDialogOpen] = useState(false);
   const [attempt, setAttempt] = useState(0);
   const formRef = useRef<HTMLFormElement>(null);
+  const dialogRef = useRef<HTMLDialogElement>(null);
+  const openerRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
     setItems([]);
     setContacts([]);
     setSelectedId(null);
-    setForm(EMPTY_FORM);
+    setForm(EMPTY_PILOT_FORM);
     setFeedback(null);
+    setFormError(null);
+    dialogRef.current?.close();
+    setDialogOpen(false);
   }, [empresaId]);
 
   useEffect(() => {
@@ -205,17 +183,31 @@ export function SchoolPilotManagementTab({ empresaId, empresaNome }: { empresaId
   }, [empresaId, attempt]);
 
   const beginNew = () => {
+    openerRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     setSelectedId(null);
-    setForm(EMPTY_FORM);
+    setForm(EMPTY_PILOT_FORM);
     setFeedback(null);
-    focusPilotObjective(formRef.current);
+    setFormError(null);
+    setDialogOpen(true);
+    dialogRef.current?.showModal();
   };
 
   const edit = (pilot: SchoolPilot) => {
+    openerRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     setSelectedId(pilot.id);
     setForm(toForm(pilot));
     setFeedback(null);
-    focusPilotObjective(formRef.current);
+    setFormError(null);
+    setDialogOpen(true);
+    dialogRef.current?.showModal();
+  };
+
+  const closeDialog = () => dialogRef.current?.close();
+
+  const handleDialogClose = () => {
+    setDialogOpen(false);
+    openerRef.current?.focus();
+    openerRef.current = null;
   };
 
   const save = async (event: FormEvent<HTMLFormElement>) => {
@@ -223,6 +215,7 @@ export function SchoolPilotManagementTab({ empresaId, empresaNome }: { empresaId
     if (!empresaId) return;
     setSaving(true);
     setFeedback(null);
+    setFormError(null);
     try {
       const saved = selectedId
         ? await atualizarPilotoDaEmpresa(empresaId, selectedId, toPayload(form))
@@ -230,8 +223,9 @@ export function SchoolPilotManagementTab({ empresaId, empresaNome }: { empresaId
       setSelectedId(saved.id);
       setFeedback('Ficha do piloto salva.');
       setAttempt((current) => current + 1);
+      closeDialog();
     } catch {
-      setFeedback('Não foi possível salvar a ficha. Confira os dados e tente novamente.');
+      setFormError('Não foi possível salvar a ficha. Confira os dados e tente novamente.');
     } finally {
       setSaving(false);
     }
@@ -251,70 +245,41 @@ export function SchoolPilotManagementTab({ empresaId, empresaNome }: { empresaId
       />
       {feedback && <p className="school-pilot-feedback" role="status">{feedback}</p>}
       <SchoolPilotMetrics empresaId={empresaId} />
-      <div className="school-pilot-grid">
-        <AdminListCard>
-          <AdminCardHeading title={selectedId ? 'Editar piloto' : 'Novo piloto'} description="Defina o acompanhamento combinado com a escola. Datas são específicas deste piloto e não ativam cobrança ou acesso automaticamente." icon={<CalendarDays size={19} />} />
-          <form ref={formRef} className="school-pilot-form" onSubmit={save}>
-            <label className="school-pilot-field school-pilot-field-wide">
-              <span>Objetivo do piloto</span>
-              <AppInput name="objective" value={form.objective} onChange={(event) => update('objective', event.target.value)} minLength={3} maxLength={500} required disabled={saving} placeholder="Ex.: acompanhar a primeira aula com a turma" />
-            </label>
-            <label className="school-pilot-field">
-              <span>Contato administrador da escola</span>
-              <AppSelect value={form.contactAdminUserId} onChange={(event) => update('contactAdminUserId', event.target.value)} disabled={saving}>
-                <option value="">Sem contato vinculado</option>
-                {contacts.map((contact) => <option key={contact.id} value={contact.id} disabled={!contact.active && contact.id !== existingContactId}>{contact.name}{contact.email ? ` · ${contact.email}` : ''}{contact.active ? '' : ' · inativo'}</option>)}
-              </AppSelect>
-            </label>
-            <label className="school-pilot-field">
-              <span>Estado operacional</span>
-              <AppSelect value={form.status} onChange={(event) => update('status', event.target.value as SchoolPilotStatus)} disabled={saving}>
-                {Object.entries(STATUS_LABELS).map(([status, label]) => <option key={status} value={status}>{label}</option>)}
-              </AppSelect>
-            </label>
-            <label className="school-pilot-field">
-              <span>Início combinado</span>
-              <input className="app-text-input" type="date" value={form.startDate} onChange={(event) => update('startDate', event.target.value)} disabled={saving} />
-            </label>
-            <label className="school-pilot-field">
-              <span>Encerramento combinado</span>
-              <input className="app-text-input" type="date" value={form.agreedEndDate} onChange={(event) => update('agreedEndDate', event.target.value)} disabled={saving} />
-            </label>
-            <label className="school-pilot-field">
-              <span>Próxima reunião semanal</span>
-              <input className="app-text-input" type="datetime-local" value={form.nextWeeklyMeetingAt} onChange={(event) => update('nextWeeklyMeetingAt', event.target.value)} disabled={saving} />
-            </label>
-            <label className="school-pilot-field">
-              <span>Data da próxima ação (opcional)</span>
-              <input className="app-text-input" type="datetime-local" value={form.nextActionAt} onChange={(event) => update('nextActionAt', event.target.value)} disabled={saving} />
-            </label>
-            <label className="school-pilot-field school-pilot-field-wide">
-              <span>Próxima ação (opcional)</span>
-              <AppInput value={form.nextAction} onChange={(event) => update('nextAction', event.target.value)} maxLength={500} disabled={saving} placeholder="Ex.: revisar o acesso do administrador" />
-            </label>
-            <div className="school-pilot-form-actions">
-              <AppButton type="submit" disabled={saving || loading}>{saving ? 'Salvando...' : 'Salvar ficha'}</AppButton>
-            </div>
-          </form>
-        </AdminListCard>
+      <AdminListCard loading={loading}>
+        <AdminCardHeading title="Acompanhamento dos pilotos" description="Consulte o estado, o período e o próximo compromisso de cada piloto. Use editar para atualizar a ficha." icon={<CalendarDays size={19} />} />
+        {loading ? <AdminListState kind="loading">Carregando pilotos...</AdminListState>
+          : error ? <AdminListState kind="error" onRetry={() => setAttempt((current) => current + 1)}>Não foi possível carregar os pilotos.</AdminListState>
+            : items.length === 0 ? <AdminListState kind="empty">Ainda não há pilotos registrados para esta escola.</AdminListState>
+              : <ul className="school-pilot-list">{items.map((pilot) => (
+                <li key={pilot.id} className="school-pilot-row">
+                  <div className="school-pilot-summary">
+                    <span className={`school-pilot-status is-${pilot.status}`}>{STATUS_LABELS[pilot.status]}</span>
+                    <strong>{pilot.objective}</strong>
+                    <small>{formatDate(pilot.startDate)} – {formatDate(pilot.agreedEndDate)}</small>
+                    <small>Próxima reunião: {formatDateTime(pilot.nextWeeklyMeetingAt)}</small>
+                    {pilot.nextAction && <small>Próxima ação: {pilot.nextAction}</small>}
+                  </div>
+                  <AppButton variant="secondary" size="sm" onClick={() => edit(pilot)} aria-label={`Editar piloto: ${pilot.objective}`}><Pencil size={15} /> Editar</AppButton>
+                </li>
+              ))}</ul>}
+      </AdminListCard>
 
-        <AdminListCard loading={loading}>
-          <AdminCardHeading title="Histórico de pilotos" description="Cada piloto é preservado como registro próprio, inclusive quando é concluído ou convertido." icon={<CalendarDays size={19} />} />
-          {loading ? <AdminListState kind="loading">Carregando pilotos...</AdminListState>
-            : error ? <AdminListState kind="error" onRetry={() => setAttempt((current) => current + 1)}>Não foi possível carregar os pilotos.</AdminListState>
-              : items.length === 0 ? <AdminListState kind="empty">Ainda não há pilotos registrados para esta escola.</AdminListState>
-                : <ul className="school-pilot-list">{items.map((pilot) => (
-                  <li key={pilot.id}>
-                    <button type="button" className="school-pilot-list-item" aria-current={selectedId === pilot.id ? 'true' : undefined} onClick={() => edit(pilot)}>
-                      <span className={`school-pilot-status is-${pilot.status}`}>{STATUS_LABELS[pilot.status]}</span>
-                      <strong>{pilot.objective}</strong>
-                      <small>{formatDate(pilot.startDate)} – {formatDate(pilot.agreedEndDate)}</small>
-                      <small>Próxima reunião: {formatDateTime(pilot.nextWeeklyMeetingAt)}</small>
-                    </button>
-                  </li>
-                ))}</ul>}
-        </AdminListCard>
-      </div>
+      <SchoolPilotFormDialog
+        dialogRef={dialogRef}
+        formRef={formRef}
+        selectedId={selectedId}
+        dialogOpen={dialogOpen}
+        form={form}
+        contacts={contacts}
+        existingContactId={existingContactId ?? null}
+        saving={saving}
+        loading={loading}
+        error={formError}
+        onClose={closeDialog}
+        onSubmit={save}
+        onUpdate={update}
+        onDialogClose={handleDialogClose}
+      />
     </div>
   );
 }
