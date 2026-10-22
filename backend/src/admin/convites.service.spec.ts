@@ -3,6 +3,7 @@ import { ConvitesService } from './convites.service';
 import { Role } from '../auth/roles.enum';
 import { AdminAuditEvent } from './entities/admin-audit-event.entity';
 import { Usuario } from '../usuario/usuario.entity';
+import { UsuarioAula } from '../conteudo/usuario-aula/usuario-aula.entity';
 
 describe('ConvitesService.inativarUsuarioGlobal', () => {
   const buildService = (
@@ -382,6 +383,14 @@ describe('ConvitesService.obterResumoAdministrativoDaEmpresa', () => {
       andWhere: jest.fn().mockReturnThis(),
       getCount: jest.fn().mockResolvedValue(4),
     };
+    const participationQuery = {
+      select: jest.fn().mockReturnThis(),
+      from: jest.fn().mockReturnThis(),
+      innerJoin: jest.fn().mockReturnThis(),
+      where: jest.fn().mockReturnThis(),
+      andWhere: jest.fn().mockReturnThis(),
+      getRawOne: jest.fn().mockResolvedValue({ total: '5' }),
+    };
     const service = new ConvitesService(
       { createQueryBuilder: jest.fn().mockReturnValue(inviteQuery) } as never,
       {
@@ -392,7 +401,7 @@ describe('ConvitesService.obterResumoAdministrativoDaEmpresa', () => {
       {} as never,
       { registrar: jest.fn() } as never,
       { emit: jest.fn() } as never,
-      {} as never,
+      { createQueryBuilder: jest.fn().mockReturnValue(participationQuery) } as never,
     );
 
     await expect(service.obterResumoAdministrativoDaEmpresa(7)).resolves.toEqual({
@@ -400,7 +409,28 @@ describe('ConvitesService.obterResumoAdministrativoDaEmpresa', () => {
       usuariosInativos: 2,
       apelidosPendentes: 3,
       convitesAtivos: 4,
+      alunosComAulaConcluida: 5,
     });
+    expect(participationQuery.select).toHaveBeenCalledWith(
+      'COUNT(DISTINCT usuarioAula.usuario_id)',
+      'total',
+    );
+    expect(participationQuery.from).toHaveBeenCalledWith(UsuarioAula, 'usuarioAula');
+    expect(participationQuery.innerJoin).toHaveBeenCalledWith(
+      Usuario,
+      'usuario',
+      'usuario.id = usuarioAula.usuario_id',
+    );
+    expect(participationQuery.where).toHaveBeenCalledWith(
+      'usuario.empresa_id = :empresaId',
+      { empresaId: 7 },
+    );
+    expect(participationQuery.andWhere).toHaveBeenNthCalledWith(1,
+      'usuario.role = :role', { role: Role.USER });
+    expect(participationQuery.andWhere).toHaveBeenNthCalledWith(2,
+      'usuario.active = :active', { active: true });
+    expect(participationQuery.andWhere).toHaveBeenNthCalledWith(3,
+      'usuarioAula.completed = :completed', { completed: true });
   });
 });
 

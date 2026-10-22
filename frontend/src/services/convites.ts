@@ -48,6 +48,7 @@ export interface ResumoAdministrativo {
   usuariosInativos: number;
   apelidosPendentes: number;
   convitesAtivos: number;
+  alunosComAulaConcluida: number;
 }
 
 function empresaPath(empresaId?: number) {

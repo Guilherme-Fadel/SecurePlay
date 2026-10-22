@@ -9,6 +9,7 @@ import { DataSource, Repository } from 'typeorm';
 import { Empresa } from '../empresa/empresa.entity';
 import { Role } from '../auth/roles.enum';
 import { Usuario } from '../usuario/usuario.entity';
+import { UsuarioAula } from '../conteudo/usuario-aula/usuario-aula.entity';
 import { CompleteCadastroConviteDto } from './dto/complete-cadastro-convite.dto';
 import { CreateConviteDto } from './dto/create-convite.dto';
 import { Convite } from './entities/convite.entity';
@@ -136,12 +137,23 @@ export class ConvitesService {
       .andWhere('convite.expires_at > :now', { now: new Date() })
       .andWhere('convite.uses < convite.max_uses')
       .getCount();
+    const participacao = await this.dataSource
+      .createQueryBuilder()
+      .select('COUNT(DISTINCT usuarioAula.usuario_id)', 'total')
+      .from(UsuarioAula, 'usuarioAula')
+      .innerJoin(Usuario, 'usuario', 'usuario.id = usuarioAula.usuario_id')
+      .where('usuario.empresa_id = :empresaId', { empresaId })
+      .andWhere('usuario.role = :role', { role: Role.USER })
+      .andWhere('usuario.active = :active', { active: true })
+      .andWhere('usuarioAula.completed = :completed', { completed: true })
+      .getRawOne<{ total: string | number }>();
 
     return {
       usuariosAtivos,
       usuariosInativos,
       apelidosPendentes,
       convitesAtivos,
+      alunosComAulaConcluida: Number(participacao?.total ?? 0),
     };
   }
 
