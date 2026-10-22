@@ -14,6 +14,7 @@ import { AppSectionHeader } from '@/components/ui/visuals/AppSectionHeader';
 import { AppButton } from '@/components/ui/buttons/AppButton';
 import { getChallengeArtwork } from '@/lib/challengeArtwork';
 import { useCompanyFeatures } from '@/hooks/useCompanyFeatures';
+import { useCurrentUserContext } from '@/contexts/CurrentUserContext';
 
 const CHILD_GAME_COPY: Record<string, { title: string; description: string; tag: string }> = {
   'quiz-relampago': {
@@ -67,7 +68,7 @@ export function Challenges() {
     const exit = () => setActive(null);
     const activeGame = features.games.some((slug) => slug === active) ? active : null;
     if (activeGame === 'termotech') {
-        return <TermoTech onExit={exit}/>;
+        return <TermoTechSession onExit={exit}/>;
     }
     if (activeGame === 'quiz-relampago') {
         return (<QuizBlitz onExit={() => {
@@ -133,4 +134,10 @@ export function Challenges() {
       </section>
 
     </div>);
+}
+
+function TermoTechSession({ onExit }: { onExit: () => void }) {
+    const { user } = useCurrentUserContext();
+    const userId = user?.userId ?? null;
+    return <TermoTech key={userId ?? 'anonymous'} userId={userId} onExit={onExit}/>;
 }

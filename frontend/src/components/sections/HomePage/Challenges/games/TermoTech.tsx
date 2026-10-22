@@ -5,34 +5,20 @@ import { isValidTermoGuess, normalizeTermoWord, preloadTermoDictionary } from '.
 import { evaluateGuess, mergeKeyStates, type LetterState, } from './termoLogic';
 import { ChallengeGameShell } from '../ChallengeGameShell';
 import { getChallengeArtwork } from '@/lib/challengeArtwork';
+import { loadTermoGame, saveTermoGame, termoStorageKey } from './termoStorage';
 interface TermoTechProps {
     onExit: () => void;
+    userId: number | null;
     onWin?: (attempts: number) => void;
 }
 const MAX_ATTEMPTS = 6;
 const WORD_LEN = 5;
 const KEYS = ['QWERTYUIOP', 'ASDFGHJKL', 'ZXCVBNM'];
-const dayKey = () => {
-    const d = new Date();
-    return `termotech:v2:${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`;
-};
-interface SavedGame {
-    guesses: string[];
-    status: 'playing' | 'won' | 'lost';
-}
-function loadSaved(): SavedGame | null {
-    try {
-        const raw = localStorage.getItem(dayKey());
-        return raw ? (JSON.parse(raw) as SavedGame) : null;
-    }
-    catch {
-        return null;
-    }
-}
-export function TermoTech({ onExit, onWin }: TermoTechProps) {
+export function TermoTech({ onExit, userId, onWin }: TermoTechProps) {
     const dailyWord = useMemo(() => getWordOfTheDayDetails(), []);
     const answer = dailyWord.word;
-    const saved = useMemo(() => loadSaved(), []);
+    const storageKey = useMemo(() => termoStorageKey(userId), [userId]);
+    const saved = useMemo(() => loadTermoGame(storageKey, window.localStorage), [storageKey]);
     const [guesses, setGuesses] = useState<string[]>(saved?.guesses ?? []);
     const [current, setCurrent] = useState('     ');
     const [selectedCell, setSelectedCell] = useState(0);
@@ -56,12 +42,8 @@ export function TermoTech({ onExit, onWin }: TermoTechProps) {
         void preloadTermoDictionary().catch(() => undefined);
     }, []);
     useEffect(() => {
-        try {
-            localStorage.setItem(dayKey(), JSON.stringify({ guesses, status }));
-        }
-        catch {
-        }
-    }, [guesses, status]);
+        saveTermoGame(storageKey, { guesses, status }, window.localStorage);
+    }, [guesses, status, storageKey]);
     const keyStates = useMemo(() => {
         let map: Record<string, LetterState> = {};
         for (const g of guesses) {
@@ -177,6 +159,7 @@ export function TermoTech({ onExit, onWin }: TermoTechProps) {
           <span className="termotech-briefing-code">MISSÃO DO DIA · {WORD_LEN} LETRAS</span>
           <h2>Descubra a palavra secreta</h2>
           <p className="termotech-hint"><strong>Dica:</strong> {dailyWord.hint}</p>
+          <p className="termotech-local-progress">Seu progresso fica salvo neste dispositivo, separado por conta.</p>
           <details className="termotech-legend-disclosure">
             <summary>Como funcionam os sinais?</summary>
             <div className="termotech-legend">
