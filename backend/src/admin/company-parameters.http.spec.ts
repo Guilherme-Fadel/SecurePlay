@@ -111,6 +111,17 @@ describe('HTTP — parâmetros institucionais', () => {
     expect(missingReason.statusCode).toBe(400);
     expect(convitesServiceMock.reativarUsuario).toHaveBeenCalledTimes(1);
 
+    for (const motivo of ['abc', '     ', 'x'.repeat(301)]) {
+      const invalidReason = await app.inject({
+        method: 'POST',
+        url: '/admin/empresa/usuarios/24/reativar',
+        headers: { origin: 'http://localhost:5173', 'x-fixture-user': '1' },
+        payload: { motivo },
+      });
+      expect(invalidReason.statusCode).toBe(400);
+    }
+    expect(convitesServiceMock.reativarUsuario).toHaveBeenCalledTimes(1);
+
     const csrfDenied = await app.inject({
       method: 'POST',
       url: '/admin/empresa/usuarios/23/reativar',
