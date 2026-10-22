@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { FormEvent } from 'react';
-import { CalendarDays, Plus, Save } from 'lucide-react';
+import { CalendarDays, Plus } from 'lucide-react';
 import { AppButton } from '@/components/ui/buttons/AppButton';
 import { AppInput } from '@/components/ui/forms/AppInput';
 import { AppSelect } from '@/components/ui/forms/AppSelect';
@@ -106,6 +106,12 @@ function formatDateTime(value: string | null) {
   }).format(new Date(value));
 }
 
+function focusPilotObjective(form: HTMLFormElement | null) {
+  window.requestAnimationFrame(() => {
+    form?.querySelector<HTMLInputElement>('[name="objective"]')?.focus();
+  });
+}
+
 function SchoolPilotMetrics({ empresaId }: { empresaId?: number }) {
   const [summary, setSummary] = useState<ResumoAdministrativo | null>(null);
   const [loading, setLoading] = useState(true);
@@ -135,7 +141,7 @@ function SchoolPilotMetrics({ empresaId }: { empresaId?: number }) {
   }, [empresaId, attempt]);
 
   return (
-    <section className="school-pilot-metrics" aria-label="Indicadores atuais da escola">
+    <AdminListCard className="school-pilot-metrics" loading={loading}>
       <AdminCardHeading title="Indicadores atuais" description="Contagens agregadas da escola, sem identificação de alunos ou histórico de coorte." icon={<CalendarDays size={19} />} />
       {loading ? <AdminListState kind="loading">Carregando indicadores...</AdminListState>
         : error ? <AdminListState kind="error" onRetry={() => setAttempt((current) => current + 1)}>Não foi possível carregar os indicadores.</AdminListState>
@@ -151,7 +157,7 @@ function SchoolPilotMetrics({ empresaId }: { empresaId?: number }) {
               <p>Alunos ativos que concluíram ao menos uma aula.</p>
             </section>
           </div>}
-    </section>
+    </AdminListCard>
   );
 }
 
@@ -165,6 +171,7 @@ export function SchoolPilotManagementTab({ empresaId, empresaNome }: { empresaId
   const [error, setError] = useState(false);
   const [feedback, setFeedback] = useState<string | null>(null);
   const [attempt, setAttempt] = useState(0);
+  const formRef = useRef<HTMLFormElement>(null);
 
   useEffect(() => {
     setItems([]);
@@ -201,12 +208,14 @@ export function SchoolPilotManagementTab({ empresaId, empresaNome }: { empresaId
     setSelectedId(null);
     setForm(EMPTY_FORM);
     setFeedback(null);
+    focusPilotObjective(formRef.current);
   };
 
   const edit = (pilot: SchoolPilot) => {
     setSelectedId(pilot.id);
     setForm(toForm(pilot));
     setFeedback(null);
+    focusPilotObjective(formRef.current);
   };
 
   const save = async (event: FormEvent<HTMLFormElement>) => {
@@ -231,9 +240,7 @@ export function SchoolPilotManagementTab({ empresaId, empresaNome }: { empresaId
   const update = <K extends keyof PilotForm>(field: K, value: PilotForm[K]) => {
     setForm((current) => ({ ...current, [field]: value }));
   };
-  const existingContactId = selectedId
-    ? items.find((pilot) => pilot.id === selectedId)?.contactAdminUserId
-    : null;
+  const existingContactId = selectedId ? items.find((pilot) => pilot.id === selectedId)?.contactAdminUserId : null;
 
   return (
     <div className="admin-users-content school-pilot-content">
@@ -245,29 +252,12 @@ export function SchoolPilotManagementTab({ empresaId, empresaNome }: { empresaId
       {feedback && <p className="school-pilot-feedback" role="status">{feedback}</p>}
       <SchoolPilotMetrics empresaId={empresaId} />
       <div className="school-pilot-grid">
-        <AdminListCard loading={loading}>
-          <AdminCardHeading title="Histórico de pilotos" description="Cada piloto é preservado como registro próprio, inclusive quando é concluído ou convertido." icon={<CalendarDays size={19} />} />
-          {loading ? <AdminListState kind="loading">Carregando pilotos...</AdminListState>
-            : error ? <AdminListState kind="error" onRetry={() => setAttempt((current) => current + 1)}>Não foi possível carregar os pilotos.</AdminListState>
-              : items.length === 0 ? <AdminListState kind="empty">Ainda não há pilotos registrados para esta escola.</AdminListState>
-                : <ul className="school-pilot-list">{items.map((pilot) => (
-                  <li key={pilot.id}>
-                    <button type="button" className="school-pilot-list-item" aria-current={selectedId === pilot.id ? 'true' : undefined} onClick={() => edit(pilot)}>
-                      <span className={`school-pilot-status is-${pilot.status}`}>{STATUS_LABELS[pilot.status]}</span>
-                      <strong>{pilot.objective}</strong>
-                      <small>{formatDate(pilot.startDate)} – {formatDate(pilot.agreedEndDate)}</small>
-                      <small>Próxima reunião: {formatDateTime(pilot.nextWeeklyMeetingAt)}</small>
-                    </button>
-                  </li>
-                ))}</ul>}
-        </AdminListCard>
-
         <AdminListCard>
           <AdminCardHeading title={selectedId ? 'Editar piloto' : 'Novo piloto'} description="Defina o acompanhamento combinado com a escola. Datas são específicas deste piloto e não ativam cobrança ou acesso automaticamente." icon={<CalendarDays size={19} />} />
-          <form className="school-pilot-form" onSubmit={save}>
+          <form ref={formRef} className="school-pilot-form" onSubmit={save}>
             <label className="school-pilot-field school-pilot-field-wide">
               <span>Objetivo do piloto</span>
-              <AppInput value={form.objective} onChange={(event) => update('objective', event.target.value)} minLength={3} maxLength={500} required disabled={saving} placeholder="Ex.: acompanhar a primeira aula com a turma" />
+              <AppInput name="objective" value={form.objective} onChange={(event) => update('objective', event.target.value)} minLength={3} maxLength={500} required disabled={saving} placeholder="Ex.: acompanhar a primeira aula com a turma" />
             </label>
             <label className="school-pilot-field">
               <span>Contato administrador da escola</span>
@@ -303,9 +293,26 @@ export function SchoolPilotManagementTab({ empresaId, empresaNome }: { empresaId
               <AppInput value={form.nextAction} onChange={(event) => update('nextAction', event.target.value)} maxLength={500} disabled={saving} placeholder="Ex.: revisar o acesso do administrador" />
             </label>
             <div className="school-pilot-form-actions">
-              <AppButton type="submit" disabled={saving || loading}>{saving ? 'Salvando...' : <><Save size={16} /> Salvar ficha</>}</AppButton>
+              <AppButton type="submit" disabled={saving || loading}>{saving ? 'Salvando...' : 'Salvar ficha'}</AppButton>
             </div>
           </form>
+        </AdminListCard>
+
+        <AdminListCard loading={loading}>
+          <AdminCardHeading title="Histórico de pilotos" description="Cada piloto é preservado como registro próprio, inclusive quando é concluído ou convertido." icon={<CalendarDays size={19} />} />
+          {loading ? <AdminListState kind="loading">Carregando pilotos...</AdminListState>
+            : error ? <AdminListState kind="error" onRetry={() => setAttempt((current) => current + 1)}>Não foi possível carregar os pilotos.</AdminListState>
+              : items.length === 0 ? <AdminListState kind="empty">Ainda não há pilotos registrados para esta escola.</AdminListState>
+                : <ul className="school-pilot-list">{items.map((pilot) => (
+                  <li key={pilot.id}>
+                    <button type="button" className="school-pilot-list-item" aria-current={selectedId === pilot.id ? 'true' : undefined} onClick={() => edit(pilot)}>
+                      <span className={`school-pilot-status is-${pilot.status}`}>{STATUS_LABELS[pilot.status]}</span>
+                      <strong>{pilot.objective}</strong>
+                      <small>{formatDate(pilot.startDate)} – {formatDate(pilot.agreedEndDate)}</small>
+                      <small>Próxima reunião: {formatDateTime(pilot.nextWeeklyMeetingAt)}</small>
+                    </button>
+                  </li>
+                ))}</ul>}
         </AdminListCard>
       </div>
     </div>
