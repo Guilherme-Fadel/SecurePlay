@@ -43,7 +43,7 @@ export function InvitationManagementTab({ empresaId, podeCriarAdministrador = fa
   const [linkGerado, setLinkGerado] = useState<string | null>(null);
   const [feedback, setFeedback] = useState<string | null>(null);
   const [restoredKey, setRestoredKey] = useState<string | null>(null);
-  const dialogRef = useRef<HTMLDivElement>(null);
+  const dialogRef = useRef<HTMLDialogElement>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
   const openerRef = useRef<HTMLElement | null>(null);
 
@@ -64,25 +64,20 @@ export function InvitationManagementTab({ empresaId, podeCriarAdministrador = fa
   }, [page, restoredKey, search, sessionKey, sort]);
 
   const fecharConvite = () => {
+    if (dialogRef.current?.open) {
+      dialogRef.current.close();
+      return;
+    }
     setLinkGerado(null);
     requestAnimationFrame(() => openerRef.current?.focus());
   };
 
   useEffect(() => {
     if (!linkGerado) return;
+    const dialog = dialogRef.current;
+    if (!dialog) return;
+    if (!dialog.open) dialog.showModal();
     closeButtonRef.current?.focus();
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') return fecharConvite();
-      if (event.key !== 'Tab' || !dialogRef.current) return;
-      const focusable = Array.from(dialogRef.current.querySelectorAll<HTMLElement>('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'));
-      const first = focusable[0];
-      const last = focusable[focusable.length - 1];
-      if (!first || !last) return;
-      if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
-      else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
-    };
-    document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
   }, [linkGerado]);
 
   useEffect(() => {
@@ -157,6 +152,6 @@ export function InvitationManagementTab({ empresaId, podeCriarAdministrador = fa
       </section>
       <AdminListCard className="admin-invites-card" loading={loading}><AdminCardHeading title="Convites emitidos" description="Links com expiração e uso controlado." icon={<QrCode size={19} />} iconTone="accent" action={<span className="admin-invites-total" aria-label="Total de convites">{loading || loadError ? '—' : `${result.total} convites`}</span>} /><AdminListToolbar><AppSearchInput label="Buscar convites" value={search} onChange={(event) => { setSearch(event.target.value); setPage(1); }} placeholder="Buscar por e-mail" /><AppSelect aria-label="Ordenar convites por data" value={sort} onChange={(event) => { setSort(event.target.value as 'asc' | 'desc'); setPage(1); }}><option value="desc">Mais recentes</option><option value="asc">Mais antigos</option></AppSelect></AdminListToolbar><AdminListContent className="admin-invites-table">{loadError ? <AdminListState kind="error" onRetry={() => setReload((current) => current + 1)}>Não foi possível carregar os convites.</AdminListState> : loading ? <AdminListState kind="loading">Carregando convites...</AdminListState> : result.items.length === 0 ? <AdminListState kind="empty">{deferredSearch ? 'Nenhum convite corresponde à busca.' : 'Nenhum convite criado ainda.'}</AdminListState> : result.items.map((convite) => <div key={convite.id} className="admin-invite-row"><div><strong>{convite.email ?? (convite.registration_mode === 'school_student' ? 'Convite escolar individual' : 'Link aberto para a empresa')}{convite.role === 'admin' ? ' · Administrador' : ''}</strong><small>Expira em {formatDate(convite.expires_at)} · {convite.uses}/{convite.max_uses} usos</small></div><span className={`admin-invite-status is-${convite.status}`}>{convite.status}</span>{convite.status === 'ativo' && <AppButton variant="ghost" size="sm" icon={<Trash2 size={14} />} disabled={revoking === convite.id} onClick={() => void revogar(convite.id)}>Revogar</AppButton>}</div>)}</AdminListContent>{!loading && !loadError && <AdminPagination page={page} totalPages={result.totalPages} ariaLabel="Paginação de convites" disabled={loading} adjacentButtons onPageChange={setPage} />}</AdminListCard>
     </div>
-    {linkGerado && <div className="admin-qr-modal" role="dialog" aria-modal="true" aria-labelledby="invite-dialog-title"><div className="admin-qr-card" ref={dialogRef}><button ref={closeButtonRef} className="admin-qr-close" onClick={fecharConvite} aria-label="Fechar">×</button><div className="admin-qr-title"><QrCode size={20} /><div><strong id="invite-dialog-title">Convite pronto</strong><span>Compartilhe pelo link ou QR code.</span></div></div><div className="admin-qr-code"><QRCodeSVG value={linkGerado} size={172} level="M" includeMargin /></div><div className="admin-qr-link"><span>{linkGerado}</span><button onClick={() => void copiar(linkGerado)}><Copy size={15} /> Copiar</button></div></div></div>}
+    {linkGerado && <dialog ref={dialogRef} className="admin-qr-modal" aria-labelledby="invite-dialog-title" onClose={() => { setLinkGerado(null); requestAnimationFrame(() => openerRef.current?.focus()); }}><div className="admin-qr-card"><button ref={closeButtonRef} type="button" className="admin-qr-close" onClick={fecharConvite} aria-label="Fechar">×</button><div className="admin-qr-title"><QrCode size={20} /><div><strong id="invite-dialog-title">Convite pronto</strong><span>Compartilhe pelo link ou QR code.</span></div></div><div className="admin-qr-code"><QRCodeSVG value={linkGerado} size={172} level="M" includeMargin /></div><div className="admin-qr-link"><span>{linkGerado}</span><button type="button" onClick={() => void copiar(linkGerado)}><Copy size={15} /> Copiar</button></div></div></dialog>}
   </div>;
 }

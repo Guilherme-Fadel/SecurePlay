@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { AnimatePresence, motion } from 'motion/react';
+import { AnimatePresence, MotionConfig, motion } from 'motion/react';
 import { ArrowRight, ChevronDown, Menu, X } from 'lucide-react';
 import heroAcademiaMissoes640 from '@/assets/kids/hero-academia-missoes-pixel-640.webp';
 import heroAcademiaMissoes1200 from '@/assets/kids/hero-academia-missoes-pixel-1200.webp';
@@ -94,6 +94,7 @@ export function KidsLandingContent() {
   }, [menuOpen]);
 
   return (
+    <MotionConfig reducedMotion="user">
     <>
       <header className="kids-header">
         <Link to="/" className="kids-brand" aria-label="SecurePlay - início">
@@ -279,6 +280,7 @@ export function KidsLandingContent() {
         <small>© 2026 SecurePlay. Todos os direitos reservados.</small>
       </footer>
     </>
+    </MotionConfig>
   );
 }
 

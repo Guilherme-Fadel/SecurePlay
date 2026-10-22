@@ -1,4 +1,4 @@
-import { motion } from 'framer-motion';
+import { motion, useReducedMotion } from 'framer-motion';
 import { ReactNode } from 'react';
 
 interface PageTransitionProps {
@@ -6,14 +6,15 @@ interface PageTransitionProps {
 }
 
 export function PageTransition({ children }: PageTransitionProps) {
+  const reduceMotion = useReducedMotion();
   return (
     <motion.div
       className="h-full"
-      initial={{ opacity: 0, y: 8 }}
+      initial={reduceMotion ? false : { opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -8 }}
+      exit={reduceMotion ? { opacity: 1, y: 0 } : { opacity: 0, y: -8 }}
       transition={{
-        duration: 0.1,
+        duration: reduceMotion ? 0 : 0.1,
         ease: 'easeOut',
       }}
     >
