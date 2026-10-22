@@ -5,7 +5,12 @@ import {
   Injectable,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
-import { getAllowedOrigins, isAllowedOrigin } from '../config/origins';
+import {
+  getAllowedOrigins,
+  isAllowedOrigin,
+  isDevEnvironment,
+  isLocalOrigin,
+} from '../config/origins';
 import { IS_PUBLIC_KEY } from './public.decorator';
 
 const SAFE_METHODS = new Set(['GET', 'HEAD', 'OPTIONS']);
@@ -24,12 +29,19 @@ export class CsrfGuard implements CanActivate {
       return true;
     }
 
-    const request = context.switchToHttp().getRequest();
+    const request = context
+      .switchToHttp()
+      .getRequest<{ method: string; headers: { origin?: string } }>();
     if (SAFE_METHODS.has(request.method)) {
       return true;
     }
 
-    if (!isAllowedOrigin(request.headers.origin, getAllowedOrigins())) {
+    const origin = request.headers.origin;
+    const allowed =
+      isAllowedOrigin(origin, getAllowedOrigins()) ||
+      (isDevEnvironment() && isLocalOrigin(origin));
+
+    if (!allowed) {
       throw new ForbiddenException('Origem da solicitação não permitida');
     }
 
