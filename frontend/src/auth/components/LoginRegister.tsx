@@ -11,7 +11,7 @@ import { loginService } from '@/services/login/login';
 import './login-register.css';
 
 export function LoginRegister() {
-  const [email, setEmail] = useState('');
+  const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -23,16 +23,16 @@ export function LoginRegister() {
     setIsLoading(true);
 
     try {
-      const result = await loginService(email, password);
+      const result = await loginService(identifier, password);
 
       if (result.requiresEmailVerification) {
         toast.info(result.mensagem);
-        navigate(`/verifique-email?email=${encodeURIComponent(result.email ?? email)}`);
+        navigate(`/verifique-email?email=${encodeURIComponent(result.email ?? identifier)}`);
         return;
       }
       if (result.requiresPasswordSetup) {
         toast.info(result.mensagem);
-        navigate(`/verifique-email?email=${encodeURIComponent(result.email ?? email)}&mode=password`);
+        navigate(`/verifique-email?email=${encodeURIComponent(result.email ?? identifier)}&mode=password`);
         return;
       }
 
@@ -108,15 +108,15 @@ export function LoginRegister() {
 
           <form onSubmit={handleLogin} className="login-form">
             <label className="login-field">
-              <span>E-mail</span>
+                <span>E-mail ou código da escola</span>
               <div>
                 <Mail size={18} aria-hidden="true" />
                 <input
-                  type="email"
-                  placeholder="voce@escola.com"
-                  autoComplete="email"
-                  value={email}
-                  onChange={(event) => setEmail(event.target.value)}
+                  type="text"
+                  placeholder="voce@escola.com ou SP-..."
+                  autoComplete="username"
+                  value={identifier}
+                  onChange={(event) => setIdentifier(event.target.value)}
                   required
                 />
               </div>

@@ -8,6 +8,7 @@ const Start = lazy(() => import('@/pages/Start'));
 const Login = lazy(() => import('@/pages/Login'));
 const Home = lazy(() => import('@/pages/Home'));
 const InviteRegister = lazy(() => import('@/pages/InviteRegister'));
+const StudentPasswordReset = lazy(() => import('@/pages/StudentPasswordReset'));
 const TrialRegister = lazy(() => import('@/pages/TrialRegister'));
 const TrialExpired = lazy(() => import('@/pages/TrialExpired'));
 const CheckEmail = lazy(() => import('@/pages/EmailVerification').then((module) => ({ default: module.CheckEmail })));
@@ -31,6 +32,7 @@ export default function App() {
             <InviteRegister />
           </Suspense>}/>
         <Route path="/cadastro/:token" element={<LegacyInviteRedirect />}/>
+        <Route path="/recuperar-acesso" element={<Suspense fallback={null}><StudentPasswordReset /></Suspense>}/>
         <Route path="/teste-gratuito" element={<PublicRoute><Suspense fallback={null}><TrialRegister /></Suspense></PublicRoute>}/>
         <Route path="/verifique-email" element={<Suspense fallback={null}><CheckEmail /></Suspense>}/>
         <Route path="/confirmar-email" element={<Suspense fallback={null}><ConfirmEmail /></Suspense>}/>

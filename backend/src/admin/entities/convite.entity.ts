@@ -45,6 +45,9 @@ export class Convite {
   @Column({ type: 'varchar', length: 32, default: Role.USER })
   role: Role;
 
+  @Column({ type: 'varchar', length: 24, default: 'legacy_email' })
+  registration_mode: 'legacy_email' | 'school_student';
+
   @Column({ default: 0 })
   uses: number;
 

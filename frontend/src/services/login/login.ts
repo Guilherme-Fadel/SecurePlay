@@ -12,22 +12,22 @@ export interface LoginResult {
 }
 
 export async function loginService(
-  email: string,
+  identifier: string,
   password: string
 ): Promise<LoginResult> {
 
-  if (!email || !password) {
-    return { sucesso: false, mensagem: 'Email e senha são obrigatórios' };
+  if (!identifier || !password) {
+    return { sucesso: false, mensagem: 'Identificador e senha são obrigatórios' };
   }
 
   try {
 
-    const response = await api.post('/auth/login', { email, password });
+    const response = await api.post('/auth/login', { identifier, password });
     if (response.data.requiresEmailVerification) {
       return {
         sucesso: false,
         requiresEmailVerification: true,
-        email: response.data.email,
+        email: response.data.email ?? identifier,
         mensagem: response.data.message,
       };
     }
@@ -35,7 +35,7 @@ export async function loginService(
       return {
         sucesso: false,
         requiresPasswordSetup: true,
-        email: response.data.email,
+        email: response.data.email ?? identifier,
         mensagem: response.data.message,
       };
     }

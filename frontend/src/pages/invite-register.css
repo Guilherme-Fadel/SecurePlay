@@ -33,6 +33,9 @@
 .invite-state p { max-width: 280px; margin: 0; line-height: 1.5; }
 .invite-state a { margin-top: 8px; color: var(--primary); font-weight: 800; }
 .invite-state--error svg { color: var(--danger); }
+.invite-state--success > svg { color: var(--success, #16865a); }
+.invite-login-code { padding: 12px 18px; border: 1px dashed #a8b7cc; border-radius: 10px; background: #f7f9fc; color: #17233a; font: 800 20px/1.2 ui-monospace, monospace; letter-spacing: .08em; }
+.invite-state--success button { display: inline-flex; align-items: center; gap: 8px; min-height: 42px; padding: 0 14px; border: 1px solid #d8e1ed; border-radius: 9px; background: #fff; color: #334155; cursor: pointer; font: 700 14px var(--font-family-ui); }
 .invite-spinner { width: 28px; height: 28px; border: 3px solid rgba(var(--primary-rgb),.18); border-top-color: var(--primary); border-radius: 50%; animation: invite-spin .8s linear infinite; }
 @keyframes invite-spin { to { transform: rotate(360deg); } }
 @media (max-width: 520px) { .invite-page { padding: 16px; } .invite-card, .invite-password-dialog { padding: 30px 24px; } .invite-brand { margin-bottom: 30px; } }

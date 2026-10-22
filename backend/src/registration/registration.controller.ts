@@ -27,6 +27,15 @@ class ResendEmailDto {
   email: string;
 }
 
+class ResetStudentPasswordDto {
+  @IsString()
+  @Matches(/^[A-Za-z0-9_-]{43}$/)
+  token: string;
+
+  @IsSecurePassword()
+  password: string;
+}
+
 @Controller('registration')
 export class RegistrationController {
   constructor(private readonly registrationService: RegistrationService) {}
@@ -57,5 +66,15 @@ export class RegistrationController {
   @Throttle({ short: { limit: 3, ttl: 60000 } })
   resend(@Body() dto: ResendEmailDto) {
     return this.registrationService.resend(dto.email);
+  }
+
+  @Public()
+  @Post('student-password-reset')
+  @Throttle({ short: { limit: 5, ttl: 60000 } })
+  resetStudentPassword(@Body() dto: ResetStudentPasswordDto) {
+    return this.registrationService.resetSchoolStudentPassword(
+      dto.token,
+      dto.password,
+    );
   }
 }

@@ -68,7 +68,7 @@ export function AuditTab({ empresaId, empresaNome }: AuditTabProps) {
     return () => { cancelled = true; };
   }, [empresaId, eventsPage, pageSize, eventsReload, restoredKey, sessionKey]);
 
-  const actionLabel: Record<string, string> = { 'usuario.inativado': 'Usuário inativado', 'convite.criado': 'Convite criado', 'convite.revogado': 'Convite revogado', 'apelido.aprovado': 'Apelido aprovado', 'apelido.rejeitado': 'Apelido rejeitado' };
+  const actionLabel: Record<string, string> = { 'usuario.inativado': 'Usuário inativado', 'usuario.reativado': 'Usuário reativado', 'convite.criado': 'Convite criado', 'convite.revogado': 'Convite revogado', 'apelido.aprovado': 'Apelido aprovado', 'apelido.rejeitado': 'Apelido rejeitado', 'aluno.link_redefinicao_emitido': 'Link de redefinição de acesso emitido' };
 
   return <div className="admin-users-content">
     <AdminPageHeader title="Auditoria" description={`Histórico de alterações das configurações${empresaNome ? ` de ${empresaNome}` : ' da empresa'}.`} count={loading || error ? undefined : audit.total} countLabel="registros" countIcon={<ClipboardList size={18} />} />

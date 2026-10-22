@@ -29,9 +29,13 @@ export class Usuario {
   @Column({ type: 'varchar', length: 255, nullable: true })
   profile_image_key: string | null;
 
-  @Column({ length: 100 })
+  @Column({ type: 'varchar', length: 100, nullable: true })
   @Index('ux_usuario_email', { unique: true })
-  email: string;
+  email: string | null;
+
+  @Column({ type: 'varchar', length: 20, nullable: true })
+  @Index('ux_usuario_login_code', { unique: true })
+  login_code: string | null;
 
   @Column({ type: 'date', nullable: true })
   birth_date: string | null;
@@ -59,6 +63,12 @@ export class Usuario {
 
   @Column({ type: 'datetime', nullable: true })
   password_setup_last_sent_at: Date | null;
+
+  @Column({ type: 'varchar', length: 64, nullable: true })
+  password_reset_token_hash: string | null;
+
+  @Column({ type: 'datetime', nullable: true })
+  password_reset_expires_at: Date | null;
 
   @Column({ type: 'datetime', nullable: true })
   trial_started_at: Date | null;

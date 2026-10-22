@@ -29,7 +29,7 @@ export interface EmpresasPaginadas {
 export interface RegistroAuditoriaEmpresa {
   id: number;
   created_at: string;
-  alterado_por: { id: number; name: string; email: string } | null;
+  alterado_por: { id: number; name: string; email: string | null } | null;
   configuracoes_alteradas: number;
 }
 
@@ -41,7 +41,7 @@ export interface AuditoriaPaginada {
   totalPages: number;
 }
 
-export interface EventoAuditoria { id: number; acao: string; alvo_tipo: string; alvo_id: number | null; detalhes: Record<string, unknown> | null; created_at: string; ator: { id: number; name: string; email: string } | null; }
+export interface EventoAuditoria { id: number; acao: string; alvo_tipo: string; alvo_id: number | null; detalhes: Record<string, unknown> | null; created_at: string; ator: { id: number; name: string; email: string | null } | null; }
 export interface EventosAuditoriaPaginados { items: EventoAuditoria[]; page: number; pageSize: number; total: number; totalPages: number; }
 
 function empresaPath(empresaId?: number) {

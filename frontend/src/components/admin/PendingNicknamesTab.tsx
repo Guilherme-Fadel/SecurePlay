@@ -125,7 +125,7 @@ export function PendingNicknamesTab({ empresaId }: PendingNicknamesTabProps) {
               <tbody>{result.items.map((usuario) => <tr key={usuario.id}>
                 <td data-label="Apelido solicitado"><strong className="admin-nickname-value">{usuario.nickname_pending}</strong></td>
                 <td data-label="Participante">{usuario.name}</td>
-                <td data-label="E-mail">{usuario.email}</td>
+                <td data-label="E-mail">{usuario.email ?? 'Acesso por código da escola'}</td>
                 <td data-label="Ações"><div className="admin-nickname-actions">
                   <AppButton size="sm" icon={<Check size={14} />} disabled={reviewing === usuario.id} onClick={() => void revisar(usuario.id, true)}>Aprovar</AppButton>
                   <AppButton variant="ghost" size="sm" icon={<X size={14} />} disabled={reviewing === usuario.id} onClick={() => void revisar(usuario.id, false)}>Recusar</AppButton>

@@ -7,6 +7,7 @@ export interface Convite {
   max_uses: number;
   uses: number;
   role: 'user' | 'admin';
+  registration_mode: 'legacy_email' | 'school_student';
   status: 'ativo' | 'utilizado' | 'expirado' | 'revogado';
   created_at: string;
 }
@@ -14,7 +15,8 @@ export interface Convite {
 export interface UsuarioEmpresa {
   id: number;
   name: string;
-  email: string;
+  email: string | null;
+  login_method: 'email' | 'school_code';
   role: string;
   level: number;
   active: boolean;
@@ -28,6 +30,7 @@ export interface ConvitePublico {
   email: string | null;
   expires_at: string;
   role: 'user' | 'admin';
+  registration_mode: 'legacy_email' | 'school_student';
 }
 
 export interface ApelidosPendentesPaginados {
@@ -110,7 +113,7 @@ export async function listarConvites(
 }
 
 export async function criarConvite(
-  data: { email?: string; validade_dias: number; max_uses: number; administrador?: boolean },
+  data: { email?: string; validade_dias: number; max_uses: number; administrador?: boolean; registration_mode?: 'legacy_email' | 'school_student' },
   empresaId?: number,
 ) {
   const response = await api.post(`${empresaPath(empresaId)}/convites`, data);
@@ -127,9 +130,9 @@ export async function consultarConvite(token: string): Promise<ConvitePublico> {
   return response.data;
 }
 
-export async function concluirCadastroConvite(token: string, data: { name: string; nickname?: string; email: string; birth_date: string }) {
+export async function concluirCadastroConvite(token: string, data: { name: string; nickname?: string; email?: string; birth_date?: string; password?: string }) {
   const response = await api.post('/convites/cadastro', { ...data, token });
-  return response.data as { sucesso: boolean; mensagem: string };
+  return response.data as { sucesso: boolean; mensagem: string; login_code?: string };
 }
 
 export async function aprovarApelido(usuarioId: number, empresaId?: number): Promise<UsuarioEmpresa> {
@@ -149,5 +152,10 @@ export async function inativarUsuario(usuarioId: number, motivo: string, empresa
 
 export async function reativarUsuario(usuarioId: number, motivo: string, empresaId?: number): Promise<UsuarioEmpresa> {
   const response = await api.post(`${empresaPath(empresaId)}/usuarios/${usuarioId}/reativar`, { motivo });
+  return response.data;
+}
+
+export async function emitirLinkRedefinicaoAluno(usuarioId: number, empresaId?: number): Promise<{ reset_token: string; expires_at: string }> {
+  const response = await api.post(`${empresaPath(empresaId)}/usuarios/${usuarioId}/redefinicao-acesso`);
   return response.data;
 }

@@ -58,6 +58,14 @@ export class RegistrationService {
         'Convite inválido, expirado ou já utilizado',
       );
     }
+    if (invite.registration_mode === 'school_student') {
+      return this.completeSchoolStudentInvite(inviteToken, dto);
+    }
+    if (!dto.email || !dto.birth_date || dto.password) {
+      throw new BadRequestException(
+        'Este convite exige e-mail, data de nascimento e confirmação por e-mail',
+      );
+    }
     return this.createPending(dto, {
       kind: 'invite',
       inviteId: invite.id,
@@ -67,12 +75,88 @@ export class RegistrationService {
     });
   }
 
+  private async completeSchoolStudentInvite(
+    inviteToken: string,
+    dto: CompleteCadastroConviteDto,
+  ) {
+    if (!dto.password) {
+      throw new BadRequestException('Defina uma senha para criar sua conta');
+    }
+    if (dto.email || dto.birth_date) {
+      throw new BadRequestException(
+        'Este convite não solicita e-mail nem data de nascimento',
+      );
+    }
+    if (dto.name.trim().length < 3 || dto.name.trim().length > 100) {
+      throw new BadRequestException('Informe um nome de exibição válido');
+    }
+
+    await ensurePendingRankingSeasonsClosed(this.dataSource);
+    return this.dataSource.transaction(async (manager) => {
+      const invite = await manager
+        .getRepository(Convite)
+        .createQueryBuilder('invite')
+        .setLock('pessimistic_write')
+        .where('invite.token_hash = :hash', { hash: this.hash(inviteToken) })
+        .getOne();
+      if (
+        !invite ||
+        invite.registration_mode !== 'school_student' ||
+        invite.role !== Role.USER ||
+        invite.email ||
+        invite.max_uses !== 1 ||
+        !this.inviteAvailable(invite)
+      ) {
+        throw new ForbiddenException(
+          'Convite inválido, expirado ou já utilizado',
+        );
+      }
+
+      const users = manager.getRepository(Usuario);
+      let loginCode = '';
+      for (let attempt = 0; attempt < 5; attempt += 1) {
+        loginCode = `SP-${randomBytes(8).toString('hex').toUpperCase()}`;
+        if (!(await users.findOne({ where: { login_code: loginCode } }))) break;
+        loginCode = '';
+      }
+      if (!loginCode) {
+        throw new BadRequestException(
+          'Não foi possível gerar um identificador de acesso. Tente novamente.',
+        );
+      }
+
+      const nickname = dto.nickname?.trim().replace(/\s+/g, ' ') || null;
+      const user = users.create({
+        name: dto.name.trim().replace(/\s+/g, ' '),
+        email: null,
+        login_code: loginCode,
+        password: await bcrypt.hash(dto.password!, 10),
+        birth_date: null,
+        email_verified_at: null,
+        password_change_required: false,
+        empresa_id: invite.empresa_id,
+        role: Role.USER,
+        nickname_pending: nickname,
+        nickname_request_status: nickname ? 'pending' : 'none',
+      });
+      await users.save(user);
+      invite.uses += 1;
+      await manager.getRepository(Convite).save(invite);
+
+      return {
+        sucesso: true,
+        mensagem: 'Conta criada. Guarde seu código de acesso para entrar.',
+        login_code: loginCode,
+      };
+    });
+  }
+
   private async createPending(
     dto: TrialRegisterDto | CompleteCadastroConviteDto,
     context: RegistrationContext,
   ) {
-    const email = dto.email.trim().toLowerCase();
-    const birthDate = this.validBirthDate(dto.birth_date);
+    const email = dto.email!.trim().toLowerCase();
+    const birthDate = this.validBirthDate(dto.birth_date!);
     if (context.invitedEmail && email !== context.invitedEmail) {
       throw new ForbiddenException(
         'Use o e-mail para o qual este convite foi criado',
@@ -296,7 +380,46 @@ export class RegistrationService {
     });
   }
 
+  async resetSchoolStudentPassword(token: string, password: string) {
+    return this.dataSource.transaction(async (manager) => {
+      const user = await manager
+        .getRepository(Usuario)
+        .createQueryBuilder('user')
+        .setLock('pessimistic_write')
+        .where('user.password_reset_token_hash = :tokenHash', {
+          tokenHash: this.hash(token),
+        })
+        .getOne();
+      if (
+        !user ||
+        !user.active ||
+        user.role !== Role.USER ||
+        user.email !== null ||
+        !user.login_code ||
+        !user.password_reset_expires_at ||
+        user.password_reset_expires_at <= new Date()
+      ) {
+        throw new NotFoundException('Link de recuperação inválido ou expirado');
+      }
+
+      user.password = await bcrypt.hash(password, 10);
+      user.password_reset_token_hash = null;
+      user.password_reset_expires_at = null;
+      user.password_change_required = false;
+      user.session_version = (user.session_version ?? 0) + 1;
+      await manager.getRepository(Usuario).save(user);
+      return {
+        sucesso: true,
+        mensagem: 'Senha atualizada. Guarde seu código de acesso.',
+        login_code: user.login_code,
+      };
+    });
+  }
+
   async startPlatformAdminVerification(user: Usuario) {
+    if (!user.email) {
+      throw new BadRequestException('Conta administrativa sem e-mail cadastrado');
+    }
     const issue = await this.dataSource.transaction(async (manager) => {
       const locked = await manager.getRepository(Usuario)
         .createQueryBuilder('user')
@@ -348,6 +471,7 @@ export class RegistrationService {
   }
 
   private async startPasswordSetup(user: Usuario) {
+    if (!user.email) return;
     const issue = await this.dataSource.transaction(async (manager) => {
       const locked = await manager.getRepository(Usuario)
         .createQueryBuilder('user')

@@ -52,13 +52,14 @@ export class AuthService {
   }
 
   async signIn(dto: LoginDto) {
-    const { email, password } = dto;
+    const identifier = dto.identifier ?? dto.email ?? '';
+    const { password } = dto;
 
-    if (!email || !password) {
-      throw new UnauthorizedException('Email ou senha não fornecidos');
+    if (!identifier || !password) {
+      throw new UnauthorizedException('Identificador ou senha não fornecidos');
     }
 
-    const user = await this.usuarioService.getUsuarioByEmail(email);
+    const user = await this.usuarioService.getUsuarioByLoginIdentifier(identifier);
 
     if (!user || !user.active) {
       throw new UnauthorizedException('Usuário ou senha inválidos');

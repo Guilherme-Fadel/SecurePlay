@@ -13,6 +13,103 @@ jest.mock('../dashboard/ranking-history', () => ({
 }));
 
 describe('Cadastro com confirmação por e-mail', () => {
+  it('cria aluno escolar por convite individual sem e-mail ou data de nascimento', async () => {
+    const invite = {
+      id: 29,
+      token_hash: createHash('sha256').update('invite-token').digest('hex'),
+      email: null,
+      empresa_id: 8,
+      role: Role.USER,
+      registration_mode: 'school_student',
+      uses: 0,
+      max_uses: 1,
+      revoked: false,
+      expires_at: new Date(Date.now() + 60_000),
+    };
+    const inviteQuery = {
+      setLock: jest.fn().mockReturnThis(),
+      where: jest.fn().mockReturnThis(),
+      getOne: jest.fn().mockResolvedValue(invite),
+    };
+    const users = {
+      findOne: jest.fn().mockResolvedValue(null),
+      create: jest.fn((value) => value),
+      save: jest.fn().mockImplementation((value) => Promise.resolve(value)),
+    };
+    const inviteRepository = {
+      findOne: jest.fn().mockResolvedValue(invite),
+      createQueryBuilder: jest.fn().mockReturnValue(inviteQuery),
+      save: jest.fn().mockImplementation((value) => Promise.resolve(value)),
+    };
+    const dataSource = {
+      getRepository: (entity: unknown) => entity === Convite ? inviteRepository : users,
+      transaction: (callback: (manager: unknown) => unknown) => callback({
+        getRepository: (entity: unknown) => entity === Convite ? inviteRepository : users,
+      }),
+    };
+    const emailService = { sendVerification: jest.fn(), sendPasswordSetup: jest.fn() };
+    const service = new RegistrationService(dataSource as never, emailService as never);
+
+    const result = await service.startInvite('invite-token', {
+      name: '  Aluna   Teste ',
+      password: 'senha-segura-123',
+    });
+
+    expect(result).toEqual({
+      sucesso: true,
+      mensagem: 'Conta criada. Guarde seu código de acesso para entrar.',
+      login_code: expect.stringMatching(/^SP-[A-F0-9]{16}$/),
+    });
+    expect(users.create).toHaveBeenCalledWith(expect.objectContaining({
+      name: 'Aluna Teste',
+      email: null,
+      login_code: result.login_code,
+      birth_date: null,
+      empresa_id: 8,
+      role: Role.USER,
+    }));
+    expect(inviteRepository.save).toHaveBeenCalledWith(expect.objectContaining({ uses: 1 }));
+    expect(emailService.sendVerification).not.toHaveBeenCalled();
+    expect(emailService.sendPasswordSetup).not.toHaveBeenCalled();
+  });
+
+  it('consome link de redefinição, atualiza senha e invalida sessões existentes', async () => {
+    const token = 'recovery-token';
+    const user = {
+      id: 43,
+      email: null,
+      login_code: 'SP-A1B2C3D4E5F60718',
+      active: true,
+      role: Role.USER,
+      password: 'old-hash',
+      password_change_required: false,
+      password_reset_token_hash: createHash('sha256').update(token).digest('hex'),
+      password_reset_expires_at: new Date(Date.now() + 60_000),
+      session_version: 2,
+    };
+    const query = {
+      setLock: jest.fn().mockReturnThis(),
+      where: jest.fn().mockReturnThis(),
+      getOne: jest.fn().mockImplementation(() => Promise.resolve(user.password_reset_token_hash ? user : null)),
+    };
+    const repository = {
+      createQueryBuilder: jest.fn().mockReturnValue(query),
+      save: jest.fn().mockImplementation((value) => Promise.resolve(value)),
+    };
+    const service = new RegistrationService({
+      transaction: (callback: (manager: unknown) => unknown) => callback({ getRepository: () => repository }),
+    } as never, {} as never);
+
+    await expect(service.resetSchoolStudentPassword(token, 'nova-senha-segura'))
+      .resolves.toMatchObject({ sucesso: true, login_code: user.login_code });
+    expect(await bcrypt.compare('nova-senha-segura', user.password)).toBe(true);
+    expect(user.password_reset_token_hash).toBeNull();
+    expect(user.password_reset_expires_at).toBeNull();
+    expect(user.session_version).toBe(3);
+    await expect(service.resetSchoolStudentPassword(token, 'outra-senha-segura'))
+      .rejects.toThrow('Link de recuperação inválido ou expirado');
+  });
+
   it('recusa apelido em convite de administrador antes de criar cadastro pendente', async () => {
     const invite = {
       id: 3,

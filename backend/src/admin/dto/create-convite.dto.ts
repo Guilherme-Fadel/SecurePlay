@@ -3,6 +3,7 @@ import {
   IsBoolean,
   IsEmail,
   IsInt,
+  IsIn,
   IsOptional,
   Max,
   Min,
@@ -30,4 +31,8 @@ export class CreateConviteDto {
   @IsOptional()
   @IsBoolean()
   administrador?: boolean;
+
+  @IsOptional()
+  @IsIn(['legacy_email', 'school_student'])
+  registration_mode?: 'legacy_email' | 'school_student';
 }

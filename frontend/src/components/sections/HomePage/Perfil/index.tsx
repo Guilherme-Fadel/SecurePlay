@@ -52,6 +52,7 @@ export function Perfil() {
   const { stats, loading: statsLoading } = useDashboardStats();
   const { navigateToSection } = useSectionContext();
   const [emailCopied, setEmailCopied] = useState(false);
+  const [loginCodeCopied, setLoginCodeCopied] = useState(false);
   const [passwordModalOpen, setPasswordModalOpen] = useState(false);
   const [passwords, setPasswords] = useState({ currentPassword: '', newPassword: '', confirmPassword: '' });
   const [showPasswords, setShowPasswords] = useState({ current: false, next: false, confirmation: false });
@@ -163,6 +164,19 @@ export function Perfil() {
     }
   };
 
+  const handleCopyLoginCode = async () => {
+    if (!user?.login_code) return;
+    try {
+      if (!navigator.clipboard) throw new Error('Clipboard indisponível');
+      await navigator.clipboard.writeText(user.login_code);
+      setLoginCodeCopied(true);
+      toast.success('Código de acesso copiado.');
+      window.setTimeout(() => setLoginCodeCopied(false), 2200);
+    } catch {
+      toast.error('Não foi possível copiar o código neste navegador.');
+    }
+  };
+
   // force so e true no sucesso da troca de senha. Nunca ligar direto em onClick/
   // onClose: o React passa o evento como argumento e, sendo truthy, ele anularia
   // a protecao de passwordSaving abaixo.
@@ -253,8 +267,8 @@ export function Perfil() {
                 <span><BadgeCheck size={14} /> {user?.active === false ? 'Conta inativa' : 'Conta ativa'}</span>
               </div>
               <div className="profile-email-line">
-                <Mail size={14} />
-                <span>{user?.email ?? (userLoading ? 'Sincronizando e-mail...' : 'E-mail não informado')}</span>
+                {user?.email ? <Mail size={14} /> : user?.login_code ? <KeyRound size={14} /> : <Mail size={14} />}
+                <span>{user?.email ?? (user?.login_code ? `Código escolar: ${user.login_code}` : userLoading ? 'Sincronizando e-mail...' : 'E-mail não informado')}</span>
                 {user?.email && (
                   <button
                     type="button"
@@ -266,6 +280,13 @@ export function Perfil() {
                     {emailCopied ? <Check size={14} /> : <Copy size={14} />}
                   </button>
                 )}
+                {!user?.email && user?.login_code && <button
+                  type="button"
+                  className="profile-copy-email"
+                  onClick={handleCopyLoginCode}
+                  aria-label={loginCodeCopied ? 'Código de acesso copiado' : 'Copiar código de acesso'}
+                  title={loginCodeCopied ? 'Código copiado' : 'Copiar código de acesso'}
+                >{loginCodeCopied ? <Check size={14} /> : <Copy size={14} />}</button>}
               </div>
             </div>
           </div>

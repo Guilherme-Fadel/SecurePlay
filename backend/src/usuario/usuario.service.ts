@@ -47,6 +47,7 @@ export class UsuarioService {
       userId: usuario.id,
       name: usuario.name,
       email: usuario.email,
+      login_code: usuario.login_code,
       birth_date: usuario.birth_date,
       email_verified_at: usuario.email_verified_at,
       trial_ends_at: usuario.trial_ends_at,
@@ -85,6 +86,20 @@ export class UsuarioService {
   }
   async getUsuarioByEmail(email: string): Promise<Usuario | undefined> {
     const usuario = await this.usuarioRepository.findOne({ where: { email } });
+    return usuario ?? undefined;
+  }
+  async getUsuarioByLoginIdentifier(identifier: string): Promise<Usuario | undefined> {
+    const value = identifier.trim();
+    const loginCode = value.toUpperCase();
+    let usuario: Usuario | null;
+    if (/^SP-[A-F0-9]{16}$/.test(loginCode)) {
+      usuario = await this.usuarioRepository.findOne({ where: { login_code: loginCode } });
+    } else {
+      usuario = await this.usuarioRepository.findOne({ where: { email: value } });
+      if (!usuario && value.toLowerCase() !== value) {
+        usuario = await this.usuarioRepository.findOne({ where: { email: value.toLowerCase() } });
+      }
+    }
     return usuario ?? undefined;
   }
   async getUsuarioById(id: number): Promise<Usuario | undefined> {

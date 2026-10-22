@@ -37,6 +37,7 @@ export function InvitationManagementTab({ empresaId, podeCriarAdministrador = fa
   const [validade, setValidade] = useState(7);
   const [maxUses, setMaxUses] = useState(1);
   const [administrador, setAdministrador] = useState(false);
+  const [registrationMode, setRegistrationMode] = useState<'legacy_email' | 'school_student'>('school_student');
   const [creating, setCreating] = useState(false);
   const [revoking, setRevoking] = useState<number | null>(null);
   const [linkGerado, setLinkGerado] = useState<string | null>(null);
@@ -100,7 +101,8 @@ export function InvitationManagementTab({ empresaId, podeCriarAdministrador = fa
     event.preventDefault();
     setCreating(true);
     try {
-      const result = await criarConvite({ email: email.trim() || undefined, validade_dias: validade, max_uses: maxUses, administrador: podeCriarAdministrador && administrador }, empresaId);
+      const modo = administrador ? 'legacy_email' : registrationMode;
+      const result = await criarConvite({ email: modo === 'legacy_email' ? (email.trim() || undefined) : undefined, validade_dias: validade, max_uses: modo === 'school_student' ? 1 : maxUses, administrador: podeCriarAdministrador && administrador, registration_mode: modo }, empresaId);
       openerRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
       setLinkGerado(`${window.location.origin}/cadastro#${result.token}`);
       setPage(1);
@@ -108,6 +110,7 @@ export function InvitationManagementTab({ empresaId, podeCriarAdministrador = fa
       setSort('desc');
       setReload((current) => current + 1);
       setEmail('');
+      setRegistrationMode('school_student');
       setAdministrador(false);
       setFeedback(administrador ? 'Convite de administrador criado com sucesso.' : 'Convite criado com sucesso. Compartilhe o link ou QR code.');
     } catch (error: any) {
@@ -136,22 +139,23 @@ export function InvitationManagementTab({ empresaId, podeCriarAdministrador = fa
     {feedback && <div className={cn('admin-feedback', feedback.startsWith('Não foi') && 'is-error')} role="status"><span>{feedback.startsWith('Não foi') ? <AlertCircle size={17} /> : <CheckCircle2 size={17} />}</span>{feedback}</div>}
     <div className="admin-invites-workspace">
       <section className="admin-users-card admin-invite-form-card">
-        <AdminCardHeading title="Novo convite" description={administrador ? 'O responsável receberá acesso de administrador desta empresa.' : 'O aluno cria a própria senha pelo link seguro.'} icon={<Plus size={19} />} />
+        <AdminCardHeading title="Novo convite" description={administrador ? 'O responsável receberá acesso de administrador desta empresa.' : registrationMode === 'school_student' ? 'Acesso individual de aluno, sem e-mail próprio ou data de nascimento.' : 'Cadastro por e-mail e confirmação.'} icon={<Plus size={19} />} />
         <form onSubmit={criar} className="admin-invite-form">
-          <label className="admin-invite-email-field">
+          {!administrador && <label className="admin-invite-email-field"><span>Forma de cadastro</span><AppSelect value={registrationMode} onChange={(event) => { const next = event.target.value as 'legacy_email' | 'school_student'; setRegistrationMode(next); if (next === 'school_student') setMaxUses(1); }}><option value="school_student">Aluno sem e-mail próprio</option><option value="legacy_email">Cadastro com e-mail</option></AppSelect></label>}
+          {(administrador || registrationMode === 'legacy_email') && <label className="admin-invite-email-field">
             <span className="admin-invite-email-label">E-mail do {administrador ? 'administrador' : 'aluno'} {!administrador && <small>opcional</small>}</span>
             <AppInput type="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder={administrador ? 'admin@empresa.com' : 'aluno@empresa.com'} required={administrador} />
-          </label>
+          </label>}
           {podeCriarAdministrador && <label className="admin-invite-admin-flag">
             <input type="checkbox" checked={administrador} onChange={(event) => { setAdministrador(event.target.checked); if (event.target.checked) setMaxUses(1); }} />
             <span className="settings-switch" aria-hidden="true"><i /></span>
             <span>Administrador</span>
           </label>}
-          <div className="admin-invite-options"><label>Validade<AppSelect value={validade} onChange={(event) => setValidade(Number(event.target.value))}><option value={1}>1 dia</option><option value={7}>7 dias</option><option value={14}>14 dias</option><option value={30}>30 dias</option></AppSelect></label><label>Usos permitidos<AppSelect value={maxUses} disabled={administrador} onChange={(event) => setMaxUses(Number(event.target.value))}><option value={1}>1 uso</option>{!administrador && <><option value={5}>5 usos</option><option value={20}>20 usos</option><option value={100}>100 usos</option></>}</AppSelect></label></div>
+          <div className="admin-invite-options"><label>Validade<AppSelect value={validade} onChange={(event) => setValidade(Number(event.target.value))}><option value={1}>1 dia</option><option value={7}>7 dias</option><option value={14}>14 dias</option><option value={30}>30 dias</option></AppSelect></label><label>Usos permitidos<AppSelect value={registrationMode === 'school_student' || administrador ? 1 : maxUses} disabled={administrador || registrationMode === 'school_student'} onChange={(event) => setMaxUses(Number(event.target.value))}><option value={1}>1 uso</option>{!administrador && registrationMode === 'legacy_email' && <><option value={5}>5 usos</option><option value={20}>20 usos</option><option value={100}>100 usos</option></>}</AppSelect></label></div>
           <AppButton type="submit" disabled={creating} icon={<Link2 size={16} />}>{creating ? 'Gerando...' : 'Gerar convite'}</AppButton>
         </form>
       </section>
-      <AdminListCard className="admin-invites-card" loading={loading}><AdminCardHeading title="Convites emitidos" description="Links com expiração e uso controlado." icon={<QrCode size={19} />} iconTone="accent" action={<span className="admin-invites-total" aria-label="Total de convites">{loading || loadError ? '—' : `${result.total} convites`}</span>} /><AdminListToolbar><AppSearchInput label="Buscar convites" value={search} onChange={(event) => { setSearch(event.target.value); setPage(1); }} placeholder="Buscar por e-mail" /><AppSelect aria-label="Ordenar convites por data" value={sort} onChange={(event) => { setSort(event.target.value as 'asc' | 'desc'); setPage(1); }}><option value="desc">Mais recentes</option><option value="asc">Mais antigos</option></AppSelect></AdminListToolbar><AdminListContent className="admin-invites-table">{loadError ? <AdminListState kind="error" onRetry={() => setReload((current) => current + 1)}>Não foi possível carregar os convites.</AdminListState> : loading ? <AdminListState kind="loading">Carregando convites...</AdminListState> : result.items.length === 0 ? <AdminListState kind="empty">{deferredSearch ? 'Nenhum convite corresponde à busca.' : 'Nenhum convite criado ainda.'}</AdminListState> : result.items.map((convite) => <div key={convite.id} className="admin-invite-row"><div><strong>{convite.email ?? 'Link aberto para a empresa'}{convite.role === 'admin' ? ' · Administrador' : ''}</strong><small>Expira em {formatDate(convite.expires_at)} · {convite.uses}/{convite.max_uses} usos</small></div><span className={`admin-invite-status is-${convite.status}`}>{convite.status}</span>{convite.status === 'ativo' && <AppButton variant="ghost" size="sm" icon={<Trash2 size={14} />} disabled={revoking === convite.id} onClick={() => void revogar(convite.id)}>Revogar</AppButton>}</div>)}</AdminListContent>{!loading && !loadError && <AdminPagination page={page} totalPages={result.totalPages} ariaLabel="Paginação de convites" disabled={loading} adjacentButtons onPageChange={setPage} />}</AdminListCard>
+      <AdminListCard className="admin-invites-card" loading={loading}><AdminCardHeading title="Convites emitidos" description="Links com expiração e uso controlado." icon={<QrCode size={19} />} iconTone="accent" action={<span className="admin-invites-total" aria-label="Total de convites">{loading || loadError ? '—' : `${result.total} convites`}</span>} /><AdminListToolbar><AppSearchInput label="Buscar convites" value={search} onChange={(event) => { setSearch(event.target.value); setPage(1); }} placeholder="Buscar por e-mail" /><AppSelect aria-label="Ordenar convites por data" value={sort} onChange={(event) => { setSort(event.target.value as 'asc' | 'desc'); setPage(1); }}><option value="desc">Mais recentes</option><option value="asc">Mais antigos</option></AppSelect></AdminListToolbar><AdminListContent className="admin-invites-table">{loadError ? <AdminListState kind="error" onRetry={() => setReload((current) => current + 1)}>Não foi possível carregar os convites.</AdminListState> : loading ? <AdminListState kind="loading">Carregando convites...</AdminListState> : result.items.length === 0 ? <AdminListState kind="empty">{deferredSearch ? 'Nenhum convite corresponde à busca.' : 'Nenhum convite criado ainda.'}</AdminListState> : result.items.map((convite) => <div key={convite.id} className="admin-invite-row"><div><strong>{convite.email ?? (convite.registration_mode === 'school_student' ? 'Convite escolar individual' : 'Link aberto para a empresa')}{convite.role === 'admin' ? ' · Administrador' : ''}</strong><small>Expira em {formatDate(convite.expires_at)} · {convite.uses}/{convite.max_uses} usos</small></div><span className={`admin-invite-status is-${convite.status}`}>{convite.status}</span>{convite.status === 'ativo' && <AppButton variant="ghost" size="sm" icon={<Trash2 size={14} />} disabled={revoking === convite.id} onClick={() => void revogar(convite.id)}>Revogar</AppButton>}</div>)}</AdminListContent>{!loading && !loadError && <AdminPagination page={page} totalPages={result.totalPages} ariaLabel="Paginação de convites" disabled={loading} adjacentButtons onPageChange={setPage} />}</AdminListCard>
     </div>
     {linkGerado && <div className="admin-qr-modal" role="dialog" aria-modal="true" aria-labelledby="invite-dialog-title"><div className="admin-qr-card" ref={dialogRef}><button ref={closeButtonRef} className="admin-qr-close" onClick={fecharConvite} aria-label="Fechar">×</button><div className="admin-qr-title"><QrCode size={20} /><div><strong id="invite-dialog-title">Convite pronto</strong><span>Compartilhe pelo link ou QR code.</span></div></div><div className="admin-qr-code"><QRCodeSVG value={linkGerado} size={172} level="M" includeMargin /></div><div className="admin-qr-link"><span>{linkGerado}</span><button onClick={() => void copiar(linkGerado)}><Copy size={15} /> Copiar</button></div></div></div>}
   </div>;

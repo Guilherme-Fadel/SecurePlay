@@ -17,7 +17,7 @@ describe('AuthService.signIn — confirmação e senha obrigatória', () => {
       ...overrides,
     };
     const usuarioService = {
-      getUsuarioByEmail: jest.fn().mockResolvedValue(user),
+      getUsuarioByLoginIdentifier: jest.fn().mockResolvedValue(user),
     };
     const jwtService = { sign: jest.fn().mockReturnValue('jwt') };
     const registrationService = {

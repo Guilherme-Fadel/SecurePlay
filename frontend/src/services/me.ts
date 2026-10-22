@@ -12,7 +12,8 @@ export interface EmpresaPaleta {
 export interface CurrentUser {
   userId: number;
   name: string;
-  email: string;
+  email: string | null;
+  login_code: string | null;
   birth_date: string | null;
   email_verified_at: string | null;
   trial_ends_at: string | null;

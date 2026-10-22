@@ -150,4 +150,16 @@ export class AdminController {
       dto.motivo,
     );
   }
+
+  @Post('usuarios/:id/redefinicao-acesso')
+  @Throttle({ short: { limit: 10, ttl: 60000 } })
+  async emitirLinkRedefinicaoAluno(
+    @Request() req: any,
+    @Param('id') id: string,
+  ) {
+    return this.convitesService.emitirLinkRedefinicaoAluno(
+      req.user.userId,
+      Number(id),
+    );
+  }
 }

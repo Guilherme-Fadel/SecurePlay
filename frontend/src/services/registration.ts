@@ -17,3 +17,8 @@ export async function resendEmail(email: string): Promise<string> {
   const response = await api.post('/registration/resend', { email });
   return response.data.mensagem as string;
 }
+
+export async function resetStudentPassword(token: string, password: string): Promise<{ sucesso: boolean; mensagem: string; login_code: string }> {
+  const response = await api.post('/registration/student-password-reset', { token, password });
+  return response.data;
+}

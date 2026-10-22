@@ -210,6 +210,16 @@ export class ConvitesService {
     }
     const email = dto.email?.trim().toLowerCase() || null;
     const roleDoConvite = role === Role.ADMIN ? Role.ADMIN : Role.USER;
+    const registrationMode =
+      roleDoConvite === Role.USER && dto.registration_mode === 'school_student'
+        ? 'school_student'
+        : 'legacy_email';
+
+    if (registrationMode === 'school_student' && email) {
+      throw new BadRequestException(
+        'Convites escolares mínimos não devem armazenar e-mail do aluno',
+      );
+    }
 
     if (roleDoConvite === Role.ADMIN && !email) {
       throw new BadRequestException(
@@ -234,8 +244,12 @@ export class ConvitesService {
       empresa_id: empresaId,
       criado_por_id: userId,
       expires_at: expiresAt,
-      max_uses: roleDoConvite === Role.ADMIN ? 1 : (dto.max_uses ?? 1),
+      max_uses:
+        roleDoConvite === Role.ADMIN || registrationMode === 'school_student'
+          ? 1
+          : (dto.max_uses ?? 1),
       role: roleDoConvite,
+      registration_mode: registrationMode,
     });
     const saved = await this.conviteRepository.save(convite);
     await this.adminAuditService.registrar({ empresaId, atorId: userId, acao: 'convite.criado', alvoTipo: 'convite', alvoId: saved.id, detalhes: { email: saved.email, role: saved.role } });
@@ -299,6 +313,7 @@ export class ConvitesService {
       empresa_nome: convite.empresa.nome,
       email: convite.email,
       role: convite.role,
+      registration_mode: convite.registration_mode ?? 'legacy_email',
       expires_at: convite.expires_at,
     };
   }
@@ -365,6 +380,42 @@ export class ConvitesService {
   async reativarUsuario(userId: number, usuarioId: number, motivo: string) {
     const empresa = await this.getEmpresaDoAdministrador(userId);
     return this.reativarUsuarioDaEmpresa(empresa.id, userId, usuarioId, motivo);
+  }
+
+  async emitirLinkRedefinicaoAluno(atorId: number, usuarioId: number) {
+    const empresa = await this.getEmpresaDoAdministrador(atorId);
+    return this.dataSource.transaction(async (manager) => {
+      const usuario = await manager.findOne(Usuario, {
+        where: { id: usuarioId, empresa_id: empresa.id, role: Role.USER },
+        lock: { mode: 'pessimistic_write' },
+      });
+      if (
+        !usuario?.active ||
+        usuario.email !== null ||
+        !usuario.login_code
+      ) {
+        throw new NotFoundException('Aluno não encontrado nesta escola');
+      }
+
+      const resetToken = randomBytes(32).toString('base64url');
+      usuario.password_reset_token_hash = this.hashToken(resetToken);
+      usuario.password_reset_expires_at = new Date(Date.now() + 20 * 60 * 1000);
+      usuario.session_version = (usuario.session_version ?? 0) + 1;
+      await manager.save(Usuario, usuario);
+      await manager.save(AdminAuditEvent, {
+        empresa_id: empresa.id,
+        ator_id: atorId,
+        acao: 'aluno.link_redefinicao_emitido',
+        alvo_tipo: 'usuario',
+        alvo_id: usuario.id,
+        detalhes: { expira_em_minutos: 20 },
+      });
+
+      return {
+        reset_token: resetToken,
+        expires_at: usuario.password_reset_expires_at,
+      };
+    });
   }
 
   async inativarUsuarioDaEmpresa(
@@ -457,6 +508,7 @@ export class ConvitesService {
       id: usuario.id,
       name: usuario.name,
       email: usuario.email,
+      login_method: usuario.login_code ? 'school_code' : 'email',
       role: usuario.role,
       level: usuario.level,
       active: usuario.active,
@@ -587,6 +639,7 @@ export class ConvitesService {
       max_uses: convite.max_uses,
       uses: convite.uses,
       role: convite.role,
+      registration_mode: convite.registration_mode ?? 'legacy_email',
       status,
       created_at: convite.created_at,
     };

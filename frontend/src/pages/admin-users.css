@@ -256,6 +256,11 @@
 }
 .admin-user-reason-form label { font-size: var(--font-label); font-weight: 700; }
 .admin-user-reason-form small { color: var(--dashboard-muted); font-size: var(--font-caption); }
+.admin-user-reset-link { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; align-items: center; gap: 10px; margin: 14px 0; padding: 14px; border: 1px solid var(--dashboard-border); border-radius: 12px; background: var(--dashboard-surface); }
+.admin-user-reset-link > div { display: grid; gap: 4px; }
+.admin-user-reset-link small { color: var(--dashboard-muted); }
+.admin-user-reset-link input { grid-column: 1 / -1; min-width: 0; }
+@media (max-width: 680px) { .admin-user-reset-link { grid-template-columns: 1fr 1fr; } .admin-user-reset-link > div, .admin-user-reset-link input { grid-column: 1 / -1; } }
 
 .admin-invites-total { margin-left: auto; color: var(--dashboard-muted); font-size: 12px; white-space: nowrap; }
 .admin-pagination-adjacent > span { order: -1; }

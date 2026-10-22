@@ -403,3 +403,61 @@ describe('ConvitesService.obterResumoAdministrativoDaEmpresa', () => {
     });
   });
 });
+
+describe('ConvitesService.emitirLinkRedefinicaoAluno', () => {
+  it('emite token curto, grava somente o hash e audita a ação sem segredo', async () => {
+    const student = {
+      id: 32,
+      email: null,
+      login_code: 'SP-A1B2C3D4E5F60718',
+      active: true,
+      session_version: 4,
+    };
+    const auditEvents: unknown[] = [];
+    const manager = {
+      findOne: jest.fn().mockResolvedValue(student),
+      save: jest.fn().mockImplementation((entity, value) => {
+        if (entity === AdminAuditEvent) auditEvents.push(value);
+        return Promise.resolve(value);
+      }),
+    };
+    const service = new ConvitesService(
+      {} as never,
+      { findOne: jest.fn().mockResolvedValue({ id: 2, empresa_id: 8 }) } as never,
+      { findOne: jest.fn().mockResolvedValue({ id: 8 }) } as never,
+      {} as never,
+      {} as never,
+      {} as never,
+      { transaction: (callback: (value: unknown) => unknown) => callback(manager) } as never,
+    );
+
+    const result = await service.emitirLinkRedefinicaoAluno(2, 32);
+
+    expect(result.reset_token).toMatch(/^[A-Za-z0-9_-]{43}$/);
+    expect(student.password_reset_token_hash).not.toBe(result.reset_token);
+    expect(student.password_reset_token_hash).toMatch(/^[a-f0-9]{64}$/);
+    expect(student.session_version).toBe(5);
+    expect(auditEvents[0]).toEqual(expect.objectContaining({
+      acao: 'aluno.link_redefinicao_emitido',
+      detalhes: { expira_em_minutos: 20 },
+    }));
+    expect(JSON.stringify(auditEvents)).not.toContain(result.reset_token);
+  });
+
+  it('não emite link para conta com e-mail ou identificador ausente', async () => {
+    const manager = { findOne: jest.fn().mockResolvedValue({
+      id: 32, email: 'student@example.test', login_code: null, active: true,
+    }), save: jest.fn() };
+    const service = new ConvitesService(
+      {} as never,
+      { findOne: jest.fn().mockResolvedValue({ id: 2, empresa_id: 8 }) } as never,
+      { findOne: jest.fn().mockResolvedValue({ id: 8 }) } as never,
+      {} as never, {} as never, {} as never,
+      { transaction: (callback: (value: unknown) => unknown) => callback(manager) } as never,
+    );
+
+    await expect(service.emitirLinkRedefinicaoAluno(2, 32))
+      .rejects.toThrow('Aluno não encontrado nesta escola');
+    expect(manager.save).not.toHaveBeenCalled();
+  });
+});

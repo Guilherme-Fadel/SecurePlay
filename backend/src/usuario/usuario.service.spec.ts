@@ -71,6 +71,32 @@ describe('UsuarioService.changePassword', () => {
   });
 });
 
+describe('UsuarioService.getUsuarioByLoginIdentifier', () => {
+  it('normaliza código escolar sem passar pela busca de e-mail', async () => {
+    const users = { findOne: jest.fn().mockResolvedValue({ id: 13 }) };
+    const service = new UsuarioService(users as never, undefined as never);
+
+    await expect(service.getUsuarioByLoginIdentifier('sp-a1b2c3d4e5f60718'))
+      .resolves.toEqual({ id: 13 });
+    expect(users.findOne).toHaveBeenCalledWith({
+      where: { login_code: 'SP-A1B2C3D4E5F60718' },
+    });
+  });
+
+  it('preserva a busca literal e tenta a forma minúscula para e-mails legados', async () => {
+    const users = { findOne: jest.fn().mockResolvedValueOnce(null).mockResolvedValueOnce({ id: 14 }) };
+    const service = new UsuarioService(users as never, undefined as never);
+
+    await service.getUsuarioByLoginIdentifier('  ADMIN@ESCOLA.TEST  ');
+    expect(users.findOne).toHaveBeenCalledWith({
+      where: { email: 'ADMIN@ESCOLA.TEST' },
+    });
+    expect(users.findOne).toHaveBeenLastCalledWith({
+      where: { email: 'admin@escola.test' },
+    });
+  });
+});
+
 describe('UsuarioService.requestNickname', () => {
   it.each([Role.ADMIN, Role.PLATFORM_ADMIN])(
     'recusa apelido para %s',

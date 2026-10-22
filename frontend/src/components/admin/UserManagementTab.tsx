@@ -1,12 +1,12 @@
 import { useDeferredValue, useEffect, useRef, useState, type FormEvent } from 'react';
-import { AlertCircle, Ban, CheckCircle2, RotateCcw, UsersRound } from 'lucide-react';
+import { AlertCircle, Ban, CheckCircle2, Copy, KeyRound, RotateCcw, UsersRound, X } from 'lucide-react';
 import { AppButton } from '@/components/ui/buttons/AppButton';
 import { AppInput } from '@/components/ui/forms/AppInput';
 import { AppSearchInput } from '@/components/ui/forms/AppSearchInput';
 import { AppSelect } from '@/components/ui/forms/AppSelect';
 import { AdminListCard, AdminListContent, AdminListState, AdminListToolbar, AdminPageHeader, AdminPagination } from './AdminListLayout';
 import { cn } from '@/lib/utils';
-import { inativarUsuario, listarUsuarios, reativarUsuario, type UsuarioEmpresa, type UsuariosPaginados } from '@/services/convites';
+import { emitirLinkRedefinicaoAluno, inativarUsuario, listarUsuarios, reativarUsuario, type UsuarioEmpresa, type UsuariosPaginados } from '@/services/convites';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { useNotebookLayout } from '@/hooks/useNotebookLayout';
 
@@ -31,6 +31,7 @@ export function UserManagementTab({ empresaId }: UserManagementTabProps) {
   const [restoredKey, setRestoredKey] = useState<string | null>(null);
   const [statusChange, setStatusChange] = useState<{ usuario: UsuarioEmpresa; action: 'inativar' | 'reativar'; empresaId?: number } | null>(null);
   const [reason, setReason] = useState('');
+  const [resetLink, setResetLink] = useState<{ userId: number; value: string } | null>(null);
   const currentEmpresaId = useRef(empresaId);
   currentEmpresaId.current = empresaId;
 
@@ -122,6 +123,20 @@ export function UserManagementTab({ empresaId }: UserManagementTabProps) {
 
   const reativar = (usuario: UsuarioEmpresa) => solicitarAlteracao(usuario, 'reativar');
 
+  const emitirRedefinicao = async (usuario: UsuarioEmpresa) => {
+    if (!window.confirm(`Gerar um link temporário para ${usuario.name}? O link permite definir uma nova senha e deve ser entregue diretamente ao aluno.`)) return;
+    setUpdatingUser(usuario.id);
+    setFeedback(null);
+    setResetLink(null);
+    try {
+      const result = await emitirLinkRedefinicaoAluno(usuario.id, empresaId);
+      setResetLink({ userId: usuario.id, value: `${window.location.origin}/recuperar-acesso#${result.reset_token}` });
+      setFeedback(`Link temporário criado para ${usuario.name}. Ele expira em 20 minutos.`);
+    } catch (error: any) {
+      setFeedback(error.response?.data?.message ?? 'Não foi possível gerar o link de redefinição.');
+    } finally { setUpdatingUser(null); }
+  };
+
   return (
     <div className="admin-users-content">
       <AdminPageHeader
@@ -137,6 +152,12 @@ export function UserManagementTab({ empresaId }: UserManagementTabProps) {
           {feedback}
         </div>
       )}
+      {resetLink && <div className="admin-user-reset-link" role="status">
+        <div><strong>Link de redefinição</strong><small>Entregue diretamente ao aluno. Uso único; expira em 20 minutos.</small></div>
+        <AppInput aria-label="Link temporário de redefinição" readOnly value={resetLink.value} />
+        <AppButton type="button" size="sm" icon={<Copy size={14} />} onClick={() => void navigator.clipboard.writeText(resetLink.value)}>Copiar link</AppButton>
+        <AppButton type="button" variant="ghost" size="sm" icon={<X size={14} />} aria-label="Fechar link de redefinição" onClick={() => setResetLink(null)}>Fechar</AppButton>
+      </div>}
       {statusChange && (
         <form className="admin-user-reason-form" onSubmit={(event) => void salvarAlteracao(event)}>
           <label htmlFor="user-status-reason">Motivo para {statusChange.action === 'inativar' ? 'inativar' : 'reativar'} {statusChange.usuario.name}</label>
@@ -183,12 +204,15 @@ export function UserManagementTab({ empresaId }: UserManagementTabProps) {
                 const isManagement = usuario.role === 'admin' || usuario.role === 'platform_admin';
                 const roleLabel = usuario.role === 'admin' ? 'Administrador' : usuario.role === 'platform_admin' ? 'Gestão da plataforma' : '';
                 return <tr key={usuario.id} className={usuario.active ? '' : 'is-inactive'}>
-                  <td data-label="Usuário"><strong>{isManagement ? usuario.name : usuario.nickname ?? usuario.name}</strong><small>{isManagement ? `${usuario.email} · ${roleLabel}` : `${usuario.nickname ? `${usuario.name} · ` : ''}${usuario.email}`}</small></td>
+                  <td data-label="Usuário"><strong>{isManagement ? usuario.name : usuario.nickname ?? usuario.name}</strong><small>{isManagement ? `${usuario.email ?? 'Sem e-mail'} · ${roleLabel}` : `${usuario.nickname ? `${usuario.name} · ` : ''}${usuario.email ?? 'Acesso por código da escola'}`}</small></td>
                   <td data-label="Nível">{usuario.level}</td>
                   <td data-label="Status"><span className={`admin-user-status ${usuario.active ? 'is-active' : 'is-inactive'}`}>{usuario.active ? 'Ativo' : 'Inativo'}</span></td>
-                  <td data-label="Ações">{usuario.id !== user?.userId && usuario.role !== 'platform_admin' && (usuario.active
-                    ? <AppButton variant="ghost" size="sm" icon={<Ban size={14} />} disabled={updatingUser !== null || statusChange !== null} onClick={() => inativar(usuario)}>{updatingUser === usuario.id ? 'Inativando...' : 'Inativar'}</AppButton>
-                    : <AppButton variant="ghost" size="sm" icon={<RotateCcw size={14} />} disabled={updatingUser !== null || statusChange !== null} onClick={() => reativar(usuario)}>{updatingUser === usuario.id ? 'Reativando...' : 'Reativar'}</AppButton>)}</td>
+                  <td data-label="Ações">{usuario.id !== user?.userId && usuario.role !== 'platform_admin' && <div className="flex flex-wrap gap-1">
+                    {usuario.active
+                      ? <AppButton variant="ghost" size="sm" icon={<Ban size={14} />} disabled={updatingUser !== null || statusChange !== null} onClick={() => inativar(usuario)}>{updatingUser === usuario.id ? 'Salvando...' : 'Inativar'}</AppButton>
+                      : <AppButton variant="ghost" size="sm" icon={<RotateCcw size={14} />} disabled={updatingUser !== null || statusChange !== null} onClick={() => reativar(usuario)}>{updatingUser === usuario.id ? 'Salvando...' : 'Reativar'}</AppButton>}
+                    {!empresaId && usuario.active && usuario.role === 'user' && usuario.login_method === 'school_code' && <AppButton variant="ghost" size="sm" icon={<KeyRound size={14} />} disabled={updatingUser !== null || statusChange !== null} onClick={() => void emitirRedefinicao(usuario)}>Redefinir acesso</AppButton>}
+                  </div>}</td>
                 </tr>;
               })}</tbody>
             </table></div>}
