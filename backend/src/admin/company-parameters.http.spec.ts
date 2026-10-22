@@ -347,6 +347,44 @@ describe('HTTP — parâmetros institucionais', () => {
     expect(schoolPilotServiceMock.create).not.toHaveBeenCalled();
   });
 
+  it.each([
+    ['PUT', '/admin/empresa/tema', '1'],
+    ['POST', '/admin/empresa/logo/presign', '1'],
+    ['POST', '/admin/empresa/convites', '1'],
+    ['POST', '/admin/empresa/convites/1/revogar', '1'],
+    ['POST', '/admin/empresa/usuarios/22/apelido/aprovar', '1'],
+    ['POST', '/admin/empresa/usuarios/22/apelido/rejeitar', '1'],
+    ['POST', '/admin/empresa/usuarios/22/redefinicao-acesso', '1'],
+    ['POST', '/platform/admin/empresas', '9'],
+    ['POST', '/platform/admin/empresas/20/pilotos', '9'],
+    ['PUT', '/platform/admin/empresas/20/pilotos/31', '9'],
+    ['PUT', '/platform/admin/empresas/20/parametros', '9'],
+    ['PUT', '/platform/admin/empresas/20/tema', '9'],
+    ['PUT', '/platform/admin/empresas/20/configuracoes', '9'],
+    ['POST', '/platform/admin/empresas/20/logo/presign', '9'],
+    ['POST', '/platform/admin/empresas/20/convites', '9'],
+    ['POST', '/platform/admin/empresas/20/convites/1/revogar', '9'],
+    ['POST', '/platform/admin/empresas/20/usuarios/22/apelido/aprovar', '9'],
+    ['POST', '/platform/admin/empresas/20/usuarios/22/apelido/rejeitar', '9'],
+    ['POST', '/platform/admin/usuarios/22/inativar', '9'],
+    ['POST', '/platform/admin/usuarios/22/reativar', '9'],
+  ] as const)(
+    'rejeita origem não confiável em mutação protegida %s %s',
+    async (method, url, identity) => {
+      const result = await app.inject({
+        method,
+        url,
+        headers: {
+          origin: 'https://origem-invalida.example',
+          'x-fixture-user': identity,
+        },
+        payload: {},
+      });
+
+      expect(result.statusCode).toBe(403);
+    },
+  );
+
   let app: NestFastifyApplication;
   let adminAuditListMock: jest.Mock;
   let convitesServiceMock: {
