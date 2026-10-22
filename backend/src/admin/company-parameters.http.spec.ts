@@ -149,8 +149,51 @@ describe('HTTP — parâmetros institucionais', () => {
     expect(convitesServiceMock.reativarUsuarioGlobal).not.toHaveBeenCalled();
   });
 
+  it('aplica motivo e proteção CSRF nas rotas de inativação escolar e da plataforma', async () => {
+    const schoolAllowed = await app.inject({
+      method: 'POST',
+      url: '/admin/empresa/usuarios/22/inativar',
+      headers: { origin: 'http://localhost:5173', 'x-fixture-user': '1' },
+      payload: { motivo: 'Fim do vínculo escolar' },
+    });
+    expect(schoolAllowed.statusCode).toBe(201);
+    expect(convitesServiceMock.inativarUsuario).toHaveBeenCalledWith(
+      1,
+      22,
+      'Fim do vínculo escolar',
+    );
+
+    const platformAllowed = await app.inject({
+      method: 'POST',
+      url: '/platform/admin/empresas/20/usuarios/22/inativar',
+      headers: { origin: 'http://localhost:5173', 'x-fixture-user': '9' },
+      payload: { motivo: 'Solicitação da escola' },
+    });
+    expect(platformAllowed.statusCode).toBe(201);
+    expect(convitesServiceMock.inativarUsuarioDaEmpresa).toHaveBeenCalledWith(
+      20,
+      9,
+      22,
+      'Solicitação da escola',
+    );
+
+    const csrfDenied = await app.inject({
+      method: 'POST',
+      url: '/platform/admin/empresas/20/usuarios/22/inativar',
+      headers: {
+        origin: 'https://origem-invalida.example',
+        'x-fixture-user': '9',
+      },
+      payload: { motivo: 'Solicitação da escola' },
+    });
+    expect(csrfDenied.statusCode).toBe(403);
+    expect(convitesServiceMock.inativarUsuarioDaEmpresa).toHaveBeenCalledTimes(1);
+  });
+
   let app: NestFastifyApplication;
   let convitesServiceMock: {
+    inativarUsuario: jest.Mock;
+    inativarUsuarioDaEmpresa: jest.Mock;
     reativarUsuario: jest.Mock;
     reativarUsuarioDaEmpresa: jest.Mock;
     reativarUsuarioGlobal: jest.Mock;
@@ -171,6 +214,10 @@ describe('HTTP — parâmetros institucionais', () => {
 
   beforeEach(async () => {
     convitesServiceMock = {
+      inativarUsuario: jest.fn().mockResolvedValue({ id: 22, active: false }),
+      inativarUsuarioDaEmpresa: jest
+        .fn()
+        .mockResolvedValue({ id: 22, active: false }),
       reativarUsuario: jest.fn().mockResolvedValue({ id: 22, active: true }),
       reativarUsuarioDaEmpresa: jest.fn().mockResolvedValue({ id: 22, active: true }),
       reativarUsuarioGlobal: jest.fn().mockResolvedValue({ id: 22, active: true }),
