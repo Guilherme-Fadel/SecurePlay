@@ -9,6 +9,7 @@ import { AdminController } from './admin.controller';
 import { PlatformAdminController } from './platform-admin.controller';
 import { AdminService } from './admin.service';
 import { AdminAuditService } from './admin-audit.service';
+import { SchoolPilotService } from './school-pilot.service';
 import { ConvitesService } from './convites.service';
 import { RolesGuard } from '../auth/roles.guard';
 import { CsrfGuard } from '../auth/csrf.guard';
@@ -305,6 +306,47 @@ describe('HTTP — parâmetros institucionais', () => {
     expect(adminAuditListMock).toHaveBeenCalledWith(20, 2, 5);
   });
 
+  it('mantém a ficha do piloto exclusiva da plataforma e encaminha ator e empresa', async () => {
+    const payload = {
+      objective: 'Testar a primeira aula com uma turma pequena',
+      status: 'planned',
+      contactAdminUserId: 2,
+      startDate: '2026-11-01',
+      agreedEndDate: '2026-11-30',
+      nextWeeklyMeetingAt: '2026-11-02T13:00:00.000Z',
+      nextAction: 'Agendar reunião de abertura',
+      nextActionAt: '2026-10-29T13:00:00.000Z',
+    };
+    const allowed = await app.inject({
+      method: 'POST',
+      url: '/platform/admin/empresas/20/pilotos',
+      headers: { origin: 'http://localhost:5173', 'x-fixture-user': '9' },
+      payload,
+    });
+    expect(allowed.statusCode).toBe(201);
+    expect(schoolPilotServiceMock.create).toHaveBeenCalledWith(20, 9, payload);
+
+    const denied = await app.inject({
+      method: 'POST',
+      url: '/platform/admin/empresas/20/pilotos',
+      headers: { origin: 'http://localhost:5173', 'x-fixture-user': '2' },
+      payload,
+    });
+    expect(denied.statusCode).toBe(403);
+    expect(schoolPilotServiceMock.create).toHaveBeenCalledTimes(1);
+  });
+
+  it('valida o contrato da ficha antes de chamar o serviço', async () => {
+    const invalid = await app.inject({
+      method: 'POST',
+      url: '/platform/admin/empresas/20/pilotos',
+      headers: { origin: 'http://localhost:5173', 'x-fixture-user': '9' },
+      payload: { objective: 'x', status: 'unknown' },
+    });
+    expect(invalid.statusCode).toBe(400);
+    expect(schoolPilotServiceMock.create).not.toHaveBeenCalled();
+  });
+
   let app: NestFastifyApplication;
   let adminAuditListMock: jest.Mock;
   let convitesServiceMock: {
@@ -315,6 +357,11 @@ describe('HTTP — parâmetros institucionais', () => {
     reativarUsuarioGlobal: jest.Mock;
     listarUsuariosPaginados: jest.Mock;
     listarUsuariosPaginadosDaEmpresa: jest.Mock;
+  };
+  let schoolPilotServiceMock: {
+    list: jest.Mock;
+    create: jest.Mock;
+    update: jest.Mock;
   };
   let companies: Map<
     number,
@@ -332,6 +379,11 @@ describe('HTTP — parâmetros institucionais', () => {
 
   beforeEach(async () => {
     adminAuditListMock = jest.fn().mockResolvedValue({ items: [], total: 0 });
+    schoolPilotServiceMock = {
+      list: jest.fn().mockResolvedValue({ items: [], contacts: [] }),
+      create: jest.fn().mockResolvedValue({ id: 31, status: 'planned' }),
+      update: jest.fn().mockResolvedValue({ id: 31, status: 'active' }),
+    };
     convitesServiceMock = {
       inativarUsuario: jest.fn().mockResolvedValue({ id: 22, active: false }),
       inativarUsuarioDaEmpresa: jest
@@ -441,6 +493,7 @@ describe('HTTP — parâmetros institucionais', () => {
         { provide: 'DATA_SOURCE', useValue: dataSource },
         { provide: S3Service, useValue: {} },
         { provide: ConvitesService, useValue: convitesServiceMock },
+        { provide: SchoolPilotService, useValue: schoolPilotServiceMock },
         {
           provide: AdminAuditService,
           useValue: { listarDaEmpresa: adminAuditListMock },

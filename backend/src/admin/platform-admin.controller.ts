@@ -22,6 +22,8 @@ import { UpdateCompanyParametersDto } from './dto/update-company-parameters.dto'
 import { UpdateCompanySettingsDto } from './dto/update-company-settings.dto';
 import { AdminAuditService } from './admin-audit.service';
 import { ChangeUserStatusDto } from './dto/change-user-status.dto';
+import { SaveSchoolPilotDto } from './dto/school-pilot.dto';
+import { SchoolPilotService } from './school-pilot.service';
 
 @Controller('platform/admin')
 @Roles(Role.PLATFORM_ADMIN)
@@ -30,6 +32,7 @@ export class PlatformAdminController {
     private readonly adminService: AdminService,
     private readonly convitesService: ConvitesService,
     private readonly adminAuditService: AdminAuditService,
+    private readonly schoolPilotService: SchoolPilotService,
   ) {}
 
   @Get('empresas')
@@ -50,6 +53,37 @@ export class PlatformAdminController {
       search,
       sort,
     });
+  }
+
+  @Get('empresas/:empresaId/pilotos')
+  async listarPilotosDaEmpresa(
+    @Param('empresaId', ParseIntPipe) empresaId: number,
+  ) {
+    return this.schoolPilotService.list(empresaId);
+  }
+
+  @Post('empresas/:empresaId/pilotos')
+  async criarPilotoDaEmpresa(
+    @Param('empresaId', ParseIntPipe) empresaId: number,
+    @Request() req: any,
+    @Body() dto: SaveSchoolPilotDto,
+  ) {
+    return this.schoolPilotService.create(empresaId, req.user.userId, dto);
+  }
+
+  @Put('empresas/:empresaId/pilotos/:pilotId')
+  async atualizarPilotoDaEmpresa(
+    @Param('empresaId', ParseIntPipe) empresaId: number,
+    @Param('pilotId', ParseIntPipe) pilotId: number,
+    @Request() req: any,
+    @Body() dto: SaveSchoolPilotDto,
+  ) {
+    return this.schoolPilotService.update(
+      empresaId,
+      pilotId,
+      req.user.userId,
+      dto,
+    );
   }
 
   @Post('empresas')

@@ -168,6 +168,8 @@ describe('Administração de parâmetros da empresa', () => {
     await new PlatformAdminController(
       service as never,
       {} as never,
+      {} as never,
+      {} as never,
     ).updateParametros(20, { user: { userId: 9 } }, dto);
     expect(service.getParametros).toHaveBeenCalledWith(7);
     expect(service.updateParametrosDaEmpresa).toHaveBeenCalledWith(20, 9, dto);

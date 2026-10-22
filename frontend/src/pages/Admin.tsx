@@ -33,6 +33,7 @@ import { InvitationManagementTab } from "@/components/admin/InvitationManagement
 import { AdminOverviewTab } from "@/components/admin/AdminOverviewTab";
 import { AuditTab } from "@/components/admin/AuditTab";
 import { CompanyManagementTab } from "@/components/admin/CompanyManagementTab";
+import { SchoolPilotManagementTab } from "@/components/admin/SchoolPilotManagementTab";
 import { CompanyParametersTab } from "@/components/admin/CompanyParametersTab";
 import { AdminPageHeader } from "@/components/admin/AdminListLayout";
 import { AdminThemePreview } from "@/components/admin/AdminThemePreview";
@@ -48,6 +49,7 @@ import {
   Link2,
   LayoutTemplate,
   UsersRound,
+  CalendarDays,
 } from "lucide-react";
 import "@/styles/app-ui.css";
 import "./admin-ui.css";
@@ -96,7 +98,7 @@ const Admin = forwardRef<AdminSaveHandle, AdminProps>(function Admin(
   const generation = useRef(0);
   const logoPreviewObjectUrlRef = useRef<string | null>(null);
   const [activeTab, setActiveTab] = useState<
-    "empresas" | "visao-geral" | "usuarios" | "apelidos" | "convites" | "auditoria" | "layout" | "funcionalidades"
+    "empresas" | "pilotos" | "visao-geral" | "usuarios" | "apelidos" | "convites" | "auditoria" | "layout" | "funcionalidades"
   >(initialTab);
   const [empresas, setEmpresas] = useState<EmpresaAdministravel[]>([]);
   const [empresaSelecionadaDetalhe, setEmpresaSelecionadaDetalhe] = useState<EmpresaAdministravel | null>(null);
@@ -164,7 +166,7 @@ const Admin = forwardRef<AdminSaveHandle, AdminProps>(function Admin(
       if (saved) {
         const state = JSON.parse(saved) as { activeTab?: typeof activeTab; empresaId?: number | null };
         const allowedTabs = platformMode
-          ? ["empresas", "visao-geral", "usuarios", "apelidos", "convites", "auditoria", "layout", "funcionalidades"]
+          ? ["empresas", "pilotos", "visao-geral", "usuarios", "apelidos", "convites", "auditoria", "layout", "funcionalidades"]
           : ["visao-geral", "usuarios", "apelidos", "convites", "layout"];
         if (state.activeTab && allowedTabs.includes(state.activeTab)) {
           setActiveTab(lockedTab ? initialTab : state.activeTab);
@@ -569,6 +571,10 @@ const Admin = forwardRef<AdminSaveHandle, AdminProps>(function Admin(
                     <span>Empresas</span>
                   </button>
                 )}
+                {platformMode && <button type="button" onClick={() => setActiveTab("pilotos")} aria-current={activeTab === "pilotos" ? "page" : undefined} className={cn("admin-tab", activeTab === "pilotos" && "is-active")}>
+                  <CalendarDays size={17} />
+                  <span>Pilotos</span>
+                </button>}
                 <button type="button" onClick={() => setActiveTab("visao-geral")} aria-current={activeTab === "visao-geral" ? "page" : undefined} className={cn("admin-tab", activeTab === "visao-geral" && "is-active")}>
                   <BarChart3 size={17} />
                   <span>Visão geral</span>
@@ -634,6 +640,8 @@ const Admin = forwardRef<AdminSaveHandle, AdminProps>(function Admin(
                   empresaNome={empresaNome}
                   onNomeChange={loaded ? setEmpresaNome : undefined}
                 />
+              ) : activeTab === "pilotos" && platformMode && empresaSelecionada ? (
+                <SchoolPilotManagementTab key={empresaSelecionada.id} empresaId={empresaSelecionada.id} empresaNome={empresaSelecionada.nome} />
               ) : platformMode && !empresaSelecionada ? (
                 <div className="admin-feedback is-error" role="status">
                   Selecione uma empresa para administrar usuários, convites,

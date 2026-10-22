@@ -265,3 +265,130 @@
 .admin-invites-total { margin-left: auto; color: var(--dashboard-muted); font-size: 12px; white-space: nowrap; }
 .admin-pagination-adjacent > span { order: -1; }
 .admin-pagination-adjacent { justify-content: flex-end; }
+.school-pilot-content .admin-list-header {
+  align-items: center;
+}
+
+.school-pilot-grid {
+  display: grid;
+  grid-template-columns: minmax(260px, 0.85fr) minmax(320px, 1.15fr);
+  gap: 18px;
+  align-items: start;
+}
+
+.school-pilot-list {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.school-pilot-list-item {
+  display: grid;
+  width: 100%;
+  gap: 7px;
+  padding: 14px;
+  border: 1px solid var(--dashboard-border);
+  border-radius: 12px;
+  background: var(--dashboard-surface-soft);
+  color: var(--dashboard-text);
+  text-align: left;
+  cursor: pointer;
+}
+
+.school-pilot-list-item:hover,
+.school-pilot-list-item[aria-current="true"] {
+  border-color: var(--secondary);
+}
+
+.school-pilot-list-item:focus-visible {
+  outline: var(--app-control-focus);
+  outline-offset: 2px;
+}
+
+.school-pilot-list-item strong {
+  overflow-wrap: anywhere;
+  font-size: 0.95rem;
+}
+
+.school-pilot-list-item small {
+  color: var(--dashboard-muted);
+}
+
+.school-pilot-status {
+  justify-self: start;
+  padding: 3px 8px;
+  border: 1px solid var(--dashboard-border);
+  border-radius: 999px;
+  color: var(--dashboard-text);
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.school-pilot-status.is-active {
+  border-color: var(--secondary);
+}
+
+.school-pilot-status.is-paused,
+.school-pilot-status.is-cancelled {
+  color: var(--dashboard-muted);
+}
+
+.school-pilot-form {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  margin-top: 18px;
+}
+
+.school-pilot-field {
+  display: grid;
+  min-width: 0;
+  gap: 7px;
+  color: var(--dashboard-text);
+  font-size: 0.88rem;
+  font-weight: 650;
+}
+
+.school-pilot-field-wide {
+  grid-column: 1 / -1;
+}
+
+.school-pilot-field input {
+  width: 100%;
+  min-width: 0;
+}
+
+.school-pilot-form-actions {
+  display: flex;
+  grid-column: 1 / -1;
+  justify-content: flex-end;
+}
+
+.school-pilot-feedback {
+  margin: 0 0 14px;
+  color: var(--dashboard-text);
+}
+
+@media (max-width: 900px) {
+  .school-pilot-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 560px) {
+  .school-pilot-form {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .school-pilot-field-wide,
+  .school-pilot-form-actions {
+    grid-column: auto;
+  }
+
+  .school-pilot-form-actions > button {
+    width: 100%;
+    justify-content: center;
+  }
+}

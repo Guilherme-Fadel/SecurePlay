@@ -11,6 +11,7 @@ import { DatabaseModule } from '../database/database.molule';
 import { S3Service } from '../conteudo/s3/s3.service';
 import { RegistrationModule } from '../registration/registration.module';
 import { AdminAuditService } from './admin-audit.service';
+import { SchoolPilotService } from './school-pilot.service';
 
 @Module({
   imports: [DatabaseModule, RegistrationModule],
@@ -22,6 +23,7 @@ import { AdminAuditService } from './admin-audit.service';
     AdminService,
     ConvitesService,
     AdminAuditService,
+    SchoolPilotService,
     S3Service,
   ],
   exports: [AdminService, ...empresaProviders],

@@ -20,7 +20,7 @@ describe('Administração global e por empresa', () => {
     const adminService = {
       listarEmpresasPaginadas: jest.fn().mockResolvedValue({ items: [], total: 0 }),
     };
-    const controller = new PlatformAdminController(adminService as never, {} as never, {} as never);
+    const controller = new PlatformAdminController(adminService as never, {} as never, {} as never, {} as never);
 
     await controller.listarEmpresasPaginadas('2', '25', 'Escola', 'desc');
 
@@ -36,6 +36,7 @@ describe('Administração global e por empresa', () => {
     const controller = new PlatformAdminController(
       {} as never,
       convitesService as never,
+      {} as never,
       {} as never,
     );
     const dto = { email: 'pessoa@empresa.com', validade_dias: 7, max_uses: 1 };
@@ -57,6 +58,7 @@ describe('Administração global e por empresa', () => {
     const controller = new PlatformAdminController(
       {} as never,
       convitesService as never,
+      {} as never,
       {} as never,
     );
     const dto = {
@@ -82,6 +84,7 @@ describe('Administração global e por empresa', () => {
     };
     const controller = new PlatformAdminController(
       adminService as never,
+      {} as never,
       {} as never,
       {} as never,
     );

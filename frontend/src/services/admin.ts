@@ -44,6 +44,50 @@ export interface AuditoriaPaginada {
 export interface EventoAuditoria { id: number; acao: string; alvo_tipo: string; alvo_id: number | null; detalhes: Record<string, unknown> | null; created_at: string; ator: { id: number; name: string; email: string | null } | null; }
 export interface EventosAuditoriaPaginados { items: EventoAuditoria[]; page: number; pageSize: number; total: number; totalPages: number; }
 
+export type SchoolPilotStatus = 'planned' | 'active' | 'paused' | 'completed' | 'converted' | 'cancelled';
+export interface SchoolPilotContact {
+  id: number;
+  name: string;
+  email: string | null;
+  active: boolean;
+}
+export interface SchoolPilot {
+  id: number;
+  empresaId: number;
+  contactAdminUserId: number | null;
+  contactAdmin: SchoolPilotContact | null;
+  objective: string;
+  status: SchoolPilotStatus;
+  startDate: string | null;
+  agreedEndDate: string | null;
+  nextWeeklyMeetingAt: string | null;
+  nextAction: string | null;
+  nextActionAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+export interface SchoolPilotsResponse {
+  items: SchoolPilot[];
+  contacts: SchoolPilotContact[];
+}
+export type SaveSchoolPilot = Pick<SchoolPilot, 'objective' | 'status'> &
+  Partial<Pick<SchoolPilot, 'contactAdminUserId' | 'startDate' | 'agreedEndDate' | 'nextWeeklyMeetingAt' | 'nextAction' | 'nextActionAt'>>;
+
+export async function listarPilotosDaEmpresa(empresaId: number): Promise<SchoolPilotsResponse> {
+  const response = await api.get(`/platform/admin/empresas/${empresaId}/pilotos`);
+  return response.data;
+}
+
+export async function criarPilotoDaEmpresa(empresaId: number, data: SaveSchoolPilot): Promise<SchoolPilot> {
+  const response = await api.post(`/platform/admin/empresas/${empresaId}/pilotos`, data);
+  return response.data;
+}
+
+export async function atualizarPilotoDaEmpresa(empresaId: number, pilotId: number, data: SaveSchoolPilot): Promise<SchoolPilot> {
+  const response = await api.put(`/platform/admin/empresas/${empresaId}/pilotos/${pilotId}`, data);
+  return response.data;
+}
+
 function empresaPath(empresaId?: number) {
   return empresaId ? `/platform/admin/empresas/${empresaId}` : "/admin/empresa";
 }
