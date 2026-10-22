@@ -391,31 +391,47 @@ describe('ConvitesService.obterResumoAdministrativoDaEmpresa', () => {
       andWhere: jest.fn().mockReturnThis(),
       getRawOne: jest.fn().mockResolvedValue({ total: '5' }),
     };
+    const userRepository = {
+      count: jest
+        .fn()
+        .mockResolvedValueOnce(12)
+        .mockResolvedValueOnce(10)
+        .mockResolvedValueOnce(2),
+      createQueryBuilder: jest.fn().mockReturnValue(nicknameQuery),
+    };
     const service = new ConvitesService(
       { createQueryBuilder: jest.fn().mockReturnValue(inviteQuery) } as never,
-      {
-        count: jest.fn().mockResolvedValueOnce(12).mockResolvedValueOnce(2),
-        createQueryBuilder: jest.fn().mockReturnValue(nicknameQuery),
-      } as never,
+      userRepository as never,
       {} as never,
       {} as never,
       { registrar: jest.fn() } as never,
       { emit: jest.fn() } as never,
-      { createQueryBuilder: jest.fn().mockReturnValue(participationQuery) } as never,
+      {
+        createQueryBuilder: jest.fn().mockReturnValue(participationQuery),
+      } as never,
     );
 
-    await expect(service.obterResumoAdministrativoDaEmpresa(7)).resolves.toEqual({
+    await expect(
+      service.obterResumoAdministrativoDaEmpresa(7),
+    ).resolves.toEqual({
       usuariosAtivos: 12,
+      alunosAtivos: 10,
       usuariosInativos: 2,
       apelidosPendentes: 3,
       convitesAtivos: 4,
       alunosComAulaConcluida: 5,
     });
+    expect(userRepository.count).toHaveBeenNthCalledWith(2, {
+      where: { empresa_id: 7, role: Role.USER, active: true },
+    });
     expect(participationQuery.select).toHaveBeenCalledWith(
       'COUNT(DISTINCT usuarioAula.usuario_id)',
       'total',
     );
-    expect(participationQuery.from).toHaveBeenCalledWith(UsuarioAula, 'usuarioAula');
+    expect(participationQuery.from).toHaveBeenCalledWith(
+      UsuarioAula,
+      'usuarioAula',
+    );
     expect(participationQuery.innerJoin).toHaveBeenCalledWith(
       Usuario,
       'usuario',
@@ -425,12 +441,21 @@ describe('ConvitesService.obterResumoAdministrativoDaEmpresa', () => {
       'usuario.empresa_id = :empresaId',
       { empresaId: 7 },
     );
-    expect(participationQuery.andWhere).toHaveBeenNthCalledWith(1,
-      'usuario.role = :role', { role: Role.USER });
-    expect(participationQuery.andWhere).toHaveBeenNthCalledWith(2,
-      'usuario.active = :active', { active: true });
-    expect(participationQuery.andWhere).toHaveBeenNthCalledWith(3,
-      'usuarioAula.completed = :completed', { completed: true });
+    expect(participationQuery.andWhere).toHaveBeenNthCalledWith(
+      1,
+      'usuario.role = :role',
+      { role: Role.USER },
+    );
+    expect(participationQuery.andWhere).toHaveBeenNthCalledWith(
+      2,
+      'usuario.active = :active',
+      { active: true },
+    );
+    expect(participationQuery.andWhere).toHaveBeenNthCalledWith(
+      3,
+      'usuarioAula.completed = :completed',
+      { completed: true },
+    );
   });
 });
 

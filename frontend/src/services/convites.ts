@@ -45,6 +45,7 @@ export type UsuariosPaginados = ApelidosPendentesPaginados;
 
 export interface ResumoAdministrativo {
   usuariosAtivos: number;
+  alunosAtivos: number;
   usuariosInativos: number;
   apelidosPendentes: number;
   convitesAtivos: number;

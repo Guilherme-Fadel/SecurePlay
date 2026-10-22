@@ -118,6 +118,9 @@ export class ConvitesService {
     const usuariosAtivos = await this.usuarioRepository.count({
       where: { empresa_id: empresaId, active: true },
     });
+    const alunosAtivos = await this.usuarioRepository.count({
+      where: { empresa_id: empresaId, role: Role.USER, active: true },
+    });
     const usuariosInativos = await this.usuarioRepository.count({
       where: { empresa_id: empresaId, active: false },
     });
@@ -150,6 +153,7 @@ export class ConvitesService {
 
     return {
       usuariosAtivos,
+      alunosAtivos,
       usuariosInativos,
       apelidosPendentes,
       convitesAtivos,

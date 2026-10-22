@@ -13,6 +13,10 @@ import {
   type SchoolPilotStatus,
 } from '@/services/admin';
 import {
+  obterResumoAdministrativo,
+  type ResumoAdministrativo,
+} from '@/services/convites';
+import {
   AdminCardHeading,
   AdminListCard,
   AdminListState,
@@ -100,6 +104,55 @@ function formatDateTime(value: string | null) {
     dateStyle: 'short',
     timeStyle: 'short',
   }).format(new Date(value));
+}
+
+function SchoolPilotMetrics({ empresaId }: { empresaId?: number }) {
+  const [summary, setSummary] = useState<ResumoAdministrativo | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
+  const [attempt, setAttempt] = useState(0);
+
+  useEffect(() => {
+    let cancelled = false;
+    setSummary(null);
+    if (!empresaId) {
+      setLoading(false);
+      return () => { cancelled = true; };
+    }
+    setLoading(true);
+    setError(false);
+    void obterResumoAdministrativo(empresaId)
+      .then((result) => {
+        if (!cancelled) setSummary(result);
+      })
+      .catch(() => {
+        if (!cancelled) setError(true);
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => { cancelled = true; };
+  }, [empresaId, attempt]);
+
+  return (
+    <section className="school-pilot-metrics" aria-label="Indicadores atuais da escola">
+      <AdminCardHeading title="Indicadores atuais" description="Contagens agregadas da escola, sem identificação de alunos ou histórico de coorte." icon={<CalendarDays size={19} />} />
+      {loading ? <AdminListState kind="loading">Carregando indicadores...</AdminListState>
+        : error ? <AdminListState kind="error" onRetry={() => setAttempt((current) => current + 1)}>Não foi possível carregar os indicadores.</AdminListState>
+          : summary && <div className="admin-overview-grid">
+            <section className="admin-overview-card" aria-label="Alunos ativos">
+              <small>Alunos ativos</small>
+              <strong>{summary.alunosAtivos}</strong>
+              <p>Contas de aluno com acesso liberado agora.</p>
+            </section>
+            <section className="admin-overview-card" aria-label="Alunos com primeira participação">
+              <small>Alunos com aula concluída</small>
+              <strong>{summary.alunosComAulaConcluida}</strong>
+              <p>Alunos ativos que concluíram ao menos uma aula.</p>
+            </section>
+          </div>}
+    </section>
+  );
 }
 
 export function SchoolPilotManagementTab({ empresaId, empresaNome }: { empresaId?: number; empresaNome?: string }) {
@@ -190,6 +243,7 @@ export function SchoolPilotManagementTab({ empresaId, empresaNome }: { empresaId
         action={<AppButton variant="secondary" size="sm" onClick={beginNew}><Plus size={16} /> Novo piloto</AppButton>}
       />
       {feedback && <p className="school-pilot-feedback" role="status">{feedback}</p>}
+      <SchoolPilotMetrics empresaId={empresaId} />
       <div className="school-pilot-grid">
         <AdminListCard loading={loading}>
           <AdminCardHeading title="Histórico de pilotos" description="Cada piloto é preservado como registro próprio, inclusive quando é concluído ou convertido." icon={<CalendarDays size={19} />} />
