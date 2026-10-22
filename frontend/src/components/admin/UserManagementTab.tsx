@@ -1,11 +1,11 @@
 import { useDeferredValue, useEffect, useState } from 'react';
-import { AlertCircle, Ban, CheckCircle2, UsersRound } from 'lucide-react';
+import { AlertCircle, Ban, CheckCircle2, RotateCcw, UsersRound } from 'lucide-react';
 import { AppButton } from '@/components/ui/buttons/AppButton';
 import { AppSearchInput } from '@/components/ui/forms/AppSearchInput';
 import { AppSelect } from '@/components/ui/forms/AppSelect';
 import { AdminListCard, AdminListContent, AdminListState, AdminListToolbar, AdminPageHeader, AdminPagination } from './AdminListLayout';
 import { cn } from '@/lib/utils';
-import { inativarUsuario, listarUsuarios, type UsuarioEmpresa, type UsuariosPaginados } from '@/services/convites';
+import { inativarUsuario, listarUsuarios, reativarUsuario, type UsuarioEmpresa, type UsuariosPaginados } from '@/services/convites';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { useNotebookLayout } from '@/hooks/useNotebookLayout';
 
@@ -25,7 +25,7 @@ export function UserManagementTab({ empresaId }: UserManagementTabProps) {
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
   const [reload, setReload] = useState(0);
-  const [deactivatingUser, setDeactivatingUser] = useState<number | null>(null);
+  const [updatingUser, setUpdatingUser] = useState<number | null>(null);
   const [feedback, setFeedback] = useState<string | null>(null);
   const [restoredKey, setRestoredKey] = useState<string | null>(null);
 
@@ -70,7 +70,7 @@ export function UserManagementTab({ empresaId }: UserManagementTabProps) {
 
   const inativar = async (usuario: UsuarioEmpresa) => {
     if (!window.confirm(`Inativar o acesso de ${usuario.name}? Essa pessoa será desconectada e não poderá entrar novamente.`)) return;
-    setDeactivatingUser(usuario.id);
+    setUpdatingUser(usuario.id);
     try {
       const updated = await inativarUsuario(usuario.id, empresaId);
       setUsuarios((current) => ({ ...current, items: current.items.map((item) => item.id === usuario.id ? updated : item) }));
@@ -78,7 +78,20 @@ export function UserManagementTab({ empresaId }: UserManagementTabProps) {
       setFeedback('Acesso inativado. Novas requisições dessa conta serão bloqueadas.');
     } catch (error: any) {
       setFeedback(error.response?.data?.message ?? 'Não foi possível inativar o usuário.');
-    } finally { setDeactivatingUser(null); }
+    } finally { setUpdatingUser(null); }
+  };
+
+  const reativar = async (usuario: UsuarioEmpresa) => {
+    if (!window.confirm(`Reativar o acesso de ${usuario.name}? A conta existente manterá os dados e a senha atuais.`)) return;
+    setUpdatingUser(usuario.id);
+    try {
+      const updated = await reativarUsuario(usuario.id, empresaId);
+      setUsuarios((current) => ({ ...current, items: current.items.map((item) => item.id === usuario.id ? updated : item) }));
+      setReload((current) => current + 1);
+      setFeedback('Acesso reativado. O usuário poderá entrar com a conta existente.');
+    } catch (error: any) {
+      setFeedback(error.response?.data?.message ?? 'Não foi possível reativar o usuário.');
+    } finally { setUpdatingUser(null); }
   };
 
   return (
@@ -119,7 +132,9 @@ export function UserManagementTab({ empresaId }: UserManagementTabProps) {
                   <td data-label="Usuário"><strong>{isManagement ? usuario.name : usuario.nickname ?? usuario.name}</strong><small>{isManagement ? `${usuario.email} · ${roleLabel}` : `${usuario.nickname ? `${usuario.name} · ` : ''}${usuario.email}`}</small></td>
                   <td data-label="Nível">{usuario.level}</td>
                   <td data-label="Status"><span className={`admin-user-status ${usuario.active ? 'is-active' : 'is-inactive'}`}>{usuario.active ? 'Ativo' : 'Inativo'}</span></td>
-                  <td data-label="Ações">{usuario.active && usuario.id !== user?.userId && usuario.role !== 'platform_admin' && <AppButton variant="ghost" size="sm" icon={<Ban size={14} />} disabled={deactivatingUser === usuario.id} onClick={() => void inativar(usuario)}>{deactivatingUser === usuario.id ? 'Inativando...' : 'Inativar'}</AppButton>}</td>
+                  <td data-label="Ações">{usuario.id !== user?.userId && usuario.role !== 'platform_admin' && (usuario.active
+                    ? <AppButton variant="ghost" size="sm" icon={<Ban size={14} />} disabled={updatingUser === usuario.id} onClick={() => void inativar(usuario)}>{updatingUser === usuario.id ? 'Inativando...' : 'Inativar'}</AppButton>
+                    : <AppButton variant="ghost" size="sm" icon={<RotateCcw size={14} />} disabled={updatingUser === usuario.id} onClick={() => void reativar(usuario)}>{updatingUser === usuario.id ? 'Reativando...' : 'Reativar'}</AppButton>)}</td>
                 </tr>;
               })}</tbody>
             </table></div>}

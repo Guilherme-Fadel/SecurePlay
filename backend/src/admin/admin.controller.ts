@@ -128,4 +128,9 @@ export class AdminController {
   async inativarUsuario(@Request() req: any, @Param('id') id: string) {
     return this.convitesService.inativarUsuario(req.user.userId, Number(id));
   }
+
+  @Post('usuarios/:id/reativar')
+  async reativarUsuario(@Request() req: any, @Param('id') id: string) {
+    return this.convitesService.reativarUsuario(req.user.userId, Number(id));
+  }
 }

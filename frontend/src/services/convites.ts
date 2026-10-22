@@ -146,3 +146,8 @@ export async function inativarUsuario(usuarioId: number, empresaId?: number): Pr
   const response = await api.post(`${empresaPath(empresaId)}/usuarios/${usuarioId}/inativar`);
   return response.data;
 }
+
+export async function reativarUsuario(usuarioId: number, empresaId?: number): Promise<UsuarioEmpresa> {
+  const response = await api.post(`${empresaPath(empresaId)}/usuarios/${usuarioId}/reativar`);
+  return response.data;
+}

@@ -5,7 +5,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { createHash, randomBytes } from 'crypto';
-import { Repository } from 'typeorm';
+import { DataSource, Repository } from 'typeorm';
 import { Empresa } from '../empresa/empresa.entity';
 import { Role } from '../auth/roles.enum';
 import { Usuario } from '../usuario/usuario.entity';
@@ -16,6 +16,7 @@ import { RegistrationService } from '../registration/registration.service';
 import { AdminAuditService } from './admin-audit.service';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { ensurePendingRankingSeasonsClosed } from '../dashboard/ranking-history';
+import { AdminAuditEvent } from './entities/admin-audit-event.entity';
 
 type ConviteFiltros = { page?: number; pageSize?: number; search?: string; sort?: 'asc' | 'desc' };
 
@@ -39,6 +40,7 @@ export class ConvitesService {
     private readonly registrationService: RegistrationService,
     private readonly adminAuditService: AdminAuditService,
     private readonly eventEmitter: EventEmitter2,
+    @Inject('DATA_SOURCE') private readonly dataSource: DataSource,
   ) {}
 
   async listarUsuarios(userId: number) {
@@ -360,13 +362,25 @@ export class ConvitesService {
     return this.inativarUsuarioDaEmpresa(empresa.id, userId, usuarioId);
   }
 
+  async reativarUsuario(userId: number, usuarioId: number) {
+    const empresa = await this.getEmpresaDoAdministrador(userId);
+    return this.reativarUsuarioDaEmpresa(empresa.id, userId, usuarioId);
+  }
+
   async inativarUsuarioDaEmpresa(
     empresaId: number,
     atorId: number,
     usuarioId: number,
   ) {
-    const usuario = await this.getUsuarioDaEmpresa(empresaId, usuarioId);
-    return this.inativar(usuario, atorId, empresaId);
+    return this.alterarAtivo(usuarioId, atorId, empresaId, false);
+  }
+
+  async reativarUsuarioDaEmpresa(
+    empresaId: number,
+    atorId: number,
+    usuarioId: number,
+  ) {
+    return this.alterarAtivo(usuarioId, atorId, empresaId, true);
   }
 
   async inativarUsuarioGlobal(atorId: number, usuarioId: number) {
@@ -374,7 +388,20 @@ export class ConvitesService {
       where: { id: usuarioId },
     });
     if (!usuario) throw new NotFoundException('Usuário não encontrado');
-    return this.inativar(usuario, atorId, usuario.empresa_id);
+    return this.alterarAtivo(usuarioId, atorId, usuario.empresa_id, false);
+  }
+
+  async reativarUsuarioGlobal(atorId: number, usuarioId: number) {
+    const usuario = await this.usuarioRepository.findOne({
+      where: { id: usuarioId },
+    });
+    if (!usuario) throw new NotFoundException('Usuário não encontrado');
+    if (!usuario.empresa_id) {
+      throw new BadRequestException(
+        'Somente contas vinculadas a uma escola podem ser reativadas por aqui',
+      );
+    }
+    return this.alterarAtivo(usuarioId, atorId, usuario.empresa_id, true);
   }
 
   private async getEmpresaDoAdministrador(userId: number) {
@@ -437,23 +464,71 @@ export class ConvitesService {
     };
   }
 
-  private async inativar(usuario: Usuario, atorId: number, empresaId: number | null) {
-    if (usuario.id === atorId) {
-      throw new BadRequestException('Você não pode inativar a própria conta');
-    }
-    if (usuario.role === Role.PLATFORM_ADMIN) {
-      throw new BadRequestException(
-        'Contas de administrador da plataforma não podem ser inativadas aqui',
-      );
-    }
-    if (!usuario.active) {
-      throw new BadRequestException('Este usuário já está inativo');
-    }
+  private async alterarAtivo(
+    usuarioId: number,
+    atorId: number,
+    empresaId: number | null,
+    active: boolean,
+  ) {
+    const usuario = await this.dataSource.transaction(async (manager) => {
+      if (empresaId) {
+        const empresa = await manager.findOne(Empresa, {
+          where: { id: empresaId },
+          lock: { mode: 'pessimistic_write' },
+        });
+        if (!empresa) throw new NotFoundException('Empresa não encontrada');
+      }
 
-    usuario.active = false;
-    await this.usuarioRepository.save(usuario);
-    this.eventEmitter.emit('usuario.inativado', { userId: usuario.id });
-    if (empresaId) await this.adminAuditService.registrar({ empresaId, atorId, acao: 'usuario.inativado', alvoTipo: 'usuario', alvoId: usuario.id, detalhes: { email: usuario.email, role: usuario.role } });
+      const target = await manager.findOne(Usuario, {
+        where: empresaId
+          ? { id: usuarioId, empresa_id: empresaId }
+          : { id: usuarioId },
+        lock: { mode: 'pessimistic_write' },
+      });
+      if (!target) throw new NotFoundException('Usuário não encontrado');
+      if (target.id === atorId) {
+        throw new BadRequestException('Você não pode inativar a própria conta');
+      }
+      if (target.role === Role.PLATFORM_ADMIN) {
+        throw new BadRequestException(
+          'Contas de administrador da plataforma não podem ser inativadas aqui',
+        );
+      }
+      if (target.active === active) {
+        throw new BadRequestException(
+          active ? 'Este usuário já está ativo' : 'Este usuário já está inativo',
+        );
+      }
+      if (!active && target.role === Role.ADMIN && empresaId) {
+        const adminsAtivos = await manager.count(Usuario, {
+          where: { empresa_id: empresaId, role: Role.ADMIN, active: true },
+        });
+        if (adminsAtivos <= 1) {
+          throw new BadRequestException(
+            'A escola precisa manter ao menos um administrador ativo',
+          );
+        }
+      }
+
+      target.active = active;
+      await manager.save(Usuario, target);
+      if (empresaId) {
+        await manager.save(AdminAuditEvent, {
+          empresa_id: empresaId,
+          ator_id: atorId,
+          acao: active ? 'usuario.reativado' : 'usuario.inativado',
+          alvo_tipo: 'usuario',
+          alvo_id: target.id,
+          detalhes: { email: target.email, role: target.role },
+        });
+      }
+      return target;
+    });
+
+    this.eventEmitter.emit(
+      active ? 'usuario.reativado' : 'usuario.inativado',
+      { userId: usuario.id },
+    );
     return this.toUsuarioResumo(usuario);
   }
 

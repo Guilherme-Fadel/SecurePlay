@@ -1,15 +1,37 @@
 import { BadRequestException } from '@nestjs/common';
 import { ConvitesService } from './convites.service';
 import { Role } from '../auth/roles.enum';
+import { AdminAuditEvent } from './entities/admin-audit-event.entity';
+import { Usuario } from '../usuario/usuario.entity';
 
 describe('ConvitesService.inativarUsuarioGlobal', () => {
-  const buildService = (user: Record<string, unknown> | null) => {
+  const buildService = (
+    user: Record<string, unknown> | null,
+    adminsAtivos = 2,
+    auditSave = jest.fn().mockResolvedValue(undefined),
+  ) => {
     const usuarioRepository = {
       findOne: jest.fn().mockResolvedValue(user),
       save: jest.fn().mockImplementation((value) => Promise.resolve(value)),
     };
     const adminAuditService = { registrar: jest.fn().mockResolvedValue(undefined) };
     const eventEmitter = { emit: jest.fn() };
+    const manager = {
+      findOne: jest.fn().mockImplementation(async (entity, options) => {
+        if (entity.name === 'Empresa') return { id: options.where.id };
+        if (user && options.where.empresa_id && user.empresa_id !== options.where.empresa_id) {
+          return null;
+        }
+        return user;
+      }),
+      count: jest.fn().mockResolvedValue(adminsAtivos),
+      save: jest.fn().mockImplementation((entity, value) =>
+        entity.name === 'AdminAuditEvent' ? auditSave(value) : Promise.resolve(value),
+      ),
+    };
+    const dataSource = {
+      transaction: jest.fn((callback) => callback(manager)),
+    };
     const service = new ConvitesService(
       {} as never,
       usuarioRepository as never,
@@ -17,8 +39,9 @@ describe('ConvitesService.inativarUsuarioGlobal', () => {
       {} as never,
       adminAuditService as never,
       eventEmitter as never,
+      dataSource as never,
     );
-    return { service, usuarioRepository, adminAuditService, eventEmitter };
+    return { service, usuarioRepository, adminAuditService, eventEmitter, dataSource, manager };
   };
 
   it('inativa um usuário e retorna o novo estado', async () => {
@@ -34,18 +57,21 @@ describe('ConvitesService.inativarUsuarioGlobal', () => {
       nickname_pending: null,
       nickname_request_status: 'none',
     };
-    const { service, usuarioRepository, adminAuditService, eventEmitter } = buildService(user);
+    const { service, usuarioRepository, adminAuditService, eventEmitter, manager } = buildService(user);
 
     await expect(service.inativarUsuarioGlobal(1, 12)).resolves.toMatchObject({
       id: 12,
       active: false,
     });
-    expect(usuarioRepository.save).toHaveBeenCalledWith(
+    expect(manager.save).toHaveBeenCalledWith(
+      expect.any(Function),
       expect.objectContaining({ active: false }),
     );
-    expect(adminAuditService.registrar).toHaveBeenCalledWith(expect.objectContaining({
-      acao: 'usuario.inativado', alvoId: 12, atorId: 1,
-    }));
+    expect(manager.save).toHaveBeenCalledWith(
+      AdminAuditEvent,
+      expect.objectContaining({ acao: 'usuario.inativado', alvo_id: 12, ator_id: 1 }),
+    );
+    expect(adminAuditService.registrar).not.toHaveBeenCalled();
     expect(eventEmitter.emit).toHaveBeenCalledWith('usuario.inativado', { userId: 12 });
   });
 
@@ -73,6 +99,81 @@ describe('ConvitesService.inativarUsuarioGlobal', () => {
       BadRequestException,
     );
     expect(usuarioRepository.save).not.toHaveBeenCalled();
+  });
+
+  it('impede inativar o último administrador ativo da escola', async () => {
+    const { service, manager, eventEmitter } = buildService({
+      id: 12,
+      empresa_id: 7,
+      email: 'admin@secureplay.test',
+      role: Role.ADMIN,
+      active: true,
+    }, 1);
+
+    await expect(service.inativarUsuarioGlobal(1, 12)).rejects.toThrow(
+      'A escola precisa manter ao menos um administrador ativo',
+    );
+    expect(manager.save).not.toHaveBeenCalled();
+    expect(eventEmitter.emit).not.toHaveBeenCalled();
+  });
+
+  it('aborta a inativação se a auditoria transacional falhar', async () => {
+    const { service, manager, eventEmitter } = buildService(
+      {
+        id: 12,
+        empresa_id: 7,
+        email: 'aluno@secureplay.test',
+        role: Role.USER,
+        active: true,
+      },
+      2,
+      jest.fn().mockRejectedValue(new Error('audit failed')),
+    );
+
+    await expect(service.inativarUsuarioGlobal(1, 12)).rejects.toThrow('audit failed');
+    expect(manager.save).toHaveBeenCalledTimes(2);
+    expect(eventEmitter.emit).not.toHaveBeenCalled();
+  });
+
+  it('reativa a conta existente sem substituir senha ou dados e persiste auditoria', async () => {
+    const user = {
+      id: 12,
+      empresa_id: 7,
+      name: 'Participante',
+      email: 'participante@secureplay.test',
+      password: 'hash-preservado',
+      role: Role.USER,
+      active: false,
+      level: 3,
+    };
+    const { service, manager, eventEmitter } = buildService(user);
+
+    await expect(service.reativarUsuarioGlobal(1, 12)).resolves.toMatchObject({
+      id: 12,
+      active: true,
+    });
+    expect(user.password).toBe('hash-preservado');
+    expect(manager.save).toHaveBeenCalledWith(Usuario, expect.objectContaining({ active: true }));
+    expect(manager.save).toHaveBeenCalledWith(
+      AdminAuditEvent,
+      expect.objectContaining({ acao: 'usuario.reativado', alvo_id: 12 }),
+    );
+    expect(eventEmitter.emit).toHaveBeenCalledWith('usuario.reativado', { userId: 12 });
+  });
+
+  it('não permite ao administrador reativar usuário de outra escola', async () => {
+    const user = {
+      id: 12,
+      empresa_id: 20,
+      role: Role.USER,
+      active: false,
+    };
+    const { service, manager } = buildService(user);
+
+    await expect(service.reativarUsuarioDaEmpresa(7, 1, 12)).rejects.toThrow(
+      'Usuário não encontrado',
+    );
+    expect(manager.save).not.toHaveBeenCalled();
   });
 });
 
@@ -110,6 +211,7 @@ describe('ConvitesService.listarApelidosPendentesDaEmpresa', () => {
       {} as never,
       { registrar: jest.fn() } as never,
       { emit: jest.fn() } as never,
+      {} as never,
     );
 
     await expect(
@@ -154,6 +256,7 @@ describe('ConvitesService.listarUsuariosPaginadosDaEmpresa', () => {
       {} as never,
       { registrar: jest.fn() } as never,
       { emit: jest.fn() } as never,
+      {} as never,
     );
 
     await expect(service.listarUsuariosPaginadosDaEmpresa(7, {
@@ -190,6 +293,7 @@ describe('ConvitesService.listarPaginadosDaEmpresa', () => {
       { createQueryBuilder: jest.fn().mockReturnValue(query) } as never,
       {} as never, {} as never, {} as never, { registrar: jest.fn() } as never,
       { emit: jest.fn() } as never,
+      {} as never,
     );
 
     await expect(service.listarPaginadosDaEmpresa(8, {
@@ -215,6 +319,7 @@ describe('ConvitesService.listarPaginadosDaEmpresa', () => {
       { createQueryBuilder: jest.fn().mockReturnValue(query) } as never,
       {} as never, {} as never, {} as never, { registrar: jest.fn() } as never,
       { emit: jest.fn() } as never,
+      {} as never,
     );
 
     await expect(service.listarPaginadosDaEmpresa(8, { page: 0, pageSize: 500, sort: 'other' as never }))
@@ -246,6 +351,7 @@ describe('ConvitesService.obterResumoAdministrativoDaEmpresa', () => {
       {} as never,
       { registrar: jest.fn() } as never,
       { emit: jest.fn() } as never,
+      {} as never,
     );
 
     await expect(service.obterResumoAdministrativoDaEmpresa(7)).resolves.toEqual({

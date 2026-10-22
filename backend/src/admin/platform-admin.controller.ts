@@ -74,6 +74,14 @@ export class PlatformAdminController {
     return this.convitesService.inativarUsuarioGlobal(req.user.userId, usuarioId);
   }
 
+  @Post('usuarios/:usuarioId/reativar')
+  async reativarUsuarioGlobal(
+    @Request() req: any,
+    @Param('usuarioId', ParseIntPipe) usuarioId: number,
+  ) {
+    return this.convitesService.reativarUsuarioGlobal(req.user.userId, usuarioId);
+  }
+
   @Get('empresas/:empresaId/tema')
   async getTema(@Param('empresaId', ParseIntPipe) empresaId: number) {
     return this.adminService.getTemaDaEmpresa(empresaId);
@@ -258,6 +266,19 @@ export class PlatformAdminController {
     @Request() req: any,
   ) {
     return this.convitesService.inativarUsuarioDaEmpresa(
+      empresaId,
+      req.user.userId,
+      usuarioId,
+    );
+  }
+
+  @Post('empresas/:empresaId/usuarios/:usuarioId/reativar')
+  async reativarUsuarioDaEmpresa(
+    @Param('empresaId', ParseIntPipe) empresaId: number,
+    @Param('usuarioId', ParseIntPipe) usuarioId: number,
+    @Request() req: any,
+  ) {
+    return this.convitesService.reativarUsuarioDaEmpresa(
       empresaId,
       req.user.userId,
       usuarioId,
