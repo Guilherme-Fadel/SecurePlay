@@ -75,7 +75,7 @@ describe('ConvitesService.inativarUsuarioGlobal', () => {
     expect(eventEmitter.emit).toHaveBeenCalledWith('usuario.inativado', { userId: 12 });
   });
 
-  it('impede inativação da própria conta', async () => {
+  it('impede alteração do status da própria conta', async () => {
     const { service, usuarioRepository } = buildService({
       id: 12,
       role: Role.ADMIN,
@@ -174,6 +174,21 @@ describe('ConvitesService.inativarUsuarioGlobal', () => {
     const { service, manager } = buildService(user);
 
     await expect(service.reativarUsuarioDaEmpresa(7, 1, 12)).rejects.toThrow(
+      'Usuário não encontrado',
+    );
+    expect(manager.save).not.toHaveBeenCalled();
+  });
+
+  it('não permite ao administrador inativar usuário de outra escola', async () => {
+    const user = {
+      id: 12,
+      empresa_id: 20,
+      role: Role.USER,
+      active: true,
+    };
+    const { service, manager } = buildService(user);
+
+    await expect(service.inativarUsuarioDaEmpresa(7, 1, 12)).rejects.toThrow(
       'Usuário não encontrado',
     );
     expect(manager.save).not.toHaveBeenCalled();

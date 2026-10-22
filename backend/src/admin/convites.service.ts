@@ -487,7 +487,9 @@ export class ConvitesService {
       });
       if (!target) throw new NotFoundException('Usuário não encontrado');
       if (target.id === atorId) {
-        throw new BadRequestException('Você não pode inativar a própria conta');
+        throw new BadRequestException(
+          'Você não pode alterar o status da própria conta',
+        );
       }
       if (target.role === Role.PLATFORM_ADMIN) {
         throw new BadRequestException(
