@@ -190,6 +190,50 @@ describe('HTTP — parâmetros institucionais', () => {
     expect(convitesServiceMock.inativarUsuarioDaEmpresa).toHaveBeenCalledTimes(1);
   });
 
+  it('protege a lista escolar e encaminha a empresa selecionada na lista global', async () => {
+    const schoolList = await app.inject({
+      method: 'GET',
+      url: '/admin/empresa/usuarios?page=2&pageSize=5&search=Jo&status=active&sort=desc&empresa_id=20',
+      headers: { origin: 'http://localhost:5173', 'x-fixture-user': '1' },
+    });
+    expect(schoolList.statusCode).toBe(200);
+    expect(convitesServiceMock.listarUsuariosPaginados).toHaveBeenCalledWith(
+      1,
+      { page: 2, pageSize: 5, search: 'Jo', status: 'active', sort: 'desc' },
+    );
+
+    const studentDenied = await app.inject({
+      method: 'GET',
+      url: '/admin/empresa/usuarios?empresa_id=20',
+      headers: { origin: 'http://localhost:5173', 'x-fixture-user': '3' },
+    });
+    expect(studentDenied.statusCode).toBe(403);
+    expect(convitesServiceMock.listarUsuariosPaginados).toHaveBeenCalledTimes(1);
+
+    const platformDenied = await app.inject({
+      method: 'GET',
+      url: '/platform/admin/empresas/20/usuarios',
+      headers: { origin: 'http://localhost:5173', 'x-fixture-user': '1' },
+    });
+    expect(platformDenied.statusCode).toBe(403);
+
+    const platformList = await app.inject({
+      method: 'GET',
+      url: '/platform/admin/empresas/20/usuarios?page=1&pageSize=10&search=Ana&status=inactive&sort=asc',
+      headers: { origin: 'http://localhost:5173', 'x-fixture-user': '9' },
+    });
+    expect(platformList.statusCode).toBe(200);
+    expect(
+      convitesServiceMock.listarUsuariosPaginadosDaEmpresa,
+    ).toHaveBeenCalledWith(20, {
+      page: 1,
+      pageSize: 10,
+      search: 'Ana',
+      status: 'inactive',
+      sort: 'asc',
+    });
+  });
+
   let app: NestFastifyApplication;
   let convitesServiceMock: {
     inativarUsuario: jest.Mock;
@@ -197,6 +241,8 @@ describe('HTTP — parâmetros institucionais', () => {
     reativarUsuario: jest.Mock;
     reativarUsuarioDaEmpresa: jest.Mock;
     reativarUsuarioGlobal: jest.Mock;
+    listarUsuariosPaginados: jest.Mock;
+    listarUsuariosPaginadosDaEmpresa: jest.Mock;
   };
   let companies: Map<
     number,
@@ -221,6 +267,10 @@ describe('HTTP — parâmetros institucionais', () => {
       reativarUsuario: jest.fn().mockResolvedValue({ id: 22, active: true }),
       reativarUsuarioDaEmpresa: jest.fn().mockResolvedValue({ id: 22, active: true }),
       reativarUsuarioGlobal: jest.fn().mockResolvedValue({ id: 22, active: true }),
+      listarUsuariosPaginados: jest.fn().mockResolvedValue({ items: [], total: 0 }),
+      listarUsuariosPaginadosDaEmpresa: jest
+        .fn()
+        .mockResolvedValue({ items: [], total: 0 }),
     };
     companies = new Map([
       [
