@@ -234,6 +234,41 @@ describe('HTTP — parâmetros institucionais', () => {
     });
   });
 
+  it('reserva a listagem global de usuários ao platform_admin', async () => {
+    const schoolAdmin = await app.inject({
+      method: 'GET',
+      url: '/platform/admin/usuarios',
+      headers: { origin: 'http://localhost:5173', 'x-fixture-user': '1' },
+    });
+    expect(schoolAdmin.statusCode).toBe(403);
+
+    const student = await app.inject({
+      method: 'GET',
+      url: '/platform/admin/usuarios',
+      headers: { origin: 'http://localhost:5173', 'x-fixture-user': '3' },
+    });
+    expect(student.statusCode).toBe(403);
+
+    const platformAdmin = await app.inject({
+      method: 'GET',
+      url: '/platform/admin/usuarios',
+      headers: { origin: 'http://localhost:5173', 'x-fixture-user': '9' },
+    });
+    expect(platformAdmin.statusCode).toBe(200);
+    expect(platformAdmin.json()).toEqual([
+      {
+        id: 3,
+        name: 'Aluno Fixture',
+        email: 'aluno@example.invalid',
+        role: Role.USER,
+        level: 2,
+        active: true,
+        empresa_id: 10,
+        empresa_nome: 'Escola Fixture',
+      },
+    ]);
+  });
+
   let app: NestFastifyApplication;
   let convitesServiceMock: {
     inativarUsuario: jest.Mock;
@@ -295,6 +330,18 @@ describe('HTTP — parâmetros institucionais', () => {
       ],
     ]);
     const userRepository = {
+      find: async () => [
+        {
+          id: 3,
+          name: 'Aluno Fixture',
+          email: 'aluno@example.invalid',
+          role: Role.USER,
+          level: 2,
+          active: true,
+          empresa_id: 10,
+          empresa: { nome: 'Escola Fixture' },
+        },
+      ],
       findOne: async ({ where }: { where: { id: number } }) => {
         const identity = identities.get(where.id);
         return identity
