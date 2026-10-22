@@ -78,7 +78,53 @@ describe('HTTP — parâmetros institucionais', () => {
     expect(result.statusCode).toBe(400);
     expect(companies.get(10)!.nome).toBe(previous);
   });
+
+  it('permite reativação pelo admin da própria empresa e barra aluno', async () => {
+    const allowed = await app.inject({
+      method: 'POST',
+      url: '/admin/empresa/usuarios/22/reativar',
+      headers: { 'x-fixture-user': '1' },
+    });
+    expect(allowed.statusCode).toBe(201);
+    expect(convitesServiceMock.reativarUsuario).toHaveBeenCalledWith(1, 22);
+
+    const denied = await app.inject({
+      method: 'POST',
+      url: '/admin/empresa/usuarios/22/reativar',
+      headers: { 'x-fixture-user': '3' },
+    });
+    expect(denied.statusCode).toBe(403);
+    expect(convitesServiceMock.reativarUsuario).toHaveBeenCalledTimes(1);
+  });
+
+  it('reserva reativação global ao platform_admin', async () => {
+    const denied = await app.inject({
+      method: 'POST',
+      url: '/platform/admin/usuarios/22/reativar',
+      headers: { 'x-fixture-user': '1' },
+    });
+    expect(denied.statusCode).toBe(403);
+
+    const allowed = await app.inject({
+      method: 'POST',
+      url: '/platform/admin/empresas/20/usuarios/22/reativar',
+      headers: { 'x-fixture-user': '9' },
+    });
+    expect(allowed.statusCode).toBe(201);
+    expect(convitesServiceMock.reativarUsuarioDaEmpresa).toHaveBeenCalledWith(
+      20,
+      9,
+      22,
+    );
+    expect(convitesServiceMock.reativarUsuarioGlobal).not.toHaveBeenCalled();
+  });
+
   let app: NestFastifyApplication;
+  let convitesServiceMock: {
+    reativarUsuario: jest.Mock;
+    reativarUsuarioDaEmpresa: jest.Mock;
+    reativarUsuarioGlobal: jest.Mock;
+  };
   let companies: Map<
     number,
     {
@@ -94,6 +140,11 @@ describe('HTTP — parâmetros institucionais', () => {
   ]);
 
   beforeEach(async () => {
+    convitesServiceMock = {
+      reativarUsuario: jest.fn().mockResolvedValue({ id: 22, active: true }),
+      reativarUsuarioDaEmpresa: jest.fn().mockResolvedValue({ id: 22, active: true }),
+      reativarUsuarioGlobal: jest.fn().mockResolvedValue({ id: 22, active: true }),
+    };
     companies = new Map([
       [
         10,
@@ -177,7 +228,7 @@ describe('HTTP — parâmetros institucionais', () => {
         { provide: 'USUARIO_REPOSITORY', useValue: userRepository },
         { provide: 'DATA_SOURCE', useValue: dataSource },
         { provide: S3Service, useValue: {} },
-        { provide: ConvitesService, useValue: {} },
+        { provide: ConvitesService, useValue: convitesServiceMock },
         { provide: AdminAuditService, useValue: {} },
         {
           provide: AchievementsService,
