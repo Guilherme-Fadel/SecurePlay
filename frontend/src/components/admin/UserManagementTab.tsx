@@ -1,6 +1,7 @@
-import { useDeferredValue, useEffect, useState } from 'react';
+import { useDeferredValue, useEffect, useRef, useState, type FormEvent } from 'react';
 import { AlertCircle, Ban, CheckCircle2, RotateCcw, UsersRound } from 'lucide-react';
 import { AppButton } from '@/components/ui/buttons/AppButton';
+import { AppInput } from '@/components/ui/forms/AppInput';
 import { AppSearchInput } from '@/components/ui/forms/AppSearchInput';
 import { AppSelect } from '@/components/ui/forms/AppSelect';
 import { AdminListCard, AdminListContent, AdminListState, AdminListToolbar, AdminPageHeader, AdminPagination } from './AdminListLayout';
@@ -28,6 +29,15 @@ export function UserManagementTab({ empresaId }: UserManagementTabProps) {
   const [updatingUser, setUpdatingUser] = useState<number | null>(null);
   const [feedback, setFeedback] = useState<string | null>(null);
   const [restoredKey, setRestoredKey] = useState<string | null>(null);
+  const [statusChange, setStatusChange] = useState<{ usuario: UsuarioEmpresa; action: 'inativar' | 'reativar'; empresaId?: number } | null>(null);
+  const [reason, setReason] = useState('');
+  const currentEmpresaId = useRef(empresaId);
+  currentEmpresaId.current = empresaId;
+
+  useEffect(() => {
+    setStatusChange(null);
+    setReason('');
+  }, [empresaId]);
 
   useEffect(() => {
     try {
@@ -68,43 +78,49 @@ export function UserManagementTab({ empresaId }: UserManagementTabProps) {
     return () => { cancelled = true; };
   }, [deferredSearch, empresaId, page, pageSize, reload, restoredKey, search, sessionKey, status, sort]);
 
-  const inativar = async (usuario: UsuarioEmpresa) => {
-    if (!window.confirm(`Inativar o acesso de ${usuario.name}? Essa pessoa será desconectada e não poderá entrar novamente.`)) return;
-    const motivo = window.prompt('Informe o motivo da inativação (5 a 300 caracteres). Não inclua dados pessoais sensíveis.');
-    if (motivo === null) return;
-    if (motivo.trim().length < 5 || motivo.trim().length > 300) {
+  const solicitarAlteracao = (usuario: UsuarioEmpresa, action: 'inativar' | 'reativar') => {
+    const confirmed = action === 'inativar'
+      ? window.confirm(`Inativar o acesso de ${usuario.name}? Essa pessoa será desconectada e não poderá entrar novamente.`)
+      : window.confirm(`Reativar o acesso de ${usuario.name}? A conta existente manterá os dados e a senha atuais.`);
+    if (!confirmed) return;
+    setStatusChange({ usuario, action, empresaId });
+    setReason('');
+    setFeedback(null);
+  };
+
+  const salvarAlteracao = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!statusChange) return;
+    const { usuario, action, empresaId: targetEmpresaId } = statusChange;
+    const motivo = reason.trim();
+    if (motivo.length < 5 || motivo.length > 300) {
       setFeedback('Informe um motivo entre 5 e 300 caracteres.');
       return;
     }
     setUpdatingUser(usuario.id);
     try {
-      const updated = await inativarUsuario(usuario.id, motivo.trim(), empresaId);
-      setUsuarios((current) => ({ ...current, items: current.items.map((item) => item.id === usuario.id ? updated : item) }));
-      setReload((current) => current + 1);
-      setFeedback('Acesso inativado. Novas requisições dessa conta serão bloqueadas.');
+      const updated = action === 'inativar'
+        ? await inativarUsuario(usuario.id, motivo, targetEmpresaId)
+        : await reativarUsuario(usuario.id, motivo, targetEmpresaId);
+      if (currentEmpresaId.current === targetEmpresaId) {
+        setUsuarios((current) => ({ ...current, items: current.items.map((item) => item.id === usuario.id ? updated : item) }));
+        setReload((current) => current + 1);
+        setFeedback(action === 'inativar'
+          ? 'Acesso inativado. Novas requisições dessa conta serão bloqueadas.'
+          : 'Acesso reativado. O usuário poderá entrar com a conta existente.');
+        setStatusChange(null);
+        setReason('');
+      }
     } catch (error: any) {
-      setFeedback(error.response?.data?.message ?? 'Não foi possível inativar o usuário.');
+      if (currentEmpresaId.current === targetEmpresaId) {
+        setFeedback(error.response?.data?.message ?? `Não foi possível ${action} o usuário.`);
+      }
     } finally { setUpdatingUser(null); }
   };
 
-  const reativar = async (usuario: UsuarioEmpresa) => {
-    if (!window.confirm(`Reativar o acesso de ${usuario.name}? A conta existente manterá os dados e a senha atuais.`)) return;
-    const motivo = window.prompt('Informe o motivo da reativação (5 a 300 caracteres). Não inclua dados pessoais sensíveis.');
-    if (motivo === null) return;
-    if (motivo.trim().length < 5 || motivo.trim().length > 300) {
-      setFeedback('Informe um motivo entre 5 e 300 caracteres.');
-      return;
-    }
-    setUpdatingUser(usuario.id);
-    try {
-      const updated = await reativarUsuario(usuario.id, motivo.trim(), empresaId);
-      setUsuarios((current) => ({ ...current, items: current.items.map((item) => item.id === usuario.id ? updated : item) }));
-      setReload((current) => current + 1);
-      setFeedback('Acesso reativado. O usuário poderá entrar com a conta existente.');
-    } catch (error: any) {
-      setFeedback(error.response?.data?.message ?? 'Não foi possível reativar o usuário.');
-    } finally { setUpdatingUser(null); }
-  };
+  const inativar = (usuario: UsuarioEmpresa) => solicitarAlteracao(usuario, 'inativar');
+
+  const reativar = (usuario: UsuarioEmpresa) => solicitarAlteracao(usuario, 'reativar');
 
   return (
     <div className="admin-users-content">
@@ -120,6 +136,32 @@ export function UserManagementTab({ empresaId }: UserManagementTabProps) {
           {feedback.startsWith('Não foi') ? <AlertCircle size={17} aria-hidden="true" /> : <CheckCircle2 size={17} aria-hidden="true" />}
           {feedback}
         </div>
+      )}
+      {statusChange && (
+        <form className="admin-user-reason-form" onSubmit={(event) => void salvarAlteracao(event)}>
+          <label htmlFor="user-status-reason">Motivo para {statusChange.action === 'inativar' ? 'inativar' : 'reativar'} {statusChange.usuario.name}</label>
+          <AppInput
+            id="user-status-reason"
+            autoFocus
+            required
+            minLength={5}
+            maxLength={300}
+            value={reason}
+            onChange={(event) => setReason(event.target.value)}
+            placeholder="Informe um motivo (5 a 300 caracteres)"
+            aria-describedby="user-status-reason-help"
+            disabled={updatingUser !== null}
+          />
+          <small id="user-status-reason-help">Não inclua dados pessoais sensíveis. {reason.trim().length}/300</small>
+          <div className="flex flex-wrap gap-2">
+            <AppButton type="submit" size="sm" disabled={updatingUser !== null || reason.trim().length < 5}>
+              {updatingUser !== null ? 'Salvando...' : 'Confirmar alteração'}
+            </AppButton>
+            <AppButton type="button" variant="ghost" size="sm" disabled={updatingUser !== null} onClick={() => { setStatusChange(null); setReason(''); }}>
+              Cancelar
+            </AppButton>
+          </div>
+        </form>
       )}
       <AdminListCard loading={loading}>
         <AdminListToolbar>
@@ -145,8 +187,8 @@ export function UserManagementTab({ empresaId }: UserManagementTabProps) {
                   <td data-label="Nível">{usuario.level}</td>
                   <td data-label="Status"><span className={`admin-user-status ${usuario.active ? 'is-active' : 'is-inactive'}`}>{usuario.active ? 'Ativo' : 'Inativo'}</span></td>
                   <td data-label="Ações">{usuario.id !== user?.userId && usuario.role !== 'platform_admin' && (usuario.active
-                    ? <AppButton variant="ghost" size="sm" icon={<Ban size={14} />} disabled={updatingUser === usuario.id} onClick={() => void inativar(usuario)}>{updatingUser === usuario.id ? 'Inativando...' : 'Inativar'}</AppButton>
-                    : <AppButton variant="ghost" size="sm" icon={<RotateCcw size={14} />} disabled={updatingUser === usuario.id} onClick={() => void reativar(usuario)}>{updatingUser === usuario.id ? 'Reativando...' : 'Reativar'}</AppButton>)}</td>
+                    ? <AppButton variant="ghost" size="sm" icon={<Ban size={14} />} disabled={updatingUser !== null || statusChange !== null} onClick={() => inativar(usuario)}>{updatingUser === usuario.id ? 'Inativando...' : 'Inativar'}</AppButton>
+                    : <AppButton variant="ghost" size="sm" icon={<RotateCcw size={14} />} disabled={updatingUser !== null || statusChange !== null} onClick={() => reativar(usuario)}>{updatingUser === usuario.id ? 'Reativando...' : 'Reativar'}</AppButton>)}</td>
                 </tr>;
               })}</tbody>
             </table></div>}

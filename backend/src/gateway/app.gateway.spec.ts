@@ -77,6 +77,36 @@ describe('AppGateway', () => {
     expect(socket.join).not.toHaveBeenCalled();
   });
 
+  it('rejeita a reconexão com token anterior à reativação da conta', async () => {
+    const gateway = new AppGateway(
+      {
+        verifyAsync: jest.fn().mockResolvedValue({
+          sub: 27,
+          role: Role.USER,
+          sessionVersion: 4,
+        }),
+      } as never,
+      { get: jest.fn().mockResolvedValue(null) } as never,
+      {
+        getRepository: jest.fn().mockReturnValue({
+          findOne: jest.fn().mockResolvedValue({
+            id: 27,
+            role: Role.USER,
+            active: true,
+            session_version: 5,
+            password_change_required: false,
+          }),
+        }),
+      } as never,
+    );
+    const socket = makeSocket('token=token-antigo');
+
+    await gateway.handleConnection(socket as never);
+
+    expect(socket.disconnect).toHaveBeenCalled();
+    expect(socket.join).not.toHaveBeenCalled();
+  });
+
   it('desconecta sessões WebSocket existentes ao inativar usuário', () => {
     const gateway = new AppGateway({} as never, {} as never);
     const disconnectSockets = jest.fn();

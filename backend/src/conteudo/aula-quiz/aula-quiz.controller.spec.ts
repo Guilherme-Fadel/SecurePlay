@@ -15,6 +15,8 @@ describe('AulaQuizController', () => {
     findOne: jest.Mock;
     update: jest.Mock;
     delete: jest.Mock;
+    merge: jest.Mock;
+    manager: { transaction: jest.Mock };
   };
 
   beforeEach(() => {
@@ -24,7 +26,12 @@ describe('AulaQuizController', () => {
       findOne: jest.fn(),
       update: jest.fn(),
       delete: jest.fn(),
+      merge: jest.fn((entity, value) => Object.assign(entity, value)),
+      manager: { transaction: jest.fn() },
     };
+    repository.manager.transaction.mockImplementation((work) =>
+      work({ getRepository: () => repository }),
+    );
     controller = new AulaQuizController(repository as never);
   });
 
@@ -43,17 +50,29 @@ describe('AulaQuizController', () => {
     expect(repository.save).not.toHaveBeenCalled();
   });
 
-  it('não permite mover a pergunta para outra aula pela DTO de edição', async () => {
+  it('rejeita pergunta composta apenas por espaços no DTO e no controller', async () => {
+    const dto = Object.assign(new CreateQuizDto(), {
+      aula_id: 4,
+      text: '   \t',
+      options: ['Sim', 'Não'],
+      correct_index: 0,
+    });
+
+    expect((await validate(dto)).map((error) => error.property)).toContain('text');
+    await expect(controller.create(dto)).rejects.toBeInstanceOf(
+      BadRequestException,
+    );
+    expect(repository.save).not.toHaveBeenCalled();
+  });
+
+  it('remove aula_id não permitida pelo whitelist da aplicação', async () => {
     const dto = Object.assign(new UpdateQuizDto(), {
       aula_id: 99,
       text: 'Atualizada',
     });
 
-    expect(
-      (
-        await validate(dto, { whitelist: true, forbidNonWhitelisted: true })
-      ).map((e) => e.property),
-    ).toContain('aula_id');
+    expect(await validate(dto, { whitelist: true })).toHaveLength(0);
+    expect('aula_id' in dto).toBe(false);
   });
 
   it('valida índice e alternativas combinando campos atuais e alterados', async () => {
@@ -69,15 +88,11 @@ describe('AulaQuizController', () => {
         Object.assign(new UpdateQuizDto(), { options: ['A', 'B'] }),
       ),
     ).rejects.toBeInstanceOf(BadRequestException);
-    expect(repository.update).not.toHaveBeenCalled();
+    expect(repository.manager.transaction).toHaveBeenCalled();
+    expect(repository.save).not.toHaveBeenCalled();
   });
 
   it('rejeita edição vazia e pergunta inexistente sem gravar', async () => {
-    repository.findOne.mockResolvedValueOnce({
-      id: 8,
-      options: ['A', 'B'],
-      correct_index: 1,
-    });
     await expect(
       controller.update(8, new UpdateQuizDto()),
     ).rejects.toBeInstanceOf(BadRequestException);
@@ -86,7 +101,36 @@ describe('AulaQuizController', () => {
     await expect(
       controller.update(404, Object.assign(new UpdateQuizDto(), { text: 'x' })),
     ).rejects.toBeInstanceOf(NotFoundException);
-    expect(repository.update).not.toHaveBeenCalled();
+    expect(repository.manager.transaction).toHaveBeenCalledTimes(1);
+    expect(repository.save).not.toHaveBeenCalled();
+  });
+
+  it('bloqueia a pergunta durante a validação e grava a edição no mesmo registro', async () => {
+    const existing = {
+      id: 8,
+      text: 'Pergunta antiga',
+      options: ['A', 'B', 'C', 'D'],
+      correct_index: 3,
+    };
+    repository.findOne.mockResolvedValue(existing);
+    const dto = Object.assign(new UpdateQuizDto(), {
+      options: ['A', 'B'],
+      correct_index: 1,
+    });
+
+    const result = await controller.update(8, dto);
+
+    expect(repository.manager.transaction).toHaveBeenCalledTimes(1);
+    expect(repository.findOne).toHaveBeenCalledWith({
+      where: { id: 8 },
+      lock: { mode: 'pessimistic_write' },
+    });
+    expect(repository.save).toHaveBeenCalledWith({
+      ...existing,
+      options: ['A', 'B'],
+      correct_index: 1,
+    });
+    expect(result).toEqual(existing);
   });
 
   it('só exclui mediante confirmação explícita true', async () => {

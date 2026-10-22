@@ -51,6 +51,7 @@ export class AppGateway implements OnGatewayConnection, OnGatewayDisconnect {
       const payload = await this.jwtService.verifyAsync<{
         sub?: number | string;
         role?: Role;
+        sessionVersion?: number;
       }>(token);
       const userId = Number(payload.sub);
       const isBlacklisted = await this.redisService.get(`blacklist:${token}`);
@@ -72,6 +73,7 @@ export class AppGateway implements OnGatewayConnection, OnGatewayDisconnect {
         if (
           !user ||
           !user.active ||
+          (payload.sessionVersion ?? 0) !== (user.session_version ?? 0) ||
           user.password_change_required ||
           (user.role === Role.PLATFORM_ADMIN &&
             user.email_verification_required &&

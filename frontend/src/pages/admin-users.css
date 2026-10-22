@@ -244,6 +244,19 @@
 .admin-list-table tr.is-inactive { opacity: .62; }
 .admin-list-table td .admin-nickname-value { color: var(--primary); }
 
+.admin-user-reason-form {
+  display: grid;
+  gap: 10px;
+  margin-bottom: 20px;
+  padding: 16px;
+  border: 1px solid var(--dashboard-border);
+  border-radius: 12px;
+  background: var(--dashboard-surface);
+  color: var(--dashboard-text);
+}
+.admin-user-reason-form label { font-size: var(--font-label); font-weight: 700; }
+.admin-user-reason-form small { color: var(--dashboard-muted); font-size: var(--font-caption); }
+
 .admin-invites-total { margin-left: auto; color: var(--dashboard-muted); font-size: 12px; white-space: nowrap; }
 .admin-pagination-adjacent > span { order: -1; }
 .admin-pagination-adjacent { justify-content: flex-end; }

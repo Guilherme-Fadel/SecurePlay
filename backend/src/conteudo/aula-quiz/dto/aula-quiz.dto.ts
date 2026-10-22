@@ -4,6 +4,7 @@ import {
   IsArray,
   IsOptional,
   MaxLength,
+  Matches,
   Min,
   ValidateNested,
   ArrayMinSize,
@@ -19,6 +20,7 @@ export class CreateQuizDto {
 
   @IsString()
   @IsNotEmpty()
+  @Matches(/\S/)
   @MaxLength(500)
   text: string;
 
@@ -42,6 +44,7 @@ export class UpdateQuizDto {
   @IsOptional()
   @IsString()
   @IsNotEmpty()
+  @Matches(/\S/)
   @MaxLength(500)
   text?: string;
 

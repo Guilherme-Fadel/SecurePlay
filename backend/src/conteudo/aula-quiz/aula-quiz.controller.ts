@@ -30,6 +30,7 @@ export class AulaQuizController {
   @Post()
   @Roles(Role.PLATFORM_ADMIN)
   async create(@Body() dto: CreateQuizDto) {
+    this.assertValidQuestionText(dto.text);
     this.assertValidAnswer(dto.options, dto.correct_index);
     const quiz = this.aulaQuizRepository.create(dto);
     return this.aulaQuizRepository.save(quiz);
@@ -41,18 +42,25 @@ export class AulaQuizController {
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: UpdateQuizDto,
   ) {
-    const existing = await this.aulaQuizRepository.findOne({ where: { id } });
-    if (!existing) throw new NotFoundException('Pergunta não encontrada');
     if (!Object.values(dto ?? {}).some((value) => value !== undefined)) {
       throw new BadRequestException(
         'Informe ao menos um campo para atualização',
       );
     }
-    const options = dto.options ?? existing.options;
-    const correctIndex = dto.correct_index ?? existing.correct_index;
-    this.assertValidAnswer(options, correctIndex);
-    await this.aulaQuizRepository.update(id, dto);
-    return this.aulaQuizRepository.findOne({ where: { id } });
+    if (dto.text !== undefined) this.assertValidQuestionText(dto.text);
+    return this.aulaQuizRepository.manager.transaction(async (manager) => {
+      const repository = manager.getRepository(AulaQuiz);
+      const existing = await repository.findOne({
+        where: { id },
+        lock: { mode: 'pessimistic_write' },
+      });
+      if (!existing) throw new NotFoundException('Pergunta não encontrada');
+
+      const options = dto.options ?? existing.options;
+      const correctIndex = dto.correct_index ?? existing.correct_index;
+      this.assertValidAnswer(options, correctIndex);
+      return repository.save(repository.merge(existing, dto));
+    });
   }
 
   @Delete(':id')
@@ -80,6 +88,12 @@ export class AulaQuizController {
       throw new BadRequestException(
         'Alternativas ou resposta correta inválidas',
       );
+    }
+  }
+
+  private assertValidQuestionText(text: unknown) {
+    if (typeof text !== 'string' || !text.trim()) {
+      throw new BadRequestException('A pergunta não pode ficar vazia');
     }
   }
 }
