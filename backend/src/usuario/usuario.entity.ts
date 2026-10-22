@@ -75,6 +75,9 @@ export class Usuario {
   @Column({ default: true })
   active: boolean;
 
+  @Column({ type: 'int', default: 0 })
+  session_version: number;
+
   @Column({ type: 'varchar', length: 20, default: 'user' })
   role: Role;
 

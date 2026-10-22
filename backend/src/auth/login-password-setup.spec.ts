@@ -60,10 +60,14 @@ describe('AuthService.signIn — confirmação e senha obrigatória', () => {
       email_verification_required: false,
       email_verified_at: null,
       password_change_required: false,
+      session_version: 3,
     });
     await expect(
       service.signIn({ email: 'gestao@example.test', password: 'senha-inicial' }),
     ).resolves.toMatchObject({ token: 'jwt', userId: 7 });
     expect(jwtService.sign).toHaveBeenCalledTimes(1);
+    expect(jwtService.sign).toHaveBeenCalledWith(
+      expect.objectContaining({ sessionVersion: 3 }),
+    );
   });
 });

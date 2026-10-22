@@ -65,7 +65,7 @@ describe('ConvitesService.inativarUsuarioGlobal', () => {
     });
     expect(manager.save).toHaveBeenCalledWith(
       expect.any(Function),
-      expect.objectContaining({ active: false }),
+      expect.objectContaining({ active: false, session_version: 1 }),
     );
     expect(manager.save).toHaveBeenCalledWith(
       AdminAuditEvent,
@@ -153,7 +153,10 @@ describe('ConvitesService.inativarUsuarioGlobal', () => {
       active: true,
     });
     expect(user.password).toBe('hash-preservado');
-    expect(manager.save).toHaveBeenCalledWith(Usuario, expect.objectContaining({ active: true }));
+    expect(manager.save).toHaveBeenCalledWith(
+      Usuario,
+      expect.objectContaining({ active: true, session_version: 1 }),
+    );
     expect(manager.save).toHaveBeenCalledWith(
       AdminAuditEvent,
       expect.objectContaining({ acao: 'usuario.reativado', alvo_id: 12 }),

@@ -511,6 +511,7 @@ export class ConvitesService {
       }
 
       target.active = active;
+      target.session_version = (target.session_version ?? 0) + 1;
       await manager.save(Usuario, target);
       if (empresaId) {
         await manager.save(AdminAuditEvent, {

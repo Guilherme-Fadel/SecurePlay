@@ -39,6 +39,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     const validRoles = Object.values(Role);
     if (
       !usuario?.active ||
+      (payload.sessionVersion ?? 0) !== (usuario.session_version ?? 0) ||
       usuario.password_change_required ||
       (usuario.role === Role.PLATFORM_ADMIN &&
         usuario.email_verification_required &&
