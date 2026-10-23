@@ -11,7 +11,6 @@ import { useCompanyFeatures } from '@/hooks/useCompanyFeatures';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { listarEmpresas, type EmpresaAdministravel } from '@/services/admin';
 import type { RankingData, RankingEntry, RankingMode, RankingSeasonOption } from '@/services/dashboard';
-import galleryEmblem from '@/assets/static/mission-room/missions-room-emblem.png';
 import hallArtwork from '@/assets/static/ranking/ranking-gallery-hall-v1.webp';
 import firstBanner from '@/assets/static/ranking/ranking-banner-first-v1.svg';
 import secondBanner from '@/assets/static/ranking/ranking-banner-second-v1.svg';
@@ -79,12 +78,9 @@ function RankingContent({ scope, companyId, companies, onCompanyChange, onScopeC
 
   return (
     <PageTransition>
-      <div className="app-page ranking-page">
+      <div className="app-page home-section ranking-page">
+        <h1 className="sr-only">Ranking</h1>
         <header className="ranking-heading">
-          <div className="ranking-title-group">
-            <img src={galleryEmblem} alt="" width={56} height={56} />
-            <div><h1>Galeria de Honra</h1><p>Cada aprendizado faz parte da sua conquista.</p></div>
-          </div>
           <div className="ranking-toolbar">
             <div className="ranking-scope-switch" role="group" aria-label="Escopo do ranking">
               {features.globalRanking && <button type="button" aria-pressed={scope === 'global'} onClick={() => onScopeChange('global')}><Globe2 size={17} />Global</button>}

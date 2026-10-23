@@ -34,7 +34,7 @@ const statusFilters = [
 ] as const;
 
 export function ModuloList({ onSelectModulo }: ModuloListProps) {
-  const { modulos, allModulos: queriedModulos, loading, filterStatus, setFilterStatus } = useConteudos();
+  const { modulos, allModulos: queriedModulos, loading, error, refetch, filterStatus, setFilterStatus } = useConteudos();
   const assets = useMissionRoomAssets();
   const prefersReducedMotion = useReducedMotion();
   const [levelIndex, setLevelIndex] = useState(0);
@@ -49,14 +49,10 @@ export function ModuloList({ onSelectModulo }: ModuloListProps) {
   const completedLessons = levelAllModules.reduce((total, modulo) => total + modulo.completedAulas, 0);
   const availableXp = levelAllModules.reduce((total, modulo) => total + modulo.xp_total + modulo.xp_bonus, 0);
   const completedModules = levelAllModules.filter((modulo) => modulo.progress === 100).length;
-  const nextModule = levelAllModules.find((modulo) => modulo.hasStarted && modulo.progress < 100)
-    ?? levelAllModules.find((modulo) => modulo.progress < 100)
-    ?? levelAllModules[0];
-  const changeLevel = (direction: number) => {
-    setLevelSlideDirection(direction > 0 ? 'next' : 'prev');
-    setCarouselStart(0);
-    setLevelIndex((current) => (current + direction + levels.length) % levels.length);
-  };
+  const accessibleModules = levelAllModules.filter((modulo) => modulo.locked !== true);
+  const nextModule = accessibleModules.find((modulo) => modulo.hasStarted && modulo.progress < 100)
+    ?? accessibleModules.find((modulo) => modulo.progress < 100)
+    ?? accessibleModules[0];
   const selectLevel = (index: number) => {
     if (index === levelIndex) return;
     setLevelSlideDirection(index > levelIndex ? 'next' : 'prev');
@@ -68,17 +64,27 @@ export function ModuloList({ onSelectModulo }: ModuloListProps) {
 
   useEffect(() => setCarouselStart(0), [filterStatus]);
 
-  if (loading || !assets['missions-room-emblem']) return <div className="app-page flex flex-col gap-6"><SkeletonList /></div>;
+  if (loading || !assets['castle-library-bg']) return <div className="app-page home-section flex flex-col gap-6"><SkeletonList /></div>;
+  if (error) return <div className="app-page home-section missions-room-page">
+    <h1 className="sr-only">Aprender</h1>
+    <div className="missions-empty-state" role="alert">
+      <h2>Não foi possível carregar as missões</h2>
+      <p>Confira sua conexão e tente novamente.</p>
+      <AppButton onClick={refetch}>Tentar novamente</AppButton>
+    </div>
+  </div>;
 
   return (
-    <div className="app-page missions-room-page">
-      <header className="missions-room-title">
-        <ProgressiveImage src={assets['missions-room-emblem']} alt="" />
-        <div><h1>Sala de Missões</h1><p>Escolha um nível, complete missões e torne-se um guardião digital!</p></div>
+    <div className="app-page home-section missions-room-page">
+      <h1 className="sr-only">Aprender</h1>
+      <header className="home-section-toolbar">
+        <div className="home-section-tabs" role="group" aria-label="Nível das missões">
+          {levels.map((item, index) => <button key={item.key} type="button" aria-pressed={index === levelIndex} onClick={() => selectLevel(index)}>{item.name.replace('Nível ', '')}</button>)}
+        </div>
+        <span className="home-section-summary">{completedModules} de {levelAllModules.length} missões concluídas</span>
       </header>
 
       <section className="missions-room-stage" style={{ '--missions-room-bg': `url(${assets['castle-library-bg']})` } as React.CSSProperties}>
-        <button className="missions-level-arrow is-left" type="button" onClick={() => changeLevel(-1)} aria-label="Ver nível anterior"><ChevronLeft size={30} /></button>
         <div className={`missions-level-board slide-${levelSlideDirection}`} key={level.key}>
           <div className="missions-level-art"><ProgressiveImage src={assets[level.artKey]} alt="" /></div>
           <div className="missions-level-copy">
@@ -86,12 +92,10 @@ export function ModuloList({ onSelectModulo }: ModuloListProps) {
             <div className="missions-level-metrics">
               <div><ProgressiveImage src={assets['icon-star']} alt="" /><strong>{availableXp}</strong><span>XP disponíveis neste nível</span></div>
             </div>
-            <AppButton disabled={!nextModule} icon={<Play size={17} />} onClick={() => nextModule && onSelectModulo(nextModule.id)}>{nextModule?.hasStarted || (nextModule?.progress ?? 0) > 0 ? 'Continuar aventura' : 'Começar aventura'}</AppButton>
+            <AppButton disabled={!nextModule} icon={<Play size={17} />} onClick={() => nextModule && onSelectModulo(nextModule.id)}>{!nextModule && levelAllModules.length > 0 ? 'Nível bloqueado' : nextModule?.hasStarted || (nextModule?.progress ?? 0) > 0 ? 'Continuar aventura' : 'Começar aventura'}</AppButton>
           </div>
           <div className="missions-level-progress"><span>Progresso do nível</span><strong>{completedModules}/{levelAllModules.length}</strong><div><i style={{ width: `${levelAllModules.length ? (completedModules / levelAllModules.length) * 100 : 0}%` }} /></div><small>{completedLessons} de {totalLessons} aulas</small></div>
         </div>
-        <button className="missions-level-arrow is-right" type="button" onClick={() => changeLevel(1)} aria-label="Ver próximo nível"><ChevronRight size={30} /></button>
-        <div className="missions-level-dots" aria-label={`Nível ${levelIndex + 1} de ${levels.length}`}>{levels.map((item, index) => <button key={item.key} type="button" className={index === levelIndex ? 'is-active' : ''} onClick={() => selectLevel(index)} aria-label={item.name} />)}</div>
       </section>
 
       <section className="missions-shelf-section">

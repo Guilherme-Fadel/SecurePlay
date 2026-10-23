@@ -96,7 +96,8 @@ export function Awards() {
 
   return (
     <PageTransition>
-      <div className="app-page achievements-page">
+      <div className="app-page home-section achievements-page">
+        <h1 className="sr-only">Conquistas</h1>
         <div className="achievements-toolbar">
           <div className="achievements-view-switch" role="tablist" aria-label="Áreas de conquistas">
             <button type="button" role="tab" aria-selected={view === 'trail'} className={view === 'trail' ? 'is-active' : ''} onClick={() => setView('trail')}>

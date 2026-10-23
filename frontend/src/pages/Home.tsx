@@ -19,6 +19,7 @@ import '@/styles/profile-ui.css';
 import '@/styles/dashboard-ui.css';
 import '@/styles/academy-dashboard.css';
 import '@/styles/notebook-ui.css';
+import '@/styles/home-sections.css';
 import { AppButton } from '@/components/ui/buttons/AppButton';
 import { useCompanyFeatures } from '@/hooks/useCompanyFeatures';
 import { companyIdentityKey } from '@/config/features';

@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from 'react';
-import { ArrowLeft, Gamepad2, RefreshCcw } from 'lucide-react';
+import { Gamepad2, RefreshCcw } from 'lucide-react';
 import '@/styles/challenges-ui.css';
 import '@/styles/challenge-games-ui.css';
 import { type GameCardData } from './games';
@@ -10,7 +10,6 @@ import { PhishingHunt } from './games/PhishingHunt';
 import { DataClassify } from './games/DataClassify';
 import { TokenBar } from './TokenBar';
 import { useArcadeGames, useTokens } from '@/hooks/useArcade';
-import { AppSectionHeader } from '@/components/ui/visuals/AppSectionHeader';
 import { AppButton } from '@/components/ui/buttons/AppButton';
 import { getChallengeArtwork } from '@/lib/challengeArtwork';
 import { useCompanyFeatures } from '@/hooks/useCompanyFeatures';
@@ -48,7 +47,7 @@ export function Challenges() {
     const [focusedSlug, setFocusedSlug] = useState<string | null>(null);
     const { games: apiGames, loading: gamesLoading, error: gamesError, refetch } = useArcadeGames();
     const { tokens, secondsLeft, reload, setFromServer } = useTokens();
-    const carouselGames = useMemo<GameCardData[]>(() => {
+    const catalogGames = useMemo<GameCardData[]>(() => {
         return apiGames
           .filter((game) => features.games.some((slug) => slug === game.slug))
           .map((g) => ({
@@ -97,39 +96,29 @@ export function Challenges() {
                     setFromServer(t);
             }}/>);
     }
-    return (<div className="app-page challenges-page">
-      <div className="challenges-heading-row">
-        <AppSectionHeader title="Jogos" subtitle="Entre no castelo, descubra pistas e proteja seus amigos brincando." className="app-page-heading"/>
+    return (<div className="app-page home-section challenges-page">
+      <h1 className="sr-only">Jogos</h1>
+      <header className="home-section-toolbar">
+        <span className="home-section-summary">{catalogGames.length} jogos para explorar</span>
         <TokenBar tokens={tokens} secondsLeft={secondsLeft}/>
-      </div>
+      </header>
 
-      <section className="challenge-arena-section">
-        <div className="challenge-arena-heading">
-          <div>
-            <h3>Escolha sua missão</h3>
-          </div>
-          <div className="challenge-navigation-hint">
-            <ArrowLeft size={13}/>
-            <span>Use as setas ou arraste</span>
-            <ArrowLeft size={13} className="rotate-180"/>
-          </div>
-        </div>
-
+      <section className="challenge-arena-section" aria-label="Catálogo de jogos">
         <div className="challenge-arena-body">
-          {gamesLoading && carouselGames.length === 0 ? (<div className="challenge-carousel-loading" aria-label="Carregando jogos">
+          {gamesLoading && catalogGames.length === 0 ? (<div className="challenge-carousel-loading" role="status" aria-label="Carregando jogos">
               <div /><div /><div />
-            </div>) : gamesError && carouselGames.length === 0 ? (<div className="challenge-catalog-state">
+            </div>) : gamesError && catalogGames.length === 0 ? (<div className="challenge-catalog-state" role="alert">
               <Gamepad2 size={28}/>
               <strong>Não foi possível carregar os jogos</strong>
               <p>Confira sua conexão e tente novamente.</p>
               <AppButton variant="soft" size="sm" icon={<RefreshCcw size={14}/>} onClick={refetch}>
                 Tentar novamente
               </AppButton>
-            </div>) : carouselGames.length === 0 ? (<div className="challenge-catalog-state">
+            </div>) : catalogGames.length === 0 ? (<div className="challenge-catalog-state" role="status">
               <Gamepad2 size={28}/>
               <strong>Nenhum jogo disponível</strong>
               <p>Novas atividades aparecerão aqui assim que forem publicadas.</p>
-            </div>) : (<GameCarousel games={carouselGames} onPlay={handlePlay} initialSlug={focusedSlug} onFocusChange={setFocusedSlug}/>)}
+            </div>) : (<GameCarousel games={catalogGames} onPlay={handlePlay} initialSlug={focusedSlug} onFocusChange={setFocusedSlug}/>)}
         </div>
       </section>
 
