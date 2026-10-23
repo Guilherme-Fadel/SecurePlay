@@ -7,7 +7,7 @@ export type AdminConsoleScope =
 
 export const adminConsoleRoutes: Record<AdminConsoleRouteId, { path: string; label: string; stage: string }> = {
   overview: { path: '/admin/inicio', label: 'Visão geral', stage: 'E2' },
-  companies: { path: '/admin/empresas', label: 'Empresas', stage: 'E4' },
+  companies: { path: '/admin/empresas', label: 'Cadastro', stage: 'E4' },
   people: { path: '/admin/pessoas', label: 'Pessoas', stage: 'E5' },
   settings: { path: '/admin/configuracoes', label: 'Configurações', stage: 'E6' },
   operations: { path: '/admin/operacao', label: 'Operação', stage: 'E7' },
@@ -34,13 +34,15 @@ export function adminConsolePath(routeId: AdminConsoleRouteId): string {
   return adminConsoleRoutes[routeId].path;
 }
 
-export type ConsolePageId = 'overview' | 'companies' | 'new-company' | 'summary' | 'users' | 'nicknames' | 'invitations' | 'new-invitation' | 'data' | 'appearance' | 'features' | 'audit-settings' | 'audit-events' | 'pilots' | 'new-pilot' | 'edit-pilot' | 'unavailable';
+export type ConsolePageId = 'overview' | 'companies' | 'new-company' | 'edit-company' | 'summary' | 'users' | 'edit-user' | 'nicknames' | 'invitations' | 'new-invitation' | 'data' | 'appearance' | 'features' | 'audit-settings' | 'audit-events' | 'pilots' | 'new-pilot' | 'edit-pilot' | 'unavailable';
 const consolePages: Array<{ pattern: RegExp; id: ConsolePageId; title: string; list?: boolean }> = [
   { pattern: /^\/admin\/(?:inicio|visao-geral)\/?$/, id: 'overview', title: 'Visão geral' },
-  { pattern: /^\/admin\/empresas\/?$/, id: 'companies', title: 'Empresas', list: true },
+  { pattern: /^\/admin\/empresas\/?$/, id: 'companies', title: 'Cadastro', list: true },
   { pattern: /^\/admin\/empresas\/nova\/?$/, id: 'new-company', title: 'Nova empresa' },
+  { pattern: /^\/admin\/empresas\/[1-9]\d*\/editar\/?$/, id: 'edit-company', title: 'Editar empresa' },
   { pattern: /^\/admin\/empresas\/\d+(?:\/resumo)?\/?$/, id: 'summary', title: 'Resumo da empresa' },
   { pattern: /^\/admin\/pessoas(?:\/usuarios)?\/?$/, id: 'users', title: 'Usuários', list: true },
+  { pattern: /^\/admin\/pessoas\/usuarios\/[1-9]\d*\/editar\/?$/, id: 'edit-user', title: 'Gerenciar usuário' },
   { pattern: /^\/admin\/pessoas\/apelidos\/?$/, id: 'nicknames', title: 'Apelidos pendentes', list: true },
   { pattern: /^\/admin\/pessoas\/convites\/?$/, id: 'invitations', title: 'Convites', list: true },
   { pattern: /^\/admin\/pessoas\/convites\/novo\/?$/, id: 'new-invitation', title: 'Novo convite' },

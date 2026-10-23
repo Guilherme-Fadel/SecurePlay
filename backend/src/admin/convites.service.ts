@@ -1,5 +1,7 @@
 import {
   BadRequestException,
+  ForbiddenException,
+  ConflictException,
   Inject,
   Injectable,
   NotFoundException,
@@ -18,8 +20,14 @@ import { AdminAuditService } from './admin-audit.service';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { ensurePendingRankingSeasonsClosed } from '../dashboard/ranking-history';
 import { AdminAuditEvent } from './entities/admin-audit-event.entity';
+import { UpdateAdminUserDto } from './dto/update-admin-user.dto';
 
-type ConviteFiltros = { page?: number; pageSize?: number; search?: string; sort?: 'asc' | 'desc' };
+type ConviteFiltros = {
+  page?: number;
+  pageSize?: number;
+  search?: string;
+  sort?: 'asc' | 'desc';
+};
 
 type UsuarioFiltros = {
   page?: number;
@@ -49,6 +57,171 @@ export class ConvitesService {
     return this.listarUsuariosDaEmpresa(empresa.id);
   }
 
+  async obterUsuario(userId: number, usuarioId: number) {
+    const empresa = await this.getEmpresaDoAdministrador(userId);
+    return this.obterUsuarioDaEmpresa(empresa.id, usuarioId);
+  }
+
+  async obterUsuarioDaEmpresa(empresaId: number, usuarioId: number) {
+    return this.toUsuarioResumo(
+      await this.getUsuarioDaEmpresa(empresaId, usuarioId),
+    );
+  }
+
+  async obterPropriosDadosPlataforma(atorId: number, usuarioId: number) {
+    const actor = await this.usuarioRepository.findOne({
+      where: { id: atorId },
+    });
+    if (actor?.role !== Role.PLATFORM_ADMIN || atorId !== usuarioId)
+      throw new ForbiddenException('Acesso indisponível');
+    return this.toUsuarioResumo(actor);
+  }
+
+  async atualizarUsuario(
+    atorId: number,
+    usuarioId: number,
+    dto: UpdateAdminUserDto,
+    empresaId?: number,
+  ) {
+    const actor = await this.usuarioRepository.findOne({
+      where: { id: atorId },
+    });
+    if (
+      !actor ||
+      !actor.active ||
+      ![Role.ADMIN, Role.PLATFORM_ADMIN].includes(actor.role)
+    )
+      throw new ForbiddenException('Acesso indisponível');
+    const platform = actor.role === Role.PLATFORM_ADMIN;
+    const scope = platform ? empresaId : actor.empresa_id;
+    if (
+      !platform &&
+      (!scope || (empresaId !== undefined && empresaId !== scope))
+    )
+      throw new ForbiddenException('Empresa inválida');
+    if (!platform && atorId === usuarioId)
+      throw new ForbiddenException(
+        'Somente o administrador da plataforma pode editar os próprios dados',
+      );
+    try {
+      const result = await this.dataSource.transaction(async (manager) => {
+        if (
+          scope &&
+          !(await manager.findOne(Empresa, {
+            where: { id: scope },
+            lock: { mode: 'pessimistic_write' },
+          }))
+        )
+          throw new NotFoundException('Empresa não encontrada');
+        const target = await manager.findOne(Usuario, {
+          where: scope
+            ? { id: usuarioId, empresa_id: scope }
+            : { id: usuarioId },
+          lock: { mode: 'pessimistic_write' },
+        });
+        if (!target)
+          throw new NotFoundException('Usuário não encontrado nesta empresa');
+        if (
+          target.role === Role.PLATFORM_ADMIN &&
+          (!platform || target.id !== atorId)
+        )
+          throw new ForbiddenException(
+            'Esta conta só pode ser editada pelo próprio administrador da plataforma',
+          );
+        if (dto.role && target.role === Role.PLATFORM_ADMIN)
+          throw new BadRequestException(
+            'O perfil da plataforma não pode ser alterado',
+          );
+        const email =
+          dto.email === undefined
+            ? target.email
+            : (dto.email?.trim().toLowerCase() ?? null);
+        const nextRole = dto.role ?? target.role;
+        if (nextRole !== Role.USER && !email)
+          throw new BadRequestException(
+            'Contas administrativas precisam de e-mail',
+          );
+        if (dto.role === Role.ADMIN && target.login_code)
+          throw new BadRequestException(
+            'Use um convite de administrador para contas com código escolar',
+          );
+        if (email !== target.email && target.password_change_required)
+          throw new BadRequestException(
+            'Conclua a definição de senha antes de alterar o e-mail',
+          );
+        if (
+          dto.role === Role.USER &&
+          target.role === Role.ADMIN &&
+          target.active &&
+          (await manager.count(Usuario, {
+            where: {
+              empresa_id: target.empresa_id,
+              role: Role.ADMIN,
+              active: true,
+            },
+          })) <= 1
+        )
+          throw new BadRequestException(
+            'A empresa precisa manter ao menos um administrador ativo',
+          );
+        const fields: string[] = [];
+        if (dto.name !== undefined) {
+          const name = dto.name.trim();
+          if (name.length < 2)
+            throw new BadRequestException('Informe um nome válido');
+          target.name = name;
+          fields.push('name');
+        }
+        if (dto.email !== undefined && email !== target.email) {
+          if (!email && !target.login_code)
+            throw new BadRequestException('Este acesso exige um e-mail');
+          target.email = email;
+          target.email_verified_at = null;
+          target.email_verification_token_hash = null;
+          target.email_verification_expires_at = null;
+          target.password_reset_token_hash = null;
+          target.password_reset_expires_at = null;
+          target.password_setup_token_hash = null;
+          target.password_setup_expires_at = null;
+          fields.push('email');
+        }
+        if (dto.nickname !== undefined) {
+          target.nickname = dto.nickname?.trim() || null;
+          target.nickname_pending = null;
+          target.nickname_request_status = 'none';
+          fields.push('nickname');
+        }
+        if (dto.level !== undefined) {
+          target.level = dto.level;
+          fields.push('level');
+        }
+        if (dto.role && (dto.role as Role) !== target.role) {
+          target.role = dto.role as Role;
+          fields.push('role');
+        }
+        if (!fields.length) return this.toUsuarioResumo(target);
+        if (fields.includes('email') || fields.includes('role'))
+          target.session_version = (target.session_version ?? 0) + 1;
+        await manager.save(Usuario, target);
+        if (target.empresa_id)
+          await manager.save(AdminAuditEvent, {
+            empresa_id: target.empresa_id,
+            ator_id: atorId,
+            acao: 'usuario.atualizado',
+            alvo_tipo: 'usuario',
+            alvo_id: target.id,
+            detalhes: { campos: fields },
+          });
+        return this.toUsuarioResumo(target);
+      });
+      return result;
+    } catch (error) {
+      if ((error as { code?: string }).code === 'ER_DUP_ENTRY')
+        throw new ConflictException('O e-mail já está em uso');
+      throw error;
+    }
+  }
+
   async listarUsuariosDaEmpresa(empresaId: number) {
     const usuarios = await this.usuarioRepository.find({
       where: { empresa_id: empresaId },
@@ -58,10 +231,7 @@ export class ConvitesService {
     return usuarios.map((usuario) => this.toUsuarioResumo(usuario));
   }
 
-  async listarUsuariosPaginados(
-    userId: number,
-    filtros: UsuarioFiltros,
-  ) {
+  async listarUsuariosPaginados(userId: number, filtros: UsuarioFiltros) {
     const empresa = await this.getEmpresaDoAdministrador(userId);
     return this.listarUsuariosPaginadosDaEmpresa(empresa.id, filtros);
   }
@@ -163,7 +333,12 @@ export class ConvitesService {
 
   async listarApelidosPendentes(
     userId: number,
-    filtros: { page?: number; pageSize?: number; search?: string; sort?: 'default' | 'asc' | 'desc' },
+    filtros: {
+      page?: number;
+      pageSize?: number;
+      search?: string;
+      sort?: 'default' | 'asc' | 'desc';
+    },
   ) {
     const empresa = await this.getEmpresaDoAdministrador(userId);
     return this.listarApelidosPendentesDaEmpresa(empresa.id, filtros);
@@ -171,7 +346,12 @@ export class ConvitesService {
 
   async listarApelidosPendentesDaEmpresa(
     empresaId: number,
-    filtros: { page?: number; pageSize?: number; search?: string; sort?: 'default' | 'asc' | 'desc' },
+    filtros: {
+      page?: number;
+      pageSize?: number;
+      search?: string;
+      sort?: 'default' | 'asc' | 'desc';
+    },
   ) {
     const { page, pageSize, search } = this.normalizarFiltrosPaginados(filtros);
     const query = this.usuarioRepository
@@ -191,7 +371,10 @@ export class ConvitesService {
     }
 
     const nicknameSort = filtros.sort === 'asc' || filtros.sort === 'desc';
-    query.orderBy(nicknameSort ? 'usuario.nickname_pending' : 'usuario.id', filtros.sort === 'asc' ? 'ASC' : 'DESC');
+    query.orderBy(
+      nicknameSort ? 'usuario.nickname_pending' : 'usuario.id',
+      filtros.sort === 'asc' ? 'ASC' : 'DESC',
+    );
     if (nicknameSort) query.addOrderBy('usuario.id', 'ASC');
     const [usuarios, total] = await query
       .skip((page - 1) * pageSize)
@@ -268,7 +451,14 @@ export class ConvitesService {
       registration_mode: registrationMode,
     });
     const saved = await this.conviteRepository.save(convite);
-    await this.adminAuditService.registrar({ empresaId, atorId: userId, acao: 'convite.criado', alvoTipo: 'convite', alvoId: saved.id, detalhes: { email: saved.email, role: saved.role } });
+    await this.adminAuditService.registrar({
+      empresaId,
+      atorId: userId,
+      acao: 'convite.criado',
+      alvoTipo: 'convite',
+      alvoId: saved.id,
+      detalhes: { email: saved.email, role: saved.role },
+    });
 
     return {
       convite: this.toResumo(saved),
@@ -297,13 +487,24 @@ export class ConvitesService {
   async listarPaginadosDaEmpresa(empresaId: number, filtros: ConviteFiltros) {
     const { page, pageSize, search } = this.normalizarFiltrosPaginados(filtros);
     const direction = filtros.sort === 'asc' ? 'ASC' : 'DESC';
-    const query = this.conviteRepository.createQueryBuilder('convite')
+    const query = this.conviteRepository
+      .createQueryBuilder('convite')
       .where('convite.empresa_id = :empresaId', { empresaId });
-    if (search) query.andWhere('convite.email LIKE :search', { search: `%${search}%` });
-    const [convites, total] = await query.orderBy('convite.created_at', direction)
+    if (search)
+      query.andWhere('convite.email LIKE :search', { search: `%${search}%` });
+    const [convites, total] = await query
+      .orderBy('convite.created_at', direction)
       .addOrderBy('convite.id', direction)
-      .skip((page - 1) * pageSize).take(pageSize).getManyAndCount();
-    return { items: convites.map((convite) => this.toResumo(convite)), page, pageSize, total, totalPages: Math.ceil(total / pageSize) };
+      .skip((page - 1) * pageSize)
+      .take(pageSize)
+      .getManyAndCount();
+    return {
+      items: convites.map((convite) => this.toResumo(convite)),
+      page,
+      pageSize,
+      total,
+      totalPages: Math.ceil(total / pageSize),
+    };
   }
 
   async revogar(userId: number, conviteId: number) {
@@ -311,7 +512,11 @@ export class ConvitesService {
     return this.revogarDaEmpresa(empresa.id, conviteId, userId);
   }
 
-  async revogarDaEmpresa(empresaId: number, conviteId: number, atorId?: number) {
+  async revogarDaEmpresa(
+    empresaId: number,
+    conviteId: number,
+    atorId?: number,
+  ) {
     const convite = await this.conviteRepository.findOne({
       where: { id: conviteId, empresa_id: empresaId },
     });
@@ -319,7 +524,15 @@ export class ConvitesService {
 
     convite.revoked = true;
     await this.conviteRepository.save(convite);
-    if (atorId) await this.adminAuditService.registrar({ empresaId, atorId, acao: 'convite.revogado', alvoTipo: 'convite', alvoId: convite.id, detalhes: { email: convite.email } });
+    if (atorId)
+      await this.adminAuditService.registrar({
+        empresaId,
+        atorId,
+        acao: 'convite.revogado',
+        alvoTipo: 'convite',
+        alvoId: convite.id,
+        detalhes: { email: convite.email },
+      });
     return this.toResumo(convite);
   }
 
@@ -343,7 +556,11 @@ export class ConvitesService {
     return this.aprovarApelidoDaEmpresa(empresa.id, usuarioId, userId);
   }
 
-  async aprovarApelidoDaEmpresa(empresaId: number, usuarioId: number, atorId?: number) {
+  async aprovarApelidoDaEmpresa(
+    empresaId: number,
+    usuarioId: number,
+    atorId?: number,
+  ) {
     const usuario = await this.getUsuarioDaEmpresa(empresaId, usuarioId);
     if (usuario.role !== Role.USER) {
       throw new BadRequestException(
@@ -355,12 +572,22 @@ export class ConvitesService {
     }
 
     const apelido = usuario.nickname_pending;
-    await ensurePendingRankingSeasonsClosed(this.usuarioRepository.manager.connection);
+    await ensurePendingRankingSeasonsClosed(
+      this.usuarioRepository.manager.connection,
+    );
     usuario.nickname = apelido;
     usuario.nickname_pending = null;
     usuario.nickname_request_status = 'approved';
     await this.usuarioRepository.save(usuario);
-    if (atorId) await this.adminAuditService.registrar({ empresaId, atorId, acao: 'apelido.aprovado', alvoTipo: 'usuario', alvoId: usuario.id, detalhes: { apelido } });
+    if (atorId)
+      await this.adminAuditService.registrar({
+        empresaId,
+        atorId,
+        acao: 'apelido.aprovado',
+        alvoTipo: 'usuario',
+        alvoId: usuario.id,
+        detalhes: { apelido },
+      });
     return this.toUsuarioResumo(usuario);
   }
 
@@ -369,7 +596,11 @@ export class ConvitesService {
     return this.rejeitarApelidoDaEmpresa(empresa.id, usuarioId, userId);
   }
 
-  async rejeitarApelidoDaEmpresa(empresaId: number, usuarioId: number, atorId?: number) {
+  async rejeitarApelidoDaEmpresa(
+    empresaId: number,
+    usuarioId: number,
+    atorId?: number,
+  ) {
     const usuario = await this.getUsuarioDaEmpresa(empresaId, usuarioId);
     if (usuario.role !== Role.USER) {
       throw new BadRequestException(
@@ -384,7 +615,15 @@ export class ConvitesService {
     usuario.nickname_pending = null;
     usuario.nickname_request_status = 'rejected';
     await this.usuarioRepository.save(usuario);
-    if (atorId) await this.adminAuditService.registrar({ empresaId, atorId, acao: 'apelido.rejeitado', alvoTipo: 'usuario', alvoId: usuario.id, detalhes: { apelido } });
+    if (atorId)
+      await this.adminAuditService.registrar({
+        empresaId,
+        atorId,
+        acao: 'apelido.rejeitado',
+        alvoTipo: 'usuario',
+        alvoId: usuario.id,
+        detalhes: { apelido },
+      });
     return this.toUsuarioResumo(usuario);
   }
 
@@ -405,11 +644,7 @@ export class ConvitesService {
         where: { id: usuarioId, empresa_id: empresa.id, role: Role.USER },
         lock: { mode: 'pessimistic_write' },
       });
-      if (
-        !usuario?.active ||
-        usuario.email !== null ||
-        !usuario.login_code
-      ) {
+      if (!usuario?.active || usuario.email !== null || !usuario.login_code) {
         throw new NotFoundException('Aluno não encontrado nesta escola');
       }
 
@@ -452,15 +687,29 @@ export class ConvitesService {
     return this.alterarAtivo(usuarioId, atorId, empresaId, true, motivo);
   }
 
-  async inativarUsuarioGlobal(atorId: number, usuarioId: number, motivo: string) {
+  async inativarUsuarioGlobal(
+    atorId: number,
+    usuarioId: number,
+    motivo: string,
+  ) {
     const usuario = await this.usuarioRepository.findOne({
       where: { id: usuarioId },
     });
     if (!usuario) throw new NotFoundException('Usuário não encontrado');
-    return this.alterarAtivo(usuarioId, atorId, usuario.empresa_id, false, motivo);
+    return this.alterarAtivo(
+      usuarioId,
+      atorId,
+      usuario.empresa_id,
+      false,
+      motivo,
+    );
   }
 
-  async reativarUsuarioGlobal(atorId: number, usuarioId: number, motivo: string) {
+  async reativarUsuarioGlobal(
+    atorId: number,
+    usuarioId: number,
+    motivo: string,
+  ) {
     const usuario = await this.usuarioRepository.findOne({
       where: { id: usuarioId },
     });
@@ -470,7 +719,13 @@ export class ConvitesService {
         'Somente contas vinculadas a uma escola podem ser reativadas por aqui',
       );
     }
-    return this.alterarAtivo(usuarioId, atorId, usuario.empresa_id, true, motivo);
+    return this.alterarAtivo(
+      usuarioId,
+      atorId,
+      usuario.empresa_id,
+      true,
+      motivo,
+    );
   }
 
   private async getEmpresaDoAdministrador(userId: number) {
@@ -542,8 +797,14 @@ export class ConvitesService {
     motivo: string,
   ) {
     const motivoNormalizado = motivo?.trim();
-    if (!motivoNormalizado || motivoNormalizado.length < 5 || motivoNormalizado.length > 300) {
-      throw new BadRequestException('Informe um motivo entre 5 e 300 caracteres');
+    if (
+      !motivoNormalizado ||
+      motivoNormalizado.length < 5 ||
+      motivoNormalizado.length > 300
+    ) {
+      throw new BadRequestException(
+        'Informe um motivo entre 5 e 300 caracteres',
+      );
     }
 
     const usuario = await this.dataSource.transaction(async (manager) => {
@@ -574,7 +835,9 @@ export class ConvitesService {
       }
       if (target.active === active) {
         throw new BadRequestException(
-          active ? 'Este usuário já está ativo' : 'Este usuário já está inativo',
+          active
+            ? 'Este usuário já está ativo'
+            : 'Este usuário já está inativo',
         );
       }
       if (!active && target.role === Role.ADMIN && empresaId) {
@@ -608,10 +871,9 @@ export class ConvitesService {
       return target;
     });
 
-    this.eventEmitter.emit(
-      active ? 'usuario.reativado' : 'usuario.inativado',
-      { userId: usuario.id },
-    );
+    this.eventEmitter.emit(active ? 'usuario.reativado' : 'usuario.inativado', {
+      userId: usuario.id,
+    });
     return this.toUsuarioResumo(usuario);
   }
 

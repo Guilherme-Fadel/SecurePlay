@@ -7,6 +7,7 @@ import {
   Request,
   Param,
   Query,
+  ParseIntPipe,
 } from '@nestjs/common';
 import { AdminService } from './admin.service';
 import { ConvitesService } from './convites.service';
@@ -17,6 +18,9 @@ import { Roles } from '../auth/roles.decorator';
 import { Role } from '../auth/roles.enum';
 import { Throttle } from '@nestjs/throttler';
 import { ChangeUserStatusDto } from './dto/change-user-status.dto';
+import { UpdateAdminUserDto } from './dto/update-admin-user.dto';
+
+type AdminRequest = { user: { userId: number } };
 
 @Controller('admin/empresa')
 @Roles(Role.ADMIN)
@@ -27,29 +31,29 @@ export class AdminController {
   ) {}
 
   @Get('tema')
-  async getTema(@Request() req: any) {
+  async getTema(@Request() req: AdminRequest) {
     return this.adminService.getTema(req.user.userId);
   }
 
   @Get('parametros')
-  async getParametros(@Request() req: any) {
+  async getParametros(@Request() req: AdminRequest) {
     return this.adminService.getParametros(req.user.userId);
   }
 
   @Put('tema')
-  async updateTema(@Request() req: any, @Body() dto: UpdateTemaDto) {
+  async updateTema(@Request() req: AdminRequest, @Body() dto: UpdateTemaDto) {
     return this.adminService.updateTema(req.user.userId, dto);
   }
 
   @Post('logo/presign')
   @Throttle({ short: { limit: 5, ttl: 60000 } })
-  async presignLogo(@Request() req: any, @Body() dto: PresignLogoDto) {
+  async presignLogo(@Request() req: AdminRequest, @Body() dto: PresignLogoDto) {
     return this.adminService.presignLogo(req.user.userId, dto.contentType);
   }
 
   @Get('usuarios')
   async listarUsuarios(
-    @Request() req: any,
+    @Request() req: AdminRequest,
     @Query('page') page?: string,
     @Query('pageSize') pageSize?: string,
     @Query('search') search?: string,
@@ -65,14 +69,31 @@ export class AdminController {
     });
   }
 
+  @Get('usuarios/:id')
+  async obterUsuario(
+    @Request() req: AdminRequest,
+    @Param('id', ParseIntPipe) id: number,
+  ) {
+    return this.convitesService.obterUsuario(req.user.userId, id);
+  }
+
+  @Put('usuarios/:id')
+  async atualizarUsuario(
+    @Request() req: AdminRequest,
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: UpdateAdminUserDto,
+  ) {
+    return this.convitesService.atualizarUsuario(req.user.userId, id, dto);
+  }
+
   @Get('resumo')
-  async obterResumo(@Request() req: any) {
+  async obterResumo(@Request() req: AdminRequest) {
     return this.convitesService.obterResumoAdministrativo(req.user.userId);
   }
 
   @Get('apelidos-pendentes')
   async listarApelidosPendentes(
-    @Request() req: any,
+    @Request() req: AdminRequest,
     @Query('page') page?: string,
     @Query('pageSize') pageSize?: string,
     @Query('search') search?: string,
@@ -87,47 +108,53 @@ export class AdminController {
   }
 
   @Get('convites')
-  async listarConvites(@Request() req: any) {
+  async listarConvites(@Request() req: AdminRequest) {
     return this.convitesService.listar(req.user.userId);
   }
 
   @Get('convites/paginados')
   async listarConvitesPaginados(
-    @Request() req: any,
+    @Request() req: AdminRequest,
     @Query('page') page?: string,
     @Query('pageSize') pageSize?: string,
     @Query('search') search?: string,
     @Query('sort') sort?: 'asc' | 'desc',
   ) {
     return this.convitesService.listarPaginados(req.user.userId, {
-      page: Number(page), pageSize: Number(pageSize), search, sort,
+      page: Number(page),
+      pageSize: Number(pageSize),
+      search,
+      sort,
     });
   }
 
   @Post('convites')
   @Throttle({ short: { limit: 10, ttl: 60000 } })
-  async criarConvite(@Request() req: any, @Body() dto: CreateConviteDto) {
+  async criarConvite(
+    @Request() req: AdminRequest,
+    @Body() dto: CreateConviteDto,
+  ) {
     return this.convitesService.criar(req.user.userId, dto);
   }
 
   @Post('convites/:id/revogar')
-  async revogarConvite(@Request() req: any, @Param('id') id: string) {
+  async revogarConvite(@Request() req: AdminRequest, @Param('id') id: string) {
     return this.convitesService.revogar(req.user.userId, Number(id));
   }
 
   @Post('usuarios/:id/apelido/aprovar')
-  async aprovarApelido(@Request() req: any, @Param('id') id: string) {
+  async aprovarApelido(@Request() req: AdminRequest, @Param('id') id: string) {
     return this.convitesService.aprovarApelido(req.user.userId, Number(id));
   }
 
   @Post('usuarios/:id/apelido/rejeitar')
-  async rejeitarApelido(@Request() req: any, @Param('id') id: string) {
+  async rejeitarApelido(@Request() req: AdminRequest, @Param('id') id: string) {
     return this.convitesService.rejeitarApelido(req.user.userId, Number(id));
   }
 
   @Post('usuarios/:id/inativar')
   async inativarUsuario(
-    @Request() req: any,
+    @Request() req: AdminRequest,
     @Param('id') id: string,
     @Body() dto: ChangeUserStatusDto,
   ) {
@@ -140,7 +167,7 @@ export class AdminController {
 
   @Post('usuarios/:id/reativar')
   async reativarUsuario(
-    @Request() req: any,
+    @Request() req: AdminRequest,
     @Param('id') id: string,
     @Body() dto: ChangeUserStatusDto,
   ) {
@@ -154,7 +181,7 @@ export class AdminController {
   @Post('usuarios/:id/redefinicao-acesso')
   @Throttle({ short: { limit: 10, ttl: 60000 } })
   async emitirLinkRedefinicaoAluno(
-    @Request() req: any,
+    @Request() req: AdminRequest,
     @Param('id') id: string,
   ) {
     return this.convitesService.emitirLinkRedefinicaoAluno(

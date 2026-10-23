@@ -1,8 +1,10 @@
+import { AdminFeedback } from './console/AdminFeedback';
+import { AdminRecordCard } from './console/AdminRecordCard';
 import { useCachedQuery } from '@/hooks/useCachedQuery';
 import { adminQueryKey } from '@/lib/adminCache';
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useNotebookLayout } from '@/hooks/useNotebookLayout';
-import { AlertCircle, CheckCircle2, Copy, Plus } from "lucide-react";
+import { Copy, Plus } from "lucide-react";
 import { AppButton } from "@/components/ui/buttons/AppButton";
 import { AppSearchInput } from "@/components/ui/forms/AppSearchInput";
 import { AppSelect } from "@/components/ui/forms/AppSelect";
@@ -122,6 +124,7 @@ export function CompanyManagementTab({
     }
   };
 
+  const FormCard = consoleMode ? AdminRecordCard : 'section';
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     await cadastrar();
@@ -161,17 +164,10 @@ export function CompanyManagementTab({
       )}
 
       {mensagem && (
-        <div
-          className={`admin-feedback ${erro ? "is-error" : ""}`}
-          role="status"
-          aria-live="polite"
-        >
-          {erro ? <AlertCircle size={17} /> : <CheckCircle2 size={17} />}
-          <span>{mensagem}</span>
-        </div>
+        <AdminFeedback variant={erro ? 'error' : 'success'}>{mensagem}</AdminFeedback>
       )}
 
-      {mode !== 'list' && <section className="admin-company-form-card">
+      {mode !== 'list' && <FormCard className="admin-company-form-card">
         {!consoleMode && <div className="admin-company-form-heading">
           <div className="admin-heading-title">
             <h2>Nova empresa</h2>
@@ -212,7 +208,7 @@ export function CompanyManagementTab({
             {salvando ? "Cadastrando..." : "Cadastrar empresa e gerar convite"}
           </AppButton>}
         </form>
-      </section>}
+      </FormCard>}
 
       {mode !== 'list' && linkAdministrador && (
         <section className="admin-company-invite-card">

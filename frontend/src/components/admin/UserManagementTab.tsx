@@ -1,23 +1,32 @@
+import { atualizarUsuarioAdministrativo, obterPropriosDadosPlataforma, type UpdateAdminUser } from '@/services/convites';
+import { AdminFeedback } from './console/AdminFeedback';
 import { useDeferredValue, useEffect, useRef, useState, type FormEvent } from 'react';
-import { AlertCircle, Ban, CheckCircle2, Copy, KeyRound, RotateCcw, UsersRound, X } from 'lucide-react';
+import { ArrowLeft, Ban, Copy, KeyRound, Pencil, Plus, RotateCcw, UsersRound, X } from 'lucide-react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { AppButton } from '@/components/ui/buttons/AppButton';
 import { AppInput } from '@/components/ui/forms/AppInput';
 import { AppSearchInput } from '@/components/ui/forms/AppSearchInput';
 import { AppSelect } from '@/components/ui/forms/AppSelect';
 import { AdminListToolbar, AdminPageHeader, AdminPagination } from './AdminListLayout';
-import { cn } from '@/lib/utils';
-import { emitirLinkRedefinicaoAluno, inativarUsuario, listarUsuarios, reativarUsuario, type UsuarioEmpresa, type UsuariosPaginados } from '@/services/convites';
+import { emitirLinkRedefinicaoAluno, inativarUsuario, listarUsuarios, obterUsuario, reativarUsuario, type UsuarioEmpresa, type UsuariosPaginados } from '@/services/convites';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { useNotebookLayout } from '@/hooks/useNotebookLayout';
 import { AdminDataGrid, type AdminDataGridColumn } from '@/components/admin/console/AdminDataGrid';
 import { useCachedQuery } from '@/hooks/useCachedQuery';
 import { adminQueryKey } from '@/lib/adminCache';
+import { useAdminUnsavedChanges } from '@/hooks/useAdminUnsavedChanges';
+import { AdminRecordCard } from '@/components/admin/console/AdminRecordCard';
 
-interface UserManagementTabProps { empresaId?: number; consoleMode?: boolean; }
+interface UserManagementTabProps { empresaId?: number; consoleMode?: boolean; usuarioId?: number; }
 const emptyResult: UsuariosPaginados = { items: [], page: 1, pageSize: 25, total: 0, totalPages: 0 };
 
-export function UserManagementTab({ empresaId, consoleMode = false }: UserManagementTabProps) {
-  const { user } = useCurrentUser();
+export function UserManagementTab({ empresaId, consoleMode = false, usuarioId }: UserManagementTabProps) {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const listPath = empresaId ? `/admin/empresas/${empresaId}/pessoas/usuarios` : '/admin/pessoas/usuarios';
+  const [selectedId, setSelectedId] = useState<number | null>(null);
+  const openUser = (usuario: UsuarioEmpresa) => navigate(`${listPath}/${usuario.id}/editar`, { state: { selectedId: usuario.id } });
+  const { user, setSession } = useCurrentUser();
   const notebook = useNotebookLayout();
   const pageSize = consoleMode ? 25 : notebook ? 4 : 25;
   const sessionKey = `secureplay-admin-users:${user?.userId ?? 'unknown'}:${empresaId ?? 'company'}`;
@@ -30,20 +39,55 @@ export function UserManagementTab({ empresaId, consoleMode = false }: UserManage
   const [feedback, setFeedback] = useState<string | null>(null);
   const [restoredKey, setRestoredKey] = useState<string | null>(null);
   const filters = { page, pageSize, search: deferredSearch, status: status || undefined, sort };
-  const query = useCachedQuery(adminQueryKey('users', empresaId, filters), () => listarUsuarios(filters, empresaId), { enabled: restoredKey === sessionKey });
+  const query = useCachedQuery(adminQueryKey('users', empresaId, filters), () => listarUsuarios(filters, empresaId), { enabled: !usuarioId && restoredKey === sessionKey });
+  const detail = useCachedQuery(adminQueryKey('users', empresaId, { id: usuarioId }), () => user?.role === 'platform_admin' && !empresaId ? obterPropriosDadosPlataforma(usuarioId ?? 0) : obterUsuario(usuarioId ?? 0, empresaId), { enabled: Boolean(usuarioId) });
   const usuarios = query.data ?? emptyResult;
   const loading = query.loading;
   const loadError = Boolean(query.error);
   const [statusChange, setStatusChange] = useState<{ usuario: UsuarioEmpresa; action: 'inativar' | 'reativar'; empresaId?: number } | null>(null);
   const [reason, setReason] = useState('');
   const [resetLink, setResetLink] = useState<{ userId: number; value: string } | null>(null);
+  const [draft, setDraft] = useState<{ name: string; email: string; nickname: string; level: number; role: string } | null>(null);
+  const [baseline, setBaseline] = useState<typeof draft>(null);
+  const [savingRecord, setSavingRecord] = useState(false);
+  const formRef = useRef<HTMLFormElement>(null);
+  const recordDirty = Boolean(draft && baseline && JSON.stringify(draft) !== JSON.stringify(baseline));
+  const recordDirtyRef = useRef(recordDirty);
+  recordDirtyRef.current = recordDirty;
+  const canEditRecord = Boolean(detail.data && (user?.role === 'platform_admin' ? detail.data.role !== 'platform_admin' || detail.data.id === user.userId : detail.data.id !== user?.userId && detail.data.role !== 'platform_admin'));
+  const fillDraft = (record: UsuarioEmpresa) => ({ name: record.name, email: record.email ?? '', nickname: record.nickname ?? '', level: record.level, role: record.role });
+  useEffect(() => { if (detail.data && !recordDirtyRef.current) { const next = fillDraft(detail.data); setDraft(next); setBaseline(next); } }, [detail.data]);
+  const saveRecord = async () => {
+    if (!draft || !baseline || !usuarioId || !canEditRecord || !recordDirty || savingRecord || !formRef.current?.reportValidity()) return false;
+    const changes: UpdateAdminUser = {};
+    if (draft.name !== baseline.name) changes.name = draft.name.trim();
+    if (draft.email !== baseline.email) changes.email = draft.email.trim() || null;
+    if (draft.nickname !== baseline.nickname) changes.nickname = draft.nickname.trim() || null;
+    if (draft.level !== baseline.level) changes.level = draft.level;
+    if (draft.role !== baseline.role && (draft.role === 'admin' || draft.role === 'user')) changes.role = draft.role;
+    setSavingRecord(true); setFeedback(null);
+    try {
+      const saved = await atualizarUsuarioAdministrativo(usuarioId, changes, empresaId, user?.role === 'platform_admin');
+      const next = fillDraft(saved); setDraft(next); setBaseline(next);
+      if (user?.userId === saved.id) setSession({ ...user, name: saved.name, email: saved.email, nickname: saved.nickname, level: saved.level });
+      setFeedback('Dados do usuário atualizados.'); return true;
+    } catch (error: any) { setFeedback(`Não foi possível salvar: ${error.response?.data?.message ?? 'confira os dados e tente novamente.'}`); return false; }
+    finally { setSavingRecord(false); }
+  };
+  const { prompt: unsavedPrompt } = useAdminUnsavedChanges(consoleMode && (Boolean(statusChange) || recordDirty), recordDirty ? saveRecord : undefined, consoleMode && (updatingUser !== null || savingRecord));
   const currentEmpresaId = useRef(empresaId);
   currentEmpresaId.current = empresaId;
 
   useEffect(() => {
     setStatusChange(null);
     setReason('');
-  }, [empresaId]);
+  }, [empresaId, usuarioId]);
+
+  useEffect(() => { setSelectedId(location.state?.selectedId ?? null); }, [location.state]);
+
+  useEffect(() => {
+    if (query.data && selectedId !== null && !query.data.items.some((item) => item.id === selectedId)) setSelectedId(null);
+  }, [query.data, selectedId]);
 
   useEffect(() => {
     try {
@@ -66,7 +110,7 @@ export function UserManagementTab({ empresaId, consoleMode = false }: UserManage
   useEffect(() => {
     if (restoredKey !== sessionKey || deferredSearch !== search) return;
     try { sessionStorage.setItem(sessionKey, JSON.stringify({ search, status, sort, page })); } catch { /* Optional session preference. */ }
-  }, [page, restoredKey, search, sessionKey, status, sort]);
+  }, [deferredSearch, page, restoredKey, search, sessionKey, status, sort]);
 
   useEffect(() => {
     if (query.data && page > Math.max(1, query.data.totalPages)) setPage(Math.max(1, query.data.totalPages));
@@ -137,18 +181,17 @@ export function UserManagementTab({ empresaId, consoleMode = false }: UserManage
 
   return (
     <div className="admin-users-content">
+      {unsavedPrompt}
       <AdminPageHeader
-        title="Usuários"
+        title={usuarioId ? 'Gerenciar usuário' : 'Usuários'}
         description="Pesquise, filtre e gerencie os acessos da empresa."
-        count={loading || loadError ? undefined : usuarios.total}
+        count={usuarioId || loading || loadError ? undefined : usuarios.total}
         countLabel="usuários cadastrados"
         countIcon={<UsersRound size={18} />}
+        action={usuarioId ? <Link className="admin-console-back-link" to={typeof location.state?.returnTo === 'string' && location.state.returnTo.startsWith('/admin/') ? location.state.returnTo : listPath} state={{ selectedId: usuarioId }}><ArrowLeft size={16} /> Voltar</Link> : undefined}
       />
       {feedback && (
-        <div className={cn('admin-feedback', feedback.startsWith('Não foi') && 'is-error')} role={feedback.startsWith('Não foi') ? 'alert' : 'status'}>
-          {feedback.startsWith('Não foi') ? <AlertCircle size={17} aria-hidden="true" /> : <CheckCircle2 size={17} aria-hidden="true" />}
-          {feedback}
-        </div>
+        <AdminFeedback variant={feedback.startsWith('Não foi') || feedback.startsWith('Informe') ? 'error' : 'success'}>{feedback}</AdminFeedback>
       )}
       {resetLink && <div className="admin-user-reset-link" role="status">
         <div><strong>Link de redefinição</strong><small>Entregue diretamente ao aluno. Uso único; expira em 20 minutos.</small></div>
@@ -182,7 +225,23 @@ export function UserManagementTab({ empresaId, consoleMode = false }: UserManage
           </div>
         </form>
       )}
-      <AdminDataGrid columns={columns} rows={usuarios.items} rowKey={(usuario) => usuario.id} loading={loading} error={loadError ? 'Não foi possível carregar os usuários.' : undefined} onRetry={query.refetch} empty="Nenhum usuário corresponde aos filtros." toolbar={<AdminListToolbar>
+      {usuarioId ? <AdminRecordCard className="admin-user-editor" busy={detail.loading}>
+        {detail.loading ? <p role="status">Carregando usuário…</p> : detail.error || !detail.data ? <div role="alert"><p>Não foi possível carregar este usuário na empresa.</p><AppButton onClick={detail.refetch}>Tentar novamente</AppButton></div> : <>
+          <header><h2>{detail.data.name}</h2><span className={`admin-user-status ${detail.data.active ? 'is-active' : 'is-inactive'}`}>{detail.data.active ? 'Ativo' : 'Inativo'}</span></header>
+          {draft && <form ref={formRef} className="admin-user-edit-form" onSubmit={event => { event.preventDefault(); void saveRecord(); }}>
+            <fieldset className="admin-record-fields" disabled={!canEditRecord || savingRecord}>
+              <label className="admin-console-setting-field"><span>Nome</span><AppInput value={draft.name} minLength={2} maxLength={100} required onChange={event => setDraft({ ...draft, name: event.target.value })} /></label>
+              <label className="admin-console-setting-field"><span>E-mail</span><AppInput type="email" value={draft.email} maxLength={100} required={detail.data.login_method === 'email'} onChange={event => setDraft({ ...draft, email: event.target.value })} /></label>
+              <label className="admin-console-setting-field"><span>Apelido</span><AppInput value={draft.nickname} minLength={2} maxLength={24} onChange={event => setDraft({ ...draft, nickname: event.target.value })} /></label>
+              <label className="admin-console-setting-field"><span>Perfil</span><AppSelect aria-label="Perfil" value={draft.role} disabled={!canEditRecord || savingRecord || draft.role === 'platform_admin'} onChange={event => setDraft({ ...draft, role: event.target.value })}><option value="user">Aluno</option><option value="admin">Administrador</option>{draft.role === 'platform_admin' && <option value="platform_admin">Administrador da plataforma</option>}</AppSelect></label>
+              <label className="admin-console-setting-field"><span>Nível</span><input className="app-text-input" type="number" value={draft.level} min={1} max={100000} required onChange={event => setDraft({ ...draft, level: Number(event.target.value) })} /></label>
+            </fieldset>
+            {!canEditRecord && <p role="status">Somente o administrador da plataforma pode editar os próprios dados. Contas da plataforma são editadas pelo próprio titular.</p>}
+            <div className="admin-console-setting-actions"><AppButton variant="ghost" disabled={!recordDirty || savingRecord} onClick={() => setDraft(baseline)}>Cancelar</AppButton><AppButton type="submit" disabled={!canEditRecord || !recordDirty || savingRecord}>{savingRecord ? 'Salvando…' : 'Salvar'}</AppButton></div>
+          </form>}
+          <div className="admin-user-editor-actions"><h3>Gerenciar acesso</h3><p>As alterações de status exigem um motivo e são registradas na auditoria.</p>{columns.find((column) => column.key === 'actions')?.render(detail.data)}{(detail.data.id === user?.userId || detail.data.role === 'platform_admin') && <p>O acesso desta conta não pode ser alterado por esta tela.</p>}</div>
+        </>}
+      </AdminRecordCard> : <AdminDataGrid selectedKey={selectedId} onSelectRow={consoleMode ? (usuario) => setSelectedId(usuario.id) : undefined} onOpenRow={consoleMode ? openUser : undefined} columns={consoleMode ? [{ key: 'edit', label: 'Editar', className: 'admin-grid-icon-column', render: (usuario) => <button type="button" className="admin-grid-icon-action" aria-label={`Editar ${usuario.name}`} title={`Editar ${usuario.name}`} onClick={() => openUser(usuario)}><Pencil size={16} aria-hidden="true" /></button> }, ...columns.filter((column) => column.key !== 'actions')] : columns} rows={usuarios.items} rowKey={(usuario) => usuario.id} loading={loading} error={loadError ? 'Não foi possível carregar os usuários.' : undefined} onRetry={query.refetch} empty="Nenhum usuário corresponde aos filtros." toolbar={<AdminListToolbar actions={consoleMode ? <Link className="admin-console-primary-link" to={empresaId ? `/admin/empresas/${empresaId}/pessoas/convites/novo` : '/admin/pessoas/convites/novo'}><Plus size={16} />Novo</Link> : undefined}>
           <AppSearchInput label="Buscar usuários" value={search} onChange={(event) => { setSearch(event.target.value); setPage(1); }} placeholder="Buscar nome, e-mail ou apelido" />
           <AppSelect aria-label="Filtrar usuários" value={status} onChange={(event) => { setStatus(event.target.value as typeof status); setPage(1); }}>
             <option value="">Todos</option><option value="active">Ativos</option><option value="inactive">Inativos</option><option value="management">Gerência</option>
@@ -190,7 +249,8 @@ export function UserManagementTab({ empresaId, consoleMode = false }: UserManage
           <AppSelect aria-label="Ordenar usuários por nome" value={sort} onChange={(event) => { setSort(event.target.value as 'asc' | 'desc'); setPage(1); }}>
             <option value="asc">Nome A–Z</option><option value="desc">Nome Z–A</option>
           </AppSelect>
-        </AdminListToolbar>} footer={!loading && !loadError ? <AdminPagination alwaysVisible={consoleMode} page={page} totalPages={usuarios.totalPages} ariaLabel="Paginação de usuários" onPageChange={setPage} /> : null} />
+          {(search || status || sort !== 'asc') && <AppButton variant="ghost" size="sm" onClick={() => { setSearch(''); setStatus(''); setSort('asc'); setPage(1); }}>Limpar filtros</AppButton>}
+        </AdminListToolbar>} footer={!loading && !loadError ? <><span className="admin-grid-total">{usuarios.total} registros</span><AdminPagination alwaysVisible={consoleMode} page={page} totalPages={usuarios.totalPages} ariaLabel="Paginação de usuários" onPageChange={setPage} /></> : null} />}
     </div>
   );
 }

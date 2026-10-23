@@ -1,12 +1,15 @@
+import { CompanyAppearanceFields } from './CompanyAppearanceFields';
+import { AdminFeedback } from './AdminFeedback';
 import { useCachedQuery } from '@/hooks/useCachedQuery';
 import { adminQueryKey } from '@/lib/adminCache';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { RotateCcw, Upload } from 'lucide-react';
+import { ArrowLeft, RotateCcw } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { AdminRecordCard } from './AdminRecordCard';
 import { AppButton } from '@/components/ui/buttons/AppButton';
 import { AppInput } from '@/components/ui/forms/AppInput';
 import { AdminPageHeader } from '@/components/admin/AdminListLayout';
 import { CompanyParametersTab } from '@/components/admin/CompanyParametersTab';
-import { AdminThemePreview } from '@/components/admin/AdminThemePreview';
 import { DEFAULT_PALETTES } from '@/lib/defaultPalettes';
 import { optimizeImageUpload } from '@/lib/optimizeImageUpload';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
@@ -17,14 +20,14 @@ import type { CompanyParameters } from '@/config/features';
 
 export type AdminConsoleSettingsKind = 'data' | 'appearance' | 'features';
 
-export function AdminConsoleSettings({ kind, empresaId }: { kind: AdminConsoleSettingsKind; empresaId?: number }) {
-  if (kind === 'data') return <CompanyDataSettings empresaId={empresaId} />;
+export function AdminConsoleSettings({ kind, empresaId, embedded = false }: { kind: AdminConsoleSettingsKind; empresaId?: number; embedded?: boolean }) {
+  if (kind === 'data') return <CompanyDataSettings empresaId={empresaId} embedded={embedded} />;
   if (kind === 'appearance') return <AppearanceSettings empresaId={empresaId} />;
   if (kind === 'features' && typeof empresaId === 'number') return <FeatureSettings empresaId={empresaId} />;
   return <section className="admin-console-unavailable" role="alert"><h1>Configuração indisponível</h1><p>Esta configuração exige uma empresa selecionada.</p></section>;
 }
 
-function CompanyDataSettings({ empresaId }: { empresaId?: number }) {
+function CompanyDataSettings({ empresaId, embedded = false }: { empresaId?: number; embedded?: boolean }) {
   const { user } = useCurrentUser();
   const canEdit = user?.role === 'platform_admin' && typeof empresaId === 'number';
   const query = useCachedQuery(adminQueryKey('theme', empresaId), () => getTema(empresaId));
@@ -50,6 +53,28 @@ function CompanyDataSettings({ empresaId }: { empresaId?: number }) {
     finally { setSaving(false); }
   };
   const { prompt: unsavedPrompt } = useAdminUnsavedChanges(dirty, save, saving);
+  if (canEdit) {
+    const formId = `company-record-${empresaId}`;
+    return <>{unsavedPrompt}<div className="admin-users-content admin-company-record-page">
+      <AdminPageHeader title={embedded ? 'Dados cadastrais' : 'Editar empresa'} description="Consulte e atualize os dados cadastrais desta empresa." action={<>
+        {!embedded && <Link className="admin-console-back-link" to="/admin/empresas" state={{ selectedId: empresaId }}><ArrowLeft size={16} /> Voltar</Link>}
+        <div className="admin-console-setting-actions">
+          <AppButton variant="ghost" aria-label="Cancelar alterações" icon={<RotateCcw size={15} />} disabled={!dirty || saving || loading} onClick={() => { setName(theme?.nome ?? ''); setMessage(null); }}>Cancelar</AppButton>
+          <AppButton type="submit" form={formId} disabled={!dirty || saving || loading || Boolean(query.error)}>{saving ? 'Salvando…' : 'Salvar'}</AppButton>
+        </div>
+      </>} />
+      {message && <AdminFeedback variant={message.startsWith('Não foi') || message.startsWith('Informe') ? 'error' : 'success'}>{message}</AdminFeedback>}
+      <AdminRecordCard busy={loading || saving}>
+        {loading ? <p role="status">Carregando empresa…</p> : query.error ? <div role="alert"><p>Não foi possível carregar os dados desta empresa.</p><AppButton size="sm" variant="secondary" onClick={query.refetch}>Tentar novamente</AppButton></div> : <>
+          {!embedded && <header><h2>{theme?.nome}</h2><span className="admin-record-code">Empresa #{empresaId}</span></header>}
+          <form id={formId} className="admin-record-fields" onSubmit={(event) => { event.preventDefault(); void save(); }}>
+            <label className="admin-console-setting-field" htmlFor={`${formId}-name`}><span>Nome da empresa</span><AppInput id={`${formId}-name`} autoComplete="organization" required minLength={2} maxLength={100} value={name} onChange={(event) => setName(event.target.value)} disabled={saving} /></label>
+            <label className="admin-console-setting-field" htmlFor={`${formId}-code`}><span>Código</span><AppInput id={`${formId}-code`} value={empresaId} readOnly /></label>
+          </form>
+        </>}
+      </AdminRecordCard>
+    </div></>;
+  }
   return <>{unsavedPrompt}<section className="admin-console-settings"><AdminPageHeader action={canEdit ? <div className="admin-console-setting-actions"><AppButton className="admin-console-secondary-action" aria-label="Cancelar alterações" variant="ghost" disabled={!dirty || saving || loading || Boolean(query.error)} icon={<RotateCcw size={15} />} onClick={() => setName(theme?.nome ?? '')}>Cancelar</AppButton><AppButton disabled={!dirty || saving || loading || Boolean(query.error)} onClick={() => void save()}>{saving ? 'Salvando…' : 'Salvar'}</AppButton></div> : undefined} title="Dados da empresa" description={canEdit ? 'Atualize o nome da empresa selecionada.' : 'Identificação da empresa vinculada à sua sessão.'} />
     {loading ? <p role="status">Carregando dados…</p> : query.error && !dirty ? null : <label className="admin-console-setting-field"><span>Nome da empresa</span><AppInput value={name} onChange={(event) => setName(event.target.value)} minLength={2} maxLength={100} disabled={!canEdit || saving || Boolean(query.error)} /></label>}
     {query.error && <p role="alert">Não foi possível carregar os dados. <button type="button" onClick={query.refetch}>Tentar novamente</button></p>}{message && <p role="status">{message}</p>}
@@ -112,10 +137,7 @@ function AppearanceSettings({ empresaId }: { empresaId?: number }) {
   const reset = () => { setPalette(theme?.paleta ?? DEFAULT_PALETTES[0].paleta); setLogoKey(theme?.logo_url ?? null); setLogoPreview(theme?.logo_preview_url ?? null); if (objectUrl.current) { URL.revokeObjectURL(objectUrl.current); objectUrl.current = null; } };
   const { prompt: unsavedPrompt } = useAdminUnsavedChanges(dirty || uploading, save, saving || uploading);
   return <>{unsavedPrompt}<section className="admin-console-settings"><AdminPageHeader action={<div className="admin-console-setting-actions"><AppButton className="admin-console-secondary-action" aria-label="Cancelar alterações" variant="ghost" disabled={!dirty || saving || uploading} icon={<RotateCcw size={15} />} onClick={reset}>Cancelar alterações</AppButton><AppButton disabled={!dirty || saving || uploading || loading} onClick={() => void save()}>{saving ? 'Salvando…' : uploading ? 'Enviando…' : 'Salvar'}</AppButton></div>} title="Aparência" description="Personalize o logo e as cores da experiência da empresa." />
-    {loading ? <p role="status">Carregando aparência…</p> : query.error && !dirty ? null : <div className="admin-console-appearance-layout"><div className="admin-console-appearance-form">
-      <section className="admin-console-settings-card" aria-label="Marca da empresa"><h2>{theme?.nome}</h2><div className="admin-console-logo-preview">{logoPreview && logoPreview !== failedPreview ? <img src={logoPreview} alt="Prévia do logo da empresa" onError={() => setFailedPreview(logoPreview)} /> : <span>{logoKey ? 'Logo indisponível' : 'Sem logotipo'}</span>}</div><label className="admin-console-upload"><Upload size={15} /> Selecionar logo<input type="file" accept="image/png,image/webp,image/jpeg" onChange={(event) => void uploadLogo(event)} disabled={uploading || saving} /></label>{logoKey && <AppButton variant="ghost" size="sm" disabled={saving || uploading} onClick={() => { setLogoKey(null); setLogoPreview(null); if (objectUrl.current) { URL.revokeObjectURL(objectUrl.current); objectUrl.current = null; } }}>Remover logo</AppButton>}</section>
-      <section className="admin-console-settings-card"><h2>Paletas disponíveis</h2><div className="admin-console-palette-list">{DEFAULT_PALETTES.map((preset) => <button type="button" disabled={saving || uploading} key={preset.name} aria-pressed={preset.paleta.primary === palette.primary && preset.paleta.secondary === palette.secondary && preset.paleta.accent === palette.accent} onClick={() => setPalette(preset.paleta)}><span style={{ background: preset.paleta.primary }} /><span style={{ background: preset.paleta.secondary }} /><span style={{ background: preset.paleta.accent }} />{preset.name}</button>)}</div><div className="admin-console-color-fields">{(['primary', 'secondary', 'accent', 'text_primary', 'text_secondary'] as const).map((key) => <label key={key}>{key.replace('_', ' ')}<input type="color" disabled={saving || uploading} value={/^#[0-9a-f]{6}$/i.test(palette[key]) ? palette[key] : '#000000'} onChange={(event) => setPalette((current) => ({ ...current, [key]: event.target.value }))} /></label>)}</div></section>
-    </div><div className="admin-console-appearance-preview"><AdminThemePreview paleta={palette} logoPreview={logoPreview === failedPreview ? null : logoPreview} onLogoError={setFailedPreview} empresaNome={theme?.nome ?? ''} userInitial={user?.name?.charAt(0).toUpperCase() ?? ''} /></div></div>}
+    {loading ? <p role="status">Carregando aparência…</p> : query.error && !dirty ? null : <CompanyAppearanceFields theme={theme} palette={palette} setPalette={setPalette} logoKey={logoKey} logoPreview={logoPreview} failedPreview={failedPreview} setFailedPreview={setFailedPreview} saving={saving} uploading={uploading} uploadLogo={uploadLogo} removeLogo={() => { setLogoKey(null); setLogoPreview(null); if (objectUrl.current) { URL.revokeObjectURL(objectUrl.current); objectUrl.current = null; } }} user={user} />}
     {query.error && <p role="alert">Não foi possível carregar os dados. <button type="button" onClick={query.refetch}>Tentar novamente</button></p>}{message && <p role="status">{message}</p>}
 
   </section></>;

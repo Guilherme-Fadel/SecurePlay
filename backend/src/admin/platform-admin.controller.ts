@@ -24,10 +24,54 @@ import { AdminAuditService } from './admin-audit.service';
 import { ChangeUserStatusDto } from './dto/change-user-status.dto';
 import { SaveSchoolPilotDto } from './dto/school-pilot.dto';
 import { SchoolPilotService } from './school-pilot.service';
+import { UpdateAdminUserDto } from './dto/update-admin-user.dto';
+
+type AdminRequest = { user: { userId: number } };
 
 @Controller('platform/admin')
 @Roles(Role.PLATFORM_ADMIN)
 export class PlatformAdminController {
+  @Get('usuarios/:usuarioId')
+  async obterPropriosDados(
+    @Request() req: AdminRequest,
+    @Param('usuarioId', ParseIntPipe) usuarioId: number,
+  ) {
+    return this.convitesService.obterPropriosDadosPlataforma(
+      req.user.userId,
+      usuarioId,
+    );
+  }
+
+  @Put('usuarios/:usuarioId')
+  async atualizarPropriosDados(
+    @Request() req: AdminRequest,
+    @Param('usuarioId', ParseIntPipe) usuarioId: number,
+    @Body() dto: UpdateAdminUserDto,
+  ) {
+    await this.convitesService.obterPropriosDadosPlataforma(
+      req.user.userId,
+      usuarioId,
+    );
+    return this.convitesService.atualizarUsuario(
+      req.user.userId,
+      usuarioId,
+      dto,
+    );
+  }
+  @Put('empresas/:empresaId/usuarios/:usuarioId')
+  async atualizarUsuario(
+    @Request() req: AdminRequest,
+    @Param('empresaId', ParseIntPipe) empresaId: number,
+    @Param('usuarioId', ParseIntPipe) usuarioId: number,
+    @Body() dto: UpdateAdminUserDto,
+  ) {
+    return this.convitesService.atualizarUsuario(
+      req.user.userId,
+      usuarioId,
+      dto,
+      empresaId,
+    );
+  }
   constructor(
     private readonly adminService: AdminService,
     private readonly convitesService: ConvitesService,
@@ -62,10 +106,35 @@ export class PlatformAdminController {
     return this.schoolPilotService.list(empresaId);
   }
 
+  @Get('empresas/:empresaId/pilotos/paginados')
+  async pilotosPaginados(
+    @Param('empresaId', ParseIntPipe) empresaId: number,
+    @Query('page') page?: string,
+  ) {
+    return this.schoolPilotService.listPage(empresaId, Number(page));
+  }
+
+  @Get('empresas/:empresaId/pilotos/contatos')
+  async contatosDosPilotos(
+    @Param('empresaId', ParseIntPipe) empresaId: number,
+    @Query('search') search?: string,
+    @Query('page') page?: string,
+  ) {
+    return this.schoolPilotService.contacts(empresaId, search, Number(page));
+  }
+
+  @Get('empresas/:empresaId/pilotos/:pilotId')
+  async detalheDoPiloto(
+    @Param('empresaId', ParseIntPipe) empresaId: number,
+    @Param('pilotId', ParseIntPipe) pilotId: number,
+  ) {
+    return this.schoolPilotService.detail(empresaId, pilotId);
+  }
+
   @Post('empresas/:empresaId/pilotos')
   async criarPilotoDaEmpresa(
     @Param('empresaId', ParseIntPipe) empresaId: number,
-    @Request() req: any,
+    @Request() req: AdminRequest,
     @Body() dto: SaveSchoolPilotDto,
   ) {
     return this.schoolPilotService.create(empresaId, req.user.userId, dto);
@@ -75,7 +144,7 @@ export class PlatformAdminController {
   async atualizarPilotoDaEmpresa(
     @Param('empresaId', ParseIntPipe) empresaId: number,
     @Param('pilotId', ParseIntPipe) pilotId: number,
-    @Request() req: any,
+    @Request() req: AdminRequest,
     @Body() dto: SaveSchoolPilotDto,
   ) {
     return this.schoolPilotService.update(
@@ -88,7 +157,10 @@ export class PlatformAdminController {
 
   @Post('empresas')
   @Throttle({ short: { limit: 10, ttl: 60000 } })
-  async criarEmpresa(@Body() dto: CreateEmpresaDto, @Request() req: any) {
+  async criarEmpresa(
+    @Body() dto: CreateEmpresaDto,
+    @Request() req: AdminRequest,
+  ) {
     return this.adminService.criarEmpresa(
       dto.nome,
       dto.email_administrador,
@@ -103,7 +175,7 @@ export class PlatformAdminController {
 
   @Post('usuarios/:usuarioId/inativar')
   async inativarUsuarioGlobal(
-    @Request() req: any,
+    @Request() req: AdminRequest,
     @Param('usuarioId', ParseIntPipe) usuarioId: number,
     @Body() dto: ChangeUserStatusDto,
   ) {
@@ -116,7 +188,7 @@ export class PlatformAdminController {
 
   @Post('usuarios/:usuarioId/reativar')
   async reativarUsuarioGlobal(
-    @Request() req: any,
+    @Request() req: AdminRequest,
     @Param('usuarioId', ParseIntPipe) usuarioId: number,
     @Body() dto: ChangeUserStatusDto,
   ) {
@@ -155,13 +227,17 @@ export class PlatformAdminController {
     @Query('page') page?: string,
     @Query('pageSize') pageSize?: string,
   ) {
-    return this.adminAuditService.listarDaEmpresa(empresaId, Number(page) || 1, Number(pageSize) || 25);
+    return this.adminAuditService.listarDaEmpresa(
+      empresaId,
+      Number(page) || 1,
+      Number(pageSize) || 25,
+    );
   }
 
   @Put('empresas/:empresaId/parametros')
   async updateParametros(
     @Param('empresaId', ParseIntPipe) empresaId: number,
-    @Request() req: any,
+    @Request() req: AdminRequest,
     @Body() dto: UpdateCompanyParametersDto,
   ) {
     return this.adminService.updateParametrosDaEmpresa(
@@ -182,7 +258,7 @@ export class PlatformAdminController {
   @Put('empresas/:empresaId/configuracoes')
   async updateConfiguracoes(
     @Param('empresaId', ParseIntPipe) empresaId: number,
-    @Request() req: any,
+    @Request() req: AdminRequest,
     @Body() dto: UpdateCompanySettingsDto,
   ) {
     return this.adminService.updateConfiguracoesDaEmpresa(
@@ -217,6 +293,14 @@ export class PlatformAdminController {
       status,
       sort,
     });
+  }
+
+  @Get('empresas/:empresaId/usuarios/:usuarioId')
+  async obterUsuarioDaEmpresa(
+    @Param('empresaId', ParseIntPipe) empresaId: number,
+    @Param('usuarioId', ParseIntPipe) usuarioId: number,
+  ) {
+    return this.convitesService.obterUsuarioDaEmpresa(empresaId, usuarioId);
   }
 
   @Get('empresas/:empresaId/resumo')
@@ -258,7 +342,10 @@ export class PlatformAdminController {
     @Query('sort') sort?: 'asc' | 'desc',
   ) {
     return this.convitesService.listarPaginadosDaEmpresa(empresaId, {
-      page: Number(page), pageSize: Number(pageSize), search, sort,
+      page: Number(page),
+      pageSize: Number(pageSize),
+      search,
+      sort,
     });
   }
 
@@ -267,7 +354,7 @@ export class PlatformAdminController {
   async criarConvite(
     @Param('empresaId', ParseIntPipe) empresaId: number,
     @Body() dto: CreateConviteDto,
-    @Request() req: any,
+    @Request() req: AdminRequest,
   ) {
     return this.convitesService.criarParaEmpresa(
       empresaId,
@@ -281,34 +368,46 @@ export class PlatformAdminController {
   async revogarConvite(
     @Param('empresaId', ParseIntPipe) empresaId: number,
     @Param('conviteId', ParseIntPipe) conviteId: number,
-    @Request() req: any,
+    @Request() req: AdminRequest,
   ) {
-    return this.convitesService.revogarDaEmpresa(empresaId, conviteId, req.user.userId);
+    return this.convitesService.revogarDaEmpresa(
+      empresaId,
+      conviteId,
+      req.user.userId,
+    );
   }
 
   @Post('empresas/:empresaId/usuarios/:usuarioId/apelido/aprovar')
   async aprovarApelido(
     @Param('empresaId', ParseIntPipe) empresaId: number,
     @Param('usuarioId', ParseIntPipe) usuarioId: number,
-    @Request() req: any,
+    @Request() req: AdminRequest,
   ) {
-    return this.convitesService.aprovarApelidoDaEmpresa(empresaId, usuarioId, req.user.userId);
+    return this.convitesService.aprovarApelidoDaEmpresa(
+      empresaId,
+      usuarioId,
+      req.user.userId,
+    );
   }
 
   @Post('empresas/:empresaId/usuarios/:usuarioId/apelido/rejeitar')
   async rejeitarApelido(
     @Param('empresaId', ParseIntPipe) empresaId: number,
     @Param('usuarioId', ParseIntPipe) usuarioId: number,
-    @Request() req: any,
+    @Request() req: AdminRequest,
   ) {
-    return this.convitesService.rejeitarApelidoDaEmpresa(empresaId, usuarioId, req.user.userId);
+    return this.convitesService.rejeitarApelidoDaEmpresa(
+      empresaId,
+      usuarioId,
+      req.user.userId,
+    );
   }
 
   @Post('empresas/:empresaId/usuarios/:usuarioId/inativar')
   async inativarUsuarioDaEmpresa(
     @Param('empresaId', ParseIntPipe) empresaId: number,
     @Param('usuarioId', ParseIntPipe) usuarioId: number,
-    @Request() req: any,
+    @Request() req: AdminRequest,
     @Body() dto: ChangeUserStatusDto,
   ) {
     return this.convitesService.inativarUsuarioDaEmpresa(
@@ -323,7 +422,7 @@ export class PlatformAdminController {
   async reativarUsuarioDaEmpresa(
     @Param('empresaId', ParseIntPipe) empresaId: number,
     @Param('usuarioId', ParseIntPipe) usuarioId: number,
-    @Request() req: any,
+    @Request() req: AdminRequest,
     @Body() dto: ChangeUserStatusDto,
   ) {
     return this.convitesService.reativarUsuarioDaEmpresa(

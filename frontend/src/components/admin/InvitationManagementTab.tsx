@@ -1,13 +1,15 @@
+import { AdminRecordCard } from './console/AdminRecordCard';
+import { PlatformCompanyFilter } from './console/PlatformCompanyFilter';
+import { AdminFeedback } from './console/AdminFeedback';
 import { useCachedQuery } from '@/hooks/useCachedQuery';
 import { adminQueryKey } from '@/lib/adminCache';
 import { useDeferredValue, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
-import { AlertCircle, CheckCircle2, Copy, Link2, Plus, QrCode, Trash2 } from 'lucide-react';
+import { Copy, Link2, Plus, QrCode, Trash2 } from 'lucide-react';
 import { AppButton } from '@/components/ui/buttons/AppButton';
 import { AppSearchInput } from '@/components/ui/forms/AppSearchInput';
 import { AppSelect } from '@/components/ui/forms/AppSelect';
 import { AppInput } from '@/components/ui/forms/AppInput';
-import { cn } from '@/lib/utils';
 import { AdminCardHeading, AdminPagination, AdminPageHeader, AdminListToolbar } from '@/components/admin/AdminListLayout';
 import { criarConvite, listarConvites, revogarConvite, type ConvitesPaginados } from '@/services/convites';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
@@ -17,6 +19,7 @@ import { useAdminUnsavedChanges } from '@/hooks/useAdminUnsavedChanges';
 
 interface InvitationManagementTabProps {
   empresaId?: number;
+  selectCompany?: boolean;
   podeCriarAdministrador?: boolean;
   mode?: 'combined' | 'list' | 'new';
   consoleMode?: boolean;
@@ -27,8 +30,11 @@ function formatDate(value: string) {
   return new Intl.DateTimeFormat('pt-BR', { dateStyle: 'medium' }).format(new Date(value));
 }
 
-export function InvitationManagementTab({ empresaId, podeCriarAdministrador = false, mode = 'combined', consoleMode = false, headerActions }: InvitationManagementTabProps) {
+export function InvitationManagementTab({ empresaId: initialCompanyId, selectCompany = false, podeCriarAdministrador = false, mode = 'combined', consoleMode = false, headerActions }: InvitationManagementTabProps) {
   const { user } = useCurrentUser();
+  const canSelectCompany = selectCompany && user?.role === 'platform_admin' && mode === 'new';
+  const [selectedCompanyId, setSelectedCompanyId] = useState(initialCompanyId);
+  const empresaId = canSelectCompany ? selectedCompanyId : initialCompanyId;
   const notebook = useNotebookLayout();
   const pageSize = consoleMode ? 25 : notebook ? 3 : 25;
   const sessionKey = `secureplay-admin-invitations:${user?.userId ?? 'unknown'}:${empresaId ?? 'company'}`;
@@ -50,10 +56,11 @@ export function InvitationManagementTab({ empresaId, podeCriarAdministrador = fa
   const [revoking, setRevoking] = useState<number | null>(null);
   const [linkGerado, setLinkGerado] = useState<string | null>(null);
   const [conviteCopiado, setConviteCopiado] = useState(false);
+  const FormCard = consoleMode ? AdminRecordCard : 'section';
   const [feedback, setFeedback] = useState<string | null>(null);
   const [feedbackError, setFeedbackError] = useState(false);
   const [restoredKey, setRestoredKey] = useState<string | null>(null);
-  const { prompt: unsavedPrompt } = useAdminUnsavedChanges(consoleMode && mode === 'new' && (creating || Boolean(email.trim() || (linkGerado && !conviteCopiado)) || validade !== 7 || maxUses !== 1 || administrador || registrationMode !== 'school_student'), undefined, creating);
+  const { prompt: unsavedPrompt } = useAdminUnsavedChanges(consoleMode && mode === 'new' && (creating || (canSelectCompany && selectedCompanyId !== initialCompanyId) || Boolean(email.trim() || (linkGerado && !conviteCopiado)) || validade !== 7 || maxUses !== 1 || administrador || registrationMode !== 'school_student'), undefined, creating);
   const dialogRef = useRef<HTMLDialogElement>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
   const openerRef = useRef<HTMLElement | null>(null);
@@ -101,6 +108,9 @@ export function InvitationManagementTab({ empresaId, podeCriarAdministrador = fa
   const criar = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (creating) return;
+    if (user?.role === 'platform_admin' && !empresaId) {
+      setFeedbackError(true); setFeedback('Selecione a empresa do convite.'); return;
+    }
     setCreating(true);
     setFeedbackError(false);
     setConviteCopiado(false);
@@ -126,6 +136,7 @@ export function InvitationManagementTab({ empresaId, podeCriarAdministrador = fa
   };
 
   const revogar = async (id: number) => {
+    if (!window.confirm('Revogar este convite? O link deixará de permitir novos cadastros.')) return;
     setRevoking(id);
     setFeedbackError(false);
     try {
@@ -145,16 +156,17 @@ export function InvitationManagementTab({ empresaId, podeCriarAdministrador = fa
   const columns: AdminDataGridColumn<ConvitesPaginados['items'][number]>[] = [
     { key: 'recipient', label: 'Destinatário', render: (convite) => <><strong>{convite.email ?? (convite.registration_mode === 'school_student' ? 'Convite escolar individual' : 'Link aberto para a empresa')}{convite.role === 'admin' ? ' · Administrador' : ''}</strong><small>Expira em {formatDate(convite.expires_at)} · {convite.uses}/{convite.max_uses} usos</small></> },
     { key: 'status', label: 'Status', render: (convite) => <span className={`admin-invite-status is-${convite.status}`}>{convite.status}</span> },
-    { key: 'actions', label: 'Ações', render: (convite) => convite.status === 'ativo' ? <AppButton variant="ghost" size="sm" icon={<Trash2 size={14} />} disabled={revoking === convite.id} onClick={() => void revogar(convite.id)}>Revogar</AppButton> : null },
+    { key: 'actions', label: 'Revogar', className: 'admin-grid-icon-column', render: (convite) => convite.status !== 'revogado' ? <button type="button" className="admin-grid-icon-action" aria-label={`Revogar convite ${convite.id}`} title="Revogar convite" disabled={revoking === convite.id} onClick={() => void revogar(convite.id)}><Trash2 size={16} aria-hidden="true" /></button> : null },
   ];
 
   return <>{unsavedPrompt}<div className="admin-users-content">
-    <AdminPageHeader title={mode === 'new' ? 'Novo convite' : 'Convites'} description={mode === 'new' ? 'Emita um acesso dentro dos limites permitidos para esta empresa.' : 'Crie acessos com validade, acompanhe a utilização e revogue links quando necessário.'} count={mode === 'new' || loading || loadError ? undefined : ativos} countLabel="ativos nesta página" countIcon={<QrCode size={18} />} action={headerActions || (consoleMode && mode === 'new') ? <>{headerActions}{consoleMode && mode === 'new' && <AppButton type="submit" form="admin-console-invitation-form" disabled={creating} icon={<Link2 size={16} />}>{creating ? 'Gerando…' : 'Gerar convite'}</AppButton>}</> : undefined} />
-    {feedback && <div className={cn('admin-feedback', feedbackError && 'is-error')} role={feedbackError ? 'alert' : 'status'}><span>{feedbackError ? <AlertCircle size={17} /> : <CheckCircle2 size={17} />}</span>{feedback}</div>}
+    <AdminPageHeader title={mode === 'new' ? 'Novo convite' : 'Convites'} description={mode === 'new' ? 'Emita um acesso dentro dos limites permitidos para esta empresa.' : 'Crie acessos com validade, acompanhe a utilização e revogue links quando necessário.'} count={mode === 'new' || loading || loadError ? undefined : ativos} countLabel="ativos nesta página" countIcon={<QrCode size={18} />} action={mode === 'list' ? undefined : headerActions || (consoleMode && mode === 'new') ? <>{headerActions}{consoleMode && mode === 'new' && <AppButton type="submit" form="admin-console-invitation-form" disabled={creating || (user?.role === 'platform_admin' && !empresaId)} icon={<Link2 size={16} />}>{creating ? 'Gerando…' : 'Gerar convite'}</AppButton>}</> : undefined} />
+    {feedback && <AdminFeedback variant={feedbackError ? 'error' : 'success'}>{feedback}</AdminFeedback>}
     <div className={`admin-invites-workspace${mode === 'new' ? ' is-new-only' : mode === 'list' ? ' is-list-only' : ''}`}>
-      {mode !== 'list' && <section className="admin-users-card admin-invite-form-card">
+      {mode !== 'list' && <FormCard className={consoleMode ? 'admin-invite-form-card' : 'admin-users-card admin-invite-form-card'}>
         {!consoleMode && <AdminCardHeading title="Novo convite" description={administrador ? 'O responsável receberá acesso de administrador desta empresa.' : registrationMode === 'school_student' ? 'Acesso individual de aluno, sem e-mail próprio ou data de nascimento.' : 'Cadastro por e-mail e confirmação.'} icon={<Plus size={19} />} />}
         <form id={consoleMode ? "admin-console-invitation-form" : undefined} onSubmit={criar} className="admin-invite-form">
+          {canSelectCompany && <div className="admin-invite-company-field"><span>Empresa</span><PlatformCompanyFilter fieldLabel="Empresa do convite" empresaId={empresaId} onChange={id => { setSelectedCompanyId(id); setFeedback(null); }} allowAll={false} compact disabled={creating || Boolean(linkGerado)} /></div>}
           {!administrador && <label className="admin-invite-email-field"><span>Forma de cadastro</span><AppSelect aria-label="Forma de cadastro" value={registrationMode} onChange={(event) => { const next = event.target.value as 'legacy_email' | 'school_student'; setRegistrationMode(next); if (next === 'school_student') setMaxUses(1); }}><option value="school_student">Aluno sem e-mail próprio</option><option value="legacy_email">Cadastro com e-mail</option></AppSelect></label>}
           {(administrador || registrationMode === 'legacy_email') && <label className="admin-invite-email-field">
             <span className="admin-invite-email-label">E-mail do {administrador ? 'administrador' : 'aluno'} {!administrador && <small>opcional</small>}</span>
@@ -166,10 +178,10 @@ export function InvitationManagementTab({ empresaId, podeCriarAdministrador = fa
             <span>Administrador</span>
           </label>}
           <div className="admin-invite-options"><label>Validade<AppSelect value={validade} onChange={(event) => setValidade(Number(event.target.value))}><option value={1}>1 dia</option><option value={7}>7 dias</option><option value={14}>14 dias</option><option value={30}>30 dias</option></AppSelect></label><label>Usos permitidos<AppSelect value={registrationMode === 'school_student' || administrador ? 1 : maxUses} disabled={administrador || registrationMode === 'school_student'} onChange={(event) => setMaxUses(Number(event.target.value))}><option value={1}>1 uso</option>{!administrador && registrationMode === 'legacy_email' && <><option value={5}>5 usos</option><option value={20}>20 usos</option><option value={100}>100 usos</option></>}</AppSelect></label></div>
-          {!consoleMode && <AppButton type="submit" disabled={creating} icon={<Link2 size={16} />}>{creating ? 'Gerando...' : 'Gerar convite'}</AppButton>}
+          {!consoleMode && <AppButton type="submit" disabled={creating || (user?.role === 'platform_admin' && !empresaId)} icon={<Link2 size={16} />}>{creating ? 'Gerando...' : 'Gerar convite'}</AppButton>}
         </form>
-      </section>}
-      {mode !== 'new' && <AdminDataGrid className="admin-invites-card" columns={columns} rows={result.items} rowKey={(convite) => convite.id} loading={loading} error={loadError ? 'Não foi possível carregar os convites.' : undefined} onRetry={query.refetch} empty={deferredSearch ? 'Nenhum convite corresponde à busca.' : 'Nenhum convite criado ainda.'} toolbar={<AdminListToolbar><AppSearchInput label="Buscar convites" value={search} onChange={(event) => { setSearch(event.target.value); setPage(1); }} placeholder="Buscar por e-mail" /><AppSelect aria-label="Ordenar convites por data" value={sort} onChange={(event) => { setSort(event.target.value as 'asc' | 'desc'); setPage(1); }}><option value="desc">Mais recentes</option><option value="asc">Mais antigos</option></AppSelect><span className="admin-invites-total" aria-label="Total de convites">{loading || loadError ? '—' : `${result.total} ${result.total === 1 ? 'convite' : 'convites'}`}</span></AdminListToolbar>} footer={!loading && !loadError ? <AdminPagination alwaysVisible={consoleMode} page={page} totalPages={result.totalPages} ariaLabel="Paginação de convites" disabled={loading} adjacentButtons onPageChange={setPage} /> : null} />}
+      </FormCard>}
+      {mode !== 'new' && <AdminDataGrid className="admin-invites-card" columns={columns} rows={result.items} rowKey={(convite) => convite.id} loading={loading} error={loadError ? 'Não foi possível carregar os convites.' : undefined} onRetry={query.refetch} empty={deferredSearch ? 'Nenhum convite corresponde à busca.' : 'Nenhum convite criado ainda.'} toolbar={<AdminListToolbar actions={mode === 'list' ? headerActions : undefined}><AppSearchInput label="Buscar convites" value={search} onChange={(event) => { setSearch(event.target.value); setPage(1); }} placeholder="Buscar por e-mail" /><AppSelect aria-label="Ordenar convites por data" value={sort} onChange={(event) => { setSort(event.target.value as 'asc' | 'desc'); setPage(1); }}><option value="desc">Mais recentes</option><option value="asc">Mais antigos</option></AppSelect><span className="admin-invites-total" aria-label="Total de convites">{loading || loadError ? '—' : `${result.total} ${result.total === 1 ? 'convite' : 'convites'}`}</span></AdminListToolbar>} footer={!loading && !loadError ? <AdminPagination alwaysVisible={consoleMode} page={page} totalPages={result.totalPages} ariaLabel="Paginação de convites" disabled={loading} adjacentButtons onPageChange={setPage} /> : null} />}
     </div>
     {linkGerado && <dialog ref={dialogRef} className="admin-qr-modal" aria-labelledby="invite-dialog-title" onClose={() => { setLinkGerado(null); setConviteCopiado(false); requestAnimationFrame(() => openerRef.current?.focus()); }}><div className="admin-qr-card"><button ref={closeButtonRef} type="button" className="admin-qr-close" onClick={fecharConvite} aria-label="Fechar">×</button><div className="admin-qr-title"><QrCode size={20} /><div><strong id="invite-dialog-title">Convite pronto</strong><span>Compartilhe pelo link ou QR code.</span></div></div><div className="admin-qr-code"><QRCodeSVG value={linkGerado} size={172} level="M" includeMargin /></div><div className="admin-qr-link"><span>{linkGerado}</span><button type="button" onClick={() => void copiar(linkGerado)}><Copy size={15} /> Copiar</button></div></div></dialog>}
   </div></>;

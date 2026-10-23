@@ -12,10 +12,17 @@ import { S3Service } from '../conteudo/s3/s3.service';
 import { RegistrationModule } from '../registration/registration.module';
 import { AdminAuditService } from './admin-audit.service';
 import { SchoolPilotService } from './school-pilot.service';
+import { PlatformRecordsService } from './platform-records.service';
+import { PlatformRecordsController } from './platform-records.controller';
 
 @Module({
   imports: [DatabaseModule, RegistrationModule],
-  controllers: [AdminController, ConvitesController, PlatformAdminController],
+  controllers: [
+    AdminController,
+    ConvitesController,
+    PlatformAdminController,
+    PlatformRecordsController,
+  ],
   providers: [
     ...empresaProviders,
     ...usuarioProviders,
@@ -24,6 +31,7 @@ import { SchoolPilotService } from './school-pilot.service';
     ConvitesService,
     AdminAuditService,
     SchoolPilotService,
+    PlatformRecordsService,
     S3Service,
   ],
   exports: [AdminService, ...empresaProviders],

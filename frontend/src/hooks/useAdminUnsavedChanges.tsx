@@ -30,7 +30,7 @@ export function useAdminGuardedAction() {
   return context.request;
 }
 
-export function useAdminUnsavedChanges(isDirty: boolean, saveDraft?: SaveDraft, busy = false) {
+export function useAdminUnsavedChanges(isDirty: boolean, saveDraft?: SaveDraft, busy = false, allowNavigation?: (location: { pathname: string; search: string }) => boolean) {
   const actionGuard = useContext(AdminActionGuardContext);
   const [pendingAction, setPendingAction] = useState<GuardedAction | null>(null);
   const approvedActionRef = useRef(false);
@@ -40,7 +40,8 @@ export function useAdminUnsavedChanges(isDirty: boolean, saveDraft?: SaveDraft, 
     return actionGuard.register((action) => setPendingAction(() => action));
   }, [actionGuard, shouldBlock]);
   const allowNextNavigationRef = useRef(false);
-  const blocker = useBlocker(() => {
+  const blocker = useBlocker(({ nextLocation }) => {
+    if (!busy && allowNavigation?.(nextLocation)) return false;
     if (approvedActionRef.current) return false;
     if (allowNextNavigationRef.current) {
       allowNextNavigationRef.current = false;
@@ -55,7 +56,7 @@ export function useAdminUnsavedChanges(isDirty: boolean, saveDraft?: SaveDraft, 
     if (pendingAction) {
       approvedActionRef.current = true;
       setPendingAction(null);
-      pendingAction();
+      try { pendingAction(); } finally { approvedActionRef.current = false; }
     } else if (blocker.state === 'blocked') blocker.proceed();
   };
   const reset = () => {

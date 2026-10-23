@@ -12,22 +12,15 @@ interface AdminPageHeaderProps {
   action?: ReactNode;
 }
 
-export function AdminPageHeader({ title, description, count, countLabel, countIcon, action }: AdminPageHeaderProps) {
+export function AdminPageHeader({ title, description, action }: AdminPageHeaderProps) {
   return (
     <header className="admin-list-header">
       <div className="admin-heading-title">
         <h1>{title}</h1>
         <AdminHelpTip label={title} text={description} />
       </div>
-      {(action || (count !== undefined && countLabel)) && <div className="admin-page-header-end">
-      {count !== undefined && countLabel && (
-        <div className="admin-list-count" role="status" aria-label={`${count} ${countLabel}`}>
-          {countIcon && <span className="admin-list-count-icon" aria-hidden="true">{countIcon}</span>}
-          <strong>{count}</strong>
-          <span>{countLabel}</span>
-        </div>
-      )}
-      {action && <div className="admin-page-header-actions">{action}</div>}
+      {action && <div className="admin-page-header-end">
+      <div className="admin-page-header-actions">{action}</div>
       </div>}
     </header>
   );
@@ -56,15 +49,17 @@ export function AdminCardHeading({ title, description, icon, iconTone, action }:
 
 interface AdminListToolbarProps {
   children: ReactNode;
+  actions?: ReactNode;
   className?: string;
   onSubmit?: FormEventHandler<HTMLFormElement>;
 }
 
-export function AdminListToolbar({ children, className, onSubmit }: AdminListToolbarProps) {
+export function AdminListToolbar({ children, actions, className, onSubmit }: AdminListToolbarProps) {
   const classes = cn('admin-list-toolbar', className);
+  const content = <>{children}{actions && <div className="admin-list-toolbar-actions">{actions}</div>}</>;
   return onSubmit
-    ? <form className={classes} onSubmit={onSubmit}>{children}</form>
-    : <div className={classes}>{children}</div>;
+    ? <form className={classes} onSubmit={onSubmit}>{content}</form>
+    : <div className={classes}>{content}</div>;
 }
 
 interface AdminListCardProps {

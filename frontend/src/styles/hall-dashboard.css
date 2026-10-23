@@ -221,6 +221,14 @@
 
 .hall-ranking-panel .academy-widget-state { display: grid; min-height: 250px; place-items: center; align-content: center; gap: 8px; padding: 20px; text-align: center; }
 
+/* Keep the previews bounded even when another panel makes the grid row taller. */
+.hall-support-grid > :is(.hall-achievements-panel, .hall-ranking-panel) > .sp-card {
+  flex: 0 0 250px;
+  height: 250px;
+  min-height: 0;
+  max-height: 250px;
+}
+
 @media (max-width: 1260px) {
   .hall-hero-grid { grid-template-columns: minmax(0,1.55fr) minmax(320px,.85fr); }
   .hall-mission-copy { width: 65%; }

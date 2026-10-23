@@ -44,6 +44,17 @@ export interface ApelidosPendentesPaginados {
 
 export type UsuariosPaginados = ApelidosPendentesPaginados;
 
+export type UpdateAdminUser = Partial<Pick<UsuarioEmpresa, 'name' | 'email' | 'nickname' | 'level'>> & { role?: 'user' | 'admin' };
+export async function obterPropriosDadosPlataforma(id: number): Promise<UsuarioEmpresa> {
+  return (await api.get(`/platform/admin/usuarios/${id}`)).data;
+}
+export async function atualizarUsuarioAdministrativo(id: number, data: UpdateAdminUser, empresaId?: number, platform = false): Promise<UsuarioEmpresa> {
+  const path = platform && !empresaId ? `/platform/admin/usuarios/${id}` : `${empresaPath(empresaId)}/usuarios/${id}`;
+  const result = await api.put(path, data);
+  invalidateAdminResources(empresaId, 'users', 'nicknames', 'audit-events', 'summary');
+  return result.data;
+}
+
 export interface ResumoAdministrativo {
   usuariosAtivos: number;
   alunosAtivos: number;
@@ -71,6 +82,11 @@ export async function listarUsuarios(
   if (options.status) params.set('status', options.status);
   if (options.sort) params.set('sort', options.sort);
   const response = await api.get(`${empresaPath(empresaId)}/usuarios?${params}`);
+  return response.data;
+}
+
+export async function obterUsuario(usuarioId: number, empresaId?: number): Promise<UsuarioEmpresa> {
+  const response = await api.get(`${empresaPath(empresaId)}/usuarios/${usuarioId}`);
   return response.data;
 }
 

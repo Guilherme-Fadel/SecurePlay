@@ -79,6 +79,18 @@ export async function listarPilotosDaEmpresa(empresaId: number): Promise<SchoolP
   return response.data;
 }
 
+export async function obterPilotoDaEmpresa(empresaId: number, pilotId: number): Promise<SchoolPilot> {
+  return (await api.get(`/platform/admin/empresas/${empresaId}/pilotos/${pilotId}`)).data;
+}
+
+export async function listarPilotosPaginados(empresaId: number, page: number): Promise<SchoolPilotsResponse & { total: number; totalPages: number }> {
+  return (await api.get(`/platform/admin/empresas/${empresaId}/pilotos/paginados`, { params: { page } })).data;
+}
+
+export async function buscarContatosDePilotos(empresaId: number, search: string, page: number): Promise<{ items: SchoolPilotContact[]; totalPages: number }> {
+  return (await api.get(`/platform/admin/empresas/${empresaId}/pilotos/contatos`, { params: { search, page } })).data;
+}
+
 export async function criarPilotoDaEmpresa(empresaId: number, data: SaveSchoolPilot): Promise<SchoolPilot> {
   const response = await api.post(`/platform/admin/empresas/${empresaId}/pilotos`, data);
   invalidateAdminResources(empresaId, 'pilots', 'audit-events');

@@ -9,17 +9,19 @@ import { Role } from '../auth/roles.enum';
 import { Empresa } from '../empresa/empresa.entity';
 import { Usuario } from '../usuario/usuario.entity';
 import { AdminAuditEvent } from './entities/admin-audit-event.entity';
-import {
-  SchoolPilot,
-  SchoolPilotStatus,
-} from './entities/school-pilot.entity';
+import { SchoolPilot, SchoolPilotStatus } from './entities/school-pilot.entity';
 import { SaveSchoolPilotDto } from './dto/school-pilot.dto';
 
 type SchoolPilotView = {
   id: number;
   empresaId: number;
   contactAdminUserId: number | null;
-  contactAdmin: { id: number; name: string; email: string | null; active: boolean } | null;
+  contactAdmin: {
+    id: number;
+    name: string;
+    email: string | null;
+    active: boolean;
+  } | null;
   objective: string;
   status: SchoolPilotStatus;
   startDate: string | null;
@@ -34,6 +36,64 @@ type SchoolPilotView = {
 @Injectable()
 export class SchoolPilotService {
   constructor(@Inject('DATA_SOURCE') private readonly dataSource: DataSource) {}
+
+  async detail(empresaId: number, pilotId: number) {
+    const pilot = await this.dataSource.getRepository(SchoolPilot).findOne({
+      where: { id: pilotId, empresa_id: empresaId },
+      relations: ['contact_admin'],
+    });
+    if (!pilot) throw new NotFoundException('Piloto não encontrado');
+    return this.toView(pilot);
+  }
+
+  async listPage(empresaId: number, page = 1) {
+    await this.requireCompany(this.dataSource.manager, empresaId);
+    const safePage = Number.isSafeInteger(page) && page > 0 ? page : 1;
+    if (!Number.isSafeInteger((safePage - 1) * 25))
+      throw new BadRequestException('Página inválida');
+    const [items, total] = await this.dataSource
+      .getRepository(SchoolPilot)
+      .findAndCount({
+        where: { empresa_id: empresaId },
+        relations: ['contact_admin'],
+        order: { created_at: 'DESC', id: 'DESC' },
+        skip: (safePage - 1) * 25,
+        take: 25,
+      });
+    return {
+      items: items.map((pilot) => this.toView(pilot)),
+      contacts: [],
+      total,
+      totalPages: Math.ceil(total / 25),
+    };
+  }
+
+  async contacts(empresaId: number, search = '', page = 1) {
+    if (typeof search !== 'string')
+      throw new BadRequestException('Busca inválida');
+    await this.requireCompany(this.dataSource.manager, empresaId);
+    const safePage = Number.isSafeInteger(page) && page > 0 ? page : 1;
+    if (!Number.isSafeInteger((safePage - 1) * 25))
+      throw new BadRequestException('Página inválida');
+    const query = this.dataSource
+      .getRepository(Usuario)
+      .createQueryBuilder('contact')
+      .select(['contact.id', 'contact.name', 'contact.email', 'contact.active'])
+      .where('contact.empresa_id = :empresaId', { empresaId })
+      .andWhere('contact.role = :role', { role: Role.ADMIN });
+    if (search.trim())
+      query.andWhere(
+        '(LOWER(contact.name) LIKE :search OR LOWER(contact.email) LIKE :search)',
+        { search: `%${search.trim().slice(0, 150).toLowerCase()}%` },
+      );
+    const [items, total] = await query
+      .orderBy('contact.name', 'ASC')
+      .addOrderBy('contact.id', 'ASC')
+      .skip((safePage - 1) * 25)
+      .take(25)
+      .getManyAndCount();
+    return { items, total, page: safePage, totalPages: Math.ceil(total / 25) };
+  }
 
   async list(empresaId: number) {
     await this.requireCompany(this.dataSource.manager, empresaId);
@@ -71,18 +131,27 @@ export class SchoolPilotService {
         dto.contactAdminUserId,
       );
       const pilotRepository = manager.getRepository(SchoolPilot);
-      const pilot = pilotRepository.create(this.toEntity(empresaId, dto, contact));
+      const pilot = pilotRepository.create(
+        this.toEntity(empresaId, dto, contact),
+      );
       const saved = await pilotRepository.save(pilot);
-      await this.audit(manager, empresaId, actorId, saved.id, [
-        'objective',
-        'status',
-        'contact_admin_user_id',
-        'start_date',
-        'agreed_end_date',
-        'next_weekly_meeting_at',
-        'next_action',
-        'next_action_at',
-      ], 'piloto.escolar.criado');
+      await this.audit(
+        manager,
+        empresaId,
+        actorId,
+        saved.id,
+        [
+          'objective',
+          'status',
+          'contact_admin_user_id',
+          'start_date',
+          'agreed_end_date',
+          'next_weekly_meeting_at',
+          'next_action',
+          'next_action_at',
+        ],
+        'piloto.escolar.criado',
+      );
       return this.toView(saved);
     });
   }
@@ -163,7 +232,9 @@ export class SchoolPilotService {
 
   private validateInput(dto: SaveSchoolPilotDto) {
     if (dto.objective.trim().length < 3) {
-      throw new BadRequestException('Informe um objetivo com pelo menos 3 caracteres');
+      throw new BadRequestException(
+        'Informe um objetivo com pelo menos 3 caracteres',
+      );
     }
     const start = this.dateOnly(dto.startDate);
     const end = this.dateOnly(dto.agreedEndDate);
