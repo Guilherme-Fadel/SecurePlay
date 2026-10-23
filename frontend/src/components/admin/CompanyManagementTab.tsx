@@ -1,19 +1,26 @@
-import { useEffect, useState } from "react";
+import { useCachedQuery } from '@/hooks/useCachedQuery';
+import { adminQueryKey } from '@/lib/adminCache';
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useNotebookLayout } from '@/hooks/useNotebookLayout';
 import { AlertCircle, CheckCircle2, Copy, Plus } from "lucide-react";
 import { AppButton } from "@/components/ui/buttons/AppButton";
 import { AppSearchInput } from "@/components/ui/forms/AppSearchInput";
 import { AppSelect } from "@/components/ui/forms/AppSelect";
 import { AppInput } from "@/components/ui/forms/AppInput";
-import { criarEmpresa, listarEmpresasPaginadas, type EmpresaAdministravel, type EmpresasPaginadas } from "@/services/admin";
+import { criarEmpresa, listarEmpresasPaginadas, type EmpresaAdministravel } from "@/services/admin";
 import { AdminListCard, AdminListContent, AdminListState, AdminPagination, AdminPageHeader, AdminListToolbar } from "@/components/admin/AdminListLayout";
 import { AdminHelpTip } from "@/components/admin/AdminHelpTip";
+import { useAdminUnsavedChanges } from "@/hooks/useAdminUnsavedChanges";
 
 interface CompanyManagementTabProps {
   onEmpresaCriada: (empresa: EmpresaAdministravel) => void;
   storageKey: string;
   empresaNome?: string;
   onNomeChange?: (nome: string) => void;
+  mode?: 'combined' | 'list' | 'new';
+  onAdministrar?: (empresa: EmpresaAdministravel) => void;
+  consoleMode?: boolean;
+  headerActions?: ReactNode;
 }
 
 export function CompanyManagementTab({
@@ -21,9 +28,14 @@ export function CompanyManagementTab({
   storageKey,
   empresaNome,
   onNomeChange,
+  mode = 'combined',
+  onAdministrar,
+  consoleMode = false,
+  headerActions,
 }: CompanyManagementTabProps) {
   const [nome, setNome] = useState("");
-  const pageSize = useNotebookLayout() ? 3 : 25;
+  const notebook = useNotebookLayout();
+  const pageSize = consoleMode ? 25 : notebook ? 3 : 25;
   const [emailAdministrador, setEmailAdministrador] = useState("");
   const [salvando, setSalvando] = useState(false);
   const [mensagem, setMensagem] = useState<string | null>(null);
@@ -31,15 +43,18 @@ export function CompanyManagementTab({
   const [linkAdministrador, setLinkAdministrador] = useState<string | null>(
     null,
   );
+  const [empresaCriada, setEmpresaCriada] = useState<EmpresaAdministravel | null>(null);
+  const [conviteCopiado, setConviteCopiado] = useState(false);
   const [searchInput, setSearchInput] = useState("");
   const [search, setSearch] = useState("");
   const [sort, setSort] = useState<"asc" | "desc">("asc");
   const [page, setPage] = useState(1);
-  const [reload, setReload] = useState(0);
-  const [list, setList] = useState<EmpresasPaginadas | null>(null);
-  const [loadingList, setLoadingList] = useState(true);
-  const [listError, setListError] = useState(false);
+
+
+
+
   const [restoredKey, setRestoredKey] = useState<string | null>(null);
+  const formRef = useRef<HTMLFormElement>(null);
 
   useEffect(() => {
     let nextSearch = "";
@@ -58,7 +73,7 @@ export function CompanyManagementTab({
     setSearch(nextSearch);
     setSort(nextSort);
     setPage(nextPage);
-    setList(null);
+
     setRestoredKey(storageKey);
   }, [storageKey]);
   useEffect(() => {
@@ -66,27 +81,15 @@ export function CompanyManagementTab({
     try { sessionStorage.setItem(storageKey, JSON.stringify({ search, sort, page })); }
     catch { /* Listagem permanece utilizável sem sessionStorage. */ }
   }, [search, sort, page, storageKey, restoredKey]);
-  useEffect(() => {
-    if (restoredKey !== storageKey) return;
-    let cancelled = false;
-    setLoadingList(true);
-    setListError(false);
-    void listarEmpresasPaginadas({ page, pageSize, search, sort })
-      .then((data) => {
-        if (cancelled) return;
-        if (page > Math.max(1, data.totalPages)) {
-          setPage(Math.max(1, data.totalPages));
-          return;
-        }
-        setList(data);
-      })
-      .catch(() => { if (!cancelled) { setList(null); setListError(true); } })
-      .finally(() => { if (!cancelled) setLoadingList(false); });
-    return () => { cancelled = true; };
-  }, [page, pageSize, search, sort, reload, restoredKey, storageKey]);
+  const filters = { page, pageSize, search, sort };
+  const query = useCachedQuery(adminQueryKey('companies-page', undefined, filters), () => listarEmpresasPaginadas(filters), { enabled: mode !== 'new' && restoredKey === storageKey });
+  const list = query.data;
+  const loadingList = query.loading;
+  const listError = Boolean(query.error);
+  useEffect(() => { if (list && page > Math.max(1, list.totalPages)) setPage(Math.max(1, list.totalPages)); }, [list, page]);
 
-  const cadastrar = async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
+  const cadastrar = async (): Promise<boolean> => {
+    if (salvando || !formRef.current?.reportValidity()) return false;
     setSalvando(true);
     setMensagem(null);
     try {
@@ -94,9 +97,11 @@ export function CompanyManagementTab({
         nome: nome.trim(),
         email_administrador: emailAdministrador.trim(),
       });
+      setEmpresaCriada(resultado.empresa);
+      setConviteCopiado(false);
       onEmpresaCriada(resultado.empresa);
       setPage(1);
-      setReload((current) => current + 1);
+
       setNome("");
       setEmailAdministrador("");
       setErro(false);
@@ -104,27 +109,36 @@ export function CompanyManagementTab({
         `${window.location.origin}/cadastro#${resultado.token}`,
       );
       setMensagem("Empresa cadastrada e convite do administrador gerado.");
+      return true;
     } catch (error: any) {
       setErro(true);
       setMensagem(
         error?.response?.data?.message ||
           "Não foi possível cadastrar a empresa.",
       );
+      return false;
     } finally {
       setSalvando(false);
     }
   };
 
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    await cadastrar();
+  };
+  const { prompt: unsavedPrompt } = useAdminUnsavedChanges(consoleMode && mode === 'new' && Boolean(nome.trim() || emailAdministrador.trim() || (linkAdministrador && !conviteCopiado)), undefined, salvando);
+
   const copiarLink = async () => {
     if (!linkAdministrador) return;
     await navigator.clipboard.writeText(linkAdministrador);
+    setConviteCopiado(true);
     setErro(false);
     setMensagem("Link do administrador copiado.");
   };
 
   return (
-    <div className="admin-companies-content app-page">
-      <AdminPageHeader title="Empresas" description="Cadastre a empresa e já gere o acesso do administrador que cuidará dela." />
+    <>{unsavedPrompt}<div className="admin-companies-content app-page">
+      <AdminPageHeader title={mode === 'new' ? 'Nova empresa' : 'Empresas'} description={mode === 'new' ? 'Cadastre a empresa e gere o acesso do administrador responsável.' : 'Escolha uma empresa para administrar ou cadastre uma nova.'} action={headerActions || (consoleMode && mode === 'new') ? <>{headerActions}{consoleMode && mode === 'new' && <AppButton type="submit" form="admin-console-company-form" disabled={salvando} aria-label="Cadastrar empresa e gerar convite">{salvando ? 'Cadastrando…' : 'Cadastrar'}</AppButton>}</> : undefined} />
 
       {onNomeChange && (
         <section className="admin-company-form-card">
@@ -157,14 +171,14 @@ export function CompanyManagementTab({
         </div>
       )}
 
-      <section className="admin-company-form-card">
-        <div className="admin-company-form-heading">
+      {mode !== 'list' && <section className="admin-company-form-card">
+        {!consoleMode && <div className="admin-company-form-heading">
           <div className="admin-heading-title">
             <h2>Nova empresa</h2>
             <AdminHelpTip label="Nova empresa" text="Informe quem será o administrador responsável pela organização." />
           </div>
-        </div>
-        <form onSubmit={cadastrar} className="admin-company-form">
+        </div>}
+        <form id={consoleMode ? "admin-console-company-form" : undefined} ref={formRef} onSubmit={handleSubmit} className="admin-company-form">
           <div className="admin-company-form-fields">
             <label htmlFor="empresa-nome">
               Nome da empresa
@@ -190,17 +204,17 @@ export function CompanyManagementTab({
               />
             </label>
           </div>
-          <AppButton
+          {!consoleMode && <AppButton
             type="submit"
             icon={<Plus size={16} />}
             disabled={salvando}
           >
             {salvando ? "Cadastrando..." : "Cadastrar empresa e gerar convite"}
-          </AppButton>
+          </AppButton>}
         </form>
-      </section>
+      </section>}
 
-      {linkAdministrador && (
+      {mode !== 'list' && linkAdministrador && (
         <section className="admin-company-invite-card">
           <strong>Convite do administrador inicial</strong>
           <p>
@@ -222,10 +236,11 @@ export function CompanyManagementTab({
               Copiar link
             </AppButton>
           </div>
+          {empresaCriada && onAdministrar && <AppButton type="button" variant="secondary" onClick={() => onAdministrar(empresaCriada)}>Abrir empresa</AppButton>}
         </section>
       )}
 
-      <AdminListCard className="admin-company-list-card" loading={loadingList}>
+      {(mode === 'list' || mode === 'combined') && <AdminListCard className="admin-company-list-card" loading={loadingList}>
         <div className="admin-company-list-heading">
           <strong>Empresas cadastradas</strong>
           <span aria-label="Total de empresas encontradas">{loadingList || listError ? "—" : list?.total ?? "—"}</span>
@@ -242,16 +257,15 @@ export function CompanyManagementTab({
           </label>
         </AdminListToolbar>
         <AdminListContent>
-        {listError ? <AdminListState kind="error" onRetry={() => setReload((current) => current + 1)}>Não foi possível carregar as empresas.</AdminListState> : loadingList ? <AdminListState kind="loading">Carregando empresas...</AdminListState> : list?.items.length ? (
+        {listError ? <AdminListState kind="error" onRetry={query.refetch}>Não foi possível carregar as empresas.</AdminListState> : loadingList ? <AdminListState kind="loading">Carregando empresas...</AdminListState> : list?.items.length ? (
           <ul className="admin-company-list">
             {list.items.map((empresa) => (
               <li key={empresa.id}>
                 <span>
                   <strong>{empresa.nome}</strong>
-                  <small>
-                    Configuração e usuários disponíveis no menu Administrador.
-                  </small>
+                    <small>Empresa #{empresa.id}</small>
                 </span>
+                {onAdministrar && <AppButton type="button" size="sm" variant="soft" onClick={() => onAdministrar(empresa)}>Administrar</AppButton>}
               </li>
             ))}
           </ul>
@@ -259,8 +273,8 @@ export function CompanyManagementTab({
           <AdminListState kind="empty">{search ? "Nenhuma empresa encontrada para esta busca." : "Nenhuma empresa cadastrada."}</AdminListState>
         )}
         </AdminListContent>
-        {!loadingList && !listError && list && <AdminPagination page={page} totalPages={list.totalPages} ariaLabel="Páginas de empresas" onPageChange={setPage} />}
-      </AdminListCard>
-    </div>
+        {!loadingList && !listError && list && <AdminPagination alwaysVisible={consoleMode} page={page} totalPages={list.totalPages} ariaLabel="Páginas de empresas" onPageChange={setPage} />}
+      </AdminListCard>}
+    </div></>
   );
 }

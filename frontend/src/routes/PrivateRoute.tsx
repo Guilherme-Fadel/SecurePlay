@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Navigate } from 'react-router-dom';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
+import { initialAuthenticatedPath } from '@/components/admin/console/consoleNavigation';
 
 export function PrivateRoute({ children }: { children: React.ReactNode }) {
   const { status, user, ensureSession } = useCurrentUser();
@@ -43,7 +44,7 @@ export function PublicRoute({ children }: { children: React.ReactNode }) {
   }
 
   if (status === 'authenticated' && !(user?.trial_ends_at && new Date(user.trial_ends_at).getTime() <= Date.now())) {
-    return <Navigate to="/home" replace />;
+    return <Navigate to={initialAuthenticatedPath(user)} replace />;
   }
 
   return children;

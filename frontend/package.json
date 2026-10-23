@@ -16,6 +16,7 @@
     "test:termotech-dictionary": "node scripts/verify-termotech-dictionary.cjs",
     "test:termotech-storage": "node scripts/test-termotech-storage.cjs",
     "test:company-parameters": "node scripts/test-company-parameters.cjs",
+    "test:admin-console": "node scripts/test-admin-console.cjs",
     "dev": "vite"
   },
   "dependencies": {

@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { SlidersHorizontal } from "lucide-react";
 import { COMPANY_GAMES, type CompanyParameters } from "@/config/features";
 import { InfoCard } from "@/components/ui/visuals/InfoCard";
@@ -8,16 +9,19 @@ export function CompanyParametersTab({
   setParameters,
   canEdit,
   saving,
+  headerActions,
 }: {
   parameters: CompanyParameters | null;
   setParameters: (value: CompanyParameters) => void;
   canEdit: boolean;
   saving: boolean;
+  headerActions?: ReactNode;
 }) {
   return (
     <div className="app-page admin-page-content">
       <AdminPageHeader
         title="Funcionalidades"
+        action={headerActions}
         description={canEdit
           ? "Escolha os recursos disponíveis somente para esta instituição."
           : "Consulte os recursos da instituição. Somente o administrador da plataforma pode alterá-los."}

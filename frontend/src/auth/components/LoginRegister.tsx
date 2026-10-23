@@ -7,6 +7,7 @@ import learningScene from '@/assets/kids/academia-missoes-login-v1.png';
 
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { loginService } from '@/services/login/login';
+import { initialAuthenticatedPath } from '@/components/admin/console/consoleNavigation';
 
 import './login-register.css';
 
@@ -44,14 +45,15 @@ export function LoginRegister() {
 
       localStorage.setItem('nome', result.nome ?? '');
 
-      if (result.user) {
-        setSession(result.user);
+      let sessionUser = result.user ?? null;
+      if (sessionUser) {
+        setSession(sessionUser);
       } else {
-        await refreshSession();
+        sessionUser = await refreshSession();
       }
 
       toast.success(result.mensagem);
-      navigate('/home');
+      navigate(initialAuthenticatedPath(sessionUser), { replace: true });
     } finally {
       setIsLoading(false);
     }

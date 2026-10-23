@@ -107,8 +107,12 @@ function HomeContent() {
 
     const setActiveSection = useCallback((section: Section) => {
         enteredContentFrom.current = null;
+        if (section === 'admin' && canOpenSection('admin')) {
+            navigate('/admin/inicio');
+            return;
+        }
         go(section, null);
-    }, [go]);
+    }, [canOpenSection, go, navigate]);
     const navigateToSection = useCallback((section: Section) => {
         enteredContentFrom.current = activeSection === 'conteudos' ? enteredContentFrom.current : activeSection;
         go(section, null);

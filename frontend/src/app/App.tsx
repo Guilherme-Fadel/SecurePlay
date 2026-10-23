@@ -1,12 +1,15 @@
 import { Navigate, Routes, Route, useLocation, useParams } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
 import { lazy, Suspense } from 'react';
-import { PrivateRoute, PublicRoute } from '@/routes/PrivateRoute';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
+import { initialAuthenticatedPath } from '@/components/admin/console/consoleNavigation';
+import { PrivateRoute, PublicRoute } from '@/routes/PrivateRoute';
 const Landing = lazy(() => import('@/pages/Landing'));
 const Start = lazy(() => import('@/pages/Start'));
 const Login = lazy(() => import('@/pages/Login'));
 const Home = lazy(() => import('@/pages/Home'));
+const AdminConsole = lazy(() => import('@/pages/AdminConsole'));
+const AdminGridPreview = import.meta.env.DEV ? lazy(() => import('@/pages/AdminGridPreview')) : null;
 const InviteRegister = lazy(() => import('@/pages/InviteRegister'));
 const StudentPasswordReset = lazy(() => import('@/pages/StudentPasswordReset'));
 const TrialRegister = lazy(() => import('@/pages/TrialRegister'));
@@ -20,14 +23,17 @@ export default function App() {
     const location = useLocation();
     // A transicao de rota anima por segmento raiz. Sem isso, navegar entre secoes
     // (/home/ranking -> /home/conteudos) remontaria a Home inteira a cada aba.
-    const animationKey = location.pathname.startsWith('/home') ? '/home' : location.pathname;
+    const animationKey = location.pathname.startsWith('/home') ? '/home' : location.pathname.startsWith('/admin') ? '/admin' : location.pathname;
     return (<AnimatePresence mode="wait">
       <Routes location={location} key={animationKey}>
         <Route path="/" element={<Suspense fallback={null}><Landing /></Suspense>}/>
         <Route path="/start" element={<Suspense fallback={null}><Start /></Suspense>}/>
         <Route path="/login" element={<PublicRoute><Suspense fallback={null}><Login /></Suspense></PublicRoute>}/>
+        <Route path="/home/admin" element={<PrivateRoute><LegacyAdminRedirect /></PrivateRoute>}/>
+        <Route path="/home/admin/*" element={<PrivateRoute><LegacyAdminRedirect /></PrivateRoute>}/>
         <Route path="/home/:section?/:moduloId?/:aulaId?" element={<PrivateRoute><Suspense fallback={null}><Home /></Suspense></PrivateRoute>}/>
-        <Route path="/admin" element={<PrivateRoute><AdminEntry /></PrivateRoute>}/>
+        <Route path="/admin/*" element={<PrivateRoute><Suspense fallback={null}><AdminConsole /></Suspense></PrivateRoute>}/>
+        {AdminGridPreview && <Route path="/__dev/admin-grid" element={<Suspense fallback={null}><AdminGridPreview /></Suspense>}/>}
         <Route path="/cadastro" element={<Suspense fallback={null}>
             <InviteRegister />
           </Suspense>}/>
@@ -49,14 +55,7 @@ function LegacyInviteRedirect() {
   return <Navigate to={`/cadastro#${token ?? ''}`} replace />;
 }
 
-/**
- * /admin nao renderiza tela propria, so aponta a secao dentro da Home. So leva a
- * secao admin quem tem a role; os demais caem no dashboard, sem montar a tela nem
- * disparar as chamadas administrativas. Roda dentro de PrivateRoute, entao o
- * usuario ja esta resolvido aqui. A autorizacao de verdade continua no backend.
- */
-function AdminEntry() {
+function LegacyAdminRedirect() {
   const { user } = useCurrentUser();
-  const allowed = user?.role === 'platform_admin' || user?.role === 'admin';
-  return <Navigate to={allowed ? '/home/admin' : '/home'} replace />;
+  return <Navigate to={initialAuthenticatedPath(user)} replace />;
 }

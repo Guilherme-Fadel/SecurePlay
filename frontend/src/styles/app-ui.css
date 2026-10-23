@@ -1,4 +1,4 @@
-.secure-home {
+:is(.secure-home, .admin-console) {
   --font-family-base: var(--font-family-ui);
   --font-family-inter: var(--font-family-ui);
   --font-micro: 11px;
@@ -30,7 +30,7 @@
   letter-spacing: 0;
 }
 
-[data-theme='light'] .secure-home {
+[data-theme='light'] :is(.secure-home, .admin-console) {
   --dashboard-bg: #f8fafc;
   --dashboard-surface: #ffffff;
   --dashboard-surface-soft: #f8fafc;
@@ -40,10 +40,10 @@
   --dashboard-shadow: 0 2px 4px rgba(15, 23, 42, 0.03), 0 8px 24px rgba(15, 23, 42, 0.05);
 }
 
-.secure-home,
-.secure-home *,
-.secure-home *::before,
-.secure-home *::after {
+:is(.secure-home, .admin-console),
+:is(.secure-home, .admin-console) *,
+:is(.secure-home, .admin-console) *::before,
+:is(.secure-home, .admin-console) *::after {
   box-sizing: border-box;
 }
 
@@ -56,20 +56,20 @@
   user-select: none;
 }
 
-.secure-home :where(h1, h2, h3, h4, h5, h6, p, span, small, strong, button, input, a, li) {
+:is(.secure-home, .admin-console) :where(h1, h2, h3, h4, h5, h6, p, span, small, strong, button, input, a, li) {
   font-family: inherit;
   letter-spacing: inherit;
 }
 
 
-.secure-home .sp-card {
+:is(.secure-home, .admin-console) .sp-card {
   border-color: var(--dashboard-border) !important;
   border-radius: 18px !important;
   background: var(--dashboard-surface) !important;
   box-shadow: var(--dashboard-shadow) !important;
 }
 
-.secure-home .sp-card-header {
+:is(.secure-home, .admin-console) .sp-card-header {
   border-color: var(--dashboard-border) !important;
 }
 

@@ -37,6 +37,7 @@ const STATUS_LABELS: Record<SchoolPilotStatus, string> = {
 };
 
 type Props = {
+  inline?: boolean;
   dialogRef: RefObject<HTMLDialogElement | null>;
   formRef: RefObject<HTMLFormElement | null>;
   selectedId: number | null;
@@ -60,24 +61,25 @@ function focusPilotObjective(form: HTMLFormElement | null) {
 }
 
 export function SchoolPilotFormDialog({
+  inline = false,
   dialogRef, formRef, selectedId, dialogOpen, form, contacts, existingContactId,
   saving, loading, error, onClose, onSubmit, onUpdate, onDialogClose,
 }: Props) {
   useEffect(() => {
-    if (dialogOpen && dialogRef.current?.open) focusPilotObjective(formRef.current);
-  }, [dialogOpen, selectedId, dialogRef, formRef]);
+    if (dialogOpen && (inline || dialogRef.current?.open)) focusPilotObjective(formRef.current);
+  }, [dialogOpen, inline, selectedId, dialogRef, formRef]);
 
-  return (
-    <dialog ref={dialogRef as RefObject<HTMLDialogElement>} className="school-pilot-dialog" aria-labelledby="school-pilot-dialog-title" onClose={onDialogClose} onClick={(event) => { if (event.target === dialogRef.current) onClose(); }}>
-      <section className="school-pilot-dialog-card">
-        <header className="school-pilot-dialog-header">
+  const content = (
+    <section className={`school-pilot-dialog-card${inline ? ' school-pilot-page-card' : ''}`}>
+        {!inline && <header className="school-pilot-dialog-header">
           <div>
             <h2 id="school-pilot-dialog-title">{selectedId ? 'Editar piloto' : 'Novo piloto'}</h2>
             <p>Registre apenas os combinados operacionais com a escola. A ficha não altera acessos nem ativa cobranças.</p>
           </div>
           <button type="button" className="school-pilot-dialog-close" onClick={onClose} aria-label="Fechar formulário"><X size={20} /></button>
-        </header>
-        <form ref={formRef as RefObject<HTMLFormElement>} className="school-pilot-form" onSubmit={onSubmit}>
+        </header>}
+        {inline && <p className="school-pilot-page-note">Registre os combinados operacionais com a escola. A ficha preserva os acessos e as funcionalidades existentes.</p>}
+        <form id={inline ? "admin-console-pilot-form" : undefined} ref={formRef as RefObject<HTMLFormElement>} className="school-pilot-form" onSubmit={onSubmit}>
           {error && <p className="school-pilot-form-error" role="alert">{error}</p>}
           <label className="school-pilot-field school-pilot-field-wide">
             <span>Objetivo do piloto</span>
@@ -85,14 +87,14 @@ export function SchoolPilotFormDialog({
           </label>
           <label className="school-pilot-field">
             <span>Contato administrador da escola</span>
-            <AppSelect value={form.contactAdminUserId} onChange={(event) => onUpdate('contactAdminUserId', event.target.value)} disabled={saving}>
+            <AppSelect aria-label="Contato administrador da escola" value={form.contactAdminUserId} onChange={(event) => onUpdate('contactAdminUserId', event.target.value)} disabled={saving}>
               <option value="">Sem contato vinculado</option>
               {contacts.map((contact) => <option key={contact.id} value={contact.id} disabled={!contact.active && contact.id !== existingContactId}>{contact.name}{contact.email ? ` · ${contact.email}` : ''}{contact.active ? '' : ' · inativo'}</option>)}
             </AppSelect>
           </label>
           <label className="school-pilot-field">
             <span>Estado operacional</span>
-            <AppSelect value={form.status} onChange={(event) => onUpdate('status', event.target.value as SchoolPilotStatus)} disabled={saving}>
+            <AppSelect aria-label="Estado operacional" value={form.status} onChange={(event) => onUpdate('status', event.target.value as SchoolPilotStatus)} disabled={saving}>
               {Object.entries(STATUS_LABELS).map(([status, label]) => <option key={status} value={status}>{label}</option>)}
             </AppSelect>
           </label>
@@ -116,12 +118,19 @@ export function SchoolPilotFormDialog({
             <span>Próxima ação (opcional)</span>
             <AppInput value={form.nextAction} onChange={(event) => onUpdate('nextAction', event.target.value)} maxLength={500} disabled={saving} placeholder="Ex.: revisar o acesso do administrador" />
           </label>
-          <div className="school-pilot-form-actions">
+          {!inline && <div className="school-pilot-form-actions">
             <AppButton type="button" variant="secondary" onClick={onClose} disabled={saving}>Cancelar</AppButton>
             <AppButton type="submit" disabled={saving || loading}>{saving ? 'Salvando...' : 'Salvar ficha'}</AppButton>
-          </div>
+          </div>}
         </form>
       </section>
+  );
+
+  if (inline) return <div className="school-pilot-page-editor">{content}</div>;
+
+  return (
+    <dialog ref={dialogRef as RefObject<HTMLDialogElement>} className="school-pilot-dialog" aria-labelledby="school-pilot-dialog-title" onClose={onDialogClose} onClick={(event) => { if (event.target === dialogRef.current) onClose(); }}>
+      {content}
     </dialog>
   );
 }

@@ -19,6 +19,7 @@ export function AdminPageHeader({ title, description, count, countLabel, countIc
         <h1>{title}</h1>
         <AdminHelpTip label={title} text={description} />
       </div>
+      {(action || (count !== undefined && countLabel)) && <div className="admin-page-header-end">
       {count !== undefined && countLabel && (
         <div className="admin-list-count" role="status" aria-label={`${count} ${countLabel}`}>
           {countIcon && <span className="admin-list-count-icon" aria-hidden="true">{countIcon}</span>}
@@ -26,7 +27,8 @@ export function AdminPageHeader({ title, description, count, countLabel, countIc
           <span>{countLabel}</span>
         </div>
       )}
-      {action}
+      {action && <div className="admin-page-header-actions">{action}</div>}
+      </div>}
     </header>
   );
 }
@@ -102,15 +104,16 @@ interface AdminPaginationProps {
   disabled?: boolean;
   detail?: string;
   adjacentButtons?: boolean;
+  alwaysVisible?: boolean;
 }
 
-export function AdminPagination({ page, totalPages, ariaLabel, onPageChange, disabled = false, detail, adjacentButtons = false }: AdminPaginationProps) {
-  if (totalPages <= 1) return null;
+export function AdminPagination({ page, totalPages, ariaLabel, onPageChange, disabled = false, detail, adjacentButtons = false, alwaysVisible = false }: AdminPaginationProps) {
+  if (totalPages <= 1 && !alwaysVisible) return null;
   return (
     <nav className={cn('admin-list-pagination', adjacentButtons && 'admin-pagination-adjacent')} aria-label={ariaLabel}>
       <AppButton variant="ghost" size="sm" disabled={disabled || page <= 1} onClick={() => onPageChange(page - 1)}>Anterior</AppButton>
       <span>Página {page} de {Math.max(1, totalPages)}{detail ? ` · ${detail}` : ''}</span>
-      <AppButton variant="ghost" size="sm" disabled={disabled || page >= totalPages} onClick={() => onPageChange(page + 1)}>Próxima</AppButton>
+      <AppButton variant="ghost" size="sm" disabled={disabled || page >= Math.max(1, totalPages)} onClick={() => onPageChange(page + 1)}>Próxima</AppButton>
     </nav>
   );
 }

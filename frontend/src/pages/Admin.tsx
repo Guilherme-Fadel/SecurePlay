@@ -52,6 +52,7 @@ import {
   CalendarDays,
 } from "lucide-react";
 import "@/styles/app-ui.css";
+import "@/components/admin/admin-shared.css";
 import "./admin-ui.css";
 import "./admin-users.css";
 interface AdminProps {

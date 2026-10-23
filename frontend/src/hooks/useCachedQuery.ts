@@ -6,6 +6,7 @@ import { companyCacheKey } from '@/config/features';
 interface UseCachedQueryOptions {
   staleTime?: number;
   enabled?: boolean;
+  keepPreviousDataOnInvalidate?: boolean;
 }
 
 interface UseCachedQueryResult<T> {
@@ -22,13 +23,14 @@ export function useCachedQuery<T>(
 ): UseCachedQueryResult<T> {
   const { user } = useCurrentUser();
   const key = companyCacheKey(baseKey, user);
-  const { staleTime, enabled = true } = options ?? {};
+  const { staleTime, enabled = true, keepPreviousDataOnInvalidate = false } = options ?? {};
   const fetcherRef = useRef(fetcher);
   fetcherRef.current = fetcher;
 
   const cached = getCached<T>(key);
   const [storedData, setStoredData] = useState<{ key: string; value: T | null }>({ key, value: cached });
   const activeKey = useRef<string | null>(null);
+  const requestVersion = useRef(0);
   const setData = useCallback((value: T | null) => {
     if (activeKey.current === key) setStoredData({ key, value });
   }, [key]);
@@ -42,14 +44,15 @@ export function useCachedQuery<T>(
 
   const refetch = useCallback(() => {
     if (!enabled) return;
+    const version = ++requestVersion.current;
     setError(null);
     if (!getCached<T>(key)) setLoading(true);
     fetchCached(key, fetcherRef.current)
       .then(result => {
-        setData(result);
+        if (version === requestVersion.current && getCached<T>(key) === result) setData(result);
       })
-      .catch(() => { if (activeKey.current === key) setError('Erro ao carregar dados'); })
-      .finally(() => { if (activeKey.current === key) setLoading(false); });
+      .catch(() => { if (activeKey.current === key && version === requestVersion.current) setError('Erro ao carregar dados'); })
+      .finally(() => { if (activeKey.current === key && version === requestVersion.current) setLoading(false); });
   }, [enabled, key, setData]);
 
   useEffect(() => {
@@ -68,25 +71,8 @@ export function useCachedQuery<T>(
       return;
     }
 
-    if (currentCache) {
-      setData(currentCache);
-      setLoading(false);
-      fetchCached(key, fetcherRef.current)
-        .then(result => {
-          setData(result);
-        })
-        .catch(() => {});
-      return;
-    }
-
-    setLoading(true);
-    fetchCached(key, fetcherRef.current)
-      .then(result => {
-        setData(result);
-      })
-      .catch(() => { if (activeKey.current === key) setError('Erro ao carregar dados'); })
-      .finally(() => { if (activeKey.current === key) setLoading(false); });
-  }, [enabled, key, staleTime, setData]);
+    refetch();
+  }, [enabled, key, staleTime, setData, refetch]);
 
   useEffect(() => {
     if (!enabled) return;
@@ -95,12 +81,14 @@ export function useCachedQuery<T>(
       if (updated) {
         setData(updated);
       } else {
+        if (!keepPreviousDataOnInvalidate) setData(null);
         refetch();
       }
     });
     return unsubscribe;
-  }, [enabled, key, refetch, setData]);
+  }, [enabled, key, refetch, setData, keepPreviousDataOnInvalidate]);
 
   const current = storedData.key === key;
-  return { data: enabled && current ? storedData.value : null, loading: enabled && (!current || loading), error: enabled && current ? error : null, refetch };
+  const data = current ? storedData.value : cached;
+  return { data: enabled ? data : null, loading: enabled && !data && (!current || loading), error: enabled && current ? error : null, refetch };
 }

@@ -1,8 +1,8 @@
 import type { CSSProperties } from 'react';
 import { EmpresaPaleta } from '@/services/me';
 import { InfoCard } from '@/components/ui/visuals/InfoCard';
-import { AppSectionHeader } from '@/components/ui/visuals/AppSectionHeader';
-import { AdminHelpTip } from './AdminHelpTip';
+import { Eye } from 'lucide-react';
+import { AdminCardHeading } from './AdminListLayout';
 
 interface AdminThemePreviewProps {
   paleta: EmpresaPaleta;
@@ -17,10 +17,14 @@ interface AdminThemePreviewProps {
  * nao busca dados e nao decide nada, so reflete a paleta recebida.
  */
 export function AdminThemePreview({ paleta, logoPreview, onLogoError, empresaNome, userInitial }: AdminThemePreviewProps) {
+    const textHex = paleta.text_primary.replace('#', '');
+    const textBrightness = /^([0-9a-f]{6})$/i.test(textHex)
+      ? .299 * Number.parseInt(textHex.slice(0, 2), 16) + .587 * Number.parseInt(textHex.slice(2, 4), 16) + .114 * Number.parseInt(textHex.slice(4, 6), 16)
+      : 255;
+    const darkSurface = textBrightness >= 128;
     return (<section className="admin-settings-section admin-preview-section">
-      <AppSectionHeader title="Pré-visualização" action={<AdminHelpTip label="Pré-visualização" text="Uma amostra do dashboard com a paleta selecionada." />}/>
       <InfoCard raised className="admin-preview-card">
-        <InfoCard.Header title="Dashboard da empresa"/>
+        <AdminCardHeading title="Pré-visualização" description="Amostra do ambiente de aprendizagem com a paleta selecionada." icon={<Eye size={19} />} />
         <InfoCard.Section>
           <div className="admin-interface-preview" style={{
             '--preview-primary': paleta.primary,
@@ -28,8 +32,8 @@ export function AdminThemePreview({ paleta, logoPreview, onLogoError, empresaNom
             '--preview-accent': paleta.accent,
             '--preview-text': paleta.text_primary,
             '--preview-muted': paleta.text_secondary,
-            '--preview-bg': paleta.text_primary.toUpperCase() === '#ECECEC' ? '#111827' : '#F8FAFC',
-            '--preview-surface': paleta.text_primary.toUpperCase() === '#ECECEC' ? '#1E293B' : '#FFFFFF',
+            '--preview-bg': darkSurface ? '#111827' : '#F8FAFC',
+            '--preview-surface': darkSurface ? '#1E293B' : '#FFFFFF',
         } as CSSProperties}>
             <div className="admin-preview-sidebar">
               <div className="admin-preview-company-mark">

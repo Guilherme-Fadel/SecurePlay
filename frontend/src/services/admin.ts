@@ -1,3 +1,4 @@
+import { invalidateAdminCompanies, invalidateAdminResources } from '@/lib/adminCache';
 import { api } from "@/services/api";
 import { EmpresaPaleta } from "./me";
 import type { CompanyParameters } from "@/config/features";
@@ -80,11 +81,13 @@ export async function listarPilotosDaEmpresa(empresaId: number): Promise<SchoolP
 
 export async function criarPilotoDaEmpresa(empresaId: number, data: SaveSchoolPilot): Promise<SchoolPilot> {
   const response = await api.post(`/platform/admin/empresas/${empresaId}/pilotos`, data);
+  invalidateAdminResources(empresaId, 'pilots', 'audit-events');
   return response.data;
 }
 
 export async function atualizarPilotoDaEmpresa(empresaId: number, pilotId: number, data: SaveSchoolPilot): Promise<SchoolPilot> {
   const response = await api.put(`/platform/admin/empresas/${empresaId}/pilotos/${pilotId}`, data);
+  invalidateAdminResources(empresaId, 'pilots', 'audit-events');
   return response.data;
 }
 
@@ -118,6 +121,7 @@ export async function criarEmpresa(data: {
   email_administrador: string;
 }): Promise<EmpresaCriadaComAdministrador> {
   const response = await api.post("/platform/admin/empresas", data);
+  invalidateAdminCompanies();
   return response.data;
 }
 
@@ -158,22 +162,25 @@ export async function updateCompanyParameters(
   empresaId?: number,
 ): Promise<CompanyParameters> {
   const response = await api.put(`${empresaPath(empresaId)}/parametros`, data);
+  invalidateAdminResources(empresaId, 'parameters', 'audit-settings');
   return response.data;
 }
 
 export async function updateCompanySettings(
   empresaId: number,
   data: {
-    nome: string;
-    paleta: EmpresaPaleta;
+    nome?: string;
+    paleta?: EmpresaPaleta;
     logo_url?: string | null;
-    parametros: CompanyParameters;
+    parametros?: CompanyParameters;
   },
 ): Promise<{ tema: TemaEmpresa; parametros: CompanyParameters }> {
   const response = await api.put(
     `/platform/admin/empresas/${empresaId}/configuracoes`,
     data,
   );
+  invalidateAdminResources(empresaId, 'theme', 'parameters', 'audit-settings');
+  invalidateAdminCompanies();
   return response.data;
 }
 
@@ -182,6 +189,8 @@ export async function updateTema(
   empresaId?: number,
 ): Promise<TemaEmpresa> {
   const response = await api.put(`${empresaPath(empresaId)}/tema`, data);
+  invalidateAdminResources(empresaId, 'theme', 'audit-settings');
+  invalidateAdminCompanies();
   return response.data;
 }
 

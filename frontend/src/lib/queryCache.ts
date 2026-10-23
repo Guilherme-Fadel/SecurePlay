@@ -66,6 +66,14 @@ export function invalidate(key: string): void {
   }
 }
 
+/** Invalida uma família de consultas, preservando as outras áreas do cache. */
+export function invalidatePrefix(prefix: string): void {
+  const keys = new Set([...cache.keys(), ...inFlight.keys(), ...listeners.keys()]);
+  for (const key of keys) {
+    if (key === prefix || key.startsWith(`${prefix}:`)) invalidate(key);
+  }
+}
+
 export function clearQueryCache(): void {
   cacheGeneration += 1;
   cache.clear();

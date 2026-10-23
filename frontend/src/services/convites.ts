@@ -1,3 +1,4 @@
+import { invalidateAdminResources } from '@/lib/adminCache';
 import { api } from './api';
 
 export interface Convite {
@@ -119,11 +120,13 @@ export async function criarConvite(
   empresaId?: number,
 ) {
   const response = await api.post(`${empresaPath(empresaId)}/convites`, data);
+  invalidateAdminResources(empresaId, 'invitations', 'summary', 'audit-events');
   return response.data as { convite: Convite; token: string };
 }
 
 export async function revogarConvite(id: number, empresaId?: number): Promise<Convite> {
   const response = await api.post(`${empresaPath(empresaId)}/convites/${id}/revogar`);
+  invalidateAdminResources(empresaId, 'invitations', 'summary', 'audit-events');
   return response.data;
 }
 
@@ -139,25 +142,30 @@ export async function concluirCadastroConvite(token: string, data: { name: strin
 
 export async function aprovarApelido(usuarioId: number, empresaId?: number): Promise<UsuarioEmpresa> {
   const response = await api.post(`${empresaPath(empresaId)}/usuarios/${usuarioId}/apelido/aprovar`);
+  invalidateAdminResources(empresaId, 'users', 'nicknames', 'summary', 'audit-events');
   return response.data;
 }
 
 export async function rejeitarApelido(usuarioId: number, empresaId?: number): Promise<UsuarioEmpresa> {
   const response = await api.post(`${empresaPath(empresaId)}/usuarios/${usuarioId}/apelido/rejeitar`);
+  invalidateAdminResources(empresaId, 'users', 'nicknames', 'summary', 'audit-events');
   return response.data;
 }
 
 export async function inativarUsuario(usuarioId: number, motivo: string, empresaId?: number): Promise<UsuarioEmpresa> {
   const response = await api.post(`${empresaPath(empresaId)}/usuarios/${usuarioId}/inativar`, { motivo });
+  invalidateAdminResources(empresaId, 'users', 'nicknames', 'summary', 'audit-events');
   return response.data;
 }
 
 export async function reativarUsuario(usuarioId: number, motivo: string, empresaId?: number): Promise<UsuarioEmpresa> {
   const response = await api.post(`${empresaPath(empresaId)}/usuarios/${usuarioId}/reativar`, { motivo });
+  invalidateAdminResources(empresaId, 'users', 'nicknames', 'summary', 'audit-events');
   return response.data;
 }
 
 export async function emitirLinkRedefinicaoAluno(usuarioId: number, empresaId?: number): Promise<{ reset_token: string; expires_at: string }> {
   const response = await api.post(`${empresaPath(empresaId)}/usuarios/${usuarioId}/redefinicao-acesso`);
+  invalidateAdminResources(empresaId, 'audit-events');
   return response.data;
 }

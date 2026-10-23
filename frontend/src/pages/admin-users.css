@@ -398,6 +398,16 @@
   overflow-y: auto;
 }
 
+.school-pilot-page-editor { max-width: 920px; margin: 0 auto; }
+.school-pilot-page-editor .school-pilot-page-card {
+  max-height: none;
+  overflow: visible;
+  border: 1px solid var(--dashboard-border);
+  border-radius: 14px;
+  background: var(--dashboard-surface);
+  box-shadow: 0 12px 36px rgba(0, 0, 0, .12);
+}
+
 .school-pilot-dialog-header {
   position: sticky;
   z-index: 1;
