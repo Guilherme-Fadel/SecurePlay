@@ -4,9 +4,9 @@ import {
   Inject,
   NotFoundException,
 } from '@nestjs/common';
-import { createHash, randomBytes } from 'crypto';
+import { randomBytes } from 'crypto';
 import { DataSource, In, Repository } from 'typeorm';
-import { Role } from '../auth/roles.enum';
+
 import { Empresa } from '../empresa/empresa.entity';
 import { UpdateTemaDto } from './dto/update-tema.dto';
 import { S3Service } from '../conteudo/s3/s3.service';
@@ -16,12 +16,14 @@ import {
   MAX_UPLOAD_BYTES,
 } from '../conteudo/s3/upload-policy';
 import { Usuario } from '../usuario/usuario.entity';
-import { Convite } from './entities/convite.entity';
+import { createRegisteredCompany } from './company-registration-create';
 import { resolveCompanyParameters } from '../config/features';
 import { EmpresaParametrosAudit } from '../empresa/empresa-parametros-audit.entity';
 import { UpdateCompanySettingsDto } from './dto/update-company-settings.dto';
 import { UpdateCompanyParametersDto } from './dto/update-company-parameters.dto';
 import { ensurePendingRankingSeasonsClosed } from '../dashboard/ranking-history';
+import { updateRegisteredCompany } from './company-settings-update';
+import { CompanyRegistrationDto } from './dto/company-registration.dto';
 
 @Injectable()
 export class AdminService {
@@ -74,13 +76,19 @@ export class AdminService {
     const pageSize = Number.isFinite(filtros.pageSize)
       ? Math.min(100, Math.max(1, Math.floor(filtros.pageSize as number)))
       : 25;
-    const search = typeof filtros.search === 'string'
-      ? filtros.search.trim().slice(0, 100)
-      : '';
+    const search =
+      typeof filtros.search === 'string'
+        ? filtros.search.trim().slice(0, 100)
+        : '';
     const direction = filtros.sort === 'desc' ? 'DESC' : 'ASC';
     const query = this.empresaRepository
       .createQueryBuilder('empresa')
-      .select(['empresa.id', 'empresa.nome', 'empresa.logo_url', 'empresa.paleta']);
+      .select([
+        'empresa.id',
+        'empresa.nome',
+        'empresa.logo_url',
+        'empresa.paleta',
+      ]);
     if (search) {
       query.where('INSTR(LOWER(empresa.nome), LOWER(:search)) > 0', { search });
     }
@@ -108,50 +116,14 @@ export class AdminService {
     nome: string,
     emailAdministrador: string,
     criadoPorId: number,
+    cadastro: CompanyRegistrationDto,
   ) {
-    const token = randomBytes(32).toString('base64url');
-    const email = emailAdministrador.toLowerCase();
-    const expiresAt = new Date();
-    expiresAt.setDate(expiresAt.getDate() + 7);
-
-    const empresa = await this.dataSource.transaction(async (manager) => {
-      const empresaRepository = manager.getRepository(Empresa);
-      const usuarioRepository = manager.getRepository(Usuario);
-      const conviteRepository = manager.getRepository(Convite);
-
-      if (await empresaRepository.findOne({ where: { nome } })) {
-        throw new BadRequestException('Já existe uma empresa com este nome');
-      }
-      if (await usuarioRepository.findOne({ where: { email } })) {
-        throw new BadRequestException(
-          'Este e-mail já possui um acesso cadastrado',
-        );
-      }
-
-      const novaEmpresa = await empresaRepository.save(
-        empresaRepository.create({
-          nome,
-          parametros_funcionalidades: resolveCompanyParameters(),
-        }),
-      );
-      await conviteRepository.save(
-        conviteRepository.create({
-          token_hash: createHash('sha256').update(token).digest('hex'),
-          email,
-          empresa_id: novaEmpresa.id,
-          criado_por_id: criadoPorId,
-          expires_at: expiresAt,
-          max_uses: 1,
-          role: Role.ADMIN,
-        }),
-      );
-      return novaEmpresa;
+    return createRegisteredCompany(this.dataSource, {
+      nome,
+      emailAdministrador,
+      criadoPorId,
+      cadastro,
     });
-
-    return {
-      empresa: { id: empresa.id, ...(await this.toTema(empresa)) },
-      token,
-    };
   }
 
   async listarUsuariosGlobais() {
@@ -189,7 +161,9 @@ export class AdminService {
         skip: (page - 1) * pageSize,
         take: pageSize,
       });
-    const autoresIds = [...new Set(registros.map((registro) => registro.alterado_por_id))];
+    const autoresIds = [
+      ...new Set(registros.map((registro) => registro.alterado_por_id)),
+    ];
     const autores = autoresIds.length
       ? await this.usuarioRepository.find({ where: { id: In(autoresIds) } })
       : [];
@@ -207,7 +181,9 @@ export class AdminService {
         })(),
         configuracoes_alteradas: Object.keys(registro.atual).filter(
           (key) =>
-            JSON.stringify(registro.atual[key as keyof typeof registro.atual]) !==
+            JSON.stringify(
+              registro.atual[key as keyof typeof registro.atual],
+            ) !==
             JSON.stringify(
               registro.anterior[key as keyof typeof registro.anterior],
             ),
@@ -279,43 +255,19 @@ export class AdminService {
     dto: UpdateCompanySettingsDto,
   ) {
     await ensurePendingRankingSeasonsClosed(this.dataSource);
-    const empresa = await this.dataSource.transaction(async (manager) => {
-      const target = await manager.findOne(Empresa, {
-        where: { id: empresaId },
-        lock: { mode: 'pessimistic_write' },
-      });
-      if (!target) throw new NotFoundException('Empresa não encontrada');
-      const anterior = resolveCompanyParameters(
-        target.parametros_funcionalidades,
-      );
-      if (dto.nome !== undefined) target.nome = dto.nome.trim();
-      if (dto.paleta) target.paleta = dto.paleta;
-      if (dto.logo_url !== undefined) {
-        this.assertLogoBelongsToEmpresa(target, dto.logo_url);
-        target.logo_url = dto.logo_url;
-      }
-      if (dto.parametros)
-        target.parametros_funcionalidades = resolveCompanyParameters(
-          dto.parametros,
-        );
-      await manager.save(Empresa, target);
-      if (
-        dto.parametros &&
-        JSON.stringify(anterior) !==
-          JSON.stringify(target.parametros_funcionalidades)
-      ) {
-        await manager.save(EmpresaParametrosAudit, {
-          empresa_id: empresaId,
-          alterado_por_id: userId,
-          anterior,
-          atual: resolveCompanyParameters(target.parametros_funcionalidades),
-        });
-      }
-      return target;
+    const empresa = await updateRegisteredCompany(this.dataSource, {
+      empresaId,
+      userId,
+      dto,
+      validateLogo: (company, key) =>
+        this.assertLogoBelongsToEmpresa(company, key),
     });
     return {
-      tema: await this.toTema(empresa),
-      parametros: resolveCompanyParameters(empresa.parametros_funcionalidades),
+      tema: await this.toTema(empresa.target),
+      parametros: resolveCompanyParameters(
+        empresa.target.parametros_funcionalidades,
+      ),
+      cadastro: empresa.cadastro,
     };
   }
 
@@ -351,7 +303,11 @@ export class AdminService {
   }
 
   private assertLogoBelongsToEmpresa(empresa: Empresa, logoUrl: string | null) {
-    if (logoUrl !== null && logoUrl !== empresa.logo_url && !isCompanyLogoKey(empresa.id, logoUrl)) {
+    if (
+      logoUrl !== null &&
+      logoUrl !== empresa.logo_url &&
+      !isCompanyLogoKey(empresa.id, logoUrl)
+    ) {
       throw new BadRequestException('Logo não pertence à empresa');
     }
   }
@@ -361,7 +317,10 @@ export class AdminService {
       nome: empresa.nome,
       logo_url: empresa.logo_url,
       logo_preview_url: empresa.logo_url
-        ? await this.s3Service.resolveCompanyLogoUrl(empresa.id, empresa.logo_url)
+        ? await this.s3Service.resolveCompanyLogoUrl(
+            empresa.id,
+            empresa.logo_url,
+          )
         : null,
       paleta: empresa.paleta,
     };

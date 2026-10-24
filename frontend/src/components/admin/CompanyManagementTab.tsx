@@ -13,6 +13,8 @@ import { criarEmpresa, listarEmpresasPaginadas, type EmpresaAdministravel } from
 import { AdminListCard, AdminListContent, AdminListState, AdminPagination, AdminPageHeader, AdminListToolbar } from "@/components/admin/AdminListLayout";
 import { AdminHelpTip } from "@/components/admin/AdminHelpTip";
 import { useAdminUnsavedChanges } from "@/hooks/useAdminUnsavedChanges";
+import { CompanyRegistrationFields } from './CompanyRegistrationFields';
+import { registrationDraft, registrationPayload } from '@/services/companyRegistration';
 
 interface CompanyManagementTabProps {
   onEmpresaCriada: (empresa: EmpresaAdministravel) => void;
@@ -36,6 +38,7 @@ export function CompanyManagementTab({
   headerActions,
 }: CompanyManagementTabProps) {
   const [nome, setNome] = useState("");
+  const [cadastro, setCadastro] = useState(registrationDraft);
   const notebook = useNotebookLayout();
   const pageSize = consoleMode ? 25 : notebook ? 3 : 25;
   const [emailAdministrador, setEmailAdministrador] = useState("");
@@ -98,6 +101,7 @@ export function CompanyManagementTab({
       const resultado = await criarEmpresa({
         nome: nome.trim(),
         email_administrador: emailAdministrador.trim(),
+        cadastro: registrationPayload(cadastro),
       });
       setEmpresaCriada(resultado.empresa);
       setConviteCopiado(false);
@@ -105,6 +109,7 @@ export function CompanyManagementTab({
       setPage(1);
 
       setNome("");
+      setCadastro(registrationDraft());
       setEmailAdministrador("");
       setErro(false);
       setLinkAdministrador(
@@ -129,7 +134,7 @@ export function CompanyManagementTab({
     event.preventDefault();
     await cadastrar();
   };
-  const { prompt: unsavedPrompt } = useAdminUnsavedChanges(consoleMode && mode === 'new' && Boolean(nome.trim() || emailAdministrador.trim() || (linkAdministrador && !conviteCopiado)), undefined, salvando);
+  const { prompt: unsavedPrompt } = useAdminUnsavedChanges(consoleMode && mode === 'new' && Boolean(nome.trim() || emailAdministrador.trim() || Object.values(cadastro).some(value => value.trim()) || (linkAdministrador && !conviteCopiado)), undefined, salvando);
 
   const copiarLink = async () => {
     if (!linkAdministrador) return;
@@ -175,31 +180,22 @@ export function CompanyManagementTab({
           </div>
         </div>}
         <form id={consoleMode ? "admin-console-company-form" : undefined} ref={formRef} onSubmit={handleSubmit} className="admin-company-form">
-          <div className="admin-company-form-fields">
-            <label htmlFor="empresa-nome">
-              Nome da empresa
-              <AppInput
-                id="empresa-nome"
-                value={nome}
-                onChange={(event) => setNome(event.target.value)}
-                minLength={2}
-                maxLength={100}
-                required
-                placeholder="Ex.: Empresa Exemplo Ltda."
-              />
-            </label>
+          <CompanyRegistrationFields nome={nome} onNomeChange={setNome} value={cadastro} onChange={setCadastro} disabled={salvando} required />
+          <fieldset className="company-registration-access"><legend>Acesso inicial</legend><p className="company-registration-note">O administrador receberá um convite para criar seu acesso nesta unidade.</p>
             <label htmlFor="empresa-admin-email">
               E-mail do administrador
               <AppInput
                 id="empresa-admin-email"
                 type="email"
+                maxLength={100}
+                disabled={salvando}
                 value={emailAdministrador}
                 onChange={(event) => setEmailAdministrador(event.target.value)}
                 required
                 placeholder="admin@empresa.com"
               />
             </label>
-          </div>
+          </fieldset>
           {!consoleMode && <AppButton
             type="submit"
             icon={<Plus size={16} />}

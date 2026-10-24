@@ -8,10 +8,17 @@ import {
 } from 'class-validator';
 import { UpdateTemaDto } from './update-tema.dto';
 import { UpdateCompanyParametersDto } from './update-company-parameters.dto';
+import { CompanyRegistrationDto } from './company-registration.dto';
 
 export class UpdateCompanySettingsDto extends UpdateTemaDto {
   @IsOptional()
-  @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
+  @ValidateNested()
+  @Type(() => CompanyRegistrationDto)
+  cadastro?: CompanyRegistrationDto;
+  @IsOptional()
+  @Transform(({ value }: { value: unknown }) =>
+    typeof value === 'string' ? value.trim() : value,
+  )
   @IsString()
   @MinLength(2)
   @MaxLength(100)

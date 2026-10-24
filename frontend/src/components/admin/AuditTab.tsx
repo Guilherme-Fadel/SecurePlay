@@ -54,7 +54,7 @@ export function AuditTab({ empresaId, empresaNome, view = 'both' }: AuditTabProp
   const eventsLoading = eventsQuery.loading;
   const eventsError = Boolean(eventsQuery.error);
 
-  const actionLabel: Record<string, string> = { 'usuario.inativado': 'Usuário inativado', 'usuario.reativado': 'Usuário reativado', 'convite.criado': 'Convite criado', 'convite.revogado': 'Convite revogado', 'apelido.aprovado': 'Apelido aprovado', 'apelido.rejeitado': 'Apelido rejeitado', 'aluno.link_redefinicao_emitido': 'Link de redefinição de acesso emitido' };
+  const actionLabel: Record<string, string> = { 'company.registration.updated': 'Dados cadastrais da empresa atualizados', 'usuario.inativado': 'Usuário inativado', 'usuario.reativado': 'Usuário reativado', 'convite.criado': 'Convite criado', 'convite.revogado': 'Convite revogado', 'apelido.aprovado': 'Apelido aprovado', 'apelido.rejeitado': 'Apelido rejeitado', 'aluno.link_redefinicao_emitido': 'Link de redefinição de acesso emitido' };
 
   if (view !== 'both') return <AuditGridView view={view} empresaNome={empresaNome} audit={audit} events={events} loading={view === 'settings' ? loading : eventsLoading} error={view === 'settings' ? error : eventsError} page={view === 'settings' ? page : eventsPage} onPageChange={view === 'settings' ? setPage : setEventsPage} onRetry={view === 'settings' ? auditQuery.refetch : eventsQuery.refetch} actionLabel={actionLabel} />;
 

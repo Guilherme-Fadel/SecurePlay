@@ -14,6 +14,11 @@ import { AdminAuditService } from './admin-audit.service';
 import { SchoolPilotService } from './school-pilot.service';
 import { PlatformRecordsService } from './platform-records.service';
 import { PlatformRecordsController } from './platform-records.controller';
+import { CompanyRegistrationService } from './company-registration.service';
+import {
+  PlatformCompanyRegistrationController,
+  OwnCompanyRegistrationController,
+} from './company-registration.controller';
 
 @Module({
   imports: [DatabaseModule, RegistrationModule],
@@ -22,6 +27,8 @@ import { PlatformRecordsController } from './platform-records.controller';
     ConvitesController,
     PlatformAdminController,
     PlatformRecordsController,
+    PlatformCompanyRegistrationController,
+    OwnCompanyRegistrationController,
   ],
   providers: [
     ...empresaProviders,
@@ -32,6 +39,7 @@ import { PlatformRecordsController } from './platform-records.controller';
     AdminAuditService,
     SchoolPilotService,
     PlatformRecordsService,
+    CompanyRegistrationService,
     S3Service,
   ],
   exports: [AdminService, ...empresaProviders],

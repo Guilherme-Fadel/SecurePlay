@@ -18,14 +18,24 @@ describe('Administração global e por empresa', () => {
 
   it('encaminha filtros de empresas paginadas sem alterar a lista usada pelo seletor', async () => {
     const adminService = {
-      listarEmpresasPaginadas: jest.fn().mockResolvedValue({ items: [], total: 0 }),
+      listarEmpresasPaginadas: jest
+        .fn()
+        .mockResolvedValue({ items: [], total: 0 }),
     };
-    const controller = new PlatformAdminController(adminService as never, {} as never, {} as never, {} as never);
+    const controller = new PlatformAdminController(
+      adminService as never,
+      {} as never,
+      {} as never,
+      {} as never,
+    );
 
     await controller.listarEmpresasPaginadas('2', '25', 'Escola', 'desc');
 
     expect(adminService.listarEmpresasPaginadas).toHaveBeenCalledWith({
-      page: 2, pageSize: 25, search: 'Escola', sort: 'desc',
+      page: 2,
+      pageSize: 25,
+      search: 'Escola',
+      sort: 'desc',
     });
   });
 
@@ -90,7 +100,11 @@ describe('Administração global e por empresa', () => {
     );
 
     await controller.criarEmpresa(
-      { nome: 'Empresa Nova', email_administrador: 'admin@empresa.com' },
+      {
+        nome: 'Empresa Nova',
+        email_administrador: 'admin@empresa.com',
+        cadastro: { unidade: 'Centro' },
+      },
       { user: { userId: 9 } },
     );
 
@@ -98,6 +112,7 @@ describe('Administração global e por empresa', () => {
       'Empresa Nova',
       'admin@empresa.com',
       9,
+      { unidade: 'Centro' },
     );
   });
 });

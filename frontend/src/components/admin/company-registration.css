@@ -1,0 +1,12 @@
+.company-registration-fields { display:grid; gap:24px; width:100%; min-width:0; }
+.company-registration-fields fieldset { min-width:0; margin:0; padding:0; border:0; }
+.company-registration-fields legend,.admin-record-card .company-registration-fields h2 { margin:0 0 14px; padding:0; color:var(--dashboard-text); font-size:15px; font-weight:750; }
+.company-registration-grid small { color:var(--dashboard-muted); font:inherit; font-weight:400; }
+.company-registration-summary { margin:0; }.company-registration-summary > div { min-width:0; }
+.company-registration-summary dt { margin-bottom:5px; color:var(--dashboard-muted); font-size:12px; }
+.company-registration-summary dd { margin:0; color:var(--dashboard-text); font-size:14px; overflow-wrap:anywhere; }
+.company-registration-note { margin:10px 0 0; color:var(--dashboard-muted); font-size:12px; line-height:1.5; }
+.company-registration-notice { max-width:var(--admin-form-max-width,900px); margin-top:14px; padding:12px; border:1px solid var(--dashboard-border); border-radius:10px; background:var(--dashboard-surface-soft); color:var(--dashboard-text); font-size:13px; line-height:1.5; }
+.company-registration-notice p { margin:4px 0; }.company-registration-notice ul { margin:8px 0 0; padding-left:18px; }.company-registration-notice a { text-decoration:underline; }
+.admin-company-registration-card { max-width:1100px; }.admin-company-form .company-registration-fields { margin-bottom:24px; }
+.company-registration-access { min-width:0; margin:0; padding:0; border:0; }.company-registration-access legend { margin-bottom:8px; color:var(--dashboard-text); font-size:15px; font-weight:750; }.company-registration-access > label { display:grid; max-width:calc((var(--admin-form-max-width,900px) - var(--admin-form-gap,20px)) / 2); gap:7px; margin-top:14px; color:var(--dashboard-text); font-size:13px; }.admin-company-registration-card > .company-registration-note { margin:0 0 20px; }

@@ -1,20 +1,19 @@
 import { CompanyAppearanceFields } from './CompanyAppearanceFields';
-import { AdminFeedback } from './AdminFeedback';
 import { useCachedQuery } from '@/hooks/useCachedQuery';
 import { adminQueryKey } from '@/lib/adminCache';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { ArrowLeft, RotateCcw } from 'lucide-react';
-import { Link } from 'react-router-dom';
-import { AdminRecordCard } from './AdminRecordCard';
+import { RotateCcw } from 'lucide-react';
+
+import { CompanyDataPanel } from './CompanyDataPanel';
 import { AppButton } from '@/components/ui/buttons/AppButton';
-import { AppInput } from '@/components/ui/forms/AppInput';
+
 import { AdminPageHeader } from '@/components/admin/AdminListLayout';
 import { CompanyParametersTab } from '@/components/admin/CompanyParametersTab';
 import { DEFAULT_PALETTES } from '@/lib/defaultPalettes';
 import { optimizeImageUpload } from '@/lib/optimizeImageUpload';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { useAdminUnsavedChanges } from '@/hooks/useAdminUnsavedChanges';
-import { getCompanyParameters, getTema, presignLogo, updateCompanyParameters, updateCompanySettings, updateTema, type TemaEmpresa } from '@/services/admin';
+import { getCompanyParameters, getTema, presignLogo, updateCompanyParameters, updateTema, type TemaEmpresa } from '@/services/admin';
 import type { EmpresaPaleta } from '@/services/me';
 import type { CompanyParameters } from '@/config/features';
 
@@ -27,59 +26,8 @@ export function AdminConsoleSettings({ kind, empresaId, embedded = false }: { ki
   return <section className="admin-console-unavailable" role="alert"><h1>Configuração indisponível</h1><p>Esta configuração exige uma empresa selecionada.</p></section>;
 }
 
-function CompanyDataSettings({ empresaId, embedded = false }: { empresaId?: number; embedded?: boolean }) {
-  const { user } = useCurrentUser();
-  const canEdit = user?.role === 'platform_admin' && typeof empresaId === 'number';
-  const query = useCachedQuery(adminQueryKey('theme', empresaId), () => getTema(empresaId));
-  const [theme, setTheme] = useState<TemaEmpresa | null>(query.data);
-  const [name, setName] = useState(query.data?.nome ?? '');
-  const loading = query.loading;
-  const [saving, setSaving] = useState(false);
-  const [message, setMessage] = useState<string | null>(null);
-  const dirty = Boolean(canEdit && theme && name.trim() !== theme.nome);
-  const dirtyRef = useRef(dirty);
-  dirtyRef.current = dirty;
-  useEffect(() => {
-    if (query.data && !dirtyRef.current) { setTheme(query.data); setName(query.data.nome); }
-  }, [query.data]);
-  const save = async () => {
-    if (!dirty || !empresaId || saving) return false;
-    if (name.trim().length < 2 || name.trim().length > 100) { setMessage('Informe um nome entre 2 e 100 caracteres.'); return false; }
-    setSaving(true); setMessage(null);
-    try {
-      const result = await updateCompanySettings(empresaId, { nome: name.trim() });
-      setTheme(result.tema); setName(result.tema.nome); setMessage('Nome da empresa atualizado.'); return true;
-    } catch { setMessage('Não foi possível salvar o nome da empresa.'); return false; }
-    finally { setSaving(false); }
-  };
-  const { prompt: unsavedPrompt } = useAdminUnsavedChanges(dirty, save, saving);
-  if (canEdit) {
-    const formId = `company-record-${empresaId}`;
-    return <>{unsavedPrompt}<div className="admin-users-content admin-company-record-page">
-      <AdminPageHeader title={embedded ? 'Dados cadastrais' : 'Editar empresa'} description="Consulte e atualize os dados cadastrais desta empresa." action={<>
-        {!embedded && <Link className="admin-console-back-link" to="/admin/empresas" state={{ selectedId: empresaId }}><ArrowLeft size={16} /> Voltar</Link>}
-        <div className="admin-console-setting-actions">
-          <AppButton variant="ghost" aria-label="Restaurar" icon={<RotateCcw size={15} />} disabled={!dirty || saving || loading} onClick={() => { setName(theme?.nome ?? ''); setMessage(null); }}>Restaurar</AppButton>
-          <AppButton type="submit" form={formId} disabled={!dirty || saving || loading || Boolean(query.error)}>{saving ? 'Salvando…' : 'Salvar'}</AppButton>
-        </div>
-      </>} />
-      {message && <AdminFeedback variant={message.startsWith('Não foi') || message.startsWith('Informe') ? 'error' : 'success'}>{message}</AdminFeedback>}
-      <AdminRecordCard busy={loading || saving}>
-        {loading ? <p role="status">Carregando empresa…</p> : query.error ? <div role="alert"><p>Não foi possível carregar os dados desta empresa.</p><AppButton size="sm" variant="secondary" onClick={query.refetch}>Tentar novamente</AppButton></div> : <>
-          {!embedded && <header><h2>{theme?.nome}</h2><span className="admin-record-code">Empresa #{empresaId}</span></header>}
-          <form id={formId} className="admin-record-fields" onSubmit={(event) => { event.preventDefault(); void save(); }}>
-            <label className="admin-console-setting-field" htmlFor={`${formId}-name`}><span>Nome da empresa</span><AppInput id={`${formId}-name`} autoComplete="organization" required minLength={2} maxLength={100} value={name} onChange={(event) => setName(event.target.value)} disabled={saving} /></label>
-            <label className="admin-console-setting-field" htmlFor={`${formId}-code`}><span>Código</span><AppInput id={`${formId}-code`} value={empresaId} readOnly /></label>
-          </form>
-        </>}
-      </AdminRecordCard>
-    </div></>;
-  }
-  return <>{unsavedPrompt}<section className="admin-console-settings"><AdminPageHeader action={canEdit ? <div className="admin-console-setting-actions"><AppButton className="admin-console-secondary-action" aria-label="Restaurar" variant="ghost" disabled={!dirty || saving || loading || Boolean(query.error)} icon={<RotateCcw size={15} />} onClick={() => setName(theme?.nome ?? '')}>Restaurar</AppButton><AppButton disabled={!dirty || saving || loading || Boolean(query.error)} onClick={() => void save()}>{saving ? 'Salvando…' : 'Salvar'}</AppButton></div> : undefined} title="Dados da empresa" description={canEdit ? 'Atualize o nome da empresa selecionada.' : 'Identificação da empresa vinculada à sua sessão.'} />
-    {loading ? <p role="status">Carregando dados…</p> : query.error && !dirty ? null : <label className="admin-console-setting-field"><span>Nome da empresa</span><AppInput value={name} onChange={(event) => setName(event.target.value)} minLength={2} maxLength={100} disabled={!canEdit || saving || Boolean(query.error)} /></label>}
-    {query.error && <p role="alert">Não foi possível carregar os dados. <button type="button" onClick={query.refetch}>Tentar novamente</button></p>}{message && <p role="status">{message}</p>}
-
-  </section></>;
+function CompanyDataSettings({ empresaId }: { empresaId?: number; embedded?: boolean }) {
+  return <CompanyDataPanel empresaId={empresaId} />;
 }
 
 function AppearanceSettings({ empresaId }: { empresaId?: number }) {

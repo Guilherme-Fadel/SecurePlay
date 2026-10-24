@@ -1,6 +1,6 @@
 import { invalidatePrefix } from './queryCache';
 
-export type AdminResource = 'companies' | 'companies-page' | 'summary' | 'users' | 'nicknames' | 'invitations' | 'theme' | 'parameters' | 'pilots' | 'audit-settings' | 'audit-events';
+export type AdminResource = 'companies' | 'companies-page' | 'summary' | 'users' | 'nicknames' | 'invitations' | 'theme' | 'parameters' | 'pilots' | 'audit-settings' | 'audit-events' | 'registration';
 
 // useCachedQuery acrescenta a identidade da sessão; o alvo e os filtros compõem a consulta.
 export function adminQueryKey(resource: AdminResource, empresaId?: number, filters?: object) {

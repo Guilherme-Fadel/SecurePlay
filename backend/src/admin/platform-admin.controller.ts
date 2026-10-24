@@ -165,6 +165,7 @@ export class PlatformAdminController {
       dto.nome,
       dto.email_administrador,
       req.user.userId,
+      dto.cadastro,
     );
   }
 

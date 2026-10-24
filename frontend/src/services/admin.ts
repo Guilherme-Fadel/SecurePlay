@@ -2,6 +2,7 @@ import { invalidateAdminCompanies, invalidateAdminResources } from '@/lib/adminC
 import { api } from "@/services/api";
 import { EmpresaPaleta } from "./me";
 import type { CompanyParameters } from "@/config/features";
+import type { CompanyRegistrationData } from './companyRegistration';
 
 export interface TemaEmpresa {
   nome: string;
@@ -131,6 +132,7 @@ export async function listarEmpresasPaginadas(filters: {
 export async function criarEmpresa(data: {
   nome: string;
   email_administrador: string;
+  cadastro: CompanyRegistrationData;
 }): Promise<EmpresaCriadaComAdministrador> {
   const response = await api.post("/platform/admin/empresas", data);
   invalidateAdminCompanies();
@@ -182,16 +184,17 @@ export async function updateCompanySettings(
   empresaId: number,
   data: {
     nome?: string;
+    cadastro?: Partial<CompanyRegistrationData>;
     paleta?: EmpresaPaleta;
     logo_url?: string | null;
     parametros?: CompanyParameters;
   },
-): Promise<{ tema: TemaEmpresa; parametros: CompanyParameters }> {
+): Promise<{ tema: TemaEmpresa; parametros: CompanyParameters; cadastro?: CompanyRegistrationData }> {
   const response = await api.put(
     `/platform/admin/empresas/${empresaId}/configuracoes`,
     data,
   );
-  invalidateAdminResources(empresaId, 'theme', 'parameters', 'audit-settings');
+  invalidateAdminResources(empresaId, 'theme', 'parameters', 'audit-settings', 'registration', 'audit-events');
   invalidateAdminCompanies();
   return response.data;
 }

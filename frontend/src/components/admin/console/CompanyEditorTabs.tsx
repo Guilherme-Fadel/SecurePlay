@@ -10,7 +10,8 @@ import { optimizeImageUpload } from '@/lib/optimizeImageUpload';
 import { getTema, getCompanyParameters, updateCompanySettings, presignLogo, type TemaEmpresa } from '@/services/admin';
 import type { CompanyParameters } from '@/config/features';
 import { AppButton } from '@/components/ui/buttons/AppButton';
-import { AppInput } from '@/components/ui/forms/AppInput';
+import { CompanyRegistrationFields } from '../CompanyRegistrationFields';
+import { getCompanyRegistration, registrationDraft, registrationChanges, companyError, type CompanyRegistrationDraft, type CompanyRegistrationData } from '@/services/companyRegistration';
 import { AdminPageHeader } from '../AdminListLayout';
 import { CompanyParametersTab } from '../CompanyParametersTab';
 import { AdminRecordCard } from './AdminRecordCard';
@@ -18,9 +19,9 @@ import { AdminFeedback } from './AdminFeedback';
 import { CompanyAppearanceFields } from './CompanyAppearanceFields';
 import { companyEditorPath, companyEditorTabs, resolveCompanyEditorTab, type CompanyEditorTab } from './companyEditorNavigation';
 
-type Draft = { nome: string; paleta: NonNullable<TemaEmpresa['paleta']>; logo_url: string | null; parametros: CompanyParameters };
-function toDraft(theme: TemaEmpresa, parameters: CompanyParameters): Draft {
-  return { nome: theme.nome, paleta: theme.paleta ?? DEFAULT_PALETTES[0].paleta, logo_url: theme.logo_url, parametros: parameters };
+type Draft = { nome: string; paleta: NonNullable<TemaEmpresa['paleta']>; logo_url: string | null; parametros: CompanyParameters; cadastro: CompanyRegistrationDraft };
+function toDraft(theme: TemaEmpresa, parameters: CompanyParameters, cadastro: Partial<CompanyRegistrationData>): Draft {
+  return { nome: theme.nome, paleta: theme.paleta ?? DEFAULT_PALETTES[0].paleta, logo_url: theme.logo_url, parametros: parameters, cadastro: registrationDraft(cadastro) };
 }
 
 export function CompanyEditorTabs({ empresaId, fallbackTab }: { empresaId: number; fallbackTab: CompanyEditorTab }) {
@@ -28,10 +29,11 @@ export function CompanyEditorTabs({ empresaId, fallbackTab }: { empresaId: numbe
   const { user } = useCurrentUser();
   const tab = resolveCompanyEditorTab(location.search, fallbackTab);
   const query = useCachedQuery(adminQueryKey('theme', empresaId, { editor: 'all-settings' }), async () => {
-    const [theme, parameters] = await Promise.all([getTema(empresaId), getCompanyParameters(empresaId)]);
-    return { theme, parameters };
+    const [theme, parameters, registration] = await Promise.all([getTema(empresaId), getCompanyParameters(empresaId), getCompanyRegistration(empresaId)]);
+    return { theme, parameters, registration };
   });
   const [draft, setDraft] = useState<Draft | null>(null);
+  const dataForm = useRef<HTMLFormElement>(null);
   const [baseline, setBaseline] = useState<Draft | null>(null);
   const [theme, setTheme] = useState<TemaEmpresa | null>(null);
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
@@ -48,21 +50,21 @@ export function CompanyEditorTabs({ empresaId, fallbackTab }: { empresaId: numbe
   useEffect(() => () => { if (objectUrl.current) URL.revokeObjectURL(objectUrl.current); }, []);
   useEffect(() => {
     if (!query.data || dirtyRef.current) return;
-    const next = toDraft(query.data.theme, query.data.parameters);
+    const next = toDraft(query.data.theme, query.data.parameters, query.data.registration.cadastro);
     setTheme(query.data.theme); setDraft(next); setBaseline(next); setLogoPreview(query.data.theme.logo_preview_url); setFailedPreview(null);
   }, [query.data]);
   const save = async () => {
-    if (!draft || !dirty || busy) return false;
+    if (!draft || !baseline || !dirty || busy || query.error || (tab === 'data' && !dataForm.current?.reportValidity())) return false;
     if (draft.nome.trim().length < 2 || draft.nome.trim().length > 100) {
       setFeedback({ text: 'Informe um nome entre 2 e 100 caracteres na aba Dados cadastrais.', error: true }); return false;
     }
     setSaving(true); setFeedback(null);
     try {
-      const result = await updateCompanySettings(empresaId, { ...draft, nome: draft.nome.trim() });
-      const next = toDraft(result.tema, result.parametros);
+      const result = await updateCompanySettings(empresaId, { ...draft, nome: draft.nome.trim(), cadastro: registrationChanges(draft.cadastro, baseline.cadastro) });
+      const next = toDraft(result.tema, result.parametros, result.cadastro ?? draft.cadastro);
       setDraft(next); setBaseline(next); setTheme(result.tema); setLogoPreview(result.tema.logo_preview_url); setFailedPreview(null); releasePreview();
       setFeedback({ text: 'Dados cadastrais, aparência e funcionalidades salvos.' }); return true;
-    } catch { setFeedback({ text: 'Não foi possível salvar a empresa. As alterações das três abas foram preservadas.', error: true }); return false; }
+    } catch (error) { setFeedback({ text: companyError(error, 'Não foi possível salvar a empresa. As alterações das três abas foram preservadas.'), error: true }); return false; }
     finally { setSaving(false); }
   };
   const reset = () => {
@@ -106,10 +108,10 @@ export function CompanyEditorTabs({ empresaId, fallbackTab }: { empresaId: numbe
     </nav>
     {feedback && <AdminFeedback variant={feedback.error ? 'error' : 'success'}>{feedback.text}</AdminFeedback>}
     {!draft ? query.error ? <AdminFeedback variant="error">Não foi possível carregar a empresa. <button type="button" onClick={query.refetch}>Tentar novamente</button></AdminFeedback> : <p role="status">Carregando empresa…</p> : <>
-      {tab === 'data' && <section><AdminPageHeader title="Dados cadastrais" description="Consulte e atualize os dados cadastrais desta empresa." /><AdminRecordCard><div className="admin-record-fields">
-        <label className="admin-console-setting-field"><span>Nome da empresa</span><AppInput autoComplete="organization" required minLength={2} maxLength={100} value={draft.nome} disabled={busy} onChange={event => setDraft({ ...draft, nome: event.target.value })} /></label>
-        <label className="admin-console-setting-field"><span>Código</span><AppInput value={empresaId} readOnly /></label>
-      </div></AdminRecordCard></section>}
+      {tab === 'data' && <section><AdminPageHeader title="Dados cadastrais" description="Identificação da unidade, contato institucional e endereço." /><AdminRecordCard>
+        {!query.data?.registration.completo && <p className="company-registration-note">Cadastro ainda incompleto. Os acessos existentes continuam disponíveis.</p>}
+        <form ref={dataForm} onSubmit={event => { event.preventDefault(); void save(); }}><CompanyRegistrationFields nome={draft.nome} onNomeChange={nome => setDraft({ ...draft, nome })} value={draft.cadastro} onChange={cadastro => setDraft({ ...draft, cadastro })} disabled={busy || Boolean(query.error)} empresaId={empresaId} /></form>
+      </AdminRecordCard></section>}
       {tab === 'appearance' && <section className="admin-console-settings"><AdminPageHeader title="Aparência" description="Personalize o logo e as cores da experiência da empresa." /><CompanyAppearanceFields theme={theme} palette={draft.paleta} setPalette={update => setDraft(current => current ? { ...current, paleta: typeof update === 'function' ? update(current.paleta) : update } : current)} logoKey={draft.logo_url} logoPreview={logoPreview} failedPreview={failedPreview} setFailedPreview={setFailedPreview} saving={saving} uploading={uploading} uploadLogo={uploadLogo} removeLogo={() => { setDraft({ ...draft, logo_url: null }); setLogoPreview(null); releasePreview(); }} user={user} /></section>}
       {tab === 'features' && <section className="admin-console-settings"><CompanyParametersTab parameters={draft.parametros} setParameters={parametros => setDraft({ ...draft, parametros })} canEdit={!busy} saving={busy} /></section>}
     </>}

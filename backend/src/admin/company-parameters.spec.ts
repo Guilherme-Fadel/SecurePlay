@@ -1,6 +1,7 @@
 import { plainToInstance } from 'class-transformer';
 import { validate } from 'class-validator';
 import { AdminService } from './admin.service';
+import { AdminAuditEvent } from './entities/admin-audit-event.entity';
 import { AdminController } from './admin.controller';
 import { PlatformAdminController } from './platform-admin.controller';
 import { Empresa } from '../empresa/empresa.entity';
@@ -40,8 +41,10 @@ describe('Administração de parâmetros da empresa', () => {
     });
     expect(transaction).toHaveBeenCalledTimes(1);
     expect(ensurePendingRankingSeasonsClosed).toHaveBeenCalled();
-    expect((ensurePendingRankingSeasonsClosed as jest.Mock).mock.invocationCallOrder[0])
-      .toBeLessThan(transaction.mock.invocationCallOrder[0]);
+    expect(
+      (ensurePendingRankingSeasonsClosed as jest.Mock).mock
+        .invocationCallOrder[0],
+    ).toBeLessThan(transaction.mock.invocationCallOrder[0]);
     expect(result).toMatchObject({
       tema: { nome: 'Escola piloto' },
       parametros,
@@ -56,13 +59,11 @@ describe('Administração de parâmetros da empresa', () => {
 
   it('não gera auditoria de parâmetros ao alterar somente informações da empresa', async () => {
     const manager = {
-      findOne: jest
-        .fn()
-        .mockResolvedValue({
-          id: 4,
-          nome: 'Escola',
-          parametros_funcionalidades: null,
-        }),
+      findOne: jest.fn().mockResolvedValue({
+        id: 4,
+        nome: 'Escola',
+        parametros_funcionalidades: null,
+      }),
       save: jest.fn().mockResolvedValue(undefined),
     };
     const service = new AdminService(
@@ -72,18 +73,28 @@ describe('Administração de parâmetros da empresa', () => {
       {} as never,
     );
     await service.updateConfiguracoesDaEmpresa(4, 9, { nome: 'Escola piloto' });
-    expect(manager.save).toHaveBeenCalledTimes(1);
+    expect(manager.save).toHaveBeenCalledTimes(2);
+    expect(manager.save).toHaveBeenCalledWith(
+      AdminAuditEvent,
+      expect.objectContaining({
+        acao: 'company.registration.updated',
+        detalhes: { campos_alterados: ['nome'] },
+      }),
+    );
+    expect(
+      manager.save.mock.calls.some(
+        ([entity]) => entity === EmpresaParametrosAudit,
+      ),
+    ).toBe(false);
   });
 
   it('propaga falha de auditoria para impedir commit do salvamento integrado', async () => {
     const manager = {
-      findOne: jest
-        .fn()
-        .mockResolvedValue({
-          id: 4,
-          nome: 'Escola',
-          parametros_funcionalidades: null,
-        }),
+      findOne: jest.fn().mockResolvedValue({
+        id: 4,
+        nome: 'Escola',
+        parametros_funcionalidades: null,
+      }),
       save: jest
         .fn()
         .mockResolvedValueOnce(undefined)
