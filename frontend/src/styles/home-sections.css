@@ -73,7 +73,7 @@
   .secure-home .home-section .ranking-card { flex-shrink:0; padding:8px 10px; }
   .secure-home .home-section .ranking-card-heading { margin-bottom:6px; }
   .secure-home .home-section .ranking-highlights-list { gap:4px; }
-  .secure-home .home-section .ranking-highlight { min-height:29px; padding:2px 8px; }
+  .secure-home .home-section .ranking-highlight { min-height:56px; padding:6px 8px; }
   .secure-home .home-section .ranking-classification { display:flex; flex-direction:column; }
   .secure-home .home-section .ranking-classification .app-page-controls { margin-top:auto; }
   .secure-home .home-section.ranking-page { height:auto; min-height:100%; }

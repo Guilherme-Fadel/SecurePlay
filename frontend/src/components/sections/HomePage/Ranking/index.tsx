@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { ArrowDown, ArrowUp, BookOpen, Building2, CalendarDays, Crown, Flame, Globe2, Medal, RefreshCw, Shield, Zap } from 'lucide-react';
+import { ArrowDown, ArrowUp, BookOpen, Building2, CalendarDays, Crown, Globe2, Medal, RefreshCw, Shield } from 'lucide-react';
 import { PageTransition } from '@/components/shared/PageTransition';
 import { AppButton } from '@/components/ui/buttons/AppButton';
 import { PageControls } from '@/components/ui/navigation/PageControls';
@@ -164,15 +164,19 @@ function JourneyCard({ ranking }: { ranking: RankingData }) {
   </section>;
 }
 
-const highlightIcons = { streak: Flame, xp: Zap, challenges: Shield };
 function WeeklyHighlights({ ranking }: { ranking: RankingData }) {
   const highlights = ranking.weeklyHighlights ?? [];
   return <section className="ranking-card ranking-highlights" aria-labelledby="ranking-highlights-title">
     <div className="ranking-card-heading"><div><h2 id="ranking-highlights-title">Destaques da semana</h2><p>Realizações que inspiram nossa comunidade.</p></div></div>
     <div className="ranking-highlights-list">
       {highlights.length === 0 ? <p className="ranking-highlights-empty">{ranking.weeklyDataAvailable ? 'Nenhuma atividade nesta semana.' : 'Dados semanais indisponíveis.'}</p> : highlights.map(item => {
-        const Icon = highlightIcons[item.kind];
-        return <div className="ranking-highlight" key={item.kind}><Icon size={18} className={`ranking-highlight-icon is-${item.kind}`} /><span className="ranking-highlight-label">{item.label}</span><Avatar name={item.user.name} imageUrl={item.user.profileImageUrl} className="ranking-highlight-avatar" /><strong title={item.user.name}>{item.user.name}</strong><b>{item.value.toLocaleString('pt-BR')} {item.unit}</b></div>;
+        return <div className="ranking-highlight" key={item.kind}>
+          <div className="ranking-highlight-copy">
+            <span className="ranking-highlight-label">{item.label}</span>
+            <div className="ranking-highlight-player"><Avatar name={item.user.name} imageUrl={item.user.profileImageUrl} className="ranking-highlight-avatar" /><strong title={item.user.name}>{item.user.name}</strong></div>
+          </div>
+          <b>{item.value.toLocaleString('pt-BR')} {item.unit}</b>
+        </div>;
       })}
     </div>
   </section>;
