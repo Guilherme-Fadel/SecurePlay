@@ -7,6 +7,7 @@ interface UseCachedQueryOptions {
   staleTime?: number;
   enabled?: boolean;
   keepPreviousDataOnInvalidate?: boolean;
+  refetchInterval?: number;
 }
 
 interface UseCachedQueryResult<T> {
@@ -23,7 +24,7 @@ export function useCachedQuery<T>(
 ): UseCachedQueryResult<T> {
   const { user } = useCurrentUser();
   const key = companyCacheKey(baseKey, user);
-  const { staleTime, enabled = true, keepPreviousDataOnInvalidate = false } = options ?? {};
+  const { staleTime, enabled = true, keepPreviousDataOnInvalidate = true, refetchInterval } = options ?? {};
   const fetcherRef = useRef(fetcher);
   fetcherRef.current = fetcher;
 
@@ -87,6 +88,27 @@ export function useCachedQuery<T>(
     });
     return unsubscribe;
   }, [enabled, key, refetch, setData, keepPreviousDataOnInvalidate]);
+
+  useEffect(() => {
+    if (!enabled) return;
+    const refreshVisible = () => {
+      if (document.visibilityState === 'hidden' || !navigator.onLine) return;
+      refetch();
+    };
+    const refreshStale = () => {
+      if (isStale(key, Math.min(staleTime ?? 60_000, 10_000))) refreshVisible();
+    };
+    window.addEventListener('focus', refreshStale);
+    window.addEventListener('online', refreshVisible);
+    document.addEventListener('visibilitychange', refreshStale);
+    const timer = refetchInterval ? window.setInterval(refreshVisible, refetchInterval) : undefined;
+    return () => {
+      window.removeEventListener('focus', refreshStale);
+      window.removeEventListener('online', refreshVisible);
+      document.removeEventListener('visibilitychange', refreshStale);
+      if (timer !== undefined) window.clearInterval(timer);
+    };
+  }, [enabled, key, staleTime, refetchInterval, refetch]);
 
   const current = storedData.key === key;
   const data = current ? storedData.value : cached;

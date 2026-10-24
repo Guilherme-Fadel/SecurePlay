@@ -1,4 +1,5 @@
 import { api } from '@/services/api';
+import { invalidateProgress } from '@/lib/progressCache';
 
 export interface ArcadeGameDto {
   slug: string;
@@ -84,11 +85,15 @@ export const getTokens = () =>
 export const startRun = (slug: string) =>
   api.post<StartRunResponse>(`/arcade/games/${slug}/start`).then((r) => r.data);
 
-export const submitRun = (
+export const submitRun = async (
   runId: string,
   body: {
     quizAnswers?: QuizAnswer[];
     phishingAnswers?: PhishingAnswer[];
     dataAnswers?: DataAnswer[];
   },
-) => api.post<SubmitRunResponse>(`/arcade/runs/${runId}/submit`, body).then((r) => r.data);
+) => {
+  const { data } = await api.post<SubmitRunResponse>(`/arcade/runs/${runId}/submit`, body);
+  invalidateProgress();
+  return data;
+};

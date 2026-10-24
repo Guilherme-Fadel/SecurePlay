@@ -20,19 +20,19 @@ const SHOP_KEY = 'achievementShop';
 
 export function useAchievementTrail(enabled = true) {
   const features = useCompanyFeatures();
-  return useCachedQuery(TRAIL_KEY, getAchievementTrail, { staleTime: 45 * 60 * 1000, enabled: enabled && features.achievements });
+  return useCachedQuery(TRAIL_KEY, getAchievementTrail, { staleTime: 45 * 60 * 1000, refetchInterval: 120_000, enabled: enabled && features.achievements });
 }
 
 export function useRecentAchievements(enabled = true) {
   const features = useCompanyFeatures();
-  return useCachedQuery('achievementRecent', getRecentAchievements, { staleTime: 45 * 60 * 1000, enabled: enabled && features.achievements });
+  return useCachedQuery('achievementRecent', getRecentAchievements, { staleTime: 45 * 60 * 1000, refetchInterval: 120_000, enabled: enabled && features.achievements });
 }
 
 export function useAchievementShop(enabled = true) {
   const { user } = useCurrentUser();
   const features = useCompanyFeatures();
   const shopCacheKey = companyCacheKey(SHOP_KEY, user);
-  const query = useCachedQuery(SHOP_KEY, getAchievementShop, { staleTime: 15_000, enabled: enabled && features.achievements });
+  const query = useCachedQuery(SHOP_KEY, getAchievementShop, { staleTime: 15_000, refetchInterval: 120_000, enabled: enabled && features.achievements });
   const [changingItem, setChangingItem] = useState<number | null>(null);
 
   const purchase = async (itemId: number) => {

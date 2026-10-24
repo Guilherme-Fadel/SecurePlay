@@ -22,7 +22,16 @@ export function DailyChallenge() {
   const [answeredCount, setAnsweredCount] = useState(0);
 
   useEffect(() => {
+    setOpen(false);
+    setCompleted(false);
+    setCheckingStatus(true);
+    setAnsweredCount(0);
+    setQuestions([]);
+  }, [challenge?.id]);
+
+  useEffect(() => {
     if (!challenge) return;
+    let cancelled = false;
     const questionsCacheKey = `challenge-questions:${challenge.id}`;
     const cachedQuestions = getCached<QuestionResponse[]>(questionsCacheKey);
     if (cachedQuestions) {
@@ -31,10 +40,12 @@ export function DailyChallenge() {
     }
     getChallengeQuestions(challenge.id)
       .then((data) => {
+        if (cancelled) return;
         setQuestions(data.questions);
         setCache(questionsCacheKey, data.questions);
       })
-      .catch(() => setQuestions([]));
+      .catch(() => { if (!cancelled) setQuestions([]); });
+    return () => { cancelled = true; };
   }, [challenge]);
 
   useEffect(() => {
@@ -43,14 +54,17 @@ export function DailyChallenge() {
       return;
     }
 
+    let cancelled = false;
     getChallengeStatus(challenge.id)
       .then((status) => {
+        if (cancelled) return;
         setCompleted(status.completed);
         setAnsweredCount(status.answeredCount);
         setCache(cacheKey, status.completed);
       })
-      .catch(() => setCompleted(false))
-      .finally(() => setCheckingStatus(false));
+      .catch(() => {})
+      .finally(() => { if (!cancelled) setCheckingStatus(false); });
+    return () => { cancelled = true; };
   }, [challenge, cacheKey]);
 
   const canStart = !!challenge && !completed && !checkingStatus;

@@ -248,6 +248,26 @@ describe('ArcadeService (ciclo start/submit e XP)', () => {
     expect(xpService.creditXp).toHaveBeenCalledWith(1, 100);
   });
 
+  it('disponibiliza as estatisticas da partida antes de avaliar conquistas pelo XP', async () => {
+    redis.incrBy.mockResolvedValue(1);
+    let savedActivity: any;
+    arcadeStatsRepository.save.mockImplementation(async (activity) => {
+      savedActivity = { ...activity };
+      return activity;
+    });
+    xpService.creditXp.mockImplementation(async () => {
+      expect(savedActivity).toEqual(expect.objectContaining({
+        usuario_id: 1,
+        total_plays: 1,
+        perfect_runs: 1,
+        best_score: 100,
+      }));
+    });
+    const start = await service.start(1, 'quiz-relampago');
+    await service.submit(1, start.runId, { quizAnswers: [] });
+    expect(xpService.creditXp).toHaveBeenCalledTimes(1);
+  });
+
   it('2a conclusao aplica 50%', async () => {
     redis.incrBy.mockResolvedValue(2);
     const start = await service.start(1, 'quiz-relampago');

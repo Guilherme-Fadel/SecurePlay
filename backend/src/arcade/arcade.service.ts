@@ -279,7 +279,6 @@ export class ArcadeService implements OnModuleInit {
     if (xpBase > 0) {
       xpEarned = Math.max(XP_FLOOR, xpEarned);
     }
-    await this.xpService.creditXp(usuario_id, xpEarned);
     let activity = await this.usuarioArcadeStatsRepository.findOne({
       where: { usuario_id, game_slug: stored.slug },
     });
@@ -297,6 +296,8 @@ export class ArcadeService implements OnModuleInit {
     activity.best_score = Math.max(activity.best_score, correction.score);
     activity.last_played_at = new Date();
     await this.usuarioArcadeStatsRepository.save(activity);
+    // Progress listeners must see the completed run when evaluating achievements.
+    await this.xpService.creditXp(usuario_id, xpEarned);
     await this.redisService.del(key);
     return {
       score: correction.score,

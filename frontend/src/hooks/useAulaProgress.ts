@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react';
 import { concluirAula, submitQuiz, updateAulaProgress, QuizAnswer, QuizResult, ConcluirResult, UpdateAulaProgress } from '@/services/conteudo';
 import { invalidate } from '@/lib/queryCache';
+import { invalidateProgress } from '@/lib/progressCache';
 
 export function useAulaProgress() {
   const [loading, setLoading] = useState(false);
@@ -12,11 +13,7 @@ export function useAulaProgress() {
 
     try {
       const result = await concluirAula(aulaId);
-      invalidate('conteudoModulos');
-      invalidate('dashboardStats');
-      invalidate('dashboardJourney');
-      invalidate('achievementRecent');
-      invalidate('achievementTrail');
+      invalidateProgress();
       return result;
     } catch (err: any) {
       const message = err?.response?.data?.message || 'Erro ao concluir aula';
@@ -33,11 +30,7 @@ export function useAulaProgress() {
 
     try {
       const result = await submitQuiz(aulaId, answers);
-      invalidate('conteudoModulos');
-      invalidate('dashboardStats');
-      invalidate('dashboardJourney');
-      invalidate('achievementRecent');
-      invalidate('achievementTrail');
+      invalidateProgress();
       return result;
     } catch (err: any) {
       const message = err?.response?.data?.message || 'Erro ao enviar quiz';

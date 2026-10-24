@@ -17,13 +17,8 @@ export function useSocket(userId: number | null): Socket | null {
       reconnectionDelay: 2000,
     });
 
-    newSocket.on('connect', () => {
-      setSocket(newSocket);
-    });
-
-    newSocket.on('connect_error', () => {
-      setSocket(null);
-    });
+    // Keep the instance across reconnects so consumers can resynchronize on connect.
+    setSocket(newSocket);
 
     return () => {
       newSocket.disconnect();

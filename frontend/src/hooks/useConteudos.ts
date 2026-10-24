@@ -9,7 +9,7 @@ export function useConteudos() {
   const { data: modulos, loading, error, refetch } = useCachedQuery<Modulo[]>(
     'conteudoModulos',
     getModulos,
-    { staleTime: 45 * 60 * 1000 },
+    { staleTime: 45 * 60 * 1000, refetchInterval: 120_000 },
   );
 
   const [filterType, setFilterType] = useState<FilterType>('todos');

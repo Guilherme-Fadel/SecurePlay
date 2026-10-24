@@ -2,24 +2,24 @@ import { DashboardStats, getDashboardStats, DashboardDailyChallenge, getDashboar
 import { useCachedQuery } from './useCachedQuery';
 import { useCompanyFeatures } from './useCompanyFeatures';
 export function useDashboardStats() {
-    const { data: stats, loading, error } = useCachedQuery<DashboardStats>('dashboardStats', getDashboardStats);
+    const { data: stats, loading, error } = useCachedQuery<DashboardStats>('dashboardStats', getDashboardStats, { refetchInterval: 60_000 });
     return { stats, loading, error };
 }
 export function useDailyChallenge() {
-    const { data: challenge, loading, error } = useCachedQuery<DashboardDailyChallenge>('dashboardDaily', getDashboardDailyChallenge);
+    const { data: challenge, loading, error } = useCachedQuery<DashboardDailyChallenge>('dashboardDaily', getDashboardDailyChallenge, { refetchInterval: 60_000 });
     return { challenge, loading, error };
 }
 export function useWeeklyStreak() {
-    const { data: streak, loading, error } = useCachedQuery<WeeklyStreak>('weeklyStreak', getWeeklyStreak);
+    const { data: streak, loading, error } = useCachedQuery<WeeklyStreak>('weeklyStreak', getWeeklyStreak, { refetchInterval: 60_000 });
     return { streak, loading, error };
 }
 export function useDashboardRanking(scope: 'global' | 'company' = 'global', companyId?: number, mode: RankingMode = 'current', season?: string) {
     const features = useCompanyFeatures();
     const effectiveScope = features.globalRanking ? scope : 'company';
-    const { data, loading, error, refetch } = useCachedQuery(`dashboardRanking:${effectiveScope}:${companyId ?? 'self'}:${mode}:${season ?? 'none'}`, () => getDashboardRanking(effectiveScope, companyId, mode, season), { staleTime: 30_000, enabled: features.ranking && (effectiveScope !== 'company' || !companyId || companyId > 0) && (mode !== 'season' || !!season) });
+    const { data, loading, error, refetch } = useCachedQuery(`dashboardRanking:${effectiveScope}:${companyId ?? 'self'}:${mode}:${season ?? 'none'}`, () => getDashboardRanking(effectiveScope, companyId, mode, season), { staleTime: 30_000, refetchInterval: mode === 'season' ? undefined : 30_000, enabled: features.ranking && (effectiveScope !== 'company' || !companyId || companyId > 0) && (mode !== 'season' || !!season) });
     return { ranking: data, loading, error, refetch };
 }
 export function useDashboardJourney() {
-    const { data, loading, error, refetch } = useCachedQuery<JourneyData>('dashboardJourney', getDashboardJourney, { staleTime: 45 * 60 * 1000 });
+    const { data, loading, error, refetch } = useCachedQuery<JourneyData>('dashboardJourney', getDashboardJourney, { staleTime: 45 * 60 * 1000, refetchInterval: 120_000 });
     return { journey: data, loading, error, refetch };
 }
