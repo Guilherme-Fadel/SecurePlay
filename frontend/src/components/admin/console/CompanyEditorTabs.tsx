@@ -97,7 +97,7 @@ export function CompanyEditorTabs({ empresaId, fallbackTab }: { empresaId: numbe
       <h2>{theme?.nome ?? `Empresa #${empresaId}`}</h2>
       <div className="admin-company-editor-actions">
         <Link className="admin-console-back-link" to={returnTo} state={{ selectedId: empresaId }}><ArrowLeft size={16} /> Voltar</Link>
-        <AppButton variant="ghost" icon={<RotateCcw size={15} />} disabled={!dirty || busy} onClick={reset}>Cancelar</AppButton>
+        <AppButton variant="ghost" icon={<RotateCcw size={15} />} disabled={!dirty || busy} onClick={reset}>Restaurar</AppButton>
         <AppButton disabled={!dirty || busy || query.loading} onClick={() => void save()}>{saving ? 'Salvando…' : uploading ? 'Enviando…' : 'Salvar'}</AppButton>
       </div>
     </header>
