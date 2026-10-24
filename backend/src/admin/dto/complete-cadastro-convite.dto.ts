@@ -8,8 +8,9 @@ import {
   MinLength,
 } from 'class-validator';
 import { IsSecurePassword } from '../../common/validators/password.validator';
+import { RegistrationContactDto } from '../../registration/dto/registration-contact.dto';
 
-export class CompleteCadastroConviteDto {
+export class CompleteCadastroConviteDto extends RegistrationContactDto {
   @IsString()
   @MinLength(3)
   @MaxLength(100)
@@ -17,6 +18,7 @@ export class CompleteCadastroConviteDto {
 
   @IsOptional()
   @IsEmail()
+  @MaxLength(100)
   email?: string;
 
   @IsOptional()

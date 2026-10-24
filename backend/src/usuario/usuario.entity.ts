@@ -26,12 +26,28 @@ export class Usuario {
   @Column({ type: 'varchar', length: 20, default: 'none' })
   nickname_request_status: 'none' | 'pending' | 'approved' | 'rejected';
 
+  @Column({ default: false })
+  nickname_onboarding_pending: boolean;
+
   @Column({ type: 'varchar', length: 255, nullable: true })
   profile_image_key: string | null;
 
   @Column({ type: 'varchar', length: 100, nullable: true })
   @Index('ux_usuario_email', { unique: true })
   email: string | null;
+
+  @Column({
+    type: 'varchar',
+    length: 24,
+    nullable: true,
+    charset: 'ascii',
+    collation: 'ascii_general_ci',
+  })
+  @Index('ux_usuario_username', { unique: true })
+  username: string | null;
+
+  @Column({ type: 'varchar', length: 16, nullable: true })
+  phone: string | null;
 
   @Column({ type: 'varchar', length: 20, nullable: true })
   @Index('ux_usuario_login_code', { unique: true })

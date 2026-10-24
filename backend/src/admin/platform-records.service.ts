@@ -77,6 +77,7 @@ export class PlatformRecordsService {
         .addSelect('r.level', 'level')
         .addSelect('r.role', 'role')
         .addSelect('r.nickname', 'nickname')
+        .addSelect('r.username', 'username')
         .addSelect(
           "CASE WHEN r.active = :enabled THEN 'active' ELSE 'inactive' END",
           'status',
@@ -97,7 +98,13 @@ export class PlatformRecordsService {
         query.andWhere('r.role IN (:...roles)', {
           roles: ['admin', 'platform_admin'],
         });
-      searchFields = ['r.name', 'r.email', 'r.nickname', 'r.nickname_pending'];
+      searchFields = [
+        'r.name',
+        'r.email',
+        'r.username',
+        'r.nickname',
+        'r.nickname_pending',
+      ];
     } else if (resource === 'invitations') {
       query
         .addSelect('r.email', 'title')

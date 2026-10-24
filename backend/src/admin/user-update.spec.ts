@@ -12,6 +12,18 @@ import { validateSync } from 'class-validator';
 import { UpdateAdminUserDto } from './dto/update-admin-user.dto';
 
 describe('Administrative user editing', () => {
+  it('preserva e-mail de conta confirmada/trial mesmo quando há username', async () => {
+    const { service, manager } = setup(Role.PLATFORM_ADMIN, {
+      username: 'aluno.teste',
+      email: 'aluno@example.test',
+      email_verified_at: new Date(),
+      trial_started_at: new Date(),
+    });
+    await expect(
+      service.atualizarUsuario(1, 2, { email: null }),
+    ).rejects.toThrow('Este acesso exige um e-mail');
+    expect(manager.save).not.toHaveBeenCalled();
+  });
   it('rejects invalid field types and platform role assignment', () => {
     expect(
       validateSync(

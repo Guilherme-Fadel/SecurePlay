@@ -13,65 +13,86 @@ jest.mock('../dashboard/ranking-history', () => ({
 }));
 
 describe('Cadastro com confirmação por e-mail', () => {
-  it('cria aluno escolar por convite individual sem e-mail ou data de nascimento', async () => {
-    const invite = {
-      id: 29,
-      token_hash: createHash('sha256').update('invite-token').digest('hex'),
-      email: null,
-      empresa_id: 8,
-      role: Role.USER,
-      registration_mode: 'school_student',
-      uses: 0,
-      max_uses: 1,
-      revoked: false,
-      expires_at: new Date(Date.now() + 60_000),
-    };
-    const inviteQuery = {
-      setLock: jest.fn().mockReturnThis(),
-      where: jest.fn().mockReturnThis(),
-      getOne: jest.fn().mockResolvedValue(invite),
-    };
-    const users = {
-      findOne: jest.fn().mockResolvedValue(null),
-      create: jest.fn((value) => value),
-      save: jest.fn().mockImplementation((value) => Promise.resolve(value)),
-    };
-    const inviteRepository = {
-      findOne: jest.fn().mockResolvedValue(invite),
-      createQueryBuilder: jest.fn().mockReturnValue(inviteQuery),
-      save: jest.fn().mockImplementation((value) => Promise.resolve(value)),
-    };
-    const dataSource = {
-      getRepository: (entity: unknown) => entity === Convite ? inviteRepository : users,
-      transaction: (callback: (manager: unknown) => unknown) => callback({
-        getRepository: (entity: unknown) => entity === Convite ? inviteRepository : users,
-      }),
-    };
-    const emailService = { sendVerification: jest.fn(), sendPasswordSetup: jest.fn() };
-    const service = new RegistrationService(dataSource as never, emailService as never);
+  it.each([undefined, 'Guardião Antigo'])(
+    'cria aluno escolar sem e-mail e preserva candidato legado %s',
+    async (nickname) => {
+      const invite = {
+        id: 29,
+        token_hash: createHash('sha256').update('invite-token').digest('hex'),
+        email: null,
+        empresa_id: 8,
+        role: Role.USER,
+        registration_mode: 'school_student',
+        uses: 0,
+        max_uses: 1,
+        revoked: false,
+        expires_at: new Date(Date.now() + 60_000),
+      };
+      const inviteQuery = {
+        setLock: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        getOne: jest.fn().mockResolvedValue(invite),
+      };
+      const users = {
+        findOne: jest.fn().mockResolvedValue(null),
+        create: jest.fn((value) => value),
+        save: jest.fn().mockImplementation((value) => Promise.resolve(value)),
+      };
+      const inviteRepository = {
+        findOne: jest.fn().mockResolvedValue(invite),
+        createQueryBuilder: jest.fn().mockReturnValue(inviteQuery),
+        save: jest.fn().mockImplementation((value) => Promise.resolve(value)),
+      };
+      const dataSource = {
+        getRepository: (entity: unknown) =>
+          entity === Convite ? inviteRepository : users,
+        transaction: (callback: (manager: unknown) => unknown) =>
+          callback({
+            getRepository: (entity: unknown) =>
+              entity === Convite ? inviteRepository : users,
+          }),
+      };
+      const emailService = {
+        sendVerification: jest.fn(),
+        sendPasswordSetup: jest.fn(),
+      };
+      const service = new RegistrationService(
+        dataSource as never,
+        emailService as never,
+      );
 
-    const result = await service.startInvite('invite-token', {
-      name: '  Aluna   Teste ',
-      password: 'senha-segura-123',
-    });
+      const result = await service.startInvite('invite-token', {
+        name: '  Aluna   Teste ',
+        password: 'senha-segura-123',
+        username: 'Aluna.Teste',
+        nickname,
+      });
 
-    expect(result).toEqual({
-      sucesso: true,
-      mensagem: 'Conta criada. Guarde seu código de acesso para entrar.',
-      login_code: expect.stringMatching(/^SP-[A-F0-9]{16}$/),
-    });
-    expect(users.create).toHaveBeenCalledWith(expect.objectContaining({
-      name: 'Aluna Teste',
-      email: null,
-      login_code: result.login_code,
-      birth_date: null,
-      empresa_id: 8,
-      role: Role.USER,
-    }));
-    expect(inviteRepository.save).toHaveBeenCalledWith(expect.objectContaining({ uses: 1 }));
-    expect(emailService.sendVerification).not.toHaveBeenCalled();
-    expect(emailService.sendPasswordSetup).not.toHaveBeenCalled();
-  });
+      expect(result).toEqual({
+        sucesso: true,
+        mensagem: 'Conta criada. Use seu usuário e senha para entrar.',
+        username: 'aluna.teste',
+      });
+      expect(users.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          name: 'Aluna Teste',
+          email: null,
+          login_code: null,
+          username: 'aluna.teste',
+          birth_date: null,
+          empresa_id: 8,
+          role: Role.USER,
+          nickname_onboarding_pending: !nickname,
+          nickname_pending: nickname ?? null,
+        }),
+      );
+      expect(inviteRepository.save).toHaveBeenCalledWith(
+        expect.objectContaining({ uses: 1 }),
+      );
+      expect(emailService.sendVerification).not.toHaveBeenCalled();
+      expect(emailService.sendPasswordSetup).not.toHaveBeenCalled();
+    },
+  );
 
   it('consome link de redefinição, atualiza senha e invalida sessões existentes', async () => {
     const token = 'recovery-token';
@@ -83,31 +104,43 @@ describe('Cadastro com confirmação por e-mail', () => {
       role: Role.USER,
       password: 'old-hash',
       password_change_required: false,
-      password_reset_token_hash: createHash('sha256').update(token).digest('hex'),
+      password_reset_token_hash: createHash('sha256')
+        .update(token)
+        .digest('hex'),
       password_reset_expires_at: new Date(Date.now() + 60_000),
       session_version: 2,
     };
     const query = {
       setLock: jest.fn().mockReturnThis(),
       where: jest.fn().mockReturnThis(),
-      getOne: jest.fn().mockImplementation(() => Promise.resolve(user.password_reset_token_hash ? user : null)),
+      getOne: jest
+        .fn()
+        .mockImplementation(() =>
+          Promise.resolve(user.password_reset_token_hash ? user : null),
+        ),
     };
     const repository = {
       createQueryBuilder: jest.fn().mockReturnValue(query),
       save: jest.fn().mockImplementation((value) => Promise.resolve(value)),
     };
-    const service = new RegistrationService({
-      transaction: (callback: (manager: unknown) => unknown) => callback({ getRepository: () => repository }),
-    } as never, {} as never);
+    const service = new RegistrationService(
+      {
+        transaction: (callback: (manager: unknown) => unknown) =>
+          callback({ getRepository: () => repository }),
+      } as never,
+      {} as never,
+    );
 
-    await expect(service.resetSchoolStudentPassword(token, 'nova-senha-segura'))
-      .resolves.toMatchObject({ sucesso: true, login_code: user.login_code });
+    await expect(
+      service.resetSchoolStudentPassword(token, 'nova-senha-segura'),
+    ).resolves.toMatchObject({ sucesso: true, login_code: user.login_code });
     expect(await bcrypt.compare('nova-senha-segura', user.password)).toBe(true);
     expect(user.password_reset_token_hash).toBeNull();
     expect(user.password_reset_expires_at).toBeNull();
     expect(user.session_version).toBe(3);
-    await expect(service.resetSchoolStudentPassword(token, 'outra-senha-segura'))
-      .rejects.toThrow('Link de recuperação inválido ou expirado');
+    await expect(
+      service.resetSchoolStudentPassword(token, 'outra-senha-segura'),
+    ).rejects.toThrow('Link de recuperação inválido ou expirado');
   });
 
   it('recusa apelido em convite de administrador antes de criar cadastro pendente', async () => {
@@ -122,19 +155,24 @@ describe('Cadastro com confirmação por e-mail', () => {
       expires_at: new Date(Date.now() + 3600000),
     };
     const pendingRepository = { save: jest.fn() };
-    const service = new RegistrationService({
-      getRepository: (entity: unknown) =>
-        entity === Convite
-          ? { findOne: jest.fn().mockResolvedValue(invite) }
-          : pendingRepository,
-    } as never, {} as never);
+    const service = new RegistrationService(
+      {
+        getRepository: (entity: unknown) =>
+          entity === Convite
+            ? { findOne: jest.fn().mockResolvedValue(invite) }
+            : pendingRepository,
+      } as never,
+      {} as never,
+    );
 
-    await expect(service.startInvite('token', {
-      name: 'Gestora',
-      email: 'admin@example.test',
-      birth_date: '1990-02-28',
-      nickname: 'Apelido',
-    })).rejects.toThrow('Administradores não utilizam apelidos');
+    await expect(
+      service.startInvite('token', {
+        name: 'Gestora',
+        email: 'admin@example.test',
+        birth_date: '1990-02-28',
+        nickname: 'Apelido',
+      }),
+    ).rejects.toThrow('Administradores não utilizam apelidos');
     expect(pendingRepository.save).not.toHaveBeenCalled();
   });
 
@@ -173,18 +211,32 @@ describe('Cadastro com confirmação por e-mail', () => {
       }),
     };
     const pendingRepository = { findOne: jest.fn().mockResolvedValue(null) };
-    const emailService = { sendPasswordSetup: jest.fn().mockResolvedValue(undefined) };
-    const service = new RegistrationService({
-      getRepository: (entity: unknown) =>
-        entity === PendingRegistration ? pendingRepository : userRepository,
-      transaction: (callback: (value: unknown) => unknown) => callback(manager),
-    } as never, emailService as never);
+    const emailService = {
+      sendPasswordSetup: jest.fn().mockResolvedValue(undefined),
+    };
+    const service = new RegistrationService(
+      {
+        getRepository: (entity: unknown) =>
+          entity === PendingRegistration ? pendingRepository : userRepository,
+        transaction: (callback: (value: unknown) => unknown) =>
+          callback(manager),
+      } as never,
+      emailService as never,
+    );
 
-    return { user, userRepository, emailService, service, lockedQuery, rollbackQuery };
+    return {
+      user,
+      userRepository,
+      emailService,
+      service,
+      lockedQuery,
+      rollbackQuery,
+    };
   }
 
   it('reenvia link para conta confirmada e limita solicitações repetidas por conta', async () => {
-    const { user, userRepository, emailService, service } = setupPasswordResend();
+    const { user, userRepository, emailService, service } =
+      setupPasswordResend();
 
     await service.resend(user.email);
     expect(user.password_setup_token_hash).toMatch(/^[a-f0-9]{64}$/);
@@ -210,9 +262,13 @@ describe('Cadastro com confirmação por e-mail', () => {
       password_setup_expires_at: previousExpiry,
       password_setup_last_sent_at: previousSent,
     });
-    emailService.sendPasswordSetup.mockRejectedValueOnce(new Error('E-mail indisponível'));
+    emailService.sendPasswordSetup.mockRejectedValueOnce(
+      new Error('E-mail indisponível'),
+    );
 
-    await expect(service.resend(user.email)).rejects.toThrow('E-mail indisponível');
+    await expect(service.resend(user.email)).rejects.toThrow(
+      'E-mail indisponível',
+    );
     expect(rollbackQuery.set).toHaveBeenCalledWith({
       password_setup_token_hash: previousHash,
       password_setup_expires_at: previousExpiry,
@@ -240,12 +296,22 @@ describe('Cadastro com confirmação por e-mail', () => {
       where: jest.fn().mockReturnThis(),
       getOne: jest.fn().mockImplementation(() => Promise.resolve(user)),
     };
-    const save = jest.fn().mockImplementation((value) => Promise.resolve(value));
-    const manager = { getRepository: () => ({ createQueryBuilder: () => lockedQuery, save }) };
-    const emailService = { sendVerification: jest.fn().mockResolvedValue(undefined) };
-    const service = new RegistrationService({
-      transaction: (callback: (value: unknown) => unknown) => callback(manager),
-    } as never, emailService as never);
+    const save = jest
+      .fn()
+      .mockImplementation((value) => Promise.resolve(value));
+    const manager = {
+      getRepository: () => ({ createQueryBuilder: () => lockedQuery, save }),
+    };
+    const emailService = {
+      sendVerification: jest.fn().mockResolvedValue(undefined),
+    };
+    const service = new RegistrationService(
+      {
+        transaction: (callback: (value: unknown) => unknown) =>
+          callback(manager),
+      } as never,
+      emailService as never,
+    );
 
     await service.startPlatformAdminVerification(user as never);
     const firstHash = user.email_verification_token_hash;
@@ -259,7 +325,8 @@ describe('Cadastro com confirmação por e-mail', () => {
 
   it('consome o link de definição de senha e emite token novo para o formulário', async () => {
     const linkToken = 'link-de-email';
-    const hash = (value: string) => createHash('sha256').update(value).digest('hex');
+    const hash = (value: string) =>
+      createHash('sha256').update(value).digest('hex');
     const user = {
       email_verified_at: new Date(),
       password_change_required: true,
@@ -274,13 +341,21 @@ describe('Cadastro com confirmação por e-mail', () => {
     };
     const userQuery = {
       setLock: jest.fn().mockReturnThis(),
-      where: jest.fn().mockImplementation((_condition: string, params: { tokenHash: string }) => {
-        requestedHash = params.tokenHash;
-        return userQuery;
-      }),
-      getOne: jest.fn().mockImplementation(() =>
-        Promise.resolve(user.password_setup_token_hash === requestedHash ? user : null),
-      ),
+      where: jest
+        .fn()
+        .mockImplementation(
+          (_condition: string, params: { tokenHash: string }) => {
+            requestedHash = params.tokenHash;
+            return userQuery;
+          },
+        ),
+      getOne: jest
+        .fn()
+        .mockImplementation(() =>
+          Promise.resolve(
+            user.password_setup_token_hash === requestedHash ? user : null,
+          ),
+        ),
     };
     const userRepository = {
       createQueryBuilder: jest.fn().mockReturnValue(userQuery),
@@ -293,16 +368,22 @@ describe('Cadastro com confirmação por e-mail', () => {
           ? { createQueryBuilder: () => pendingQuery }
           : userRepository,
     };
-    const service = new RegistrationService({
-      transaction: (callback: (value: unknown) => unknown) => callback(manager),
-    } as never, {} as never);
+    const service = new RegistrationService(
+      {
+        transaction: (callback: (value: unknown) => unknown) =>
+          callback(manager),
+      } as never,
+      {} as never,
+    );
 
     const result = await service.confirm(linkToken);
 
     expect(result.password_setup_token).toEqual(expect.any(String));
     expect(result.password_setup_token).not.toBe(linkToken);
     expect(user.password_setup_token_hash).toMatch(/^[a-f0-9]{64}$/);
-    expect(user.password_setup_token_hash).toBe(hash(result.password_setup_token));
+    expect(user.password_setup_token_hash).toBe(
+      hash(result.password_setup_token),
+    );
     expect(userRepository.save).toHaveBeenCalledWith(user);
     await expect(service.confirm(linkToken)).rejects.toThrow(
       'Link de confirmação inválido ou expirado',
@@ -355,78 +436,86 @@ describe('Cadastro com confirmação por e-mail', () => {
     );
   });
 
-  it('consome o convite e cria o usuário somente ao confirmar o endereço', async () => {
-    const pending = {
-      email: 'aluno@example.com',
-      name: 'Aluno',
-      birth_date: '2016-05-01',
-      nickname: null,
-      kind: 'invite',
-      invite_id: 5,
-      expires_at: new Date(Date.now() + 3600000),
-    };
-    const invite = {
-      id: 5,
-      email: 'aluno@example.com',
-      empresa_id: 8,
-      role: Role.USER,
-      uses: 0,
-      max_uses: 1,
-      revoked: false,
-      expires_at: new Date(Date.now() + 3600000),
-    };
-    const locked = (value: unknown) => ({
-      setLock: jest.fn().mockReturnThis(),
-      where: jest.fn().mockReturnThis(),
-      getOne: jest.fn().mockResolvedValue(value),
-    });
-    const pendingRepository = {
-      createQueryBuilder: () => locked(pending),
-      remove: jest.fn(),
-    };
-    const inviteRepository = {
-      createQueryBuilder: () => locked(invite),
-      save: jest.fn(),
-    };
-    const userRepository = {
-      findOne: jest.fn().mockResolvedValue(null),
-      create: jest.fn((value: Partial<Usuario>) => value),
-      save: jest.fn(),
-    };
-    const manager = {
-      getRepository: (entity: unknown) => {
-        if (entity === PendingRegistration) return pendingRepository;
-        if (entity === Convite) return inviteRepository;
-        if (entity === Usuario) return userRepository;
-        if (entity === Empresa) return { findOne: jest.fn() };
-      },
-    };
-    const dataSource = {
-      transaction: (callback: (manager: unknown) => unknown) =>
-        callback(manager),
-    };
-    const service = new RegistrationService(
-      dataSource as never,
-      { sendVerification: jest.fn() } as never,
-    );
-
-    await service.confirm('valid-token', 'segredo123');
-
-    expect(inviteRepository.save).toHaveBeenCalledWith(
-      expect.objectContaining({ uses: 1 }),
-    );
-    expect(userRepository.save).toHaveBeenCalledWith(
-      expect.objectContaining({
+  it.each([
+    { role: Role.USER, nickname: null, expectedWelcome: true },
+    { role: Role.USER, nickname: 'Guardião Antigo', expectedWelcome: false },
+    { role: Role.ADMIN, nickname: null, expectedWelcome: false },
+  ])(
+    'confirma cadastro com boas-vindas=$expectedWelcome para $role e apelido $nickname',
+    async ({ role, nickname, expectedWelcome }) => {
+      const pending = {
+        email: 'aluno@example.com',
+        name: 'Aluno',
+        birth_date: '2016-05-01',
+        nickname,
+        kind: 'invite',
+        invite_id: 5,
+        expires_at: new Date(Date.now() + 3600000),
+      };
+      const invite = {
+        id: 5,
         email: 'aluno@example.com',
         empresa_id: 8,
-        role: Role.USER,
-        birth_date: '2016-05-01',
-        trial_ends_at: null,
-        email_verified_at: expect.any(Date) as Date,
-      }),
-    );
-    expect(pendingRepository.remove).toHaveBeenCalledWith(pending);
-  });
+        role,
+        uses: 0,
+        max_uses: 1,
+        revoked: false,
+        expires_at: new Date(Date.now() + 3600000),
+      };
+      const locked = (value: unknown) => ({
+        setLock: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        getOne: jest.fn().mockResolvedValue(value),
+      });
+      const pendingRepository = {
+        createQueryBuilder: () => locked(pending),
+        remove: jest.fn(),
+      };
+      const inviteRepository = {
+        createQueryBuilder: () => locked(invite),
+        save: jest.fn(),
+      };
+      const userRepository = {
+        findOne: jest.fn().mockResolvedValue(null),
+        create: jest.fn((value: Partial<Usuario>) => value),
+        save: jest.fn(),
+      };
+      const manager = {
+        getRepository: (entity: unknown) => {
+          if (entity === PendingRegistration) return pendingRepository;
+          if (entity === Convite) return inviteRepository;
+          if (entity === Usuario) return userRepository;
+          if (entity === Empresa) return { findOne: jest.fn() };
+        },
+      };
+      const dataSource = {
+        transaction: (callback: (manager: unknown) => unknown) =>
+          callback(manager),
+      };
+      const service = new RegistrationService(
+        dataSource as never,
+        { sendVerification: jest.fn() } as never,
+      );
+
+      await service.confirm('valid-token');
+
+      expect(inviteRepository.save).toHaveBeenCalledWith(
+        expect.objectContaining({ uses: 1 }),
+      );
+      expect(userRepository.save).toHaveBeenCalledWith(
+        expect.objectContaining({
+          email: 'aluno@example.com',
+          empresa_id: 8,
+          role,
+          nickname_onboarding_pending: expectedWelcome,
+          birth_date: '2016-05-01',
+          trial_ends_at: null,
+          email_verified_at: expect.any(Date) as Date,
+        }),
+      );
+      expect(pendingRepository.remove).toHaveBeenCalledWith(pending);
+    },
+  );
 
   it('recusa data de nascimento inexistente', async () => {
     const service = new RegistrationService({} as never, {} as never);
@@ -494,6 +583,7 @@ describe('Cadastro com confirmação por e-mail', () => {
       created.trial_ends_at!.getTime() - created.trial_started_at!.getTime(),
     ).toBe(7 * 86400000);
     expect(created.password_change_required).toBe(true);
+    expect(created.nickname_onboarding_pending).toBe(true);
     expect(created.password_setup_token_hash).toEqual(expect.any(String));
     expect(created.password_setup_expires_at).toBeInstanceOf(Date);
   });
@@ -523,9 +613,9 @@ describe('Cadastro com confirmação por e-mail', () => {
     );
     jest.spyOn(service as never, 'hash').mockReturnValue('hash');
 
-    await expect(service.setPassword('token', 'nova-senha-segura')).resolves.toEqual(
-      expect.objectContaining({ sucesso: true }),
-    );
+    await expect(
+      service.setPassword('token', 'nova-senha-segura'),
+    ).resolves.toEqual(expect.objectContaining({ sucesso: true }));
     expect(await bcrypt.compare('nova-senha-segura', user.password)).toBe(true);
     expect(user.password_change_required).toBe(false);
     expect(user.password_setup_token_hash).toBeNull();

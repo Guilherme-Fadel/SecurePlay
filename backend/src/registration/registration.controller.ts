@@ -5,12 +5,12 @@ import { Public } from '../auth/public.decorator';
 import { TrialRegisterDto } from './dto/trial-register.dto';
 import { RegistrationService } from './registration.service';
 import { IsSecurePassword } from '../common/validators/password.validator';
+import { RegistrationUsernameDto } from './dto/registration-contact.dto';
 
-class ConfirmEmailDto {
+class ConfirmEmailDto extends RegistrationUsernameDto {
   @IsString()
   @Matches(/^[A-Za-z0-9_-]{43}$/)
   token: string;
-
 }
 
 class SetPasswordDto {
@@ -51,7 +51,7 @@ export class RegistrationController {
   @Post('confirm-email')
   @Throttle({ short: { limit: 5, ttl: 60000 } })
   confirm(@Body() dto: ConfirmEmailDto) {
-    return this.registrationService.confirm(dto.token);
+    return this.registrationService.confirm(dto.token, dto.username);
   }
 
   @Public()

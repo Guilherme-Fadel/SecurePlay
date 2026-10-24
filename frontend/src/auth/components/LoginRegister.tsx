@@ -110,18 +110,20 @@ export function LoginRegister() {
 
           <form onSubmit={handleLogin} className="login-form">
             <label className="login-field">
-                <span>E-mail ou código da escola</span>
+                <span>Usuário ou e-mail</span>
               <div>
                 <Mail size={18} aria-hidden="true" />
                 <input
                   type="text"
-                  placeholder="voce@escola.com ou SP-..."
+                  placeholder="Seu usuário ou voce@escola.com"
                   autoComplete="username"
+                  aria-describedby="legacy-login-help"
                   value={identifier}
                   onChange={(event) => setIdentifier(event.target.value)}
                   required
                 />
               </div>
+              <small id="legacy-login-help">Códigos da escola já emitidos também continuam válidos.</small>
             </label>
 
             <label className="login-field">

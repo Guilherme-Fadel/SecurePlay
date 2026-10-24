@@ -352,3 +352,4 @@
   .login-heading p { margin: 10px 0 24px; }
   .login-form { gap: 15px; }
 }
+.login-field > small { color: #64748b; font: 400 11px/1.4 var(--font-family-ui); }

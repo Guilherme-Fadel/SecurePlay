@@ -49,13 +49,18 @@ export function PlatformRecordsTab({ resource, empresaId, companyFilter }: { res
   const iconAction = (label: string, row: PlatformRecord, icon: ReactNode, action: () => void) => <button type="button" className="admin-grid-icon-action" aria-label={`${label} ${row.title ?? `registro ${row.id}`}`} title={label} disabled={busy !== null || (!row.empresaId && !(resource === 'users' && row.id === user?.userId))} onClick={action}>{icon}</button>;
   const columns: AdminDataGridColumn<PlatformRecord>[] = [];
   if (resource === 'users' || resource === 'pilots') columns.push({ key: 'edit', label: 'Editar', className: 'admin-grid-icon-column', render: (row) => iconAction('Editar', row, <Pencil size={16} />, () => open(row)) });
-  columns.push({
+  if (resource === 'users') columns.push(
+    { key: 'name', label: 'Nome', render: (row) => <><strong>{row.title ?? 'Indisponível'}</strong>{row.role === 'admin' && <small>Administrador</small>}{row.role === 'platform_admin' && <small>Gestão da plataforma</small>}</> },
+    { key: 'nickname', label: 'Apelido', render: (row) => row.nickname || '—' },
+    { key: 'username', label: 'Usuário de acesso', render: (row) => row.username || '—' },
+    { key: 'email', label: 'E-mail', width: 'minmax(0, 1.3fr)', render: (row) => row.subtitle || 'Sem e-mail' },
+  );
+  else columns.push({
     key: 'title',
-    label: resource === 'users' ? 'Usuário' : resource === 'nicknames' ? 'Apelido solicitado' : resource === 'invitations' ? 'Destinatário' : resource === 'pilots' ? 'Objetivo' : 'Responsável',
+    label: resource === 'nicknames' ? 'Apelido solicitado' : resource === 'invitations' ? 'Destinatário' : resource === 'pilots' ? 'Objetivo' : 'Responsável',
     render: (row) => {
-      const useNickname = resource === 'users' && row.role === 'user' && Boolean(row.nickname);
-      const title = useNickname ? row.nickname : row.title;
-      const subtitle = useNickname ? `${row.title} · ${row.subtitle ?? 'Acesso por código da escola'}` : row.subtitle;
+      const title = row.title;
+      const subtitle = row.subtitle;
       return <><strong>{title ?? (resource === 'invitations' ? row.registrationMode === 'school_student' ? 'Convite escolar individual' : 'Link aberto para a empresa' : 'Indisponível')}{row.role === 'admin' ? ' · Administrador' : ''}</strong>
         {subtitle && <small>{subtitle}</small>}
         {resource === 'nicknames' && <small>{row.detail}</small>}

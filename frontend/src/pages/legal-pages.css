@@ -9,3 +9,9 @@
 .legal-content p { margin: 0; }
 .legal-content h2 { margin: 14px 0 -3px; color: #17233a; font-size: 19px; line-height: 1.25; }
 @media (max-width: 520px) { .legal-page { padding: 16px; } .legal-card { border-radius: 18px; } }
+.registration-legal-dialog { width: min(calc(100% - 32px), 760px); max-height: calc(100dvh - 32px); margin: auto; overflow-y: auto; padding: clamp(20px, 4vw, 40px); border: 1px solid #d8e1ed; border-radius: 20px; background: #fff; color: #17233a; font-family: var(--font-family-ui); }
+.registration-legal-dialog::backdrop { background: rgba(15, 23, 42, .65); }
+.registration-legal-dialog > .legal-back { padding: 0; border: 0; background: transparent; cursor: pointer; }
+.registration-legal-dialog > .legal-eyebrow { margin-top: 20px; }
+.registration-legal-dialog > h2 { margin: 0 0 20px; font-size: clamp(23px, 4vw, 30px); line-height: 1.2; }
+.registration-legal-dialog .legal-content p { font-size: 14px; line-height: 1.6; }

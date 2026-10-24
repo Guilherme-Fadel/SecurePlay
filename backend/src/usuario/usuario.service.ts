@@ -47,6 +47,8 @@ export class UsuarioService {
       userId: usuario.id,
       name: usuario.name,
       email: usuario.email,
+      username: usuario.username,
+      phone: usuario.phone,
       login_code: usuario.login_code,
       birth_date: usuario.birth_date,
       email_verified_at: usuario.email_verified_at,
@@ -79,6 +81,7 @@ export class UsuarioService {
       nickname: usuario.nickname,
       nickname_pending: usuario.nickname_pending,
       nickname_request_status: usuario.nickname_request_status,
+      nickname_onboarding_pending: Boolean(usuario.nickname_onboarding_pending),
       profile_image_url: await this.resolveProfileImageUrl(
         usuario.profile_image_key,
       ),
@@ -88,16 +91,32 @@ export class UsuarioService {
     const usuario = await this.usuarioRepository.findOne({ where: { email } });
     return usuario ?? undefined;
   }
-  async getUsuarioByLoginIdentifier(identifier: string): Promise<Usuario | undefined> {
+  async getUsuarioByLoginIdentifier(
+    identifier: string,
+  ): Promise<Usuario | undefined> {
     const value = identifier.trim();
     const loginCode = value.toUpperCase();
     let usuario: Usuario | null;
     if (/^SP-[A-F0-9]{16}$/.test(loginCode)) {
-      usuario = await this.usuarioRepository.findOne({ where: { login_code: loginCode } });
+      usuario = await this.usuarioRepository.findOne({
+        where: { login_code: loginCode },
+      });
+    } else if (!value.includes('@')) {
+      const username = value.toLowerCase();
+      if (
+        !/^[a-z0-9][a-z0-9._-]{2,23}$/.test(username) ||
+        username.startsWith('sp-')
+      )
+        return undefined;
+      usuario = await this.usuarioRepository.findOne({ where: { username } });
     } else {
-      usuario = await this.usuarioRepository.findOne({ where: { email: value } });
+      usuario = await this.usuarioRepository.findOne({
+        where: { email: value },
+      });
       if (!usuario && value.toLowerCase() !== value) {
-        usuario = await this.usuarioRepository.findOne({ where: { email: value.toLowerCase() } });
+        usuario = await this.usuarioRepository.findOne({
+          where: { email: value.toLowerCase() },
+        });
       }
     }
     return usuario ?? undefined;
@@ -160,14 +179,30 @@ export class UsuarioService {
 
     usuario.nickname_pending = nickname;
     usuario.nickname_request_status = 'pending';
+    usuario.nickname_onboarding_pending = false;
     await this.usuarioRepository.save(usuario);
 
     return {
       nickname: usuario.nickname,
       nickname_pending: usuario.nickname_pending,
       nickname_request_status: usuario.nickname_request_status,
+      nickname_onboarding_pending: false,
       message: 'Apelido enviado para aprovação do administrador da turma.',
     };
+  }
+
+  async dismissNicknameOnboarding(userId: number) {
+    const usuario = await this.getUsuarioById(userId);
+    if (!usuario || usuario.role !== Role.USER || !usuario.empresa_id) {
+      throw new BadRequestException(
+        'Este recurso é exclusivo para alunos de uma organização',
+      );
+    }
+    if (usuario.nickname_onboarding_pending) {
+      usuario.nickname_onboarding_pending = false;
+      await this.usuarioRepository.save(usuario);
+    }
+    return { nickname_onboarding_pending: false };
   }
 
   async presignProfileImage(userId: number, contentType: string) {
@@ -190,7 +225,9 @@ export class UsuarioService {
 
     const usuario = await this.getUsuarioById(userId);
     if (!usuario) throw new NotFoundException('Usuário não encontrado');
-    await ensurePendingRankingSeasonsClosed(this.usuarioRepository.manager.connection);
+    await ensurePendingRankingSeasonsClosed(
+      this.usuarioRepository.manager.connection,
+    );
     usuario.profile_image_key = key;
     await this.usuarioRepository.save(usuario);
 
@@ -214,7 +251,9 @@ export class UsuarioService {
         email: data.email,
         password: senhaHash,
       });
-      await ensurePendingRankingSeasonsClosed(this.usuarioRepository.manager.connection);
+      await ensurePendingRankingSeasonsClosed(
+        this.usuarioRepository.manager.connection,
+      );
       await this.usuarioRepository.save(usuario);
       return {
         sucesso: true,

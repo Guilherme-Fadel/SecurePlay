@@ -31,7 +31,7 @@ export function CheckEmail() {
 }
 
 export function ConfirmEmail() {
-  const token = window.location.hash.slice(1);
+  const [token] = useState(() => window.location.hash.slice(1));
   const confirmationStarted = useRef(false);
   const dialogRef = useRef<HTMLDialogElement>(null);
   const passwordInputRef = useRef<HTMLInputElement>(null);
@@ -44,16 +44,32 @@ export function ConfirmEmail() {
   const [passwordSetupToken, setPasswordSetupToken] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState('');
+  const [usernameConflict, setUsernameConflict] = useState(false);
+  const [alternativeUsername, setAlternativeUsername] = useState('');
   useEffect(() => {
     if (!token || confirmationStarted.current) return;
     confirmationStarted.current = true;
     void confirmEmail(token).then((nextToken) => {
       window.history.replaceState(null, '', '/confirmar-email');
       setPasswordSetupToken(nextToken);
-    }).catch(() => {
-      setError('O link expirou, já foi usado ou não está disponível. Peça outro link.');
+    }).catch((failure: unknown) => {
+      const conflict = (failure as { response?: { data?: { code?: string } } }).response?.data?.code === 'USERNAME_TAKEN';
+      setUsernameConflict(conflict);
+      setError(conflict ? 'O usuário escolhido foi ocupado. Escolha outro para concluir seu cadastro.' : 'O link expirou, já foi usado ou não está disponível. Peça outro link.');
     }).finally(() => setConfirming(false));
   }, [token]);
+  const retryConfirmation = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setSubmitting(true);
+    try {
+      const nextToken = await confirmEmail(token, alternativeUsername.trim());
+      window.history.replaceState(null, '', '/confirmar-email');
+      setUsernameConflict(false); setError(''); setPasswordSetupToken(nextToken);
+    } catch (failure: unknown) {
+      const message = (failure as { response?: { data?: { message?: unknown } } }).response?.data?.message;
+      setError(typeof message === 'string' ? message : 'Não foi possível confirmar. Tente novamente.');
+    } finally { setSubmitting(false); }
+  };
   useEffect(() => {
     if (!passwordSetupToken || success) return;
     const dialog = dialogRef.current;
@@ -87,6 +103,7 @@ export function ConfirmEmail() {
     {success ? <><h1 ref={successHeadingRef} tabIndex={-1}>Acesso ativado</h1><p className="invite-intro">E-mail confirmado e senha definida.</p><Link className="invite-primary-link" to="/login">Entrar na SecurePlay</Link></> :
       !hasConfirmationLink ? <><h1>Link indisponível</h1><p className="invite-intro">Abra o link recebido por e-mail para continuar.</p><Link className="invite-primary-link" to="/verifique-email">Pedir outro link</Link></> :
       confirming ? <><h1>Validando e-mail</h1><p className="invite-intro">Estamos validando seu link seguro.</p></> :
+      usernameConflict ? <><h1>Escolha outro usuário</h1><p className="invite-intro" role="alert">{error}</p><form className="invite-form" onSubmit={event => void retryConfirmation(event)}><label>Usuário de acesso<input autoFocus value={alternativeUsername} onChange={event => setAlternativeUsername(event.target.value)} autoComplete="username" autoCapitalize="none" minLength={3} maxLength={24} required pattern="(?![sS][pP]-)[A-Za-z0-9][A-Za-z0-9._\-]{2,23}" /></label><button type="submit" disabled={submitting}>{submitting ? 'Confirmando…' : 'Confirmar cadastro'}</button></form></> :
       !passwordSetupToken ? <><h1>Link indisponível</h1><p className="invite-intro">Peça um novo link de confirmação para continuar.</p><Link className="invite-primary-link" to="/verifique-email">Pedir outro link</Link></> :
       <><h1>E-mail confirmado</h1><p className="invite-intro">Defina uma senha para liberar o acesso à SecurePlay.</p></>}
   </main>

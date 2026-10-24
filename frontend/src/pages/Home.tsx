@@ -1,6 +1,7 @@
 import { PageTransition } from '@/components/shared/PageTransition';
 import { LoadingScreen } from '@/components/shared/LoadingScreen';
 import { HomeLoadingOverlay } from '@/components/shared/HomeLoadingOverlay';
+import { NicknameWelcomeDialog } from '@/components/shared/NicknameWelcomeDialog';
 import { Header } from "@/components/shared/layout/header/index";
 import { MobileNavigation, Sidebar, SidebarItem } from '@/components/shared/Sidebar';
 import { TrophyIcon, LayoutDashboard, Gamepad2, AwardIcon, BookOpenIcon, ArrowLeft, ShieldIcon } from "lucide-react";
@@ -182,6 +183,7 @@ function HomeContent() {
           </div>
 
           <MobileNavigation activeSection={activeSection} onSelect={setActiveSection} showAdmin={canOpenSection('admin')} showAchievements={features.achievements} showRanking={features.ranking} />
+          {bootstrapReady && <NicknameWelcomeDialog key={user?.userId} />}
         </div>
         </SectionContext.Provider>
     </>);

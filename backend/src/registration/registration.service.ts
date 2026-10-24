@@ -18,6 +18,12 @@ import { TrialRegisterDto } from './dto/trial-register.dto';
 import { EmailService } from './email.service';
 import { PendingRegistration } from './pending-registration.entity';
 import { ensurePendingRankingSeasonsClosed } from '../dashboard/ranking-history';
+import {
+  normalizePhone,
+  normalizeUsername,
+  registrationConflict,
+  usernameTaken,
+} from '../usuario/login-identity';
 
 const CONFIRMATION_HOURS = 24;
 const TRIAL_DAYS = 7;
@@ -30,6 +36,7 @@ type RegistrationContext = {
   invitedEmail: string | null;
   inviteExpiresAt: Date | null;
   inviteRole: Role | null;
+  schoolStudent?: boolean;
 };
 
 @Injectable()
@@ -59,6 +66,22 @@ export class RegistrationService {
       );
     }
     if (invite.registration_mode === 'school_student') {
+      if (dto.email) {
+        if (invite.role !== Role.USER || invite.email || invite.max_uses !== 1)
+          throw new ForbiddenException('Convite escolar inválido');
+        if (dto.password || dto.birth_date)
+          throw new BadRequestException(
+            'Confirme seu e-mail para definir a senha. Este convite não solicita data de nascimento.',
+          );
+        return this.createPending(dto, {
+          kind: 'invite',
+          inviteId: invite.id,
+          invitedEmail: null,
+          inviteExpiresAt: invite.expires_at,
+          inviteRole: Role.USER,
+          schoolStudent: true,
+        });
+      }
       return this.completeSchoolStudentInvite(inviteToken, dto);
     }
     if (!dto.email || !dto.birth_date || dto.password) {
@@ -91,64 +114,65 @@ export class RegistrationService {
       throw new BadRequestException('Informe um nome de exibição válido');
     }
 
+    const username = normalizeUsername(dto.username);
+    const phone = normalizePhone(dto.phone);
+    if (!username)
+      throw new BadRequestException(
+        'Escolha um usuário para entrar sem e-mail',
+      );
     await ensurePendingRankingSeasonsClosed(this.dataSource);
-    return this.dataSource.transaction(async (manager) => {
-      const invite = await manager
-        .getRepository(Convite)
-        .createQueryBuilder('invite')
-        .setLock('pessimistic_write')
-        .where('invite.token_hash = :hash', { hash: this.hash(inviteToken) })
-        .getOne();
-      if (
-        !invite ||
-        invite.registration_mode !== 'school_student' ||
-        invite.role !== Role.USER ||
-        invite.email ||
-        invite.max_uses !== 1 ||
-        !this.inviteAvailable(invite)
-      ) {
-        throw new ForbiddenException(
-          'Convite inválido, expirado ou já utilizado',
-        );
-      }
+    return this.dataSource
+      .transaction(async (manager) => {
+        const invite = await manager
+          .getRepository(Convite)
+          .createQueryBuilder('invite')
+          .setLock('pessimistic_write')
+          .where('invite.token_hash = :hash', { hash: this.hash(inviteToken) })
+          .getOne();
+        if (
+          !invite ||
+          invite.registration_mode !== 'school_student' ||
+          invite.role !== Role.USER ||
+          invite.email ||
+          invite.max_uses !== 1 ||
+          !this.inviteAvailable(invite)
+        ) {
+          throw new ForbiddenException(
+            'Convite inválido, expirado ou já utilizado',
+          );
+        }
 
-      const users = manager.getRepository(Usuario);
-      let loginCode = '';
-      for (let attempt = 0; attempt < 5; attempt += 1) {
-        loginCode = `SP-${randomBytes(8).toString('hex').toUpperCase()}`;
-        if (!(await users.findOne({ where: { login_code: loginCode } }))) break;
-        loginCode = '';
-      }
-      if (!loginCode) {
-        throw new BadRequestException(
-          'Não foi possível gerar um identificador de acesso. Tente novamente.',
-        );
-      }
+        const users = manager.getRepository(Usuario);
+        if (await users.findOne({ where: { username } })) throw usernameTaken();
 
-      const nickname = dto.nickname?.trim().replace(/\s+/g, ' ') || null;
-      const user = users.create({
-        name: dto.name.trim().replace(/\s+/g, ' '),
-        email: null,
-        login_code: loginCode,
-        password: await bcrypt.hash(dto.password!, 10),
-        birth_date: null,
-        email_verified_at: null,
-        password_change_required: false,
-        empresa_id: invite.empresa_id,
-        role: Role.USER,
-        nickname_pending: nickname,
-        nickname_request_status: nickname ? 'pending' : 'none',
-      });
-      await users.save(user);
-      invite.uses += 1;
-      await manager.getRepository(Convite).save(invite);
+        const nickname = dto.nickname?.trim().replace(/\s+/g, ' ') || null;
+        const user = users.create({
+          name: dto.name.trim().replace(/\s+/g, ' '),
+          email: null,
+          username,
+          phone,
+          login_code: null,
+          password: await bcrypt.hash(dto.password!, 10),
+          birth_date: null,
+          email_verified_at: null,
+          password_change_required: false,
+          empresa_id: invite.empresa_id,
+          role: Role.USER,
+          nickname_pending: nickname,
+          nickname_request_status: nickname ? 'pending' : 'none',
+          nickname_onboarding_pending: !nickname,
+        });
+        await users.save(user);
+        invite.uses += 1;
+        await manager.getRepository(Convite).save(invite);
 
-      return {
-        sucesso: true,
-        mensagem: 'Conta criada. Guarde seu código de acesso para entrar.',
-        login_code: loginCode,
-      };
-    });
+        return {
+          sucesso: true,
+          mensagem: 'Conta criada. Use seu usuário e senha para entrar.',
+          username,
+        };
+      })
+      .catch(registrationConflict);
   }
 
   private async createPending(
@@ -156,13 +180,21 @@ export class RegistrationService {
     context: RegistrationContext,
   ) {
     const email = dto.email!.trim().toLowerCase();
-    const birthDate = this.validBirthDate(dto.birth_date!);
+    const birthDate = context.schoolStudent
+      ? null
+      : this.validBirthDate(dto.birth_date!);
+    const username = normalizeUsername(dto.username);
+    const phone = normalizePhone(dto.phone);
     if (context.invitedEmail && email !== context.invitedEmail) {
       throw new ForbiddenException(
         'Use o e-mail para o qual este convite foi criado',
       );
     }
-    if (context.inviteRole === Role.ADMIN && 'nickname' in dto && dto.nickname) {
+    if (
+      context.inviteRole === Role.ADMIN &&
+      'nickname' in dto &&
+      dto.nickname
+    ) {
       throw new BadRequestException('Administradores não utilizam apelidos');
     }
     if (
@@ -187,6 +219,8 @@ export class RegistrationService {
     pending.email = email;
     pending.name = dto.name.trim();
     pending.birth_date = birthDate;
+    pending.username = username;
+    pending.phone = phone;
     pending.nickname =
       context.inviteRole !== Role.ADMIN && 'nickname' in dto
         ? dto.nickname?.trim().replace(/\s+/g, ' ') || null
@@ -200,7 +234,7 @@ export class RegistrationService {
       ),
     );
     pending.last_sent_at = new Date();
-    await pendingRepository.save(pending);
+    await pendingRepository.save(pending).catch(registrationConflict);
     await this.emailService.sendVerification(email, token);
     return {
       sucesso: true,
@@ -222,10 +256,7 @@ export class RegistrationService {
         !user.email_verified_at
       ) {
         await this.startPlatformAdminVerification(user);
-      } else if (
-        user?.password_change_required &&
-        user.email_verified_at
-      ) {
+      } else if (user?.password_change_required && user.email_verified_at) {
         await this.startPasswordSetup(user);
       }
       return {
@@ -272,84 +303,111 @@ export class RegistrationService {
     };
   }
 
-  async confirm(token: string) {
+  async confirm(token: string, alternativeUsername?: string) {
     await ensurePendingRankingSeasonsClosed(this.dataSource);
-    return this.dataSource.transaction(async (manager) => {
-      const pending = await manager
-        .getRepository(PendingRegistration)
-        .createQueryBuilder('registration')
-        .setLock('pessimistic_write')
-        .where('registration.token_hash = :hash', { hash: this.hash(token) })
-        .getOne();
-      if (!pending || pending.expires_at <= new Date()) {
-        const existing = await this.confirmExistingPasswordSetup(token, manager);
-        if (existing) return existing;
-        return this.confirmPlatformAdmin(token, manager);
-      }
-      if (
-        await manager
-          .getRepository(Usuario)
-          .findOne({ where: { email: pending.email } })
-      ) {
-        throw new BadRequestException(
-          'Este e-mail já possui um acesso cadastrado',
-        );
-      }
-      let companyId: number;
-      let role = Role.USER;
-      if (pending.kind === 'invite') {
-        const invite = await manager
-          .getRepository(Convite)
-          .createQueryBuilder('invite')
+    return this.dataSource
+      .transaction(async (manager) => {
+        const pending = await manager
+          .getRepository(PendingRegistration)
+          .createQueryBuilder('registration')
           .setLock('pessimistic_write')
-          .where('invite.id = :id', { id: pending.invite_id })
+          .where('registration.token_hash = :hash', { hash: this.hash(token) })
           .getOne();
-        if (
-          !invite ||
-          !this.inviteAvailable(invite) ||
-          (invite.email && invite.email !== pending.email)
-        ) {
-          throw new ForbiddenException('Este convite não está mais disponível');
+        if (!pending || pending.expires_at <= new Date()) {
+          const existing = await this.confirmExistingPasswordSetup(
+            token,
+            manager,
+          );
+          if (existing) return existing;
+          return this.confirmPlatformAdmin(token, manager);
         }
-        companyId = invite.empresa_id;
-        role = invite.role === Role.ADMIN ? Role.ADMIN : Role.USER;
-        invite.uses += 1;
-        await manager.getRepository(Convite).save(invite);
-      } else {
-        companyId = await this.trialCompanyId(manager);
-      }
-      const now = new Date();
-      const passwordSetupToken = randomBytes(32).toString('base64url');
-      const user = manager.getRepository(Usuario).create({
-        name: pending.name,
-        email: pending.email,
-        password: await bcrypt.hash(randomBytes(32).toString('base64url'), 10),
-        birth_date: pending.birth_date,
-        email_verified_at: now,
-        password_change_required: true,
-        password_setup_token_hash: this.hash(passwordSetupToken),
-        password_setup_expires_at: new Date(
-          now.getTime() + CONFIRMATION_HOURS * 60 * 60 * 1000,
-        ),
-        trial_started_at: pending.kind === 'trial' ? now : null,
-        trial_ends_at:
-          pending.kind === 'trial'
-            ? new Date(now.getTime() + TRIAL_DAYS * 86400000)
-            : null,
-        empresa_id: companyId,
-        role,
-        nickname_pending: role === Role.USER ? pending.nickname : null,
-        nickname_request_status:
-          role === Role.USER && pending.nickname ? 'pending' : 'none',
-      });
-      await manager.getRepository(Usuario).save(user);
-      await manager.getRepository(PendingRegistration).remove(pending);
-      return {
-        sucesso: true,
-        mensagem: 'E-mail confirmado. Defina sua senha para ativar o acesso.',
-        password_setup_token: passwordSetupToken,
-      };
-    });
+        if (
+          await manager
+            .getRepository(Usuario)
+            .findOne({ where: { email: pending.email } })
+        ) {
+          throw new BadRequestException(
+            'Este e-mail já possui um acesso cadastrado',
+          );
+        }
+        const username = normalizeUsername(
+          alternativeUsername ?? pending.username,
+        );
+        if (
+          username &&
+          (await manager
+            .getRepository(Usuario)
+            .findOne({ where: { username } }))
+        )
+          throw usernameTaken();
+        let companyId: number;
+        let role = Role.USER;
+        if (pending.kind === 'invite') {
+          const invite = await manager
+            .getRepository(Convite)
+            .createQueryBuilder('invite')
+            .setLock('pessimistic_write')
+            .where('invite.id = :id', { id: pending.invite_id })
+            .getOne();
+          if (
+            !invite ||
+            !this.inviteAvailable(invite) ||
+            (invite.registration_mode === 'school_student' &&
+              (invite.role !== Role.USER ||
+                invite.email ||
+                invite.max_uses !== 1)) ||
+            (invite.email && invite.email !== pending.email)
+          ) {
+            throw new ForbiddenException(
+              'Este convite não está mais disponível',
+            );
+          }
+          companyId = invite.empresa_id;
+          role = invite.role === Role.ADMIN ? Role.ADMIN : Role.USER;
+          invite.uses += 1;
+          await manager.getRepository(Convite).save(invite);
+        } else {
+          companyId = await this.trialCompanyId(manager);
+        }
+        const now = new Date();
+        const passwordSetupToken = randomBytes(32).toString('base64url');
+        const user = manager.getRepository(Usuario).create({
+          name: pending.name,
+          email: pending.email,
+          username,
+          phone: pending.phone ?? null,
+          password: await bcrypt.hash(
+            randomBytes(32).toString('base64url'),
+            10,
+          ),
+          birth_date: pending.birth_date,
+          email_verified_at: now,
+          password_change_required: true,
+          password_setup_token_hash: this.hash(passwordSetupToken),
+          password_setup_expires_at: new Date(
+            now.getTime() + CONFIRMATION_HOURS * 60 * 60 * 1000,
+          ),
+          trial_started_at: pending.kind === 'trial' ? now : null,
+          trial_ends_at:
+            pending.kind === 'trial'
+              ? new Date(now.getTime() + TRIAL_DAYS * 86400000)
+              : null,
+          empresa_id: companyId,
+          role,
+          nickname_pending: role === Role.USER ? pending.nickname : null,
+          nickname_request_status:
+            role === Role.USER && pending.nickname ? 'pending' : 'none',
+          nickname_onboarding_pending: role === Role.USER && !pending.nickname,
+        });
+        await manager.getRepository(Usuario).save(user);
+        await manager.getRepository(PendingRegistration).remove(pending);
+        return {
+          sucesso: true,
+          mensagem: 'E-mail confirmado. Defina sua senha para ativar o acesso.',
+          password_setup_token: passwordSetupToken,
+        };
+      })
+      .catch(registrationConflict);
   }
 
   async setPassword(token: string, password: string) {
@@ -367,7 +425,9 @@ export class RegistrationService {
         !user.password_setup_expires_at ||
         user.password_setup_expires_at <= new Date()
       ) {
-        throw new NotFoundException('Link para definir senha inválido ou expirado');
+        throw new NotFoundException(
+          'Link para definir senha inválido ou expirado',
+        );
       }
 
       user.password = await bcrypt.hash(password, 10);
@@ -395,7 +455,7 @@ export class RegistrationService {
         !user.active ||
         user.role !== Role.USER ||
         user.email !== null ||
-        !user.login_code ||
+        !(user.username || user.login_code) ||
         !user.password_reset_expires_at ||
         user.password_reset_expires_at <= new Date()
       ) {
@@ -410,7 +470,9 @@ export class RegistrationService {
       await manager.getRepository(Usuario).save(user);
       return {
         sucesso: true,
-        mensagem: 'Senha atualizada. Guarde seu código de acesso.',
+        mensagem:
+          'Senha atualizada. Use seu usuário ou código de acesso para entrar.',
+        username: user.username ?? null,
         login_code: user.login_code,
       };
     });
@@ -418,10 +480,13 @@ export class RegistrationService {
 
   async startPlatformAdminVerification(user: Usuario) {
     if (!user.email) {
-      throw new BadRequestException('Conta administrativa sem e-mail cadastrado');
+      throw new BadRequestException(
+        'Conta administrativa sem e-mail cadastrado',
+      );
     }
     const issue = await this.dataSource.transaction(async (manager) => {
-      const locked = await manager.getRepository(Usuario)
+      const locked = await manager
+        .getRepository(Usuario)
         .createQueryBuilder('user')
         .setLock('pessimistic_write')
         .where('user.id = :id', { id: user.id })
@@ -442,7 +507,10 @@ export class RegistrationService {
         ? new Date(locked.email_verification_expires_at).getTime() -
           CONFIRMATION_HOURS * 60 * 60 * 1000
         : 0;
-      if (locked.email_verification_token_hash && Date.now() - issuedAt < RESEND_COOLDOWN_MS) {
+      if (
+        locked.email_verification_token_hash &&
+        Date.now() - issuedAt < RESEND_COOLDOWN_MS
+      ) {
         return null;
       }
       const token = randomBytes(32).toString('base64url');
@@ -451,13 +519,18 @@ export class RegistrationService {
         Date.now() + CONFIRMATION_HOURS * 60 * 60 * 1000,
       );
       await manager.getRepository(Usuario).save(locked);
-      return { token, tokenHash: locked.email_verification_token_hash, previous };
+      return {
+        token,
+        tokenHash: locked.email_verification_token_hash,
+        previous,
+      };
     });
     if (!issue) return;
     try {
       await this.emailService.sendVerification(user.email, issue.token);
     } catch (error) {
-      await this.dataSource.getRepository(Usuario)
+      await this.dataSource
+        .getRepository(Usuario)
         .createQueryBuilder()
         .update(Usuario)
         .set(issue.previous)
@@ -473,17 +546,23 @@ export class RegistrationService {
   private async startPasswordSetup(user: Usuario) {
     if (!user.email) return;
     const issue = await this.dataSource.transaction(async (manager) => {
-      const locked = await manager.getRepository(Usuario)
+      const locked = await manager
+        .getRepository(Usuario)
         .createQueryBuilder('user')
         .setLock('pessimistic_write')
         .where('user.id = :id', { id: user.id })
         .getOne();
-      if (!locked?.active || !locked.password_change_required || !locked.email_verified_at) {
+      if (
+        !locked?.active ||
+        !locked.password_change_required ||
+        !locked.email_verified_at
+      ) {
         return null;
       }
       if (
         locked.password_setup_last_sent_at &&
-        Date.now() - new Date(locked.password_setup_last_sent_at).getTime() < RESEND_COOLDOWN_MS
+        Date.now() - new Date(locked.password_setup_last_sent_at).getTime() <
+          RESEND_COOLDOWN_MS
       ) {
         return null;
       }
@@ -505,7 +584,8 @@ export class RegistrationService {
     try {
       await this.emailService.sendPasswordSetup(user.email, issue.token);
     } catch (error) {
-      await this.dataSource.getRepository(Usuario)
+      await this.dataSource
+        .getRepository(Usuario)
         .createQueryBuilder()
         .update(Usuario)
         .set(issue.previous)
@@ -522,7 +602,8 @@ export class RegistrationService {
     token: string,
     manager: EntityManager,
   ) {
-    const user = await manager.getRepository(Usuario)
+    const user = await manager
+      .getRepository(Usuario)
       .createQueryBuilder('user')
       .setLock('pessimistic_write')
       .where('user.password_setup_token_hash = :tokenHash', {
@@ -536,7 +617,9 @@ export class RegistrationService {
       !user.password_setup_expires_at ||
       user.password_setup_expires_at <= new Date()
     ) {
-      throw new NotFoundException('Link para definir senha inválido ou expirado');
+      throw new NotFoundException(
+        'Link para definir senha inválido ou expirado',
+      );
     }
     const passwordSetupToken = randomBytes(32).toString('base64url');
     user.password_setup_token_hash = this.hash(passwordSetupToken);

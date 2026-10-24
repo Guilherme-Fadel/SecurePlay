@@ -22,8 +22,21 @@ export class PendingRegistration {
   @Column({ type: 'varchar', length: 100 })
   name: string;
 
-  @Column({ type: 'date' })
-  birth_date: string;
+  @Column({ type: 'date', nullable: true })
+  birth_date: string | null;
+
+  // Desired username, claimed only when the email is confirmed.
+  @Column({
+    type: 'varchar',
+    length: 24,
+    nullable: true,
+    charset: 'ascii',
+    collation: 'ascii_general_ci',
+  })
+  username: string | null;
+
+  @Column({ type: 'varchar', length: 16, nullable: true })
+  phone: string | null;
 
   @Column({ type: 'varchar', length: 24, nullable: true })
   nickname: string | null;

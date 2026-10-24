@@ -22,6 +22,8 @@
   --app-control-height: 40px;
   --app-control-radius: 10px;
   --app-control-focus: 2px solid var(--primary);
+  --admin-form-max-width: 900px;
+  --admin-form-gap: 20px;
   background: var(--dashboard-bg);
   color: var(--dashboard-text);
   font-family: var(--font-family-ui);
@@ -45,6 +47,30 @@
 :is(.secure-home, .admin-console) *::before,
 :is(.secure-home, .admin-console) *::after {
   box-sizing: border-box;
+}
+
+.admin-form-grid {
+  display: grid;
+  min-width: 0;
+  width: 100%;
+  max-width: var(--admin-form-max-width, 900px);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--admin-form-gap, 20px);
+}
+.admin-form-grid > label {
+  display: grid;
+  align-content: start;
+  min-width: 0;
+  width: 100%;
+  max-width: none;
+  gap: 7px;
+  margin: 0;
+  color: var(--dashboard-text);
+  font-size: var(--font-label, 13px);
+  font-weight: 600;
+}
+@media (max-width: 600px) {
+  .admin-form-grid { grid-template-columns: minmax(0, 1fr); }
 }
 
 .digital-key-icon {

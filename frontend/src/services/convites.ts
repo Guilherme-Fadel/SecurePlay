@@ -17,7 +17,9 @@ export interface UsuarioEmpresa {
   id: number;
   name: string;
   email: string | null;
-  login_method: 'email' | 'school_code';
+  username: string | null;
+  phone: string | null;
+  login_method: 'email' | 'school_code' | 'username';
   role: string;
   level: number;
   active: boolean;
@@ -151,9 +153,9 @@ export async function consultarConvite(token: string): Promise<ConvitePublico> {
   return response.data;
 }
 
-export async function concluirCadastroConvite(token: string, data: { name: string; nickname?: string; email?: string; birth_date?: string; password?: string }) {
+export async function concluirCadastroConvite(token: string, data: { name: string; nickname?: string; email?: string; username?: string; phone?: string; birth_date?: string; password?: string }) {
   const response = await api.post('/convites/cadastro', { ...data, token });
-  return response.data as { sucesso: boolean; mensagem: string; login_code?: string };
+  return response.data as { sucesso: boolean; mensagem: string; username?: string; login_code?: string };
 }
 
 export async function aprovarApelido(usuarioId: number, empresaId?: number): Promise<UsuarioEmpresa> {

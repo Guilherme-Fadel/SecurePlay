@@ -5,6 +5,8 @@ import { Toaster, toast } from 'sonner';
 import { consultarConvite, concluirCadastroConvite, type ConvitePublico } from '@/services/convites';
 import { PageTransition } from '@/components/shared/PageTransition';
 import { BirthDateField } from '@/components/shared/BirthDateField';
+import { RegistrationContactFields } from '@/components/shared/RegistrationContactFields';
+import { RegistrationLegalNotice } from '@/components/shared/RegistrationLegalNotice';
 import './invite-register.css';
 
 export default function InviteRegister() {
@@ -14,12 +16,14 @@ export default function InviteRegister() {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [name, setName] = useState('');
-  const [nickname, setNickname] = useState('');
   const [email, setEmail] = useState('');
+  const [username, setUsername] = useState('');
+  const [phone, setPhone] = useState('');
   const [birthDate, setBirthDate] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [loginCode, setLoginCode] = useState<string | null>(null);
+  const [createdUsername, setCreatedUsername] = useState<string | null>(null);
+  const schoolWithoutEmail = convite?.registration_mode === 'school_student' && !email.trim();
 
   useEffect(() => {
     if (!token) {
@@ -39,7 +43,7 @@ export default function InviteRegister() {
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const isSchoolStudent = convite?.registration_mode === 'school_student';
-    if (isSchoolStudent && password !== confirmPassword) {
+    if (schoolWithoutEmail && password !== confirmPassword) {
       toast.error('As senhas não conferem.');
       return;
     }
@@ -47,13 +51,14 @@ export default function InviteRegister() {
     try {
       const result = await concluirCadastroConvite(token, {
         name,
-        ...(convite?.role === 'user' ? { nickname: nickname.trim() || undefined } : {}),
-        ...(isSchoolStudent ? { password } : { email, birth_date: birthDate }),
+        username: username.trim() || undefined,
+        phone: phone.trim() || undefined,
+        ...(schoolWithoutEmail ? { password } : isSchoolStudent ? { email: email.trim() } : { email, birth_date: birthDate }),
       });
       toast.success(result.mensagem);
       window.history.replaceState(null, '', window.location.pathname);
-      if (isSchoolStudent && result.login_code) setLoginCode(result.login_code);
-      else if (isSchoolStudent) throw new Error('Código de acesso não recebido. Procure a administração da escola antes de tentar entrar.');
+      if (schoolWithoutEmail && result.username) setCreatedUsername(result.username);
+      else if (schoolWithoutEmail) throw new Error('Usuário de acesso não recebido. Procure a administração da escola.');
       else setTimeout(() => navigate('/verifique-email?email=' + encodeURIComponent(email), { replace: true }), 800);
     } catch (error: any) {
       toast.error(error.response?.data?.message ?? 'Não foi possível concluir o cadastro.');
@@ -67,7 +72,7 @@ export default function InviteRegister() {
       <div className="invite-page">
         <div className="invite-orb invite-orb--primary" />
         <div className="invite-orb invite-orb--secondary" />
-        <main className="invite-card">
+        <main className={`invite-card${convite && !createdUsername ? ' invite-card--registration' : ''}`}>
           <div className="invite-brand"><span><ShieldCheck size={22} /></span> secure<em>play</em></div>
 
           {loading ? (
@@ -79,13 +84,13 @@ export default function InviteRegister() {
               <p>Este link expirou, foi revogado ou já foi utilizado.</p>
               <Link to="/login">Ir para o login</Link>
             </div>
-          ) : loginCode ? (
+          ) : createdUsername ? (
             <div className="invite-state invite-state--success">
               <CheckCircle2 size={32} />
               <h1>Conta criada</h1>
-              <p>Guarde este código. Ele será usado com sua senha para entrar.</p>
-              <strong className="invite-login-code">{loginCode}</strong>
-              <button type="button" onClick={() => void navigator.clipboard.writeText(loginCode).then(() => toast.success('Código copiado.'))}><Copy size={16} /> Copiar código</button>
+              <p>Use seu usuário e a senha que você criou para entrar.</p>
+              <strong className="invite-login-code">{createdUsername}</strong>
+              <button type="button" onClick={() => void navigator.clipboard.writeText(createdUsername).then(() => toast.success('Usuário copiado.'))}><Copy size={16} /> Copiar usuário</button>
               <Link to="/login">Ir para o login</Link>
             </div>
           ) : (
@@ -94,21 +99,25 @@ export default function InviteRegister() {
               <h1>Crie seu passe de aventura</h1>
               <p className="invite-intro">Você vai entrar na turma de <strong>{convite.empresa_nome}</strong>.</p>
 
-              <form onSubmit={handleSubmit} className="invite-form">
+              <form onSubmit={handleSubmit} className="invite-form invite-form--registration">
                 <label>Nome para identificar você na turma<input value={name} onChange={(event) => setName(event.target.value)} minLength={3} maxLength={100} autoComplete="name" required /></label>
-                {convite.role === 'user' && <label>Apelido de aventura <small>vai para aprovação</small><input value={nickname} onChange={(event) => setNickname(event.target.value)} minLength={3} maxLength={24} pattern="[A-Za-zÀ-ÿ0-9 _-]+" placeholder="Ex.: Guardiã Estelar" /></label>}
                 {convite.registration_mode === 'school_student' ? <>
+                  <label><span>E-mail <small>opcional</small></span><input type="email" value={email} onChange={event => setEmail(event.target.value)} maxLength={100} autoComplete="email" /><small>Sem e-mail, escolha um usuário e uma senha. Com e-mail, confirme o endereço para criar sua senha.</small></label>
+                  <RegistrationContactFields username={username} phone={phone} setUsername={setUsername} setPhone={setPhone} usernameRequired={schoolWithoutEmail} disabled={submitting} />
+                  {schoolWithoutEmail && <>
                   <label>Crie uma senha<input type="password" value={password} onChange={(event) => setPassword(event.target.value)} minLength={6} maxLength={72} autoComplete="new-password" required /></label>
                   <label>Confirme a senha<input type="password" value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} minLength={6} maxLength={72} autoComplete="new-password" required /></label>
+                  </>}
                 </> : <>
                   <label>E-mail da escola<input type="email" value={email} onChange={(event) => setEmail(event.target.value)} disabled={Boolean(convite.email)} required /></label>
+                  <RegistrationContactFields username={username} phone={phone} setUsername={setUsername} setPhone={setPhone} disabled={submitting} />
                   <BirthDateField value={birthDate} onChange={setBirthDate} />
                 </>}
-                <button type="submit" disabled={submitting}>{submitting ? 'Criando acesso...' : convite.registration_mode === 'school_student' ? 'Criar minha conta' : 'Confirmar meu e-mail'}</button>
+                <button type="submit" disabled={submitting}>{submitting ? 'Criando acesso...' : schoolWithoutEmail ? 'Criar minha conta' : 'Confirmar meu e-mail'}</button>
               </form>
 
-              <p className="invite-security"><CheckCircle2 size={14} /> {convite.registration_mode === 'school_student' ? 'O código de acesso será exibido uma vez após o cadastro.' : 'Seu acesso será preparado com segurança.'}</p>
-              <p className="invite-legal-note">Ao criar sua conta, você confirma que leu a <Link to="/privacidade">Privacidade</Link> e os <Link to="/termos">Termos de uso</Link>. Se for criança, peça ajuda a um responsável ou educador.</p>
+              <p className="invite-security"><CheckCircle2 size={14} /> {schoolWithoutEmail ? 'Entre com o usuário escolhido e sua senha.' : 'Confirme seu e-mail para ativar o acesso.'}</p>
+              <RegistrationLegalNotice />
             </>
           )}
         </main>

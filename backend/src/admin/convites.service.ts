@@ -257,7 +257,7 @@ export class ConvitesService {
 
     if (search) {
       query.andWhere(
-        '(usuario.name LIKE :search OR usuario.email LIKE :search OR usuario.nickname LIKE :search)',
+        '(usuario.name LIKE :search OR usuario.email LIKE :search OR usuario.nickname LIKE :search OR usuario.username LIKE :search)',
         { search: `%${search}%` },
       );
     }
@@ -644,7 +644,11 @@ export class ConvitesService {
         where: { id: usuarioId, empresa_id: empresa.id, role: Role.USER },
         lock: { mode: 'pessimistic_write' },
       });
-      if (!usuario?.active || usuario.email !== null || !usuario.login_code) {
+      if (
+        !usuario?.active ||
+        usuario.email !== null ||
+        !(usuario.username || usuario.login_code)
+      ) {
         throw new NotFoundException('Aluno não encontrado nesta escola');
       }
 
@@ -779,7 +783,13 @@ export class ConvitesService {
       id: usuario.id,
       name: usuario.name,
       email: usuario.email,
-      login_method: usuario.login_code ? 'school_code' : 'email',
+      username: usuario.username ?? null,
+      phone: usuario.phone ?? null,
+      login_method: usuario.username
+        ? 'username'
+        : usuario.login_code
+          ? 'school_code'
+          : 'email',
       role: usuario.role,
       level: usuario.level,
       active: usuario.active,

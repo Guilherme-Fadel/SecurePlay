@@ -411,9 +411,8 @@ html[data-admin-console='true'] body { min-width: 320px; overflow: hidden; }
 .admin-user-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; margin: 24px 0; }
 .admin-user-fields dt { color: var(--admin-console-muted); font-size: 12px; }
 .admin-user-fields dd { margin: 6px 0 0; font-size: 14px; overflow-wrap: anywhere; }
-.admin-user-editor-actions { padding-top: 20px; border-top: 1px solid var(--admin-console-border); }
-.admin-user-editor-actions h3 { margin: 0; font-size: 15px; }
-.admin-user-editor-actions p { margin: 8px 0 16px; color: var(--admin-console-muted); font-size: 13px; }
+.admin-user-editor-footer { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px; margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--admin-console-border); }
+.admin-user-editor-footer > .admin-console-setting-actions { margin-left: auto; }
 @media (max-width: 720px) {
   .admin-grid-pagination-layout { grid-template-columns: minmax(0, 1fr); }
   .admin-grid-pagination-layout > .admin-list-pagination { grid-column: 1; justify-self: center; }
@@ -425,7 +424,8 @@ html[data-admin-console='true'] body { min-width: 320px; overflow: hidden; }
   .admin-user-fields { grid-template-columns: minmax(0, 1fr); }
   .admin-console .admin-data-grid-table td.admin-grid-icon-column { display: flex; align-items: center; gap: 8px; width: auto; }
   .admin-console .admin-data-grid-table td.admin-grid-icon-column::before { content: attr(data-label); color: var(--admin-console-muted); font-size: 12px; }
-  .admin-console .admin-data-grid-table td[data-label='Usuário'] { grid-column: 1 / -1; }
+  .admin-console .admin-data-grid-table td[data-label='Nome'],
+  .admin-console .admin-data-grid-table td[data-label='E-mail'] { grid-column: 1 / -1; }
 }
 .admin-console .admin-record-card.school-pilot-page-card .school-pilot-form { padding: 0; }
 .admin-console .admin-record-card.school-pilot-page-card .school-pilot-page-note { padding: 0; margin: 0 0 20px; }
@@ -462,5 +462,4 @@ html[data-admin-console='true'] body { min-width: 320px; overflow: hidden; }
 .admin-console-color-fields input[type='color']::-webkit-color-swatch { border: 0; border-radius: 4px; }
 .admin-console-color-fields input[type='color']::-moz-color-swatch { border: 0; border-radius: 4px; }
 .admin-user-edit-form fieldset { padding: 0; border: 0; }
-.admin-user-edit-form .admin-record-fields { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-@media (max-width: 600px) { .admin-user-edit-form .admin-record-fields { grid-template-columns: minmax(0, 1fr); } }
+.admin-user-edit-form .admin-form-grid { margin-top: 24px; }

@@ -12,7 +12,9 @@
 .invite-intro strong { color: #334155; font: inherit; font-weight: 800; }
 .invite-form { display: grid; gap: 15px; }
 .invite-form label { display: grid; gap: 6px; color: #334155; font: 700 14px var(--font-family-ui); }
-.invite-form input { height: 54px; padding: 0 13px; border: 1px solid #d8e1ed; border-radius: 10px; outline: none; color: #17233a; font: 16px var(--font-family-ui); }
+.invite-form label > span { font: inherit; }
+.invite-form label small { color: #64748b; font: 400 12px/1.45 var(--font-family-ui); }
+.invite-form input { min-width: 0; width: 100%; height: 54px; padding: 0 13px; border: 1px solid #d8e1ed; border-radius: 10px; outline: none; color: #17233a; font: 16px var(--font-family-ui); }
 .invite-form input:focus { border-color: var(--primary); box-shadow: 0 0 0 4px rgba(var(--primary-rgb),.1); }
 .invite-form input:disabled { background: #f8fafc; color: #64748b; cursor: not-allowed; }
 .invite-form button { height: 56px; margin-top: 4px; border: 0; border-radius: 10px; background: var(--primary); box-shadow: 0 9px 18px rgba(var(--primary-rgb),.2); color: #fff; cursor: pointer; font: 800 16px var(--font-family-ui); }
@@ -34,8 +36,17 @@
 .invite-state a { margin-top: 8px; color: var(--primary); font-weight: 800; }
 .invite-state--error svg { color: var(--danger); }
 .invite-state--success > svg { color: var(--success, #16865a); }
-.invite-login-code { padding: 12px 18px; border: 1px dashed #a8b7cc; border-radius: 10px; background: #f7f9fc; color: #17233a; font: 800 20px/1.2 ui-monospace, monospace; letter-spacing: .08em; }
+.invite-login-code { max-width: 100%; overflow-wrap: anywhere; padding: 12px 18px; border: 1px dashed #a8b7cc; border-radius: 10px; background: #f7f9fc; color: #17233a; font: 800 20px/1.2 ui-monospace, monospace; letter-spacing: .08em; }
 .invite-state--success button { display: inline-flex; align-items: center; gap: 8px; min-height: 42px; padding: 0 14px; border: 1px solid #d8e1ed; border-radius: 9px; background: #fff; color: #334155; cursor: pointer; font: 700 14px var(--font-family-ui); }
 .invite-spinner { width: 28px; height: 28px; border: 3px solid rgba(var(--primary-rgb),.18); border-top-color: var(--primary); border-radius: 50%; animation: invite-spin .8s linear infinite; }
 @keyframes invite-spin { to { transform: rotate(360deg); } }
 @media (max-width: 520px) { .invite-page { padding: 16px; } .invite-card, .invite-password-dialog { padding: 30px 24px; } .invite-brand { margin-bottom: 30px; } }
+.invite-card--registration { width: min(100%, 820px); }
+.invite-form--registration { grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; gap: 18px 24px; }
+.invite-form--registration > button { grid-column: 1 / -1; justify-self: end; min-width: 220px; padding-inline: 24px; }
+.invite-legal-note > button { padding: 0; border: 0; background: transparent; color: var(--primary); font: inherit; font-weight: 800; text-decoration: underline; cursor: pointer; }
+.invite-legal-note > button:focus-visible { outline: 2px solid var(--primary); outline-offset: 3px; }
+@media (max-width: 640px) {
+  .invite-form--registration { grid-template-columns: minmax(0, 1fr); }
+  .invite-form--registration > button { justify-self: stretch; min-width: 0; }
+}

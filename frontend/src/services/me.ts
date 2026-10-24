@@ -13,6 +13,8 @@ export interface CurrentUser {
   userId: number;
   name: string;
   email: string | null;
+  username: string | null;
+  phone: string | null;
   login_code: string | null;
   birth_date: string | null;
   email_verified_at: string | null;
@@ -28,6 +30,7 @@ export interface CurrentUser {
   nickname: string | null;
   nickname_pending: string | null;
   nickname_request_status: 'none' | 'pending' | 'approved' | 'rejected';
+  nickname_onboarding_pending: boolean;
   profile_image_url: string | null;
 }
 

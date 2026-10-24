@@ -17,6 +17,12 @@ export class UsuarioController {
     return this.usuarioService.requestNickname(req.user.userId, dto.nickname);
   }
 
+  @Patch('perfil/boas-vindas/apelido')
+  @Throttle({ short: { limit: 5, ttl: 60000 } })
+  dismissNicknameOnboarding(@Request() req: { user: { userId: number } }) {
+    return this.usuarioService.dismissNicknameOnboarding(req.user.userId);
+  }
+
   @Post('perfil/foto/presign')
   @Throttle({ short: { limit: 5, ttl: 60000 } })
   presignProfileImage(

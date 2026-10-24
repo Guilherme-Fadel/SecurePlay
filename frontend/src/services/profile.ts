@@ -14,11 +14,17 @@ export interface NicknameRequestResult {
   nickname: string | null;
   nickname_pending: string | null;
   nickname_request_status: 'none' | 'pending' | 'approved' | 'rejected';
+  nickname_onboarding_pending: boolean;
   message: string;
 }
 
 export async function requestNickname(nickname: string): Promise<NicknameRequestResult> {
   const response = await api.patch('/usuarios/perfil/apelido', { nickname });
+  return response.data;
+}
+
+export async function dismissNicknameOnboarding(): Promise<{ nickname_onboarding_pending: boolean }> {
+  const response = await api.patch('/usuarios/perfil/boas-vindas/apelido');
   return response.data;
 }
 
