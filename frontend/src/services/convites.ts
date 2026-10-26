@@ -58,12 +58,17 @@ export async function atualizarUsuarioAdministrativo(id: number, data: UpdateAdm
 }
 
 export interface ResumoAdministrativo {
+  empresasTotal?: number;
   usuariosAtivos: number;
   alunosAtivos: number;
   usuariosInativos: number;
   apelidosPendentes: number;
   convitesAtivos: number;
   alunosComAulaConcluida: number;
+  aulasConcluidas: number;
+  alunosComConclusaoRecente: number;
+  conclusoesPorDia: Array<{ dia: string; total: number }>;
+  atualizadoEm: string;
 }
 
 function empresaPath(empresaId?: number) {
@@ -92,8 +97,8 @@ export async function obterUsuario(usuarioId: number, empresaId?: number): Promi
   return response.data;
 }
 
-export async function obterResumoAdministrativo(empresaId?: number): Promise<ResumoAdministrativo> {
-  const response = await api.get(`${empresaPath(empresaId)}/resumo`);
+export async function obterResumoAdministrativo(empresaId?: number, platform = false): Promise<ResumoAdministrativo> {
+  const response = await api.get(platform ? '/platform/admin/resumo' : `${empresaPath(empresaId)}/resumo`);
   return response.data;
 }
 

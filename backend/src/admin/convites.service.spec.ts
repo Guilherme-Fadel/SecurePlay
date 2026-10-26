@@ -470,7 +470,7 @@ describe('ConvitesService.listarPaginadosDaEmpresa', () => {
 });
 
 describe('ConvitesService.obterResumoAdministrativoDaEmpresa', () => {
-  it('retorna somente indicadores administrativos da empresa', async () => {
+  it.each([7, undefined])('retorna indicadores no escopo solicitado: %s', async (empresaId) => {
     const nicknameQuery = {
       where: jest.fn().mockReturnThis(),
       andWhere: jest.fn().mockReturnThis(),
@@ -483,11 +483,15 @@ describe('ConvitesService.obterResumoAdministrativoDaEmpresa', () => {
     };
     const participationQuery = {
       select: jest.fn().mockReturnThis(),
+      addSelect: jest.fn().mockReturnThis(),
+      setParameter: jest.fn().mockReturnThis(),
+      groupBy: jest.fn().mockReturnThis(),
+      getRawMany: jest.fn().mockResolvedValue([]),
       from: jest.fn().mockReturnThis(),
       innerJoin: jest.fn().mockReturnThis(),
       where: jest.fn().mockReturnThis(),
       andWhere: jest.fn().mockReturnThis(),
-      getRawOne: jest.fn().mockResolvedValue({ total: '5' }),
+      getRawOne: jest.fn().mockResolvedValue({ total: '5', aulasConcluidas: '18', alunosRecentes: '2' }),
     };
     const userRepository = {
       count: jest
@@ -506,11 +510,12 @@ describe('ConvitesService.obterResumoAdministrativoDaEmpresa', () => {
       { emit: jest.fn() } as never,
       {
         createQueryBuilder: jest.fn().mockReturnValue(participationQuery),
+        getRepository: jest.fn().mockReturnValue({ count: jest.fn().mockResolvedValue(3) }),
       } as never,
     );
 
     await expect(
-      service.obterResumoAdministrativoDaEmpresa(7),
+      empresaId === undefined ? service.obterResumoAdministrativoDaPlataforma() : service.obterResumoAdministrativoDaEmpresa(empresaId),
     ).resolves.toEqual({
       usuariosAtivos: 12,
       alunosAtivos: 10,
@@ -518,9 +523,14 @@ describe('ConvitesService.obterResumoAdministrativoDaEmpresa', () => {
       apelidosPendentes: 3,
       convitesAtivos: 4,
       alunosComAulaConcluida: 5,
+      aulasConcluidas: 18,
+      alunosComConclusaoRecente: 2,
+      conclusoesPorDia: expect.arrayContaining([expect.objectContaining({ total: 0 })]),
+      atualizadoEm: expect.any(String),
+      ...(empresaId === undefined ? { empresasTotal: 3 } : {}),
     });
     expect(userRepository.count).toHaveBeenNthCalledWith(2, {
-      where: { empresa_id: 7, role: Role.USER, active: true },
+      where: { ...(empresaId === undefined ? {} : { empresa_id: empresaId }), role: Role.USER, active: true },
     });
     expect(participationQuery.select).toHaveBeenCalledWith(
       'COUNT(DISTINCT usuarioAula.usuario_id)',
@@ -536,8 +546,8 @@ describe('ConvitesService.obterResumoAdministrativoDaEmpresa', () => {
       'usuario.id = usuarioAula.usuario_id',
     );
     expect(participationQuery.where).toHaveBeenCalledWith(
-      'usuario.empresa_id = :empresaId',
-      { empresaId: 7 },
+      empresaId === undefined ? '1 = 1' : 'usuario.empresa_id = :empresaId',
+      { empresaId },
     );
     expect(participationQuery.andWhere).toHaveBeenNthCalledWith(
       1,

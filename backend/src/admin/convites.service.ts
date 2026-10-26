@@ -21,6 +21,7 @@ import { EventEmitter2 } from '@nestjs/event-emitter';
 import { ensurePendingRankingSeasonsClosed } from '../dashboard/ranking-history';
 import { AdminAuditEvent } from './entities/admin-audit-event.entity';
 import { UpdateAdminUserDto } from './dto/update-admin-user.dto';
+import { getLocalDateKey } from '../common/utils/date.utils';
 
 type ConviteFiltros = {
   page?: number;
@@ -285,18 +286,31 @@ export class ConvitesService {
   }
 
   async obterResumoAdministrativoDaEmpresa(empresaId: number) {
+    return this.resumoAdministrativo(empresaId);
+  }
+
+  async obterResumoAdministrativoDaPlataforma() {
+    const [summary, empresasTotal] = await Promise.all([
+      this.resumoAdministrativo(),
+      this.dataSource.getRepository(Empresa).count(),
+    ]);
+    return { ...summary, empresasTotal };
+  }
+
+  private async resumoAdministrativo(empresaId?: number) {
+    const scope = empresaId === undefined ? {} : { empresa_id: empresaId };
     const usuariosAtivos = await this.usuarioRepository.count({
-      where: { empresa_id: empresaId, active: true },
+      where: { ...scope, active: true },
     });
     const alunosAtivos = await this.usuarioRepository.count({
-      where: { empresa_id: empresaId, role: Role.USER, active: true },
+      where: { ...scope, role: Role.USER, active: true },
     });
     const usuariosInativos = await this.usuarioRepository.count({
-      where: { empresa_id: empresaId, active: false },
+      where: { ...scope, active: false },
     });
     const apelidosPendentes = await this.usuarioRepository
       .createQueryBuilder('usuario')
-      .where('usuario.empresa_id = :empresaId', { empresaId })
+      .where(empresaId === undefined ? '1 = 1' : 'usuario.empresa_id = :empresaId', { empresaId })
       .andWhere('usuario.role = :role', { role: Role.USER })
       .andWhere('usuario.nickname_request_status = :status', {
         status: 'pending',
@@ -305,7 +319,7 @@ export class ConvitesService {
       .getCount();
     const convitesAtivos = await this.conviteRepository
       .createQueryBuilder('convite')
-      .where('convite.empresa_id = :empresaId', { empresaId })
+      .where(empresaId === undefined ? '1 = 1' : 'convite.empresa_id = :empresaId', { empresaId })
       .andWhere('convite.revoked = :revoked', { revoked: false })
       .andWhere('convite.expires_at > :now', { now: new Date() })
       .andWhere('convite.uses < convite.max_uses')
@@ -313,13 +327,40 @@ export class ConvitesService {
     const participacao = await this.dataSource
       .createQueryBuilder()
       .select('COUNT(DISTINCT usuarioAula.usuario_id)', 'total')
+      .addSelect('COUNT(*)', 'aulasConcluidas')
+      .addSelect('COUNT(DISTINCT CASE WHEN usuarioAula.completed_at >= :since THEN usuarioAula.usuario_id END)', 'alunosRecentes')
       .from(UsuarioAula, 'usuarioAula')
       .innerJoin(Usuario, 'usuario', 'usuario.id = usuarioAula.usuario_id')
-      .where('usuario.empresa_id = :empresaId', { empresaId })
+      .where(empresaId === undefined ? '1 = 1' : 'usuario.empresa_id = :empresaId', { empresaId })
       .andWhere('usuario.role = :role', { role: Role.USER })
       .andWhere('usuario.active = :active', { active: true })
       .andWhere('usuarioAula.completed = :completed', { completed: true })
-      .getRawOne<{ total: string | number }>();
+      .setParameter('since', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000))
+      .getRawOne<{ total: string | number; aulasConcluidas: string | number; alunosRecentes: string | number }>();
+
+    // Apenas conclusões datadas permitem uma leitura histórica confiável.
+    const now = new Date();
+    const since = new Date(`${getLocalDateKey(now)}T00:00:00-03:00`);
+    since.setUTCDate(since.getUTCDate() - 6);
+    const dias = await this.dataSource.createQueryBuilder()
+      .select("DATE_FORMAT(usuarioAula.completed_at, '%Y-%m-%d')", 'dia')
+      .addSelect('COUNT(*)', 'total')
+      .from(UsuarioAula, 'usuarioAula')
+      .innerJoin(Usuario, 'usuario', 'usuario.id = usuarioAula.usuario_id')
+      .where(empresaId === undefined ? '1 = 1' : 'usuario.empresa_id = :empresaId', { empresaId })
+      .andWhere('usuario.role = :role', { role: Role.USER })
+      .andWhere('usuario.active = :active', { active: true })
+      .andWhere('usuarioAula.completed = :completed', { completed: true })
+      .andWhere('usuarioAula.completed_at >= :since AND usuarioAula.completed_at <= :now', { since, now })
+      .groupBy('dia')
+      .getRawMany<{ dia: string; total: string | number }>();
+    const conclusoesPorDia = Array.from({ length: 7 }, (_, index) => {
+      const date = new Date(since);
+      date.setUTCDate(date.getUTCDate() + index);
+      const dia = getLocalDateKey(date);
+      const row = dias.find((item) => String(item.dia).slice(0, 10) === dia);
+      return { dia, total: Number(row?.total ?? 0) };
+    });
 
     return {
       usuariosAtivos,
@@ -328,6 +369,10 @@ export class ConvitesService {
       apelidosPendentes,
       convitesAtivos,
       alunosComAulaConcluida: Number(participacao?.total ?? 0),
+      aulasConcluidas: Number(participacao?.aulasConcluidas ?? 0),
+      alunosComConclusaoRecente: Number(participacao?.alunosRecentes ?? 0),
+      conclusoesPorDia,
+      atualizadoEm: now.toISOString(),
     };
   }
 

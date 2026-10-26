@@ -9,6 +9,7 @@ export function adminQueryKey(resource: AdminResource, empresaId?: number, filte
 }
 
 export function invalidateAdminResources(empresaId: number | undefined, ...resources: AdminResource[]) {
+  invalidatePrefix('admin:platform:summary');
   invalidatePrefix('admin:platform:records');
   for (const resource of resources) invalidatePrefix(adminQueryKey(resource, empresaId));
 }

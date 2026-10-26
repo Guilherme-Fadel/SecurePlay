@@ -101,7 +101,7 @@ function AdminConsoleFrame({ onSignOut, scope }: { onSignOut: () => Promise<void
         </header>
 
         <main className={`admin-console-content${page.list ? ' is-list-page' : ''}`}>
-          <AdminConsolePage isOverview={isOverview} name={user?.nickname || user?.name || 'administrador'} scope={scope} companyId={companyId} />
+          <AdminConsolePage isOverview={isOverview} scope={scope} companyId={companyId} />
         </main>
       </div>
     </div>
@@ -125,11 +125,11 @@ function getCompanyIdFromPath(pathname: string): number | null {
   return Number.isSafeInteger(id) && id > 0 ? id : null;
 }
 
-function AdminConsolePage({ isOverview, name, scope, companyId }: { isOverview: boolean; name: string; scope: NonNullable<ReturnType<typeof resolveAdminConsoleScope>>; companyId: number | null }) {
+function AdminConsolePage({ isOverview, scope, companyId }: { isOverview: boolean; scope: NonNullable<ReturnType<typeof resolveAdminConsoleScope>>; companyId: number | null }) {
   const location = useLocation();
   const navigate = useNavigate();
   const isPlatform = scope.kind === 'platform';
-  if (isOverview) return scope.kind === 'company' ? <AdminOverviewTab empresaId={undefined} onNavigate={(tab) => navigate(`/admin/pessoas/${tab === 'usuarios' ? 'usuarios' : tab}`)} /> : <AdminConsoleWelcome name={name} scope={scope} />;
+  if (isOverview) return scope.kind === 'company' ? <AdminOverviewTab empresaId={undefined} onNavigate={(tab) => navigate(`/admin/pessoas/${tab === 'usuarios' ? 'usuarios' : tab}`)} /> : <AdminOverviewTab platform onNavigate={(tab) => navigate(`/admin/pessoas/${tab}`)} headerActions={<Link className="admin-console-back-link" to="/admin/empresas"><Building2 size={16} />Instituições</Link>} />;
   if (resolveConsolePage(location.pathname).id === 'companies' && isPlatform) return <CompanyRegistryTab />;
   if (resolveConsolePage(location.pathname).id === 'new-company' && isPlatform) return <CompanyManagementTab headerActions={<ConsoleBackLink to="/admin/empresas" label="Cadastro" />} mode="new" consoleMode storageKey="admin-console:platform:companies-new" onEmpresaCriada={() => undefined} onAdministrar={(empresa) => navigate(`/admin/empresas/${empresa.id}/editar`)} />;
   if (scope.kind === 'company' && location.pathname.startsWith('/admin/empresas')) return <section className="admin-console-unavailable" role="alert"><h1>Acesso indisponível</h1><p>Esta rota pertence ao contexto da plataforma.</p><Link to="/admin/inicio">Voltar</Link></section>;
@@ -195,6 +195,7 @@ function PlatformWorkspace({ companyId }: { companyId: number | null }) {
 }
 
 function ConsoleCompanyPage({ empresa }: { empresa: EmpresaAdministravel }) {
+  const navigate = useNavigate();
   const location = useLocation();
   const empresaId = empresa.id;
   const path = location.pathname.replace(/\/+$/, '');
@@ -206,7 +207,7 @@ function ConsoleCompanyPage({ empresa }: { empresa: EmpresaAdministravel }) {
   if (path.endsWith('/pessoas/apelidos')) return <PendingNicknamesTab empresaId={empresaId} consoleMode />;
   if (path.endsWith('/pessoas/convites/novo')) return <InvitationManagementTab empresaId={empresaId} podeCriarAdministrador headerActions={<ConsoleBackLink to={`/admin/empresas/${empresaId}/pessoas/convites`} label="Convites" />} mode="new" consoleMode />;
   if (path.endsWith('/pessoas/convites')) return <InvitationManagementTab empresaId={empresaId} podeCriarAdministrador headerActions={<Link className="admin-console-primary-link" to={`/admin/empresas/${empresaId}/pessoas/convites/novo`}><Plus size={16} /> Novo</Link>} mode="list" consoleMode />;
-  if (page.id === 'summary') return <AdminOverviewTab empresaId={empresa.id} empresaNome={empresa.nome} title={empresa.nome} headerActions={<><Link className="admin-console-back-link" aria-label="Pessoas da empresa" to={`/admin/empresas/${empresa.id}/pessoas/usuarios`}><Users size={16} /><span>Pessoas</span></Link><Link className="admin-console-back-link" aria-label="Configurações da empresa" to={`/admin/empresas/${empresa.id}/configuracoes/dados`}><Settings size={16} /><span>Configurações</span></Link><ConsoleBackLink to="/admin/empresas" label="Trocar empresa" /></>} />;
+  if (page.id === 'summary') return <AdminOverviewTab onNavigate={(tab) => navigate(`/admin/empresas/${empresa.id}/pessoas/${tab}`)} empresaId={empresa.id} empresaNome={empresa.nome} title={empresa.nome} headerActions={<><Link className="admin-console-back-link" aria-label="Pessoas da empresa" to={`/admin/empresas/${empresa.id}/pessoas/usuarios`}><Users size={16} /><span>Pessoas</span></Link><Link className="admin-console-back-link" aria-label="Configurações da empresa" to={`/admin/empresas/${empresa.id}/configuracoes/dados`}><Settings size={16} /><span>Configurações</span></Link><ConsoleBackLink to="/admin/empresas" label="Trocar empresa" /></>} />;
   return <section className="admin-console-unavailable" role="status"><h1>Área indisponível</h1><Link to={`/admin/empresas/${empresa.id}/resumo`}>Voltar</Link></section>;
 }
 
@@ -242,20 +243,5 @@ function AdminConsoleAccount({ name, onSignOut }: { name: string; onSignOut: () 
       </button>
       <button type="button" className="admin-console-signout" aria-label="Sair da conta" onClick={() => requestAction(() => { void onSignOut().catch(() => undefined); })}><LogOut size={16} aria-hidden="true" /><span>Sair</span></button>
     </div>
-  );
-}
-
-function AdminConsoleWelcome({ name, scope }: { name: string; scope: NonNullable<ReturnType<typeof resolveAdminConsoleScope>> }) {
-  const isCompany = scope.kind === 'company';
-  return (
-    <section className="admin-console-welcome"><AdminPageHeader title="Visão geral" description="Administração da plataforma." />
-      <span className="admin-console-eyebrow">ÁREA ADMINISTRATIVA</span>
-      <h2>Bem-vindo, {name}</h2>
-      <p>Gerencie empresas, acessos e configurações em um só lugar.</p>
-      <div className="admin-console-scope-card">
-        <Building2 size={20} aria-hidden="true" />
-        <div><strong>{isCompany ? 'Escopo da empresa' : 'Escopo da plataforma'}</strong><span>{isCompany ? 'A empresa é determinada pela sessão autenticada.' : 'Acesse as áreas pelo menu e filtre a empresa diretamente em cada aba.'}</span></div>
-      </div>
-    </section>
   );
 }

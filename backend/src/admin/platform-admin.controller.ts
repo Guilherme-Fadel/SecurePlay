@@ -31,6 +31,11 @@ type AdminRequest = { user: { userId: number } };
 @Controller('platform/admin')
 @Roles(Role.PLATFORM_ADMIN)
 export class PlatformAdminController {
+  @Get('resumo')
+  async obterResumoDaPlataforma() {
+    return this.convitesService.obterResumoAdministrativoDaPlataforma();
+  }
+
   @Get('usuarios/:usuarioId')
   async obterPropriosDados(
     @Request() req: AdminRequest,

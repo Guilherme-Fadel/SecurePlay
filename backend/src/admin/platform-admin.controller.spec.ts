@@ -4,6 +4,13 @@ import { ROLES_KEY } from '../auth/roles.decorator';
 import { Role } from '../auth/roles.enum';
 
 describe('Administração global e por empresa', () => {
+  it('encaminha o resumo global para a agregação da plataforma', async () => {
+    const service = { obterResumoAdministrativoDaPlataforma: jest.fn().mockResolvedValue({ empresasTotal: 3 }) };
+    const controller = new PlatformAdminController({} as never, service as never, {} as never, {} as never);
+    await expect(controller.obterResumoDaPlataforma()).resolves.toEqual({ empresasTotal: 3 });
+    expect(service.obterResumoAdministrativoDaPlataforma).toHaveBeenCalledWith();
+  });
+
   it('mantém as rotas de empresa exclusivas para admin', () => {
     expect(Reflect.getMetadata(ROLES_KEY, AdminController)).toEqual([
       Role.ADMIN,
