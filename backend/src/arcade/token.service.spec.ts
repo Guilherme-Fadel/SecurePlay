@@ -1,89 +1,51 @@
-import { TokenService, TOKEN_CAP, TOKEN_REGEN_MS } from './token.service';
-class TestTokenService extends TokenService {
-  public current = 1000000000000;
-  protected now(): number {
-    return this.current;
-  }
-}
-describe('TokenService', () => {
-  let service: TestTokenService;
-  let store: Map<string, string>;
-  let redis: {
-    get: jest.Mock;
-    set: jest.Mock;
-  };
-  beforeEach(() => {
-    store = new Map();
-    redis = {
-      get: jest.fn((k: string) => Promise.resolve(store.get(k) ?? null)),
-      set: jest.fn((k: string, v: string) => {
-        store.set(k, v);
-        return Promise.resolve();
-      }),
-    };
-    service = new TestTokenService(redis as any);
+import { TokenService, TOKEN_REGEN_MS } from './token.service';
+
+describe('TokenService — contrato de saldo e recibo', () => {
+  const at = 1_000_000_000_000;
+  it('retorna relógio de regeneração consistente com o estado recebido', async () => {
+    const service = new TokenService({
+      eval: jest.fn().mockResolvedValue([1, 2, at, at + 1000]),
+    } as never);
+    const state = await service.getState(7);
+    expect(state).toMatchObject({
+      balance: 2,
+      nextRegenAt: at + TOKEN_REGEN_MS,
+      nextRegenInSeconds: 1799,
+    });
   });
-  it('novo usuario comeca com o teto de tokens', async () => {
-    const state = await service.getState(1);
-    expect(state.balance).toBe(TOKEN_CAP);
-    expect(state.nextRegenInSeconds).toBe(0);
+  it('saldo cheio não apresenta contagem de regeneração', async () => {
+    const service = new TokenService({
+      eval: jest.fn().mockResolvedValue([1, 5, at, at]),
+    } as never);
+    expect(await service.getState(7)).toEqual({
+      balance: 5,
+      cap: 5,
+      nextRegenAt: null,
+      nextRegenInSeconds: 0,
+    });
   });
-  it('nao regenera antes de 30 min', async () => {
-    store.set(
-      'op-tokens:1',
-      JSON.stringify({ balance: 2, lastRegenAt: service.current }),
-    );
-    service.current += TOKEN_REGEN_MS - 1000;
-    const state = await service.getState(1);
-    expect(state.balance).toBe(2);
+  it('recibo repetido preserva o estado da cobrança original, sem recalcular pelo relógio atual', async () => {
+    const service = new TokenService({
+      eval: jest.fn().mockResolvedValue([1, 4, at, at]),
+    } as never);
+    const result = await service.consumeForRun(7, 'fixture-run', new Date(0));
+    expect(result.ok).toBe(true);
+    expect(result.state.nextRegenInSeconds).toBe(1800);
+    expect(result.state.balance).toBe(4);
   });
-  it('regenera 1 token apos 1 intervalo', async () => {
-    store.set(
-      'op-tokens:1',
-      JSON.stringify({ balance: 2, lastRegenAt: service.current }),
-    );
-    service.current += TOKEN_REGEN_MS;
-    const state = await service.getState(1);
-    expect(state.balance).toBe(3);
-  });
-  it('regenera N tokens apos N intervalos', async () => {
-    store.set(
-      'op-tokens:1',
-      JSON.stringify({ balance: 1, lastRegenAt: service.current }),
-    );
-    service.current += TOKEN_REGEN_MS * 3;
-    const state = await service.getState(1);
-    expect(state.balance).toBe(4);
-  });
-  it('nao ultrapassa o teto mesmo com muito tempo decorrido', async () => {
-    store.set(
-      'op-tokens:1',
-      JSON.stringify({ balance: 1, lastRegenAt: service.current }),
-    );
-    service.current += TOKEN_REGEN_MS * 100;
-    const state = await service.getState(1);
-    expect(state.balance).toBe(TOKEN_CAP);
-    expect(state.nextRegenInSeconds).toBe(0);
-  });
-  it('saldo no teto nao adianta o relogio de regen', async () => {
-    store.set(
-      'op-tokens:1',
-      JSON.stringify({
-        balance: TOKEN_CAP,
-        lastRegenAt: service.current - TOKEN_REGEN_MS * 5,
-      }),
-    );
-    const state = await service.getState(1);
-    expect(state.balance).toBe(TOKEN_CAP);
-    const persisted = JSON.parse(store.get('op-tokens:1')!);
-    expect(persisted.lastRegenAt).toBe(service.current);
-  });
-  it('refillToCap recarrega ate o teto', async () => {
-    store.set(
-      'op-tokens:1',
-      JSON.stringify({ balance: 0, lastRegenAt: service.current }),
-    );
-    const state = await service.refillToCap(1);
-    expect(state.balance).toBe(TOKEN_CAP);
+  it('distingue primeira cobrança expirada de saldo insuficiente', async () => {
+    const evalMock = jest
+      .fn()
+      .mockResolvedValueOnce([-1, 5, at, at])
+      .mockResolvedValueOnce([0, 0, at, at]);
+    const service = new TokenService({ eval: evalMock } as never);
+    expect(await service.consumeForRun(7, 'run', new Date(0))).toMatchObject({
+      ok: false,
+      expired: true,
+    });
+    expect(await service.consumeForRun(7, 'run', new Date(0))).toMatchObject({
+      ok: false,
+      expired: false,
+    });
   });
 });

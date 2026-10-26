@@ -48,6 +48,33 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
   async get(key: string): Promise<string | null> {
     return this.client.get(key);
   }
+  async acquireLease(
+    key: string,
+    owner: string,
+    ttlMs: number,
+  ): Promise<boolean> {
+    return (await this.client.set(key, owner, 'PX', ttlMs, 'NX')) === 'OK';
+  }
+  async releaseLease(key: string, owner: string): Promise<void> {
+    await this.eval(
+      "if redis.call('GET', KEYS[1]) == ARGV[1] then return redis.call('DEL', KEYS[1]) end; return 0",
+      [key],
+      [owner],
+    );
+  }
+  /** Valor e TTL da mesma fotografia Redis para importar partidas legadas. */
+  async getWithTtl(
+    key: string,
+  ): Promise<{ value: string; ttlMs: number } | null> {
+    const snapshot = (await this.eval(
+      "local value = redis.call('GET', KEYS[1]); if not value then return {} end; return {value, redis.call('PTTL', KEYS[1])}",
+      [key],
+      [],
+    )) as [string, number] | [];
+    return snapshot.length === 2
+      ? { value: snapshot[0], ttlMs: snapshot[1] }
+      : null;
+  }
   async mget(keys: string[]): Promise<(string | null)[]> {
     return keys.length ? this.client.mget(...keys) : [];
   }
