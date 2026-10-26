@@ -4,7 +4,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { DataSource, Repository } from 'typeorm';
+import { DataSource, EntityManager, Repository } from 'typeorm';
 import { Achievement } from './entities/achievement.entity';
 import { UsuarioAchievement } from './entities/usuario-achievement.entity';
 import { CosmeticItem, CosmeticType } from './entities/cosmetic-item.entity';
@@ -28,6 +28,7 @@ import { buildMetrics, metricValue } from './achievement-metrics';
 import { buildTrailNode, buildTrailSummary } from './achievement-trail.mapper';
 import { buildEquippedList, buildShopItems } from './cosmetic-shop.mapper';
 import { executeCosmeticPurchase } from './cosmetic-purchase';
+import { lockPrestigeWallet } from './prestige-ledger';
 
 // A interface publica deste arquivo nao muda: quem importava os tipos daqui
 // continua importando daqui.
@@ -40,31 +41,15 @@ export type {
 @Injectable()
 export class AchievementsService {
   constructor(
-    @Inject('ACHIEVEMENT_REPOSITORY')
-    private achievementRepository: Repository<Achievement>,
-    @Inject('USUARIO_ACHIEVEMENT_REPOSITORY')
-    private usuarioAchievementRepository: Repository<UsuarioAchievement>,
     @Inject('COSMETIC_ITEM_REPOSITORY')
     private cosmeticRepository: Repository<CosmeticItem>,
     @Inject('USUARIO_COSMETIC_REPOSITORY')
     private usuarioCosmeticRepository: Repository<UsuarioCosmetic>,
-    @Inject('PRESTIGE_WALLET_REPOSITORY')
-    private walletRepository: Repository<PrestigeWallet>,
-    @Inject('PRESTIGE_TRANSACTION_REPOSITORY')
-    private transactionRepository: Repository<PrestigeTransaction>,
-    @Inject('USUARIO_STATS_REPOSITORY')
-    private statsRepository: Repository<UsuarioStats>,
-    @Inject('USUARIO_CHALLENGE_REPOSITORY')
-    private usuarioChallengeRepository: Repository<UsuarioChallenge>,
-    @Inject('USUARIO_AULA_REPOSITORY')
-    private usuarioAulaRepository: Repository<UsuarioAula>,
-    @Inject('USUARIO_ARCADE_STATS_REPOSITORY')
-    private arcadeStatsRepository: Repository<UsuarioArcadeStats>,
     @Inject('DATA_SOURCE')
     private dataSource: DataSource,
   ) {}
 
-  @OnEvent('progress.changed')
+  @OnEvent('progress.changed', { suppressErrors: false })
   async synchronizeProgress(payload: { usuarioId: number }): Promise<void> {
     await this.getTrail(payload.usuarioId);
   }
@@ -74,54 +59,48 @@ export class AchievementsService {
     return source && !source.startsWith('s3://') ? source : null;
   }
 
-  private async getWallet(usuario_id: number): Promise<PrestigeWallet> {
-    let wallet = await this.walletRepository.findOne({ where: { usuario_id } });
-    if (!wallet) {
-      wallet = this.walletRepository.create({
-        usuario_id,
-        balance: 0,
-        total_earned: 0,
-      });
-      wallet = await this.walletRepository.save(wallet);
-    }
-    return wallet;
-  }
-
   private async addTransaction(
+    manager: EntityManager,
     wallet: PrestigeWallet,
     amount: number,
     type: PrestigeTransactionType,
     source_key: string,
     description: string,
   ): Promise<boolean> {
-    const existing = await this.transactionRepository.findOne({
+    const transactionRepository = manager.getRepository(PrestigeTransaction);
+    const existing = await transactionRepository.findOne({
       where: { usuario_id: wallet.usuario_id, source_key },
     });
     if (existing) return false;
-    const transaction = this.transactionRepository.create({
+    if (!Number.isSafeInteger(amount) || amount < 0)
+      throw new Error('Recompensa de Prestígio inválida');
+    const transaction = transactionRepository.create({
       usuario_id: wallet.usuario_id,
       amount,
       type,
       source_key,
       description,
     });
-    await this.transactionRepository.save(transaction);
+    await transactionRepository.save(transaction);
     wallet.balance += amount;
     if (amount > 0) wallet.total_earned += amount;
-    await this.walletRepository.save(wallet);
+    await manager.getRepository(PrestigeWallet).save(wallet);
     return true;
   }
 
-  private async getMetrics(usuario_id: number): Promise<AchievementMetrics> {
+  private async getMetrics(
+    usuario_id: number,
+    manager: EntityManager,
+  ): Promise<AchievementMetrics> {
     const [stats, challenges, lessons, arcade] = await Promise.all([
-      this.statsRepository.findOne({ where: { usuario_id } }),
-      this.usuarioChallengeRepository.count({
+      manager.getRepository(UsuarioStats).findOne({ where: { usuario_id } }),
+      manager.getRepository(UsuarioChallenge).count({
         where: { usuario_id, completed: true },
       }),
-      this.usuarioAulaRepository.count({
+      manager.getRepository(UsuarioAula).count({
         where: { usuario_id, completed: true },
       }),
-      this.arcadeStatsRepository.find({ where: { usuario_id } }),
+      manager.getRepository(UsuarioArcadeStats).find({ where: { usuario_id } }),
     ]);
     return buildMetrics({
       stats,
@@ -132,11 +111,13 @@ export class AchievementsService {
   }
 
   private async grantLevelPrestige(
+    manager: EntityManager,
     wallet: PrestigeWallet,
     level: number,
   ): Promise<void> {
     for (let currentLevel = 2; currentLevel <= level; currentLevel += 1) {
       await this.addTransaction(
+        manager,
         wallet,
         1,
         PrestigeTransactionType.LEVEL,
@@ -147,80 +128,83 @@ export class AchievementsService {
   }
 
   async getTrail(usuario_id: number): Promise<AchievementTrailResponse> {
-    const [definitions, metrics, wallet] = await Promise.all([
-      this.achievementRepository.find({
-        where: { active: true },
-        order: { order_index: 'ASC', tier: 'ASC' },
-      }),
-      this.getMetrics(usuario_id),
-      this.getWallet(usuario_id),
-    ]);
-    await this.grantLevelPrestige(wallet, metrics.level);
-    const records = await this.usuarioAchievementRepository.find({
-      where: { usuario_id },
-    });
-    const recordsByAchievement = new Map(
-      records.map((record) => [record.achievement_id, record]),
-    );
-    const unlockedSlugs = new Set<string>();
-    const nodes: AchievementTrailNode[] = [];
-    for (const definition of definitions) {
-      let record = recordsByAchievement.get(definition.id);
-      const prerequisiteMet =
-        !definition.prerequisite_slug ||
-        unlockedSlugs.has(definition.prerequisite_slug);
-      const metric = metricValue(metrics, definition.requirement_type);
-      const progress = Math.min(metric, definition.requirement_value);
-      const shouldUnlock =
-        prerequisiteMet && metric >= definition.requirement_value;
-      const newlyUnlocked = shouldUnlock && !record?.unlocked;
-      if (!record) {
-        record = this.usuarioAchievementRepository.create({
-          usuario_id,
-          achievement_id: definition.id,
-          progress,
-          unlocked: shouldUnlock,
-          unlocked_at: shouldUnlock ? new Date() : null,
-        });
-      } else {
-        record.progress = progress;
-        if (shouldUnlock && !record.unlocked) {
-          record.unlocked = true;
-          record.unlocked_at = new Date();
+    return this.dataSource.transaction(async (manager) => {
+      const wallet = await lockPrestigeWallet(manager, usuario_id);
+      const userAchievements = manager.getRepository(UsuarioAchievement);
+      const [definitions, metrics] = await Promise.all([
+        manager.getRepository(Achievement).find({
+          where: { active: true },
+          order: { order_index: 'ASC', tier: 'ASC' },
+        }),
+        this.getMetrics(usuario_id, manager),
+      ]);
+      await this.grantLevelPrestige(manager, wallet, metrics.level);
+      const records = await userAchievements.find({
+        where: { usuario_id },
+      });
+      const recordsByAchievement = new Map(
+        records.map((record) => [record.achievement_id, record]),
+      );
+      const unlockedSlugs = new Set<string>();
+      const nodes: AchievementTrailNode[] = [];
+      for (const definition of definitions) {
+        let record = recordsByAchievement.get(definition.id);
+        const prerequisiteMet =
+          !definition.prerequisite_slug ||
+          unlockedSlugs.has(definition.prerequisite_slug);
+        const metric = metricValue(metrics, definition.requirement_type);
+        const progress = Math.min(metric, definition.requirement_value);
+        const shouldUnlock =
+          prerequisiteMet && metric >= definition.requirement_value;
+        if (!record) {
+          record = userAchievements.create({
+            usuario_id,
+            achievement_id: definition.id,
+            progress,
+            unlocked: shouldUnlock,
+            unlocked_at: shouldUnlock ? new Date() : null,
+          });
+        } else {
+          record.progress = progress;
+          if (shouldUnlock && !record.unlocked) {
+            record.unlocked = true;
+            record.unlocked_at = new Date();
+          }
         }
-      }
-      await this.usuarioAchievementRepository.save(record);
-      if (record.unlocked) unlockedSlugs.add(definition.slug);
-      if (newlyUnlocked) {
-        await this.addTransaction(
-          wallet,
-          definition.reward_prestige,
-          PrestigeTransactionType.ACHIEVEMENT,
-          `achievement:${definition.slug}`,
-          `Conquista desbloqueada: ${definition.name}`,
+        await userAchievements.save(record);
+        if (record.unlocked) unlockedSlugs.add(definition.slug);
+        // Um unlock legado sem lançamento também pode completar sua recompensa.
+        if (record.unlocked) {
+          await this.addTransaction(
+            manager,
+            wallet,
+            definition.reward_prestige,
+            PrestigeTransactionType.ACHIEVEMENT,
+            `achievement:${definition.slug}`,
+            `Conquista desbloqueada: ${definition.name}`,
+          );
+        }
+        const concealed = definition.secret && !record.unlocked;
+        nodes.push(
+          buildTrailNode({
+            definition,
+            record,
+            prerequisiteMet,
+            concealed,
+            artworkUrl: concealed ? null : this.resolveArtwork(definition),
+          }),
         );
       }
-      const concealed = definition.secret && !record.unlocked;
-      nodes.push(
-        buildTrailNode({
-          definition,
-          record,
-          prerequisiteMet,
-          concealed,
-          artworkUrl: concealed ? null : this.resolveArtwork(definition),
+      return {
+        summary: buildTrailSummary({
+          nodes,
+          wallet,
+          level: metrics.level,
         }),
-      );
-    }
-    const refreshedWallet = await this.getWallet(usuario_id);
-    return {
-      summary: buildTrailSummary({
+        metrics,
         nodes,
-        wallet: refreshedWallet,
-        level: metrics.level,
-      }),
-      metrics,
-      nodes,
-    };
+      };
+    });
   }
 
   async getRecent(usuario_id: number, limit = 3) {

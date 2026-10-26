@@ -3,6 +3,7 @@ import { EntityManager } from 'typeorm';
 import { CosmeticItem } from './entities/cosmetic-item.entity';
 import { UsuarioCosmetic } from './entities/usuario-cosmetic.entity';
 import { PrestigeWallet } from './entities/prestige-wallet.entity';
+import { lockPrestigeWallet } from './prestige-ledger';
 import {
   PrestigeTransaction,
   PrestigeTransactionType,
@@ -18,6 +19,7 @@ export async function executeCosmeticPurchase(
   params: { usuario_id: number; item: CosmeticItem },
 ): Promise<void> {
   const { usuario_id, item } = params;
+  const wallet = await lockPrestigeWallet(manager, usuario_id);
   const walletRepository = manager.getRepository(PrestigeWallet);
   const userCosmeticRepository = manager.getRepository(UsuarioCosmetic);
   const transactionRepository = manager.getRepository(PrestigeTransaction);
@@ -25,10 +27,6 @@ export async function executeCosmeticPurchase(
     where: { usuario_id, cosmetic_item_id: item.id },
   });
   if (existing) throw new BadRequestException('Este item já foi adquirido');
-  const wallet = await walletRepository.findOne({
-    where: { usuario_id },
-    lock: { mode: 'pessimistic_write' },
-  });
   if (!wallet || wallet.balance < item.price) {
     throw new BadRequestException('Chaves Digitais insuficientes');
   }

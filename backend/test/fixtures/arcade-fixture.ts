@@ -39,6 +39,12 @@ import { ArcadeRunStore } from '../../src/arcade/arcade-run.store';
 import { ArcadeService } from '../../src/arcade/arcade.service';
 import { ActivityCompletion1793232000000 } from '../../src/database/migrations/1793232000000-activity-completion';
 import { ArcadeRunCompletion1793318400000 } from '../../src/database/migrations/1793318400000-arcade-run-completion';
+import { Achievement } from '../../src/achievements/entities/achievement.entity';
+import { UsuarioAchievement } from '../../src/achievements/entities/usuario-achievement.entity';
+import { PrestigeWallet } from '../../src/achievements/entities/prestige-wallet.entity';
+import { PrestigeTransaction } from '../../src/achievements/entities/prestige-transaction.entity';
+import { CosmeticItem } from '../../src/achievements/entities/cosmetic-item.entity';
+import { UsuarioCosmetic } from '../../src/achievements/entities/usuario-cosmetic.entity';
 
 /** emitAsync aguarda Promises, embora on use ListenerFn:void nos tipos. */
 export function listenProgress(
@@ -100,6 +106,12 @@ export async function arcadeFixture() {
       UsuarioArcadeStats,
       DataItem,
       PhishingSample,
+      Achievement,
+      UsuarioAchievement,
+      PrestigeWallet,
+      PrestigeTransaction,
+      CosmeticItem,
+      UsuarioCosmetic,
     ],
     timezone: '-03:00',
     synchronize: true,
