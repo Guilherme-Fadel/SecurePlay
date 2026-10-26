@@ -9,6 +9,7 @@ import { JwtStrategy } from './jwt.strategy';
 import { ConfigService } from '@nestjs/config';
 import { RedisModule } from 'src/redis/redis.module';
 import { RegistrationModule } from '../registration/registration.module';
+import { SocketSessionService } from './socket-session.service';
 
 @Module({
   imports: [
@@ -34,8 +35,8 @@ import { RegistrationModule } from '../registration/registration.module';
       },
     }),
   ],
-  providers: [AuthService, JwtStrategy, JwtAuthGuard],
+  providers: [AuthService, JwtStrategy, JwtAuthGuard, SocketSessionService],
   controllers: [AuthController],
-  exports: [AuthService, JwtAuthGuard, JwtModule],
+  exports: [AuthService, JwtAuthGuard, JwtModule, SocketSessionService],
 })
 export class AuthModule {}

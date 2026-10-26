@@ -10,7 +10,7 @@ import { RegistrationService } from '../registration/registration.service';
 import { Role } from './roles.enum';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { ChangePasswordDto } from './dto/change-password.dto';
-import { sessionPayload } from './session';
+import { sessionPayload, sessionTokenHash } from './session';
 
 @Injectable()
 export class AuthService {
@@ -112,12 +112,23 @@ export class AuthService {
       return { message: 'Logout realizado com sucesso' };
     }
 
-    const decoded = this.jwtService.decode(token);
+    const decoded = await this.jwtService.verifyAsync<{ exp: number }>(token);
+    if (!Number.isSafeInteger(decoded.exp))
+      throw new UnauthorizedException('Sessão inválida');
     const ttl = calcTokenTtl(decoded.exp);
 
     if (ttl > 0) {
-      await this.redisService.set(`blacklist:${token}`, '1', ttl);
+      // Hash canônico primeiro; chave raw apenas para compatibilidade HTTP antiga.
+      await this.redisService.eval(
+        "redis.call('SET', KEYS[1], '1', 'EX', ARGV[1]); redis.call('SET', KEYS[2], '1', 'EX', ARGV[1]); return 1",
+        [`session-revoked:${sessionTokenHash(token)}`, `blacklist:${token}`],
+        [ttl],
+      );
     }
+
+    this.events.emit('auth.session.revoked', {
+      tokenHash: sessionTokenHash(token),
+    });
 
     return { message: 'Logout realizado com sucesso' };
   }

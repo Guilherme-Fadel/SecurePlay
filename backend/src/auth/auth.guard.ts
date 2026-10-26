@@ -7,7 +7,8 @@ import { Reflector } from '@nestjs/core';
 import { AuthGuard } from '@nestjs/passport';
 import { RedisService } from '../redis/redis.service';
 import { IS_PUBLIC_KEY } from './public.decorator';
-import { extractTokenFromHeader } from '../common/utils/token.utils';
+import { extractRequestToken } from '../common/utils/token.utils';
+import { sessionTokenHash } from './session';
 
 @Injectable()
 export class JwtAuthGuard extends AuthGuard('jwt') {
@@ -26,7 +27,10 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
 
     if (isPublic) return true;
 
-    const request = context.switchToHttp().getRequest();
+    const request = context.switchToHttp().getRequest<{
+      cookies?: { token?: string };
+      headers: { authorization?: string };
+    }>();
 
     const cookieToken = request.cookies?.token;
     if (cookieToken && !request.headers['authorization']) {
@@ -35,14 +39,18 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
 
     await (super.canActivate(context) as Promise<boolean>);
 
-    const token =
-      cookieToken || extractTokenFromHeader(request.headers['authorization']);
+    const token = extractRequestToken(request);
 
     if (!token) {
       throw new UnauthorizedException('Token não encontrado');
     }
 
-    const isBlacklisted = await this.redisService.get(`blacklist:${token}`);
+    const isBlacklisted = (
+      await this.redisService.mget([
+        `session-revoked:${sessionTokenHash(token)}`,
+        `blacklist:${token}`,
+      ])
+    ).some(Boolean);
 
     if (isBlacklisted) {
       throw new UnauthorizedException('Token inválido');

@@ -16,6 +16,7 @@ import { Public } from './public.decorator';
 import { Throttle } from '@nestjs/throttler';
 import { ChangePasswordDto } from './dto/change-password.dto';
 import { AllowExpiredTrial } from '../registration/trial-access.guard';
+import { extractRequestToken } from '../common/utils/token.utils';
 import type { AuthenticatedRequest } from './session';
 import type { FastifyReply } from 'fastify';
 
@@ -60,8 +61,8 @@ export class AuthController {
     @Request() req: AuthenticatedRequest,
     @Response({ passthrough: true }) res: FastifyReply,
   ) {
-    const token = req.cookies?.token;
-    const result = await this.authService.signOut(token);
+    const token = extractRequestToken(req);
+    const result = await this.authService.signOut(token ?? undefined);
 
     res.clearCookie('token', this.authService.cookieClearOptions);
 
