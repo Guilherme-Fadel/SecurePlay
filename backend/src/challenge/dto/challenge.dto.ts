@@ -1,5 +1,12 @@
 import { Type } from 'class-transformer';
-import { IsArray, IsNumber, ValidateNested } from 'class-validator';
+import {
+  ArrayNotEmpty,
+  ArrayUnique,
+  IsArray,
+  IsInt,
+  Min,
+  ValidateNested,
+} from 'class-validator';
 
 export interface QuestionResponseDto {
   id: number;
@@ -21,24 +28,30 @@ export interface ChallengeQuestionsResponseDto {
 }
 
 export class AnswerDto {
-  @IsNumber()
+  @IsInt()
+  @Min(1)
   questionId: number;
 
-  @IsNumber()
+  @IsInt()
+  @Min(0)
   selectedIndex: number;
 }
 
 export class SubmitChallengeDto {
   @IsArray()
+  @ArrayNotEmpty()
+  @ArrayUnique((answer: AnswerDto | null) => answer?.questionId)
   @ValidateNested({ each: true })
   @Type(() => AnswerDto)
   answers: AnswerDto[];
 }
 
 export class SaveProgressDto {
-  @IsNumber()
+  @IsInt()
+  @Min(1)
   questionId: number;
 
-  @IsNumber()
+  @IsInt()
+  @Min(0)
   selectedIndex: number;
 }

@@ -4,7 +4,7 @@ import {
   NotFoundException,
   ForbiddenException,
 } from '@nestjs/common';
-import { Repository } from 'typeorm';
+import { EntityManager, Repository } from 'typeorm';
 import { Modulo } from './modulo.entity';
 import { Aula } from '../aula/aula.entity';
 import { UsuarioAula } from '../usuario-aula/usuario-aula.entity';
@@ -31,17 +31,22 @@ export class ModuloService {
     return normalized;
   }
 
-  async findAll(usuario_id: number) {
+  async findAll(usuario_id: number, manager?: EntityManager) {
+    const moduloRepository =
+      manager?.getRepository(Modulo) ?? this.moduloRepository;
+    const aulaRepository = manager?.getRepository(Aula) ?? this.aulaRepository;
+    const usuarioAulaRepository =
+      manager?.getRepository(UsuarioAula) ?? this.usuarioAulaRepository;
     const [modulos, aulas, progressRows] = await Promise.all([
-      this.moduloRepository.find({
+      moduloRepository.find({
         where: { active: true },
         order: { order: 'ASC', id: 'ASC' },
       }),
-      this.aulaRepository.find({
+      aulaRepository.find({
         where: { active: true },
         order: { modulo_id: 'ASC', order: 'ASC', id: 'ASC' },
       }),
-      this.usuarioAulaRepository
+      usuarioAulaRepository
         .createQueryBuilder('ua')
         .innerJoinAndSelect('ua.aula', 'aula', 'aula.active = :active', {
           active: true,
@@ -123,8 +128,9 @@ export class ModuloService {
   async assertModuloDesbloqueado(
     modulo_id: number,
     usuario_id: number,
+    manager?: EntityManager,
   ): Promise<void> {
-    const modulos = await this.findAll(usuario_id);
+    const modulos = await this.findAll(usuario_id, manager);
     const alvo = modulos.find((modulo) => modulo.id === modulo_id);
     if (!alvo) {
       throw new NotFoundException('Módulo não encontrado');

@@ -7,9 +7,10 @@ import { questionProviders } from '../question/question.providers';
 import { usuarioChallengeProviders } from '../usuario-challenge/usuario-challenge.providers';
 import { usuarioStatsProviders } from '../usuario-stats/usuario-stats.providers';
 import { RedisModule } from '../redis/redis.module';
+import { GamificationModule } from '../common/gamification/gamification.module';
 
 @Module({
-  imports: [DatabaseModule, RedisModule],
+  imports: [DatabaseModule, RedisModule, GamificationModule],
   controllers: [ChallengeController],
   providers: [
     ...challengeProviders,

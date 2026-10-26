@@ -13,6 +13,8 @@ import { Challenge } from '../challenge/challenge.entity';
 @Entity()
 @Index('ix_usuario_challenge_usuario_completed', ['usuario_id', 'completed'])
 @Index('ix_usuario_challenge_usuario_challenge', ['usuario_id', 'challenge_id'])
+// Criado somente pela migração com preflight, preservado pelo synchronize.
+@Index('ux_usuario_challenge_source', { synchronize: false })
 export class UsuarioChallenge {
   @PrimaryGeneratedColumn()
   id: number;

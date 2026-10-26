@@ -16,9 +16,16 @@ import { AulaQuizController } from './aula-quiz/aula-quiz.controller';
 import { S3Service } from './s3/s3.service';
 import { UploadController } from './s3/upload.controller';
 import { UiAssetsController } from './s3/ui-assets.controller';
+import { GamificationModule } from '../common/gamification/gamification.module';
 
 @Module({
-  imports: [DatabaseModule, RedisModule, AuthModule, NotificationModule],
+  imports: [
+    DatabaseModule,
+    RedisModule,
+    AuthModule,
+    NotificationModule,
+    GamificationModule,
+  ],
   controllers: [
     ModuloController,
     AulaController,

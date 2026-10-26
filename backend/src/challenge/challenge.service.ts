@@ -8,12 +8,11 @@ import { Repository } from 'typeorm';
 import { Challenge } from './challenge.entity';
 import { Question } from '../question/question.entity';
 import { UsuarioChallenge } from '../usuario-challenge/usuario-challenge.entity';
-import { UsuarioStats } from '../usuario-stats/usuario-stats.entity';
 import { RedisService } from '../redis/redis.service';
 import { getLocalDateKey, ttlUntilEndOfDay } from '../common/utils/date.utils';
 import { SubmitChallengeDto } from './dto/challenge.dto';
-import { EventEmitter2 } from '@nestjs/event-emitter';
-import { creditSeasonXp } from '../common/gamification/credit-season-xp';
+import { ActivityCompletionService } from '../common/gamification/activity-completion.service';
+import { ChallengeResult, gradeChallenge } from './challenge-result';
 
 @Injectable()
 export class ChallengeService {
@@ -27,11 +26,8 @@ export class ChallengeService {
     @Inject('USUARIO_CHALLENGE_REPOSITORY')
     private usuarioChallengeRepository: Repository<UsuarioChallenge>,
 
-    @Inject('USUARIO_STATS_REPOSITORY')
-    private statsRepository: Repository<UsuarioStats>,
-
     private redisService: RedisService,
-    private eventEmitter: EventEmitter2,
+    private readonly completions: ActivityCompletionService,
   ) {}
 
   private localImageReference(source: string | null | undefined) {
@@ -51,9 +47,14 @@ export class ChallengeService {
       };
     }
 
-    const completedIds = await this.usuarioChallengeRepository
-      .find({ where: { usuario_id }, select: ['challenge_id'] })
-      .then((rows) => rows.map((r) => r.challenge_id));
+    const records = await this.usuarioChallengeRepository.find({
+      where: { usuario_id },
+      select: ['challenge_id', 'completed', 'started_at'],
+      order: { started_at: 'DESC' },
+    });
+    const completedIds = records
+      .filter((record) => record.completed)
+      .map((record) => record.challenge_id);
 
     const activeChallenges = await this.challengeRepository.find({
       where: { active: true },
@@ -73,7 +74,15 @@ export class ChallengeService {
     for (let index = 0; index < seed.length; index += 1) {
       hash = (hash * 31 + seed.charCodeAt(index)) >>> 0;
     }
-    const selectedId = availableIds[hash % availableIds.length];
+    const partial = records.find(
+      (record) =>
+        !record.completed &&
+        record.started_at &&
+        getLocalDateKey(new Date(record.started_at)) === getLocalDateKey() &&
+        availableIds.includes(record.challenge_id),
+    );
+    const selectedId =
+      partial?.challenge_id ?? availableIds[hash % availableIds.length];
     const challenge = await this.challengeRepository.findOne({
       where: { id: selectedId, active: true },
     });
@@ -157,67 +166,70 @@ export class ChallengeService {
       throw new NotFoundException('Questão não encontrada para este desafio');
     }
 
-    let record = await this.usuarioChallengeRepository.findOne({
-      where: { usuario_id, challenge_id: challengeId },
-    });
-
-    if (record?.completed) {
-      throw new BadRequestException('Desafio já concluído');
-    }
-
-    if (!record) {
-      record = this.usuarioChallengeRepository.create({
-        usuario_id,
-        challenge_id: challengeId,
-        progress: 0,
-        completed: false,
-        answered_question_ids: [],
+    return this.completions.updateProgress(usuario_id, async (manager) => {
+      const repository = manager.getRepository(UsuarioChallenge);
+      let record = await repository.findOne({
+        where: { usuario_id, challenge_id: challengeId },
       });
-    }
 
-    const answered = new Set(record.answered_question_ids ?? []);
-
-    const isCorrect = selectedIndex === question.correct_index;
-    if (isCorrect) {
-      answered.add(questionId);
-    }
-
-    record.answered_question_ids = Array.from(answered);
-
-    const totalQuestions = await this.questionRepository.count({
-      where: { challenge_id: challengeId },
-    });
-    record.progress =
-      totalQuestions > 0
-        ? Math.round(
-            (record.answered_question_ids.length / totalQuestions) * 100,
-          )
-        : 0;
-
-    if (record.id) {
-      // Atualiza apenas o progresso parcial enquanto a tentativa estiver aberta.
-      // Um PATCH atrasado não pode reverter a conclusão gravada pelo submit.
-      const result = await this.usuarioChallengeRepository.update(
-        { id: record.id, completed: false },
-        {
-          answered_question_ids: record.answered_question_ids,
-          progress: record.progress,
-        },
-      );
-      if (!result.affected) {
+      if (record?.completed) {
         throw new BadRequestException('Desafio já concluído');
       }
-    } else {
-      await this.usuarioChallengeRepository.save(record);
-    }
 
-    return {
-      correct: isCorrect,
-      answeredCount: record.answered_question_ids.length,
-      totalQuestions,
-      progress: record.progress,
-      completed: false,
-    };
+      if (!record) {
+        record = repository.create({
+          usuario_id,
+          challenge_id: challengeId,
+          progress: 0,
+          completed: false,
+          answered_question_ids: [],
+        });
+      }
+
+      const answered = new Set(record.answered_question_ids ?? []);
+
+      const isCorrect = selectedIndex === question.correct_index;
+      if (isCorrect) {
+        answered.add(questionId);
+      }
+
+      record.answered_question_ids = Array.from(answered);
+
+      const totalQuestions = await manager.getRepository(Question).count({
+        where: { challenge_id: challengeId },
+      });
+      record.progress =
+        totalQuestions > 0
+          ? Math.round(
+              (record.answered_question_ids.length / totalQuestions) * 100,
+            )
+          : 0;
+
+      if (record.id) {
+        // Atualiza apenas o progresso parcial enquanto a tentativa estiver aberta.
+        // Um PATCH atrasado não pode reverter a conclusão gravada pelo submit.
+        const result = await repository.update(
+          { id: record.id, completed: false },
+          {
+            answered_question_ids: record.answered_question_ids,
+            progress: record.progress,
+          },
+        );
+        if (!result.affected) {
+          throw new BadRequestException('Desafio já concluído');
+        }
+      } else {
+        await repository.save(record);
+      }
+
+      return {
+        correct: isCorrect,
+        answeredCount: record.answered_question_ids.length,
+        totalQuestions,
+        progress: record.progress,
+        completed: false,
+      };
+    });
   }
 
   async getQuestions(challengeId: number, usuario_id: number) {
@@ -260,6 +272,12 @@ export class ChallengeService {
     usuario_id: number,
     dto: SubmitChallengeDto,
   ) {
+    const replay = await this.completions.replay<ChallengeResult>(
+      usuario_id,
+      'challenge',
+      challengeId,
+    );
+    if (replay) return replay;
     await this.ensureDailyChallenge(challengeId, usuario_id);
 
     const challenge = await this.challengeRepository.findOne({
@@ -270,91 +288,39 @@ export class ChallengeService {
       throw new NotFoundException('Desafio não encontrado');
     }
 
-    const existing = await this.usuarioChallengeRepository.findOne({
-      where: { usuario_id, challenge_id: challengeId },
-    });
-
-    if (existing?.completed) {
-      throw new BadRequestException('Você já realizou este desafio');
-    }
-
     const questions = await this.questionRepository.find({
       where: { challenge_id: challengeId },
     });
 
-    if (questions.length === 0) {
-      throw new NotFoundException(
-        'Nenhuma pergunta encontrada para este desafio',
-      );
-    }
-
-    const questionMap = new Map(questions.map((q) => [q.id, q]));
-
-    let correctCount = 0;
-    const corrections = dto.answers.map((answer) => {
-      const question = questionMap.get(answer.questionId);
-
-      if (!question) {
-        return {
-          questionId: answer.questionId,
-          correct: false,
-          correctIndex: -1,
-          explanation: null,
-        };
-      }
-
-      const isCorrect = answer.selectedIndex === question.correct_index;
-      if (isCorrect) correctCount++;
-
-      return {
-        questionId: question.id,
-        correct: isCorrect,
-        correctIndex: question.correct_index,
-        explanation: question.explanation,
-      };
-    });
-
-    const totalQuestions = questions.length;
-    const score = Math.round((correctCount / totalQuestions) * 100);
-    const pointsEarned = Math.round(challenge.points * (score / 100));
-
-    const usuarioChallenge =
-      existing ??
-      this.usuarioChallengeRepository.create({
-        usuario_id,
-        challenge_id: challengeId,
-        answered_question_ids: [],
-      });
-    usuarioChallenge.progress = score;
-    usuarioChallenge.completed = true;
-    usuarioChallenge.completed_at = new Date();
-
-    await this.usuarioChallengeRepository.save(usuarioChallenge);
-    await this.redisService.recordRankingChallenge(usuario_id);
-
-    if (pointsEarned > 0) {
-      const before = await creditSeasonXp(this.statsRepository, usuario_id, pointsEarned);
-      await this.redisService.recordRankingXp(usuario_id, before, pointsEarned);
-
-      const xpKey = `xp-today:${usuario_id}`;
-      const currentXp = await this.redisService.get(xpKey);
-      const newXp = (currentXp ? parseInt(currentXp, 10) : 0) + pointsEarned;
-      const ttl = ttlUntilEndOfDay();
-      await this.redisService.set(xpKey, String(newXp), ttl);
-    }
-
-    await this.eventEmitter.emitAsync('progress.changed', {
-      usuarioId: usuario_id,
-    });
-
-    return {
-      score,
-      correctCount,
-      totalQuestions,
-      pointsEarned,
-      completed: true,
-      corrections,
-    };
+    const result = gradeChallenge(challenge.points, questions, dto.answers);
+    return this.completions.complete(
+      usuario_id,
+      'challenge',
+      challengeId,
+      async (manager) => {
+        const repository = manager.getRepository(UsuarioChallenge);
+        const existing = await repository.findOne({
+          where: { usuario_id, challenge_id: challengeId },
+        });
+        // Legado sem resultado: não inventar correções nem conceder XP retroativo.
+        if (existing?.completed)
+          throw new BadRequestException('Você já realizou este desafio');
+        await repository.save(
+          repository.create({
+            ...existing,
+            usuario_id,
+            challenge_id: challengeId,
+            progress: result.score,
+            completed: true,
+            completed_at: new Date(),
+            answered_question_ids: dto.answers.map(
+              (answer) => answer.questionId,
+            ),
+          }),
+        );
+        return { result, xp: result.pointsEarned };
+      },
+    );
   }
 
   private async ensureDailyChallenge(

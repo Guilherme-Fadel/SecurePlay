@@ -1,31 +1,53 @@
 import { BadRequestException } from '@nestjs/common';
 import { ChallengeService } from './challenge.service';
+import { UsuarioChallenge } from '../usuario-challenge/usuario-challenge.entity';
+import { EntityManager, EntityTarget } from 'typeorm';
 
 describe('ChallengeService daily authorization', () => {
-  const buildService = () =>
-    new ChallengeService(
+  const buildService = () => {
+    const questions = { findOne: jest.fn(), find: jest.fn(), count: jest.fn() };
+    const progress = {
+      findOne: jest.fn(),
+      find: jest.fn(),
+      create: jest.fn(),
+      save: jest.fn(),
+      update: jest.fn(),
+      count: jest.fn(),
+    };
+    const challengeRepository = {
+      findOne: jest.fn(),
+      createQueryBuilder: jest.fn(),
+      count: jest.fn(),
+    };
+    const redisService = { get: jest.fn(), set: jest.fn() };
+    const service = new ChallengeService(
+      challengeRepository as never,
+      questions as never,
+      progress as never,
+      redisService as never,
       {
-        findOne: jest.fn(),
-        createQueryBuilder: jest.fn(),
-        count: jest.fn(),
+        replay: jest.fn().mockResolvedValue(null),
+        updateProgress: jest.fn(
+          (_id: number, action: (manager: EntityManager) => Promise<unknown>) =>
+            action({
+              getRepository: (entity: EntityTarget<unknown>) =>
+                entity === UsuarioChallenge ? progress : questions,
+            } as unknown as EntityManager),
+        ),
       } as never,
-      { findOne: jest.fn(), find: jest.fn(), count: jest.fn() } as never,
-      {
-        findOne: jest.fn(),
-        find: jest.fn(),
-        create: jest.fn(),
-        save: jest.fn(),
-        update: jest.fn(),
-        count: jest.fn(),
-      } as never,
-      { findOne: jest.fn(), create: jest.fn(), save: jest.fn() } as never,
-      { get: jest.fn(), set: jest.fn() } as never,
-      { emitAsync: jest.fn() } as never,
     );
+    return {
+      service,
+      redisService,
+      challengeRepository,
+      questionRepository: questions,
+      usuarioChallengeRepository: progress,
+    };
+  };
 
   it('does not expose an S3 reference after retrieving a cached daily challenge', async () => {
-    const service = buildService();
-    const internals = service as any;
+    const internals = buildService();
+    const { service } = internals;
     internals.redisService.get.mockResolvedValue(
       JSON.stringify({ id: 5, image: '/old.svg' }),
     );
@@ -38,7 +60,7 @@ describe('ChallengeService daily authorization', () => {
   });
 
   it('recusa questions, progress e submit para um desafio diferente do diário', async () => {
-    const service = buildService();
+    const { service } = buildService();
     jest
       .spyOn(service, 'getDailyChallenge')
       .mockResolvedValue({ id: 5 } as never);
@@ -55,10 +77,15 @@ describe('ChallengeService daily authorization', () => {
   });
 
   it('não reabre uma missão concluída por um PATCH parcial atrasado', async () => {
-    const service = buildService();
-    const internals = service as any;
-    jest.spyOn(service, 'getDailyChallenge').mockResolvedValue({ id: 5 } as never);
-    internals.questionRepository.findOne.mockResolvedValue({ id: 101, correct_index: 0 });
+    const internals = buildService();
+    const { service } = internals;
+    jest
+      .spyOn(service, 'getDailyChallenge')
+      .mockResolvedValue({ id: 5 } as never);
+    internals.questionRepository.findOne.mockResolvedValue({
+      id: 101,
+      correct_index: 0,
+    });
     internals.questionRepository.count.mockResolvedValue(1);
     // O PATCH leu o registro antes de outra requisição concluir a missão.
     internals.usuarioChallengeRepository.findOne.mockResolvedValue({
@@ -68,7 +95,9 @@ describe('ChallengeService daily authorization', () => {
       completed: false,
       answered_question_ids: [],
     });
-    internals.usuarioChallengeRepository.update.mockResolvedValue({ affected: 0 });
+    internals.usuarioChallengeRepository.update.mockResolvedValue({
+      affected: 0,
+    });
 
     await expect(service.saveProgress(5, 11, 101, 0)).rejects.toThrow(
       'Desafio já concluído',
@@ -81,17 +110,24 @@ describe('ChallengeService daily authorization', () => {
   });
 
   it('mantém o progresso parcial quando a missão ainda está aberta', async () => {
-    const service = buildService();
-    const internals = service as any;
-    jest.spyOn(service, 'getDailyChallenge').mockResolvedValue({ id: 5 } as never);
-    internals.questionRepository.findOne.mockResolvedValue({ id: 101, correct_index: 0 });
+    const internals = buildService();
+    const { service } = internals;
+    jest
+      .spyOn(service, 'getDailyChallenge')
+      .mockResolvedValue({ id: 5 } as never);
+    internals.questionRepository.findOne.mockResolvedValue({
+      id: 101,
+      correct_index: 0,
+    });
     internals.questionRepository.count.mockResolvedValue(2);
     internals.usuarioChallengeRepository.findOne.mockResolvedValue({
       id: 77,
       completed: false,
       answered_question_ids: [],
     });
-    internals.usuarioChallengeRepository.update.mockResolvedValue({ affected: 1 });
+    internals.usuarioChallengeRepository.update.mockResolvedValue({
+      affected: 1,
+    });
 
     await expect(service.saveProgress(5, 11, 101, 0)).resolves.toMatchObject({
       correct: true,

@@ -1,5 +1,7 @@
 import { AulaService } from './aula.service';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
+import { EntityManager } from 'typeorm';
+import { UsuarioAula } from '../usuario-aula/usuario-aula.entity';
 
 describe('AulaService (progresso parcial)', () => {
   let service: AulaService;
@@ -22,10 +24,13 @@ describe('AulaService (progresso parcial)', () => {
     usuarioAulaRepository = {
       findOne: jest.fn(),
       find: jest.fn().mockResolvedValue([]),
-      create: jest.fn((value) => value),
-      save: jest.fn(async (value) => value),
+      create: jest.fn((value: Partial<UsuarioAula>) => value),
+      save: jest.fn((value: Partial<UsuarioAula>) => Promise.resolve(value)),
     };
-    aulaQuizRepository = { find: jest.fn().mockResolvedValue([]), count: jest.fn().mockResolvedValue(0) };
+    aulaQuizRepository = {
+      find: jest.fn().mockResolvedValue([]),
+      count: jest.fn().mockResolvedValue(0),
+    };
     s3Service = { generatePresignedGetUrl: jest.fn() };
     // por padrao o modulo esta liberado; os testes de aula validam o bloqueio sequencial de aula
     moduloService = {
@@ -37,12 +42,17 @@ describe('AulaService (progresso parcial)', () => {
       aulaQuizRepository as never,
       usuarioAulaRepository as never,
       {} as never,
-      {} as never,
-      {} as never,
       s3Service as never,
-      {} as never,
-      {} as never,
       moduloService as never,
+      {
+        replay: jest.fn().mockResolvedValue(null),
+        updateProgress: jest.fn(
+          (_id: number, action: (manager: EntityManager) => Promise<unknown>) =>
+            action({
+              getRepository: () => usuarioAulaRepository,
+            } as unknown as EntityManager),
+        ),
+      } as never,
     );
   });
 
@@ -177,19 +187,41 @@ describe('AulaService (progresso parcial)', () => {
       content_url: null,
       active: true,
     });
-    aulaRepository.find.mockResolvedValue([{ id: 77, modulo_id: 50, order: 1 }]);
+    aulaRepository.find.mockResolvedValue([
+      { id: 77, modulo_id: 50, order: 1 },
+    ]);
     usuarioAulaRepository.findOne.mockResolvedValue(null);
-    aulaQuizRepository.find.mockResolvedValue([{ id: 9, text: 'O que fazer?', options: ['Verificar', 'Ignorar'], correct_index: 0, order: 1 }]);
+    aulaQuizRepository.find.mockResolvedValue([
+      {
+        id: 9,
+        text: 'O que fazer?',
+        options: ['Verificar', 'Ignorar'],
+        correct_index: 0,
+        order: 1,
+      },
+    ]);
 
     const result = await service.findOne(77, 3);
 
     expect(result.pages).toEqual(['Objetivo da aula\n\nProteja suas contas.']);
-    expect(result.quiz).toEqual([{ id: 9, text: 'O que fazer?', options: ['Verificar', 'Ignorar'], order: 1 }]);
+    expect(result.quiz).toEqual([
+      {
+        id: 9,
+        text: 'O que fazer?',
+        options: ['Verificar', 'Ignorar'],
+        order: 1,
+      },
+    ]);
     expect(s3Service.generatePresignedGetUrl).not.toHaveBeenCalled();
   });
 
   it('impede concluir diretamente uma aula textual que possui quiz', async () => {
-    aulaRepository.findOne.mockResolvedValueOnce({ id: 77, modulo_id: 50, type: 'texto', active: true });
+    aulaRepository.findOne.mockResolvedValueOnce({
+      id: 77,
+      modulo_id: 50,
+      type: 'texto',
+      active: true,
+    });
     aulaQuizRepository.count.mockResolvedValue(3);
 
     await expect(service.concluir(77, 3)).rejects.toThrow(/responda ao quiz/i);
@@ -197,20 +229,30 @@ describe('AulaService (progresso parcial)', () => {
   });
 
   it('rejeita respostas duplicadas antes de pontuar ou creditar XP', async () => {
-    aulaRepository.findOne.mockResolvedValueOnce({ id: 77, modulo_id: 50, order: 1, type: 'texto', active: true });
-    aulaRepository.find.mockResolvedValue([{ id: 77, modulo_id: 50, order: 1 }]);
+    aulaRepository.findOne.mockResolvedValueOnce({
+      id: 77,
+      modulo_id: 50,
+      order: 1,
+      type: 'texto',
+      active: true,
+    });
+    aulaRepository.find.mockResolvedValue([
+      { id: 77, modulo_id: 50, order: 1 },
+    ]);
     usuarioAulaRepository.findOne.mockResolvedValue(null);
     aulaQuizRepository.find.mockResolvedValue([
       { id: 1, options: ['Sim', 'Não'], correct_index: 0 },
       { id: 2, options: ['Sim', 'Não'], correct_index: 1 },
     ]);
 
-    await expect(service.submitQuiz(77, 3, {
-      answers: [
-        { questionId: 1, selectedIndex: 0 },
-        { questionId: 1, selectedIndex: 0 },
-      ],
-    })).rejects.toThrow(/cada pergunta uma vez/i);
+    await expect(
+      service.submitQuiz(77, 3, {
+        answers: [
+          { questionId: 1, selectedIndex: 0 },
+          { questionId: 1, selectedIndex: 0 },
+        ],
+      }),
+    ).rejects.toThrow(/cada pergunta uma vez/i);
     expect(usuarioAulaRepository.save).not.toHaveBeenCalled();
   });
 

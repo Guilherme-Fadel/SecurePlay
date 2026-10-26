@@ -4,26 +4,44 @@ import {
   NotFoundException,
   BadRequestException,
 } from '@nestjs/common';
-import { Not, Repository } from 'typeorm';
+import { EntityManager, Not, Repository } from 'typeorm';
 import { Aula, AulaType } from './aula.entity';
 import { AulaQuiz } from '../aula-quiz/aula-quiz.entity';
 import { UsuarioAula } from '../usuario-aula/usuario-aula.entity';
-import { UsuarioStats } from '../../usuario-stats/usuario-stats.entity';
 import { Modulo } from '../modulo/modulo.entity';
 import { ModuloService } from '../modulo/modulo.service';
-import { RedisService } from '../../redis/redis.service';
 import { S3Service } from '../s3/s3.service';
-import { ttlUntilEndOfDay } from '../../common/utils/date.utils';
 import {
   CreateAulaDto,
   UpdateAulaDto,
   UpdateAulaProgressDto,
 } from './dto/aula.dto';
 import { SubmitQuizDto } from '../aula-quiz/dto/aula-quiz.dto';
-import { NotificationService } from '../../notification/notification.service';
-import { EventEmitter2 } from '@nestjs/event-emitter';
+import { Notification } from '../../notification/notification.entity';
 import { sortAulasByModuleSequence } from './aula-order';
-import { creditSeasonXp } from '../../common/gamification/credit-season-xp';
+import { ActivityCompletionService } from '../../common/gamification/activity-completion.service';
+import {
+  ActivityCompletion,
+  CompletionNotification,
+} from '../../common/gamification/activity-completion.entity';
+import { validateAnswers } from '../../common/gamification/validate-answers';
+
+export interface LessonResult {
+  sucesso: boolean;
+  mensagem: string;
+  xp_ganho: number;
+}
+export interface QuizResult {
+  score: number;
+  correctCount: number;
+  totalQuestions: number;
+  xpEarned: number;
+  corrections: Array<{
+    questionId: number;
+    correct: boolean;
+    correctIndex: number;
+  }>;
+}
 
 @Injectable()
 export class AulaService {
@@ -37,17 +55,12 @@ export class AulaService {
     @Inject('USUARIO_AULA_REPOSITORY')
     private usuarioAulaRepository: Repository<UsuarioAula>,
 
-    @Inject('USUARIO_STATS_REPOSITORY')
-    private statsRepository: Repository<UsuarioStats>,
-
     @Inject('MODULO_REPOSITORY')
     private moduloRepository: Repository<Modulo>,
 
-    private redisService: RedisService,
     private s3Service: S3Service,
-    private notificationService: NotificationService,
-    private eventEmitter: EventEmitter2,
     private moduloService: ModuloService,
+    private readonly completions: ActivityCompletionService,
   ) {}
 
   async findOne(id: number, usuario_id: number) {
@@ -178,219 +191,206 @@ export class AulaService {
 
     await this.verificarDesbloqueio(aula, usuario_id);
 
-    let progress = await this.usuarioAulaRepository.findOne({
-      where: { usuario_id, aula_id: aulaId },
-    });
-    const now = new Date();
-
-    if (!progress) {
-      progress = this.usuarioAulaRepository.create({
-        usuario_id,
-        aula_id: aulaId,
-        completed: false,
-        started_at: now,
-        progress_percent: 0,
+    return this.completions.updateProgress(usuario_id, async (manager) => {
+      const repository = manager.getRepository(UsuarioAula);
+      let progress = await repository.findOne({
+        where: { usuario_id, aula_id: aulaId },
       });
-    }
+      const now = new Date();
 
-    progress.started_at ??= now;
-    progress.last_accessed_at = now;
+      if (!progress) {
+        progress = repository.create({
+          usuario_id,
+          aula_id: aulaId,
+          completed: false,
+          started_at: now,
+          progress_percent: 0,
+        });
+      }
 
-    if (!progress.completed && dto.progress_percent !== undefined) {
-      progress.progress_percent = Math.max(
-        progress.progress_percent ?? 0,
-        dto.progress_percent,
-      );
-    }
-    if (dto.last_video_second !== undefined) {
-      progress.last_video_second = dto.last_video_second;
-    }
-    if (dto.last_page !== undefined) {
-      progress.last_page = dto.last_page;
-    }
+      progress.started_at ??= now;
+      progress.last_accessed_at = now;
 
-    const saved = await this.usuarioAulaRepository.save(progress);
-    return {
-      completed: saved.completed,
-      percent: saved.progress_percent,
-      lastVideoSecond: saved.last_video_second ?? 0,
-      lastPage: saved.last_page ?? 0,
-      startedAt: saved.started_at,
-      lastAccessedAt: saved.last_accessed_at,
-    };
+      if (!progress.completed && dto.progress_percent !== undefined) {
+        progress.progress_percent = Math.max(
+          progress.progress_percent ?? 0,
+          dto.progress_percent,
+        );
+      }
+      if (dto.last_video_second !== undefined) {
+        progress.last_video_second = dto.last_video_second;
+      }
+      if (dto.last_page !== undefined) {
+        progress.last_page = dto.last_page;
+      }
+
+      const saved = await repository.save(progress);
+      return {
+        completed: saved.completed,
+        percent: saved.progress_percent,
+        lastVideoSecond: saved.last_video_second ?? 0,
+        lastPage: saved.last_page ?? 0,
+        startedAt: saved.started_at,
+        lastAccessedAt: saved.last_accessed_at,
+      };
+    });
   }
 
-  async concluir(aulaId: number, usuario_id: number) {
+  async concluir(aulaId: number, usuario_id: number): Promise<LessonResult> {
+    const replay = await this.completions.replay<LessonResult>(
+      usuario_id,
+      'lesson',
+      aulaId,
+    );
+    if (replay) return replay;
     const aula = await this.aulaRepository.findOne({
       where: { id: aulaId, active: true },
     });
-
-    if (!aula) {
-      throw new NotFoundException('Aula não encontrada');
-    }
-
+    if (!aula) throw new NotFoundException('Aula não encontrada');
     if (aula.type === AulaType.QUADRINHO || aula.type === AulaType.TEXTO) {
-      const quizCount = await this.aulaQuizRepository.count({
+      const count = await this.aulaQuizRepository.count({
         where: { aula_id: aulaId },
       });
-      if (quizCount > 0) {
-        throw new BadRequestException('Responda ao quiz para concluir esta aula');
-      }
+      if (count > 0)
+        throw new BadRequestException(
+          'Responda ao quiz para concluir esta aula',
+        );
     }
-
-    const existing = await this.usuarioAulaRepository.findOne({
-      where: { usuario_id, aula_id: aulaId },
-    });
-
-    if (existing?.completed) {
-      throw new BadRequestException('Aula já foi concluída');
-    }
-
-    await this.verificarDesbloqueio(aula, usuario_id);
-
-    if (existing) {
-      existing.completed = true;
-      existing.completed_at = new Date();
-      existing.last_accessed_at = existing.completed_at;
-      existing.progress_percent = 100;
-      await this.usuarioAulaRepository.save(existing);
-    } else {
-      await this.usuarioAulaRepository.save({
-        usuario_id,
-        aula_id: aulaId,
-        completed: true,
-        completed_at: new Date(),
-        started_at: new Date(),
-        last_accessed_at: new Date(),
-        progress_percent: 100,
-      });
-    }
-
-    await this.creditarXp(usuario_id, aula.xp);
-
-    await this.verificarModuloConcluido(aula.modulo_id, usuario_id);
-    await this.eventEmitter.emitAsync('progress.changed', {
-      usuarioId: usuario_id,
-    });
-
-    return {
-      sucesso: true,
-      mensagem: 'Aula concluída com sucesso',
-      xp_ganho: aula.xp,
-    };
+    return this.completions.complete(
+      usuario_id,
+      'lesson',
+      aulaId,
+      async (manager) => {
+        await this.verificarDesbloqueio(aula, usuario_id, manager);
+        await this.markCompleted(manager, aulaId, usuario_id);
+        const bonus = await this.completeModule(
+          manager,
+          aula.modulo_id,
+          usuario_id,
+        );
+        return {
+          result: {
+            sucesso: true,
+            mensagem: 'Aula concluída com sucesso',
+            xp_ganho: aula.xp,
+          },
+          xp: aula.xp + bonus.xp,
+          notifications: bonus.notifications,
+        };
+      },
+    );
   }
 
-  async submitQuiz(aulaId: number, usuario_id: number, dto: SubmitQuizDto) {
+  async submitQuiz(
+    aulaId: number,
+    usuario_id: number,
+    dto: SubmitQuizDto,
+  ): Promise<QuizResult> {
+    const replay = await this.completions.replay<QuizResult>(
+      usuario_id,
+      'lesson_quiz',
+      aulaId,
+    );
+    if (replay) return replay;
     const aula = await this.aulaRepository.findOne({
       where: { id: aulaId, active: true },
     });
-
-    if (!aula) {
-      throw new NotFoundException('Aula não encontrada');
-    }
-
+    if (!aula) throw new NotFoundException('Aula não encontrada');
     if (aula.type !== AulaType.QUADRINHO && aula.type !== AulaType.TEXTO) {
       throw new BadRequestException('Esta aula não possui quiz');
     }
-
-    const existing = await this.usuarioAulaRepository.findOne({
-      where: { usuario_id, aula_id: aulaId },
-    });
-
-    if (existing?.completed) {
-      throw new BadRequestException('Quiz já foi respondido');
-    }
-
-    await this.verificarDesbloqueio(aula, usuario_id);
-
     const questions = await this.aulaQuizRepository.find({
       where: { aula_id: aulaId },
     });
-
-    if (questions.length === 0) {
+    if (!questions.length)
       throw new NotFoundException('Nenhuma pergunta encontrada para esta aula');
-    }
-
-    const questionMap = new Map(questions.map((q) => [q.id, q]));
-
-    const submittedIds = new Set(dto.answers.map((answer) => answer.questionId));
-    if (dto.answers.length !== questions.length || submittedIds.size !== questions.length ||
-        dto.answers.some((answer) => {
-          const question = questionMap.get(answer.questionId);
-          return !question || answer.selectedIndex < 0 || answer.selectedIndex >= question.options.length;
-        })) {
-      throw new BadRequestException('Responda cada pergunta uma vez com uma opção válida');
-    }
-
+    validateAnswers(questions, dto.answers);
+    const questionMap = new Map(
+      questions.map((question) => [question.id, question]),
+    );
     let correctCount = 0;
     const corrections = dto.answers.map((answer) => {
       const question = questionMap.get(answer.questionId)!;
-
-      const isCorrect = answer.selectedIndex === question.correct_index;
-      if (isCorrect) correctCount++;
-
+      const correct = question.correct_index === answer.selectedIndex;
+      if (correct) correctCount++;
       return {
         questionId: question.id,
-        correct: isCorrect,
+        correct,
         correctIndex: question.correct_index,
       };
     });
-
-    const totalQuestions = questions.length;
-    const score = Math.round((correctCount / totalQuestions) * 100);
-    const xpEarned = Math.round(aula.xp * (score / 100));
-
-    const completedAt = new Date();
-    await this.usuarioAulaRepository.save(
-      existing
-        ? {
-            ...existing,
-            completed: true,
-            completed_at: completedAt,
-            last_accessed_at: completedAt,
-            progress_percent: 100,
-          }
-        : {
-            usuario_id,
-            aula_id: aulaId,
-            completed: true,
-            completed_at: completedAt,
-            started_at: completedAt,
-            last_accessed_at: completedAt,
-            progress_percent: 100,
+    const score = Math.round((correctCount / questions.length) * 100);
+    const xpEarned = Math.round((aula.xp * score) / 100);
+    return this.completions.complete(
+      usuario_id,
+      'lesson_quiz',
+      aulaId,
+      async (manager) => {
+        await this.verificarDesbloqueio(aula, usuario_id, manager);
+        await this.markCompleted(manager, aulaId, usuario_id);
+        const bonus = await this.completeModule(
+          manager,
+          aula.modulo_id,
+          usuario_id,
+        );
+        return {
+          result: {
+            score,
+            correctCount,
+            totalQuestions: questions.length,
+            xpEarned,
+            corrections,
           },
+          xp: xpEarned + bonus.xp,
+          notifications: bonus.notifications,
+        };
+      },
     );
+  }
 
-    if (xpEarned > 0) {
-      await this.creditarXp(usuario_id, xpEarned);
-    }
-
-    await this.verificarModuloConcluido(aula.modulo_id, usuario_id);
-    await this.eventEmitter.emitAsync('progress.changed', {
-      usuarioId: usuario_id,
+  private async markCompleted(
+    manager: EntityManager,
+    aulaId: number,
+    usuarioId: number,
+  ): Promise<void> {
+    const repository = manager.getRepository(UsuarioAula);
+    const existing = await repository.findOne({
+      where: { usuario_id: usuarioId, aula_id: aulaId },
     });
-
-    return {
-      score,
-      correctCount,
-      totalQuestions,
-      xpEarned,
-      corrections,
-    };
+    if (existing?.completed)
+      throw new BadRequestException('Aula já foi concluída');
+    const now = new Date();
+    await repository.save(
+      repository.create({
+        ...existing,
+        usuario_id: usuarioId,
+        aula_id: aulaId,
+        completed: true,
+        completed_at: now,
+        started_at: existing?.started_at ?? now,
+        last_accessed_at: now,
+        progress_percent: 100,
+      }),
+    );
   }
 
   private async verificarDesbloqueio(
     aula: Aula,
     usuario_id: number,
+    manager?: EntityManager,
   ): Promise<void> {
+    const aulasRepository = manager?.getRepository(Aula) ?? this.aulaRepository;
+    const progressRepository =
+      manager?.getRepository(UsuarioAula) ?? this.usuarioAulaRepository;
     // bloqueio de modulo tem precedencia sobre o bloqueio sequencial de aula
     await this.moduloService.assertModuloDesbloqueado(
       aula.modulo_id,
       usuario_id,
+      manager,
     );
 
     const aulas = sortAulasByModuleSequence(
-      await this.aulaRepository.find({
+      await aulasRepository.find({
         where: { modulo_id: aula.modulo_id, active: true },
         order: { order: 'ASC', id: 'ASC' },
       }),
@@ -400,7 +400,7 @@ export class AulaService {
 
     if (previousAulas.length === 0) return;
 
-    const completedProgress = await this.usuarioAulaRepository.find({
+    const completedProgress = await progressRepository.find({
       where: { usuario_id, completed: true },
     });
     const completedAulaIds = new Set(
@@ -437,50 +437,69 @@ export class AulaService {
     }
   }
 
-  private async creditarXp(usuario_id: number, xp: number): Promise<void> {
-    if (xp <= 0) return;
-    const previousPoints = await creditSeasonXp(this.statsRepository, usuario_id, xp);
-    await this.redisService.recordRankingXp(usuario_id, previousPoints, xp);
-
-    const xpKey = `xp-today:${usuario_id}`;
-    const currentXp = await this.redisService.get(xpKey);
-    const newXp = (currentXp ? parseInt(currentXp, 10) : 0) + xp;
-    const ttl = ttlUntilEndOfDay();
-    await this.redisService.set(xpKey, String(newXp), ttl);
-  }
-
-  private async verificarModuloConcluido(
-    modulo_id: number,
-    usuario_id: number,
-  ): Promise<void> {
-    const totalAulas = await this.aulaRepository.count({
-      where: { modulo_id, active: true },
-    });
-
-    const completedAulas = await this.usuarioAulaRepository
+  private async completeModule(
+    manager: EntityManager,
+    moduloId: number,
+    usuarioId: number,
+  ): Promise<{ xp: number; notifications: CompletionNotification[] }> {
+    const rewards = manager.getRepository(ActivityCompletion);
+    const key = {
+      usuario_id: usuarioId,
+      activity_type: 'module' as const,
+      activity_id: moduloId,
+    };
+    if (await rewards.findOne({ where: key }))
+      return { xp: 0, notifications: [] };
+    const total = await manager
+      .getRepository(Aula)
+      .count({ where: { modulo_id: moduloId, active: true } });
+    const completed = await manager
+      .getRepository(UsuarioAula)
       .createQueryBuilder('ua')
       .innerJoin('ua.aula', 'aula')
-      .where('aula.modulo_id = :moduloId', { moduloId: modulo_id })
-      .andWhere('ua.usuario_id = :usuarioId', { usuarioId: usuario_id })
-      .andWhere('ua.completed = :completed', { completed: true })
+      .where('aula.modulo_id = :moduloId AND aula.active = :active', {
+        moduloId,
+        active: true,
+      })
+      .andWhere('ua.usuario_id = :usuarioId AND ua.completed = :completed', {
+        usuarioId,
+        completed: true,
+      })
       .getCount();
-
-    if (completedAulas >= totalAulas && totalAulas > 0) {
-      const modulo = await this.moduloRepository.findOne({
-        where: { id: modulo_id },
-      });
-
-      if (modulo && modulo.xp_bonus > 0) {
-        await this.creditarXp(usuario_id, modulo.xp_bonus);
-      }
-
-      await this.notificationService.insertNotification({
-        usuario_id,
-        title: 'Módulo Concluído!',
-        message: `Parabéns! Você completou o módulo "${modulo?.title}" e ganhou ${modulo?.xp_bonus || 0} XP bônus!`,
-        type: 'achievement',
-        readed: false,
-      });
-    }
+    if (!total || completed < total) return { xp: 0, notifications: [] };
+    const modulo = await manager
+      .getRepository(Modulo)
+      .findOneByOrFail({ id: moduloId });
+    const xp = Math.max(0, modulo.xp_bonus);
+    // Marcador e notificação entram na mesma transação do crédito da aula.
+    await rewards.save(
+      rewards.create({
+        ...key,
+        result: { xp },
+        xp: 0,
+        previous_points: 0,
+        effects_processed: true,
+      }),
+    );
+    const notification = await manager.getRepository(Notification).save({
+      usuario_id: usuarioId,
+      title: 'Módulo Concluído!',
+      message: `Parabéns! Você completou o módulo "${modulo.title}" e ganhou ${xp} XP bônus!`,
+      type: 'achievement',
+      readed: false,
+    });
+    return {
+      xp,
+      notifications: [
+        {
+          id: notification.id,
+          usuario_id: usuarioId,
+          title: notification.title,
+          message: notification.message,
+          type: notification.type,
+          created_at: notification.created_at,
+        },
+      ],
+    };
   }
 }
