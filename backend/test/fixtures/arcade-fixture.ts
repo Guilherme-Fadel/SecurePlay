@@ -39,6 +39,8 @@ import { ArcadeRunStore } from '../../src/arcade/arcade-run.store';
 import { ArcadeService } from '../../src/arcade/arcade.service';
 import { ActivityCompletion1793232000000 } from '../../src/database/migrations/1793232000000-activity-completion';
 import { ArcadeRunCompletion1793318400000 } from '../../src/database/migrations/1793318400000-arcade-run-completion';
+import { DailyCheckin1793404800000 } from '../../src/database/migrations/1793404800000-daily-checkin';
+import { DailyCheckin } from '../../src/dashboard/daily-checkin.entity';
 import { Achievement } from '../../src/achievements/entities/achievement.entity';
 import { UsuarioAchievement } from '../../src/achievements/entities/usuario-achievement.entity';
 import { PrestigeWallet } from '../../src/achievements/entities/prestige-wallet.entity';
@@ -106,6 +108,7 @@ export async function arcadeFixture() {
       UsuarioArcadeStats,
       DataItem,
       PhishingSample,
+      DailyCheckin,
       Achievement,
       UsuarioAchievement,
       PrestigeWallet,
@@ -132,6 +135,7 @@ export async function arcadeFixture() {
   try {
     await new ActivityCompletion1793232000000().up(runner);
     await new ArcadeRunCompletion1793318400000().up(runner);
+    await new DailyCheckin1793404800000().up(runner);
   } finally {
     await runner.release();
   }

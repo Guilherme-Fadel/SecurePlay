@@ -13,12 +13,14 @@ export const TOKEN_STATE_SCRIPT = `
   local regen = tonumber(ARGV[2])
   local balance = cap
   local last = now
+  local checkinRefillDay = ''
   local raw = redis.call('GET', KEYS[1])
   if raw then
     local valid, value = pcall(cjson.decode, raw)
     if valid and type(value) == 'table' then
       if type(value.balance) == 'number' then balance = math.max(0, math.min(cap, math.floor(value.balance))) end
       if type(value.lastRegenAt) == 'number' and value.lastRegenAt >= 0 then last = math.min(now, value.lastRegenAt) end
+      if type(value.checkinRefillDay) == 'string' then checkinRefillDay = value.checkinRefillDay end
     end
   end
   if balance >= cap then
@@ -30,7 +32,14 @@ export const TOKEN_STATE_SCRIPT = `
     last = balance >= cap and now or last + count * regen
   end
   local ok = 1
-  if mode == 'run' and now > tonumber(ARGV[6]) then
+  if mode == 'checkin' or mode == 'checkin-recover' then
+    if checkinRefillDay == ARGV[7] then return {1, balance, last, now} end
+    if mode == 'checkin-recover' then return {-2, balance, last, now} end
+    if now >= tonumber(ARGV[6]) or checkinRefillDay > ARGV[7] then return {-1, balance, last, now} end
+    balance = cap
+    last = now
+    checkinRefillDay = ARGV[7]
+  elseif mode == 'run' and now > tonumber(ARGV[6]) then
     return {-1, balance, last, now}
   elseif mode == 'refill' then
     balance = cap
@@ -38,7 +47,7 @@ export const TOKEN_STATE_SCRIPT = `
   elseif mode == 'consume' or mode == 'run' then
     if balance > 0 then balance = balance - 1 else ok = 0 end
   end
-  redis.call('SET', KEYS[1], cjson.encode({balance = balance, lastRegenAt = last}), 'EX', ARGV[4])
+  redis.call('SET', KEYS[1], cjson.encode({balance = balance, lastRegenAt = last, checkinRefillDay = checkinRefillDay}), 'EX', ARGV[4])
   if mode == 'run' and ok == 1 then
     redis.call('SET', KEYS[2], cjson.encode({balance = balance, lastRegenAt = last, at = now}), 'EX', ARGV[4])
   end

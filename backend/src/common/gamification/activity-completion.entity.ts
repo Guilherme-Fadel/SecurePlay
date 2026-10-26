@@ -14,6 +14,7 @@ export type ActivityType =
   | 'lesson'
   | 'lesson_quiz'
   | 'module'
+  | 'checkin'
   | 'arcade';
 export interface CompletionNotification {
   id: number;

@@ -2,6 +2,7 @@ import { randomInt, randomUUID } from 'crypto';
 import { openArcadeRedis } from '../../test/fixtures/arcade-fixture';
 import { RedisService } from '../redis/redis.service';
 import { TokenService, TOKEN_REGEN_MS } from './token.service';
+import { getLocalDateKey } from '../common/utils/date.utils';
 
 class ClockTokens extends TokenService {
   current = 1_000_000_000_000;
@@ -66,6 +67,45 @@ isolated('C06 — saldo/regeneração no Redis real', () => {
   it('refill é atômico e recarrega até o teto', async () => {
     await balance(0);
     expect((await tokens.refillToCap(user)).balance).toBe(5);
+  });
+  it('refill de check-in preserva marcador após leitura, consume, run e refill normal', async () => {
+    const day = getLocalDateKey(new Date(tokens.current));
+    await tokens.refillForCheckin(user, day, true);
+    await tokens.getState(user);
+    await tokens.consume(user);
+    await tokens.consumeForRun(
+      user,
+      randomUUID(),
+      new Date(tokens.current + 1000),
+    );
+    expect(
+      (await tokens.refillForCheckin(user, day, false)).state.balance,
+    ).toBe(3);
+    await tokens.refillToCap(user);
+    await tokens.consume(user);
+    expect(
+      (await tokens.refillForCheckin(user, day, false)).state.balance,
+    ).toBe(4);
+  });
+  it('recuperação sem marcador não altera saldo nem autoriza nova reposição', async () => {
+    const day = getLocalDateKey(new Date(tokens.current));
+    await tokens.consume(user);
+    expect(await tokens.refillForCheckin(user, day, false)).toMatchObject({
+      uncertain: true,
+      state: { balance: 4 },
+    });
+    expect((await tokens.getState(user)).balance).toBe(4);
+  });
+  it('direito de check-in antigo expira, e dia novo permite nova reposição', async () => {
+    const day = getLocalDateKey(new Date(tokens.current));
+    await tokens.consume(user);
+    tokens.current += 24 * 3600_000;
+    expect((await tokens.refillForCheckin(user, day, true)).expired).toBe(true);
+    await tokens.consume(user);
+    const nextDay = getLocalDateKey(new Date(tokens.current));
+    expect(
+      (await tokens.refillForCheckin(user, nextDay, true)).state.balance,
+    ).toBe(5);
   });
   it('100 leituras paralelas não restauram as fichas gastas por 20 consumos', async () => {
     const reads = Array.from({ length: 100 }, () => tokens.getState(user));

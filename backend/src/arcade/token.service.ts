@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { RedisService } from '../redis/redis.service';
 import { TOKEN_STATE_SCRIPT } from './token-state';
+import { endOfDay } from '../common/utils/date.utils';
 export const TOKEN_CAP = 5;
 export const TOKEN_REGEN_MS = 30 * 60 * 1000;
 export interface TokenState {
@@ -49,9 +50,10 @@ export class TokenService {
 
   private async mutate(
     usuarioId: number,
-    mode: 'read' | 'consume' | 'refill' | 'run',
+    mode: 'read' | 'consume' | 'refill' | 'run' | 'checkin' | 'checkin-recover',
     runId?: string,
     expiresAt?: Date,
+    checkinDay?: string,
   ) {
     const result = (await this.redisService.eval(
       TOKEN_STATE_SCRIPT,
@@ -65,11 +67,13 @@ export class TokenService {
         7 * 24 * 3600,
         mode,
         expiresAt?.getTime() ?? 0,
+        checkinDay ?? '',
       ],
     )) as [number, number, number, number];
     return {
       ok: result[0] === 1,
       expired: result[0] === -1,
+      uncertain: result[0] === -2,
       state: this.toState(
         { balance: result[1], lastRegenAt: result[2] },
         result[3],
@@ -98,5 +102,16 @@ export class TokenService {
 
   async refillToCap(usuarioId: number): Promise<TokenState> {
     return (await this.mutate(usuarioId, 'refill')).state;
+  }
+
+  /** O chamador persiste a tentativa no SQL antes do primeiro refill. */
+  async refillForCheckin(usuarioId: number, day: string, initial: boolean) {
+    return this.mutate(
+      usuarioId,
+      initial ? 'checkin' : 'checkin-recover',
+      undefined,
+      endOfDay(new Date(`${day}T12:00:00-03:00`)),
+      day,
+    );
   }
 }

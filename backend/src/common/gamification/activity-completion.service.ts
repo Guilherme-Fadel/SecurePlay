@@ -89,7 +89,7 @@ export class ActivityCompletionService
   async complete<T extends object>(
     usuarioId: number,
     type: ActivityType,
-    activityId: number,
+    activityId: number | ((createdAt: Date) => number),
     action: (
       manager: EntityManager,
       context: { createdAt: Date; seasonId: string },
@@ -99,12 +99,14 @@ export class ActivityCompletionService
       this.source.getRepository(UsuarioStats),
       usuarioId,
       async (manager, seasonId, createdAt) => {
+        const resolvedActivityId =
+          typeof activityId === 'function' ? activityId(createdAt) : activityId;
         const repository = manager.getRepository(ActivityCompletion);
         const existing = await repository.findOne({
           where: {
             usuario_id: usuarioId,
             activity_type: type,
-            activity_id: activityId,
+            activity_id: resolvedActivityId,
           },
         });
         if (existing) return existing;
@@ -119,7 +121,7 @@ export class ActivityCompletionService
           repository.create({
             usuario_id: usuarioId,
             activity_type: type,
-            activity_id: activityId,
+            activity_id: resolvedActivityId,
             result: draft.result as Record<string, unknown>,
             xp: draft.xp,
             previous_points: previousPoints,
@@ -208,10 +210,14 @@ export class ActivityCompletionService
       const record = await repository.findOneBy({ id });
       if (!record || record.effects_processed) return;
       await this.redis.applyActivityCompletion(record);
+      if (record.activity_type === 'checkin') {
+        await this.events.emitAsync('checkin.effects', record);
+      }
       // Eventos são at-least-once. O SQL do prêmio e os incrementos Redis têm
       // dedupe própria; listeners existentes mantêm seus contratos de retry.
       await this.events.emitAsync('progress.changed', {
         usuarioId: record.usuario_id,
+        ...(record.activity_type === 'checkin' ? { skipCheckin: true } : {}),
       });
       for (const notification of record.notifications ?? []) {
         this.events.emit('notification.created', notification);

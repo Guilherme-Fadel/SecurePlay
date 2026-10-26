@@ -4,15 +4,9 @@ import { UsuarioStats } from '../usuario-stats/usuario-stats.entity';
 import { Usuario } from '../usuario/usuario.entity';
 import { ChallengeService } from '../challenge/challenge.service';
 import { RedisService } from '../redis/redis.service';
-import { TokenService } from '../arcade/token.service';
+import { DailyCheckinService } from './daily-checkin.service';
 import { calcLevel, calcXpToNextLevel } from '../common/utils/xp.utils';
-import {
-  ttlUntilEndOfDay,
-  ttlUntilEndOfWeek,
-  getLocalDateKey,
-  getMondayOfWeek,
-  getTodayWeekIndex,
-} from '../common/utils/date.utils';
+import { ttlUntilEndOfDay } from '../common/utils/date.utils';
 import { EventEmitter2, OnEvent } from '@nestjs/event-emitter';
 import { S3Service } from '../conteudo/s3/s3.service';
 import { ModuloService } from '../conteudo/modulo/modulo.service';
@@ -37,7 +31,7 @@ export class DashboardService implements OnModuleInit, OnModuleDestroy {
     @Inject('DATA_SOURCE') private readonly dataSource: DataSource,
     private challengeService: ChallengeService,
     private redisService: RedisService,
-    private tokenService: TokenService,
+    private checkins: DailyCheckinService,
     private eventEmitter: EventEmitter2,
     private s3Service: S3Service,
     private moduloService: ModuloService,
@@ -375,104 +369,15 @@ export class DashboardService implements OnModuleInit, OnModuleDestroy {
     });
   }
   async getWeeklyStreak(usuario_id: number) {
-    const key = `streak:${usuario_id}:${getMondayOfWeek()}`;
-    const raw = await this.redisService.get(key);
-    const checkedDays: boolean[] = raw
-      ? JSON.parse(raw)
-      : [false, false, false, false, false, false, false];
-    const todayIndex = getTodayWeekIndex();
-    const stats = await this.getOrCreateStats(usuario_id);
-    return {
-      checkedDays,
-      todayIndex,
-      streak: stats.current_streak,
-      checkedToday: checkedDays[todayIndex],
-    };
-  }
-  /**
-   * Marca o check-in do dia e atualiza a sequencia (streak).
-   * Concede o bonus de XP (streak * 5) e recarrega as fichas do arcade.
-   * Idempotente por dia: se ja houve check-in hoje, apenas retorna o estado atual.
-   *
-   * @param emitBonusEvent quando false, credita o XP do bonus sem re-emitir
-   * progress.changed. Usado pelo check-in automatico, que ja e disparado
-   * DENTRO do handler de progress.changed, evitando reentrada do evento.
-   */
-  private async registrarCheckin(usuario_id: number, emitBonusEvent: boolean) {
-    const key = `streak:${usuario_id}:${getMondayOfWeek()}`;
-    const raw = await this.redisService.get(key);
-    const checkedDays: boolean[] = raw
-      ? JSON.parse(raw)
-      : [false, false, false, false, false, false, false];
-    const todayIndex = getTodayWeekIndex();
-    if (checkedDays[todayIndex]) {
-      const stats = await this.getOrCreateStats(usuario_id);
-      return {
-        alreadyChecked: true,
-        message: 'Você já fez check-in hoje!',
-        checkedDays,
-        streak: stats.current_streak,
-        bonusXp: 0,
-      };
-    }
-    checkedDays[todayIndex] = true;
-    const ttl = ttlUntilEndOfWeek();
-    await this.redisService.set(key, JSON.stringify(checkedDays), ttl);
-    const stats = await this.getOrCreateStats(usuario_id);
-    const todayStr = getLocalDateKey();
-    if (stats.last_checkin_date) {
-      const lastDate = new Date(stats.last_checkin_date + 'T00:00:00');
-      const todayDate = new Date(todayStr + 'T00:00:00');
-      const diffDays = Math.floor(
-        (todayDate.getTime() - lastDate.getTime()) / (1000 * 60 * 60 * 24),
-      );
-      if (diffDays === 1) {
-        stats.current_streak += 1;
-      } else if (diffDays > 1) {
-        stats.current_streak = 1;
-      }
-    } else {
-      stats.current_streak = 1;
-    }
-    stats.last_checkin_date = todayStr;
-    await this.statsRepository.save(stats);
-    const streak = stats.current_streak;
-    const bonusXp = streak * 5;
-    if (emitBonusEvent) {
-      await this.addPoints(usuario_id, bonusXp);
-    } else {
-      // credita direto (sem emitir progress.changed) para nao reentrar no handler
-      const previousPoints = await creditSeasonXp(this.statsRepository, usuario_id, bonusXp);
-      await this.redisService.recordRankingXp(
-        usuario_id,
-        previousPoints,
-        bonusXp,
-      );
-      await this.incrementRedisXpToday(usuario_id, bonusXp);
-    }
-    await this.tokenService.refillToCap(usuario_id);
-    return {
-      alreadyChecked: false,
-      message: `Check-in realizado! +${bonusXp} XP (${streak === 1 ? 'dia consecutivo' : 'dias consecutivos'}!)`,
-      checkedDays,
-      streak,
-      bonusXp,
-    };
+    return this.checkins.weekly(usuario_id);
   }
 
-  /**
-   * Check-in automatico: disparado quando o usuario finaliza qualquer atividade
-   * que gera progresso (aula, quiz, desafio diario ou jogo do arcade).
-   * Escuta progress.changed e marca o check-in do dia uma unica vez.
-   */
-  @OnEvent('progress.changed')
-  async handleProgressChanged(payload: { usuarioId: number }): Promise<void> {
-    try {
-      await this.registrarCheckin(payload.usuarioId, false);
-    } catch (error) {
-      this.logger.error(
-        `Falha no check-in automatico do usuario ${payload?.usuarioId}: ${error?.message}`,
-      );
-    }
+  @OnEvent('progress.changed', { suppressErrors: false })
+  async handleProgressChanged(payload: {
+    usuarioId: number;
+    skipCheckin?: boolean;
+  }): Promise<void> {
+    if (payload.skipCheckin) return;
+    await this.checkins.register(payload.usuarioId);
   }
 }

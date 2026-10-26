@@ -7,6 +7,8 @@ import { ChallengeModule } from '../challenge/challenge.module';
 import { RedisModule } from '../redis/redis.module';
 import { ArcadeModule } from '../arcade/arcade.module';
 import { ConteudoModule } from '../conteudo/conteudo.module';
+import { GamificationModule } from '../common/gamification/gamification.module';
+import { DailyCheckinService } from './daily-checkin.service';
 
 @Module({
   imports: [
@@ -15,9 +17,10 @@ import { ConteudoModule } from '../conteudo/conteudo.module';
     ChallengeModule,
     ArcadeModule,
     ConteudoModule,
+    GamificationModule,
   ],
   controllers: [DashboardController],
-  providers: [...usuarioStatsProviders, DashboardService],
+  providers: [...usuarioStatsProviders, DashboardService, DailyCheckinService],
   exports: [DashboardService],
 })
 export class DashboardModule {}
