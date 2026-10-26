@@ -6,6 +6,7 @@ import {
   OnModuleInit,
 } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
+import { randomUUID } from 'crypto';
 import { DataSource, EntityManager } from 'typeorm';
 import { UsuarioStats } from '../../usuario-stats/usuario-stats.entity';
 import { Usuario } from '../../usuario/usuario.entity';
@@ -33,6 +34,9 @@ export class ActivityCompletionService
   private readonly logger = new Logger(ActivityCompletionService.name);
   private timer?: ReturnType<typeof setInterval>;
   private draining = false;
+  private readonly deliveries = new Map<string, Promise<void>>();
+  private readonly deliveryStartedAt = new Map<string, number>();
+  private lastDeliveryWarning = 0;
 
   constructor(
     @Inject('DATA_SOURCE') private readonly source: DataSource,
@@ -62,7 +66,7 @@ export class ActivityCompletionService
       },
     });
     if (!record) return null;
-    await this.deliver(record.id);
+    await this.deliverWithinBudget(record.id);
     return record.result as T;
   }
 
@@ -86,7 +90,10 @@ export class ActivityCompletionService
     usuarioId: number,
     type: ActivityType,
     activityId: number,
-    action: (manager: EntityManager) => Promise<CompletionDraft<T>>,
+    action: (
+      manager: EntityManager,
+      context: { createdAt: Date; seasonId: string },
+    ) => Promise<CompletionDraft<T>>,
   ): Promise<T> {
     const record = await withSeasonXpTransaction(
       this.source.getRepository(UsuarioStats),
@@ -101,7 +108,7 @@ export class ActivityCompletionService
           },
         });
         if (existing) return existing;
-        const draft = await action(manager);
+        const draft = await action(manager, { createdAt, seasonId });
         const previousPoints = await creditSeasonXpInTransaction(
           manager,
           usuarioId,
@@ -124,11 +131,12 @@ export class ActivityCompletionService
       },
     );
     // O SQL já confirmou o resultado; indisponibilidade posterior fica na outbox.
-    await this.deliver(record.id);
+    await this.deliverWithinBudget(record.id);
     return record.result as T;
   }
 
   async flushPending(): Promise<void> {
+    this.reportStalledDeliveries();
     if (this.draining) return;
     this.draining = true;
     try {
@@ -137,7 +145,7 @@ export class ActivityCompletionService
         order: { created_at: 'ASC', id: 'ASC' },
         take: 25,
       });
-      for (const record of pending) await this.deliver(record.id);
+      for (const record of pending) await this.deliverWithinBudget(record.id);
     } catch {
       this.logger.warn(
         'Não foi possível consultar os efeitos pendentes de atividades',
@@ -147,28 +155,78 @@ export class ActivityCompletionService
     }
   }
 
-  private async deliver(id: string): Promise<void> {
+  private deliver(id: string): Promise<void> {
+    const existing = this.deliveries.get(id);
+    if (existing) return existing;
+    if (this.deliveries.size >= 2) return Promise.resolve();
+    const delivery = this.deliverOnce(id);
+    this.deliveries.set(id, delivery);
+    this.deliveryStartedAt.set(id, Date.now());
+    const cleanup = () => {
+      this.deliveries.delete(id);
+      this.deliveryStartedAt.delete(id);
+    };
+    void delivery.then(cleanup, cleanup);
+    return delivery;
+  }
+
+  private reportStalledDeliveries(): void {
+    const now = Date.now();
+    const stalled = [...this.deliveryStartedAt.values()].filter(
+      (started) => now - started > 30_000,
+    ).length;
+    if (stalled && now - this.lastDeliveryWarning >= 30_000) {
+      this.lastDeliveryWarning = now;
+      this.logger.error(
+        `Outbox com ${stalled} entrega(s) aguardando listeners há mais de 30s; verificar dependências e reprocessar as pendências após recuperar o serviço`,
+      );
+    }
+  }
+
+  private async deliverWithinBudget(id: string): Promise<void> {
+    let timer: ReturnType<typeof setTimeout> | undefined;
     try {
-      await this.source.transaction(async (manager) => {
-        const repository = manager.getRepository(ActivityCompletion);
-        const record = await repository.findOne({
-          where: { id },
-          lock: { mode: 'pessimistic_write' },
-        });
-        if (!record || record.effects_processed) return;
-        await this.redis.applyActivityCompletion(record);
-        // Eventos são at-least-once. O SQL do prêmio e os incrementos Redis têm
-        // dedupe própria; listeners existentes mantêm seus contratos de retry.
-        await this.events.emitAsync('progress.changed', {
-          usuarioId: record.usuario_id,
-        });
-        for (const notification of record.notifications ?? []) {
-          this.events.emit('notification.created', notification);
-        }
-        await repository.update(id, { effects_processed: true });
+      await Promise.race([
+        this.deliver(id),
+        new Promise<void>((resolve) => {
+          timer = setTimeout(resolve, 250);
+        }),
+      ]);
+    } finally {
+      if (timer) clearTimeout(timer);
+    }
+  }
+
+  private async deliverOnce(id: string): Promise<void> {
+    const leaseKey = `activity-delivery:${id}`;
+    const owner = randomUUID();
+    let claimed = false;
+    try {
+      claimed = await this.redis.acquireLease(leaseKey, owner, 60_000);
+      if (!claimed) return;
+      const repository = this.source.getRepository(ActivityCompletion);
+      const record = await repository.findOneBy({ id });
+      if (!record || record.effects_processed) return;
+      await this.redis.applyActivityCompletion(record);
+      // Eventos são at-least-once. O SQL do prêmio e os incrementos Redis têm
+      // dedupe própria; listeners existentes mantêm seus contratos de retry.
+      await this.events.emitAsync('progress.changed', {
+        usuarioId: record.usuario_id,
       });
+      for (const notification of record.notifications ?? []) {
+        this.events.emit('notification.created', notification);
+      }
+      await repository.update(id, { effects_processed: true });
     } catch {
       this.logger.warn(`Efeitos pendentes da atividade ${id}`);
+    } finally {
+      if (claimed) {
+        try {
+          await this.redis.releaseLease(leaseKey, owner);
+        } catch {
+          /* lease expira; nunca libera lease de outra instância */
+        }
+      }
     }
   }
 }

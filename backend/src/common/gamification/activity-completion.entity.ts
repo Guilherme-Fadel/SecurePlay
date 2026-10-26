@@ -9,7 +9,12 @@ import {
 } from 'typeorm';
 import { Usuario } from '../../usuario/usuario.entity';
 
-export type ActivityType = 'challenge' | 'lesson' | 'lesson_quiz' | 'module';
+export type ActivityType =
+  | 'challenge'
+  | 'lesson'
+  | 'lesson_quiz'
+  | 'module'
+  | 'arcade';
 export interface CompletionNotification {
   id: number;
   usuario_id: number;

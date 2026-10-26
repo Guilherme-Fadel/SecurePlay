@@ -11,18 +11,15 @@ import { randomUUID } from 'crypto';
 import { ArcadeGame, ArcadeGameType } from './entities/arcade-game.entity';
 import { DataItem, DataLevel } from './entities/data-item.entity';
 import { RedisService } from '../redis/redis.service';
-import { XpService } from '../common/gamification/xp.service';
 import { TokenService } from './token.service';
-import { ttlUntilEndOfDay } from '../common/utils/date.utils';
 import { GameHandler } from './games/game-handler';
 import { QuizRelampagoHandler } from './games/quiz-relampago.handler';
 import { PhishingHandler } from './games/phishing.handler';
 import { DataClassifyHandler } from './games/data-classify.handler';
 import { SubmitRunDto } from './dto/arcade.dto';
-import { UsuarioArcadeStats } from './entities/usuario-arcade-stats.entity';
+import { ArcadeSubmissionService } from './arcade-submission.service';
 import { CompanyFeaturesService } from '../common/features/company-features.service';
 const RUN_TTL_SECONDS = 30 * 60;
-const XP_FLOOR = 10;
 interface StoredRun {
   usuario_id: number;
   slug: string;
@@ -36,16 +33,14 @@ export class ArcadeService implements OnModuleInit {
     @Inject('ARCADE_GAME_REPOSITORY')
     private readonly gameRepository: Repository<ArcadeGame>,
     private readonly redisService: RedisService,
-    private readonly xpService: XpService,
     private readonly tokenService: TokenService,
     private readonly quizHandler: QuizRelampagoHandler,
     private readonly phishingHandler: PhishingHandler,
     private readonly dataClassifyHandler: DataClassifyHandler,
     @Inject('DATA_ITEM_REPOSITORY')
     private readonly dataItemRepository: Repository<DataItem>,
-    @Inject('USUARIO_ARCADE_STATS_REPOSITORY')
-    private readonly usuarioArcadeStatsRepository: Repository<UsuarioArcadeStats>,
     private readonly companyFeatures: CompanyFeaturesService,
+    private readonly submissions: ArcadeSubmissionService,
   ) {}
   async onModuleInit() {
     const seeds: Partial<ArcadeGame>[] = [
@@ -231,6 +226,7 @@ export class ArcadeService implements OnModuleInit {
     const handler = this.handlerFor(game.game_type);
     const run = await handler.buildRun();
     const runId = randomUUID();
+    await this.submissions.create(usuario_id, runId, game, run.answerKey);
     const stored: StoredRun = {
       usuario_id,
       slug: game.slug,
@@ -238,11 +234,15 @@ export class ArcadeService implements OnModuleInit {
       xp_base: game.xp_base,
       answerKey: run.answerKey,
     };
-    await this.redisService.set(
-      this.runKey(usuario_id, runId),
-      JSON.stringify(stored),
-      RUN_TTL_SECONDS,
-    );
+    try {
+      await this.redisService.set(
+        this.runKey(usuario_id, runId),
+        JSON.stringify(stored),
+        RUN_TTL_SECONDS,
+      );
+    } catch {
+      /* A partida já é durável em SQL; este cache é só compatibilidade. */
+    }
     return {
       runId,
       game: { slug: game.slug, title: game.title, gameType: game.game_type },
@@ -250,67 +250,7 @@ export class ArcadeService implements OnModuleInit {
       tokens,
     };
   }
-  async submit(usuario_id: number, runId: string, dto: SubmitRunDto) {
-    const key = this.runKey(usuario_id, runId);
-    const raw = await this.redisService.get(key);
-    if (!raw) {
-      throw new BadRequestException('Partida invalida ou ja finalizada.');
-    }
-    const stored = JSON.parse(raw) as StoredRun;
-    await this.companyFeatures.requireGame(usuario_id, stored.slug);
-    const consumed = await this.tokenService.consume(usuario_id);
-    if (!consumed.ok) {
-      const secs = consumed.state.nextRegenInSeconds;
-      throw new ForbiddenException(
-        `Sem tentativas no momento. Proxima em ${Math.ceil(secs / 60)} min.`,
-      );
-    }
-    const handler = this.handlerFor(stored.game_type);
-    const correction = handler.correct(stored.answerKey, dto);
-    const xpBase = Math.round(stored.xp_base * (correction.score / 100));
-    const playsKey = `arcade-plays:${usuario_id}:${stored.slug}:${this.today()}`;
-    const plays = await this.redisService.incrBy(
-      playsKey,
-      1,
-      ttlUntilEndOfDay(),
-    );
-    const multiplier = plays <= 1 ? 1 : plays === 2 ? 0.5 : 0.25;
-    let xpEarned = Math.round(xpBase * multiplier);
-    if (xpBase > 0) {
-      xpEarned = Math.max(XP_FLOOR, xpEarned);
-    }
-    let activity = await this.usuarioArcadeStatsRepository.findOne({
-      where: { usuario_id, game_slug: stored.slug },
-    });
-    if (!activity) {
-      activity = this.usuarioArcadeStatsRepository.create({
-        usuario_id,
-        game_slug: stored.slug,
-        total_plays: 0,
-        perfect_runs: 0,
-        best_score: 0,
-      });
-    }
-    activity.total_plays += 1;
-    if (correction.score === 100) activity.perfect_runs += 1;
-    activity.best_score = Math.max(activity.best_score, correction.score);
-    activity.last_played_at = new Date();
-    await this.usuarioArcadeStatsRepository.save(activity);
-    // Progress listeners must see the completed run when evaluating achievements.
-    await this.xpService.creditXp(usuario_id, xpEarned);
-    await this.redisService.del(key);
-    return {
-      score: correction.score,
-      xpBase,
-      multiplier,
-      xpEarned,
-      playsToday: plays,
-      feedback: correction.feedback,
-      tokens: consumed.state,
-    };
-  }
-  private today(): string {
-    const d = new Date();
-    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  submit(usuario_id: number, runId: string, dto: SubmitRunDto) {
+    return this.submissions.submit(usuario_id, runId, dto);
   }
 }

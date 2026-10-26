@@ -10,6 +10,8 @@ import { questionProviders } from '../question/question.providers';
 import { QuizRelampagoHandler } from './games/quiz-relampago.handler';
 import { PhishingHandler } from './games/phishing.handler';
 import { DataClassifyHandler } from './games/data-classify.handler';
+import { ArcadeSubmissionService } from './arcade-submission.service';
+import { ArcadeRunStore } from './arcade-run.store';
 
 @Module({
   imports: [DatabaseModule, RedisModule, GamificationModule],
@@ -22,6 +24,8 @@ import { DataClassifyHandler } from './games/data-classify.handler';
     PhishingHandler,
     DataClassifyHandler,
     ArcadeService,
+    ArcadeSubmissionService,
+    ArcadeRunStore,
   ],
   exports: [TokenService],
 })
