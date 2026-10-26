@@ -7,12 +7,22 @@ jest.mock('bcrypt', () => ({
   compare: jest.fn(),
   hash: jest.fn(),
 }));
+const compareMock = bcrypt.compare as jest.Mock<
+  Promise<boolean>,
+  [string, string]
+>;
+const hashMock = bcrypt.hash as jest.Mock<Promise<string>, [string, number]>;
 
 describe('UsuarioService.changePassword', () => {
-  const repository = () => ({
-    findOne: jest.fn(),
-    save: jest.fn(),
-  });
+  const repository = () => {
+    const users = { findOne: jest.fn(), save: jest.fn() };
+    return Object.assign(users, {
+      manager: {
+        transaction: (action: (manager: unknown) => Promise<unknown>) =>
+          action({ getRepository: () => users }),
+      },
+    });
+  };
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -20,15 +30,25 @@ describe('UsuarioService.changePassword', () => {
 
   it('rejeita a troca quando a senha atual não confere', async () => {
     const users = repository();
-    users.findOne.mockResolvedValue({ id: 11, password: '$2b$10$hash-atual' });
-    bcrypt.compare.mockResolvedValue(false);
+    users.findOne.mockResolvedValue({
+      id: 11,
+      password: '$2b$10$hash-atual',
+      active: true,
+      role: Role.USER,
+      session_version: 0,
+    });
+    compareMock.mockResolvedValue(false);
     const service = new UsuarioService(users as never, undefined as never);
 
     await expect(
-      service.changePassword(11, {
-        currentPassword: 'senha-incorreta',
-        newPassword: 'nova-senha-segura',
-      }),
+      service.changePassword(
+        11,
+        {
+          currentPassword: 'senha-incorreta',
+          newPassword: 'nova-senha-segura',
+        },
+        0,
+      ),
     ).rejects.toMatchObject({ status: 400, message: 'Senha atual inválida' });
 
     expect(users.save).not.toHaveBeenCalled();
@@ -36,19 +56,29 @@ describe('UsuarioService.changePassword', () => {
 
   it('faz hash da nova senha antes de persistir', async () => {
     const users = repository();
-    const user = { id: 11, password: '$2b$10$hash-atual' };
+    const user = {
+      id: 11,
+      password: '$2b$10$hash-atual',
+      active: true,
+      role: Role.USER,
+      session_version: 0,
+    };
     users.findOne.mockResolvedValue(user);
     users.save.mockResolvedValue(user);
-    bcrypt.compare.mockResolvedValue(true);
-    bcrypt.hash.mockResolvedValue('$2b$10$novo-hash');
+    compareMock.mockResolvedValue(true);
+    hashMock.mockResolvedValue('$2b$10$novo-hash');
     const service = new UsuarioService(users as never, undefined as never);
 
     await expect(
-      service.changePassword(11, {
-        currentPassword: 'senha-atual',
-        newPassword: 'nova-senha-segura',
-      }),
-    ).resolves.toEqual({ message: 'Senha alterada com sucesso' });
+      service.changePassword(
+        11,
+        {
+          currentPassword: 'senha-atual',
+          newPassword: 'nova-senha-segura',
+        },
+        0,
+      ),
+    ).resolves.toMatchObject({ id: 11, session_version: 1 });
 
     expect(bcrypt.hash).toHaveBeenCalledWith('nova-senha-segura', 10);
     expect(users.save).toHaveBeenCalledWith(
@@ -61,10 +91,14 @@ describe('UsuarioService.changePassword', () => {
     const service = new UsuarioService(users as never, undefined as never);
 
     await expect(
-      service.changePassword(11, {
-        currentPassword: 'mesma-senha',
-        newPassword: 'mesma-senha',
-      }),
+      service.changePassword(
+        11,
+        {
+          currentPassword: 'mesma-senha',
+          newPassword: 'mesma-senha',
+        },
+        0,
+      ),
     ).rejects.toBeInstanceOf(BadRequestException);
 
     expect(users.findOne).not.toHaveBeenCalled();

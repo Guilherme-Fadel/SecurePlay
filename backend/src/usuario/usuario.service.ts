@@ -3,6 +3,7 @@ import {
   Injectable,
   Inject,
   NotFoundException,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { Repository } from 'typeorm';
 import { Usuario } from './usuario.entity';
@@ -18,6 +19,7 @@ import {
 import { randomUUID } from 'crypto';
 import { Role } from '../auth/roles.enum';
 import { ensurePendingRankingSeasonsClosed } from '../dashboard/ranking-history';
+import { activeAccountSession } from '../auth/session';
 import {
   noCompanyParameters,
   platformAdminParameters,
@@ -125,7 +127,11 @@ export class UsuarioService {
     const usuario = await this.usuarioRepository.findOne({ where: { id } });
     return usuario ?? undefined;
   }
-  async changePassword(userId: number, data: ChangePasswordDto) {
+  async changePassword(
+    userId: number,
+    data: ChangePasswordDto,
+    expectedVersion: number,
+  ) {
     if (data.currentPassword === data.newPassword) {
       throw new BadRequestException(
         'A nova senha deve ser diferente da senha atual',
@@ -137,6 +143,9 @@ export class UsuarioService {
       throw new NotFoundException('Usuário não encontrado');
     }
 
+    if (!activeAccountSession(usuario, expectedVersion))
+      throw new UnauthorizedException('Sessão inválida');
+
     const senhaAtualValida = await bcrypt.compare(
       data.currentPassword,
       usuario.password,
@@ -145,10 +154,29 @@ export class UsuarioService {
       throw new BadRequestException('Senha atual inválida');
     }
 
-    usuario.password = await bcrypt.hash(data.newPassword, 10);
-    await this.usuarioRepository.save(usuario);
-
-    return { message: 'Senha alterada com sucesso' };
+    const previousHash = usuario.password;
+    const nextHash = await bcrypt.hash(data.newPassword, 10);
+    return this.usuarioRepository.manager.transaction(async (manager) => {
+      const repository = manager.getRepository(Usuario);
+      const current = await repository.findOne({
+        where: { id: userId },
+        lock: { mode: 'pessimistic_write' },
+      });
+      if (
+        !activeAccountSession(current, expectedVersion) ||
+        current.password !== previousHash
+      )
+        throw new UnauthorizedException('Sessão alterada; entre novamente');
+      current.password = nextHash;
+      current.session_version = expectedVersion + 1;
+      current.password_reset_token_hash = null;
+      current.password_reset_expires_at = null;
+      current.password_setup_token_hash = null;
+      current.password_setup_expires_at = null;
+      current.password_setup_last_sent_at = null;
+      await repository.save(current);
+      return current;
+    });
   }
   async requestNickname(userId: number, requestedNickname: string) {
     const usuario = await this.getUsuarioById(userId);
@@ -180,7 +208,11 @@ export class UsuarioService {
     usuario.nickname_pending = nickname;
     usuario.nickname_request_status = 'pending';
     usuario.nickname_onboarding_pending = false;
-    await this.usuarioRepository.save(usuario);
+    await this.usuarioRepository.update(userId, {
+      nickname_pending: usuario.nickname_pending,
+      nickname_request_status: usuario.nickname_request_status,
+      nickname_onboarding_pending: false,
+    });
 
     return {
       nickname: usuario.nickname,
@@ -200,7 +232,9 @@ export class UsuarioService {
     }
     if (usuario.nickname_onboarding_pending) {
       usuario.nickname_onboarding_pending = false;
-      await this.usuarioRepository.save(usuario);
+      await this.usuarioRepository.update(userId, {
+        nickname_onboarding_pending: false,
+      });
     }
     return { nickname_onboarding_pending: false };
   }
@@ -229,7 +263,7 @@ export class UsuarioService {
       this.usuarioRepository.manager.connection,
     );
     usuario.profile_image_key = key;
-    await this.usuarioRepository.save(usuario);
+    await this.usuarioRepository.update(userId, { profile_image_key: key });
 
     return {
       profile_image_url: await this.resolveProfileImageUrl(key),
@@ -259,8 +293,13 @@ export class UsuarioService {
         sucesso: true,
         mensagem: 'Usuário criado com sucesso',
       };
-    } catch (error: any) {
-      if (error.code === '23505') {
+    } catch (error: unknown) {
+      if (
+        error &&
+        typeof error === 'object' &&
+        'code' in error &&
+        error.code === '23505'
+      ) {
         return {
           sucesso: false,
           mensagem: 'Email já cadastrado',

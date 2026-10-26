@@ -8,6 +8,9 @@ import { calcTokenTtl } from '../common/utils/token.utils';
 import { ConfigService } from '@nestjs/config';
 import { RegistrationService } from '../registration/registration.service';
 import { Role } from './roles.enum';
+import { EventEmitter2 } from '@nestjs/event-emitter';
+import { ChangePasswordDto } from './dto/change-password.dto';
+import { sessionPayload } from './session';
 
 @Injectable()
 export class AuthService {
@@ -17,6 +20,7 @@ export class AuthService {
     private readonly redisService: RedisService,
     private readonly configService: ConfigService,
     private readonly registrationService: RegistrationService,
+    private readonly events: EventEmitter2,
   ) {}
 
   get cookieOptions() {
@@ -43,12 +47,11 @@ export class AuthService {
       path: '/',
       maxAge: 2 * 60 * 60,
       ...(domain ? { domain } : {}),
-    };
+    } as const;
   }
 
   get cookieClearOptions() {
-    const { maxAge: _maxAge, ...options } = this.cookieOptions;
-    return options;
+    return { ...this.cookieOptions, maxAge: undefined };
   }
 
   async signIn(dto: LoginDto) {
@@ -59,7 +62,8 @@ export class AuthService {
       throw new UnauthorizedException('Identificador ou senha não fornecidos');
     }
 
-    const user = await this.usuarioService.getUsuarioByLoginIdentifier(identifier);
+    const user =
+      await this.usuarioService.getUsuarioByLoginIdentifier(identifier);
 
     if (!user || !user.active) {
       throw new UnauthorizedException('Usuário ou senha inválidos');
@@ -88,16 +92,12 @@ export class AuthService {
       return {
         requiresPasswordSetup: true,
         email: user.email,
-        message: 'Defina sua senha pelo link enviado ao seu e-mail antes de entrar.',
+        message:
+          'Defina sua senha pelo link enviado ao seu e-mail antes de entrar.',
       };
     }
 
-    const token = this.jwtService.sign({
-      sub: user.id,
-      email: user.email,
-      role: user.role,
-      sessionVersion: user.session_version ?? 0,
-    });
+    const token = this.jwtService.sign(sessionPayload(user));
 
     return {
       token,
@@ -120,5 +120,25 @@ export class AuthService {
     }
 
     return { message: 'Logout realizado com sucesso' };
+  }
+
+  async changePassword(
+    userId: number,
+    dto: ChangePasswordDto,
+    expectedVersion: number,
+  ) {
+    const user = await this.usuarioService.changePassword(
+      userId,
+      dto,
+      expectedVersion,
+    );
+    this.events.emit('auth.sessions.revoked', {
+      userId,
+      sessionVersion: user.session_version,
+    });
+    return {
+      token: this.jwtService.sign(sessionPayload(user)),
+      message: 'Senha alterada com sucesso',
+    };
   }
 }

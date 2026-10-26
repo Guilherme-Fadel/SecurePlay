@@ -10,12 +10,14 @@ import {
   Response,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
-import { LoginDto } from 'src/usuario/dto/login.dto';
-import { UsuarioService } from 'src/usuario/usuario.service';
+import { LoginDto } from '../usuario/dto/login.dto';
+import { UsuarioService } from '../usuario/usuario.service';
 import { Public } from './public.decorator';
 import { Throttle } from '@nestjs/throttler';
 import { ChangePasswordDto } from './dto/change-password.dto';
 import { AllowExpiredTrial } from '../registration/trial-access.guard';
+import type { AuthenticatedRequest } from './session';
+import type { FastifyReply } from 'fastify';
 
 @Controller('auth')
 export class AuthController {
@@ -30,7 +32,7 @@ export class AuthController {
   @Throttle({ short: { limit: 5, ttl: 60000 } })
   async signIn(
     @Body() dto: LoginDto,
-    @Response({ passthrough: true }) res: any,
+    @Response({ passthrough: true }) res: FastifyReply,
   ) {
     const result = await this.authService.signIn(dto);
 
@@ -38,10 +40,11 @@ export class AuthController {
       return result;
     }
 
+    if (!result.token || !result.userId) throw new Error('Sessão não emitida');
     res.setCookie('token', result.token, this.authService.cookieOptions);
     res.header('Cache-Control', 'private, no-store');
 
-    const user = await this.usuarioService.getUsuarioDados(result.userId!);
+    const user = await this.usuarioService.getUsuarioDados(result.userId);
 
     return {
       message: result.message,
@@ -54,8 +57,8 @@ export class AuthController {
   @AllowExpiredTrial()
   @HttpCode(HttpStatus.OK)
   async signOut(
-    @Request() req: any,
-    @Response({ passthrough: true }) res: any,
+    @Request() req: AuthenticatedRequest,
+    @Response({ passthrough: true }) res: FastifyReply,
   ) {
     const token = req.cookies?.token;
     const result = await this.authService.signOut(token);
@@ -67,7 +70,10 @@ export class AuthController {
 
   @Get(['me', 'token'])
   @AllowExpiredTrial()
-  async me(@Request() req: any, @Response({ passthrough: true }) res: any) {
+  async me(
+    @Request() req: AuthenticatedRequest,
+    @Response({ passthrough: true }) res: FastifyReply,
+  ) {
     res.header('Cache-Control', 'private, no-store');
     return this.usuarioService.getUsuarioDados(req.user.userId);
   }
@@ -75,7 +81,21 @@ export class AuthController {
   @Patch('password')
   @HttpCode(HttpStatus.OK)
   @Throttle({ short: { limit: 5, ttl: 60000 } })
-  async changePassword(@Request() req: any, @Body() dto: ChangePasswordDto) {
-    return this.usuarioService.changePassword(req.user.userId, dto);
+  async changePassword(
+    @Request() req: AuthenticatedRequest,
+    @Body() dto: ChangePasswordDto,
+    @Response({ passthrough: true }) res: FastifyReply,
+  ) {
+    const result = await this.authService.changePassword(
+      req.user.userId,
+      dto,
+      req.user.sessionVersion,
+    );
+    res.header('Cache-Control', 'private, no-store');
+    res.setCookie('token', result.token, this.authService.cookieOptions);
+    return {
+      message: result.message,
+      ...(!req.cookies?.token ? { token: result.token } : {}),
+    };
   }
 }

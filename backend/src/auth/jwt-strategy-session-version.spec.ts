@@ -27,7 +27,11 @@ describe('JwtStrategy session version', () => {
     } as never);
 
     await expect(
-      strategy.validate({ sub: 4, sessionVersion: 5 }),
+      strategy.validate({
+        sub: 4,
+        sessionVersion: 5,
+        exp: Math.floor(Date.now() / 1000) + 60,
+      }),
     ).resolves.toMatchObject({ userId: 4, role: Role.USER });
   });
 
@@ -43,7 +47,11 @@ describe('JwtStrategy session version', () => {
     } as never);
 
     await expect(
-      strategy.validate({ sub: 4, sessionVersion: 5 }),
+      strategy.validate({
+        sub: 4,
+        sessionVersion: 5,
+        exp: Math.floor(Date.now() / 1000) + 60,
+      }),
     ).rejects.toBeInstanceOf(UnauthorizedException);
   });
 
@@ -58,6 +66,8 @@ describe('JwtStrategy session version', () => {
       }),
     } as never);
 
-    await expect(strategy.validate({ sub: 4 })).resolves.toMatchObject({ userId: 4 });
+    await expect(
+      strategy.validate({ sub: 4, exp: Math.floor(Date.now() / 1000) + 60 }),
+    ).resolves.toMatchObject({ userId: 4, sessionVersion: 0 });
   });
 });

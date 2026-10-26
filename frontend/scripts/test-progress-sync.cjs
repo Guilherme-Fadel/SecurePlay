@@ -66,6 +66,46 @@ function eventTarget() {
   };
 }
 
+test('password renewal reconnects the current socket after HTTP success, without credentials in the event', async () => {
+  const effects = [];
+  const calls = [];
+  const events = [];
+  const window = {
+    ...eventTarget(),
+    dispatchEvent(event) { events.push(event); this.emit(event.type); },
+  };
+  const session = load('src/services/session-events.ts', {}, { window, Event });
+  const socket = {
+    disconnect() { calls.push('disconnect'); },
+    connect() { calls.push('connect'); },
+  };
+  const { useSocket } = load('src/hooks/useSocket.ts', {
+    react: { useState: () => [null, () => {}], useEffect: (effect) => effects.push(effect) },
+    'socket.io-client': { io: () => socket },
+    '@/services/api-config': { SOCKET_ORIGIN: '/fixture', SOCKET_PATH: '/socket.io' },
+    '@/services/session-events': session,
+  }, { window });
+  let finish;
+  const api = { patch: () => new Promise((resolve) => { finish = resolve; }) };
+  const { changePassword } = load('src/services/profile.ts', {
+    '@/services/api': { api }, './session-events': session,
+  });
+  useSocket(7);
+  const cleanup = effects[0]();
+  const pending = changePassword({ currentPassword: 'fixture-old', newPassword: 'fixture-new' });
+  assert.deepEqual(calls, []);
+  finish({ data: { message: 'ok' } });
+  await pending;
+  assert.deepEqual(calls, ['disconnect', 'connect']);
+  assert.equal(events[0].detail, undefined);
+  api.patch = async () => { throw new Error('fixture rejected'); };
+  await assert.rejects(changePassword({ currentPassword: 'wrong', newPassword: 'fixture-new' }));
+  assert.deepEqual(calls, ['disconnect', 'connect']);
+  cleanup();
+  session.notifySessionRenewed();
+  assert.deepEqual(calls, ['disconnect', 'connect', 'disconnect']);
+});
+
 test('visible polling, focus and reconnect refresh without clearing displayed data; cleanup stops work', async () => {
   let now = 100_000;
   const cache = load('src/lib/queryCache.ts', {}, { Date: class extends Date { static now() { return now; } } });

@@ -16,7 +16,7 @@ describe('Boas-vindas para escolha de apelido', () => {
     };
     const users = {
       findOne: jest.fn().mockResolvedValue(user),
-      save: jest.fn().mockResolvedValue(user),
+      update: jest.fn().mockResolvedValue(user),
     };
     const service = new UsuarioService(
       users as never,
@@ -36,8 +36,9 @@ describe('Boas-vindas para escolha de apelido', () => {
       nickname_onboarding_pending: false,
     });
     expect(user.nickname).toBeNull();
-    expect(users.save).toHaveBeenCalledTimes(1);
-    expect(users.save).toHaveBeenCalledWith(
+    expect(users.update).toHaveBeenCalledTimes(1);
+    expect(users.update).toHaveBeenCalledWith(
+      31,
       expect.objectContaining({
         nickname_onboarding_pending: false,
         nickname_pending: 'Guardião Azul',
@@ -49,7 +50,7 @@ describe('Boas-vindas para escolha de apelido', () => {
     const { user, users, service } = setup();
     await expect(service.requestNickname(31, 'ab@')).rejects.toThrow();
     expect(user.nickname_onboarding_pending).toBe(true);
-    expect(users.save).not.toHaveBeenCalled();
+    expect(users.update).not.toHaveBeenCalled();
   });
 
   it('escolher depois mantém o perfil e o apelido intactos e é idempotente', async () => {
@@ -60,7 +61,7 @@ describe('Boas-vindas para escolha de apelido', () => {
     await service.dismissNicknameOnboarding(31);
     expect(user.nickname_pending).toBeNull();
     expect(user.nickname_request_status).toBe('none');
-    expect(users.save).toHaveBeenCalledTimes(1);
+    expect(users.update).toHaveBeenCalledTimes(1);
     expect(users.findOne).toHaveBeenCalledWith({ where: { id: 31 } });
   });
 
@@ -69,19 +70,19 @@ describe('Boas-vindas para escolha de apelido', () => {
     async (role) => {
       const { users, service } = setup({ role });
       await expect(service.dismissNicknameOnboarding(31)).rejects.toThrow();
-      expect(users.save).not.toHaveBeenCalled();
+      expect(users.update).not.toHaveBeenCalled();
     },
   );
 
   it('perfil sem organização não pode concluir boas-vindas', async () => {
     const { users, service } = setup({ empresa_id: null });
     await expect(service.dismissNicknameOnboarding(31)).rejects.toThrow();
-    expect(users.save).not.toHaveBeenCalled();
+    expect(users.update).not.toHaveBeenCalled();
   });
 
   it('não retorna sucesso quando a persistência falha', async () => {
     const { users, service } = setup();
-    users.save.mockRejectedValue(new Error('Falha simulada'));
+    users.update.mockRejectedValue(new Error('Falha simulada'));
     await expect(service.dismissNicknameOnboarding(31)).rejects.toThrow(
       'Falha simulada',
     );

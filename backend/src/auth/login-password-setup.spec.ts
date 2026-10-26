@@ -29,6 +29,7 @@ describe('AuthService.signIn — confirmação e senha obrigatória', () => {
       {} as never,
       {} as never,
       registrationService as never,
+      {} as never,
     );
     return { service, jwtService, registrationService };
   }
@@ -36,7 +37,10 @@ describe('AuthService.signIn — confirmação e senha obrigatória', () => {
   it('não emite sessão com a senha inicial após confirmação enquanto a troca estiver pendente', async () => {
     const { service, jwtService } = await setup();
     await expect(
-      service.signIn({ email: 'gestao@example.test', password: 'senha-inicial' }),
+      service.signIn({
+        email: 'gestao@example.test',
+        password: 'senha-inicial',
+      }),
     ).resolves.toMatchObject({
       requiresPasswordSetup: true,
       email: 'gestao@example.test',
@@ -49,9 +53,14 @@ describe('AuthService.signIn — confirmação e senha obrigatória', () => {
       email_verified_at: null,
     });
     await expect(
-      service.signIn({ email: 'gestao@example.test', password: 'senha-inicial' }),
+      service.signIn({
+        email: 'gestao@example.test',
+        password: 'senha-inicial',
+      }),
     ).resolves.toMatchObject({ requiresEmailVerification: true });
-    expect(registrationService.startPlatformAdminVerification).toHaveBeenCalledTimes(1);
+    expect(
+      registrationService.startPlatformAdminVerification,
+    ).toHaveBeenCalledTimes(1);
     expect(jwtService.sign).not.toHaveBeenCalled();
   });
 
@@ -63,7 +72,10 @@ describe('AuthService.signIn — confirmação e senha obrigatória', () => {
       session_version: 3,
     });
     await expect(
-      service.signIn({ email: 'gestao@example.test', password: 'senha-inicial' }),
+      service.signIn({
+        email: 'gestao@example.test',
+        password: 'senha-inicial',
+      }),
     ).resolves.toMatchObject({ token: 'jwt', userId: 7 });
     expect(jwtService.sign).toHaveBeenCalledTimes(1);
     expect(jwtService.sign).toHaveBeenCalledWith(

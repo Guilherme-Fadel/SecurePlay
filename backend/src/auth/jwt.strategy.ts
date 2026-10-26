@@ -1,20 +1,13 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { Strategy } from 'passport-jwt';
-import { Role } from './roles.enum';
 import { Request } from 'express';
 import { UsuarioService } from '../usuario/usuario.service';
+import { extractRequestToken } from '../common/utils/token.utils';
+import { activeAccountSession } from './session';
 
 function extractFromCookieOrHeader(req: Request): string | null {
-  if (req.cookies?.token) {
-    return req.cookies.token;
-  }
-  const authHeader = req.headers?.authorization;
-  if (authHeader) {
-    const [type, token] = authHeader.split(' ');
-    if (type === 'Bearer' && token) return token;
-  }
-  return null;
+  return extractRequestToken(req);
 }
 
 @Injectable()
@@ -34,24 +27,28 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     });
   }
 
-  async validate(payload: any) {
-    const usuario = await this.usuarioService.getUsuarioById(payload.sub);
-    const validRoles = Object.values(Role);
+  async validate(payload: {
+    sub: number;
+    sessionVersion?: number;
+    exp?: number;
+  }) {
     if (
-      !usuario?.active ||
-      (payload.sessionVersion ?? 0) !== (usuario.session_version ?? 0) ||
-      usuario.password_change_required ||
-      (usuario.role === Role.PLATFORM_ADMIN &&
-        usuario.email_verification_required &&
-        !usuario.email_verified_at) ||
-      !validRoles.includes(usuario.role)
-    ) {
+      !Number.isSafeInteger(payload.sub) ||
+      payload.sub <= 0 ||
+      !Number.isSafeInteger(payload.exp) ||
+      (payload.exp ?? 0) <= Date.now() / 1000
+    )
+      throw new UnauthorizedException('Sessão inválida');
+    const usuario = await this.usuarioService.getUsuarioById(payload.sub);
+    const sessionVersion = payload.sessionVersion ?? 0;
+    if (!activeAccountSession(usuario, sessionVersion)) {
       throw new UnauthorizedException('Ocorreu um erro inesperado');
     }
     return {
       userId: usuario.id,
       email: usuario.email,
       role: usuario.role,
+      sessionVersion,
     };
   }
 }

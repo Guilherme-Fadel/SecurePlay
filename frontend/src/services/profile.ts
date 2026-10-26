@@ -1,4 +1,5 @@
 import { api } from '@/services/api';
+import { notifySessionRenewed } from './session-events';
 
 export interface ChangePasswordPayload {
   currentPassword: string;
@@ -7,6 +8,7 @@ export interface ChangePasswordPayload {
 
 export async function changePassword(payload: ChangePasswordPayload): Promise<{ message: string }> {
   const response = await api.patch('/auth/password', payload);
+  notifySessionRenewed();
   return response.data;
 }
 

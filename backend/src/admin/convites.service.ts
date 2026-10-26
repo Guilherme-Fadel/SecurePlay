@@ -623,7 +623,14 @@ export class ConvitesService {
     usuario.nickname = apelido;
     usuario.nickname_pending = null;
     usuario.nickname_request_status = 'approved';
-    await this.usuarioRepository.save(usuario);
+    await this.usuarioRepository.update(
+      { id: usuarioId, empresa_id: empresaId },
+      {
+        nickname: apelido,
+        nickname_pending: null,
+        nickname_request_status: 'approved',
+      },
+    );
     if (atorId)
       await this.adminAuditService.registrar({
         empresaId,
@@ -659,7 +666,10 @@ export class ConvitesService {
     const apelido = usuario.nickname_pending;
     usuario.nickname_pending = null;
     usuario.nickname_request_status = 'rejected';
-    await this.usuarioRepository.save(usuario);
+    await this.usuarioRepository.update(
+      { id: usuarioId, empresa_id: empresaId },
+      { nickname_pending: null, nickname_request_status: 'rejected' },
+    );
     if (atorId)
       await this.adminAuditService.registrar({
         empresaId,
