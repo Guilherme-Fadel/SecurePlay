@@ -98,9 +98,8 @@ export class DashboardService implements OnModuleInit, OnModuleDestroy {
     points: number,
   ): Promise<void> {
     const key = `xp-today:${usuario_id}`;
-    const current = await this.getRedisXpToday(usuario_id);
     const ttl = ttlUntilEndOfDay();
-    await this.redisService.set(key, String(current + points), ttl);
+    await this.redisService.incrBy(key, points, ttl);
   }
   async getRanking(
     usuario_id: number,

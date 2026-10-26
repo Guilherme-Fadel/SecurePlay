@@ -173,11 +173,19 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
     amount: number,
     ttlSeconds?: number,
   ): Promise<number> {
-    const value = await this.client.incrby(key, amount);
-    if (ttlSeconds !== undefined && value === amount) {
-      await this.client.expire(key, ttlSeconds);
-    }
-    return value;
+    if (
+      !Number.isSafeInteger(amount) ||
+      (ttlSeconds !== undefined &&
+        (!Number.isSafeInteger(ttlSeconds) || ttlSeconds <= 0))
+    )
+      throw new Error('Incremento ou TTL inválido');
+    if (ttlSeconds === undefined) return this.client.incrby(key, amount);
+    // Incremento e TTL juntos; repara chave antiga sem expiração.
+    return this.eval(
+      "local value = redis.call('INCRBY', KEYS[1], ARGV[1]); if redis.call('TTL', KEYS[1]) < 0 then redis.call('EXPIRE', KEYS[1], ARGV[2]) end; return value",
+      [key],
+      [amount, ttlSeconds],
+    ) as Promise<number>;
   }
   async decrBy(key: string, amount: number): Promise<number> {
     return this.client.decrby(key, amount);
