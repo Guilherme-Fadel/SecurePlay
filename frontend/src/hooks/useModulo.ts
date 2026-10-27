@@ -1,30 +1,48 @@
-import { useCallback, useState, useEffect } from 'react';
+import { useCallback, useState, useEffect, useRef } from 'react';
 import { ModuloDetalhes, getModulo } from '@/services/conteudo';
 
+interface ModuleState {
+  id: number | null;
+  modulo: ModuloDetalhes | null;
+  loading: boolean;
+  error: string | null;
+}
+
 export function useModulo(moduloId: number | null) {
-  const [modulo, setModulo] = useState<ModuloDetalhes | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [state, setState] = useState<ModuleState>({ id: null, modulo: null, loading: false, error: null });
+  const generation = useRef(0);
 
   const fetch = useCallback(async () => {
-    if (!moduloId) return;
-
-    setLoading(true);
-    setError(null);
-
+    const request = ++generation.current;
+    if (!moduloId) {
+      setState({ id: moduloId, modulo: null, loading: false, error: null });
+      return;
+    }
+    setState({ id: moduloId, modulo: null, loading: true, error: null });
     try {
       const data = await getModulo(moduloId);
-      setModulo(data);
+      if (data.id !== moduloId) throw new Error('Unexpected module');
+      if (request === generation.current) {
+        setState({ id: moduloId, modulo: data, loading: false, error: null });
+      }
     } catch {
-      setError('Erro ao carregar módulo');
-    } finally {
-      setLoading(false);
+      if (request === generation.current) {
+        setState({ id: moduloId, modulo: null, loading: false, error: 'Não foi possível carregar esta missão.' });
+      }
     }
   }, [moduloId]);
 
   useEffect(() => {
-    fetch();
+    void fetch();
+    return () => { generation.current += 1; };
   }, [fetch]);
 
-  return { modulo, loading, error, refetch: fetch };
+  // O ID muda no render antes da limpeza do efeito anterior.
+  const current = state.id === moduloId;
+  return {
+    modulo: current ? state.modulo : null,
+    loading: current ? state.loading : Boolean(moduloId),
+    error: current ? state.error : null,
+    refetch: fetch,
+  };
 }

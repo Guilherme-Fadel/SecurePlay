@@ -80,3 +80,39 @@ test('session: a late failure cannot replace a newer login', async () => {
   assert.equal(value.status, 'authenticated');
   assert.equal(value.user.userId, 9);
 });
+
+test('module: A slow/B fast, stale failure, overlapping retries, invalid response and null ID', async () => {
+  const h = hooks();
+  const requests = [];
+  const { useModulo } = load('src/hooks/useModulo.ts', {
+    react: h.react, '@/services/conteudo': { getModulo: (id) => {
+      const request = deferred(); requests.push({ id, ...request }); return request.promise;
+    } },
+  });
+  let id = 1;
+  const render = () => h.render(() => useModulo(id));
+  render();
+  id = 2;
+  assert.equal(render().modulo, null);
+  requests[1].resolve({ id: 2 }); await settle();
+  assert.equal(render().modulo.id, 2);
+  requests[0].resolve({ id: 1 }); await settle();
+  assert.equal(render().modulo.id, 2);
+  let value = render();
+  void value.refetch(); void value.refetch();
+  requests[3].resolve({ id: 2 }); await settle();
+  requests[2].reject(new Error('stale')); await settle();
+  assert.equal(render().error, null);
+  void render().refetch();
+  requests[4].resolve({ id: 99 }); await settle();
+  assert.ok(render().error);
+  id = null;
+  render();
+  value = render();
+  assert.equal(value.modulo, null);
+  assert.equal(value.loading, false);
+  assert.equal(value.error, null);
+  id = 3; render(); h.unmount();
+  requests[5].resolve({ id: 3 }); await settle();
+  assert.equal(requests.length, 6);
+});
