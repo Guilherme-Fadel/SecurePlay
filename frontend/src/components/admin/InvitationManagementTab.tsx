@@ -15,6 +15,8 @@ import { criarConvite, listarConvites, revogarConvite, type ConvitesPaginados } 
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { useNotebookLayout } from '@/hooks/useNotebookLayout';
 import { AdminDataGrid, type AdminDataGridColumn } from '@/components/admin/console/AdminDataGrid';
+import { AdminGridPagination } from '@/components/admin/console/AdminGridPagination';
+import { normalizeAdminListFilters } from '@/hooks/useAdminListFilters';
 import { useAdminUnsavedChanges } from '@/hooks/useAdminUnsavedChanges';
 
 interface InvitationManagementTabProps {
@@ -36,7 +38,8 @@ export function InvitationManagementTab({ empresaId: initialCompanyId, selectCom
   const [selectedCompanyId, setSelectedCompanyId] = useState(initialCompanyId);
   const empresaId = canSelectCompany ? selectedCompanyId : initialCompanyId;
   const notebook = useNotebookLayout();
-  const pageSize = consoleMode ? 25 : notebook ? 3 : 25;
+  const [recordsPerPage, setRecordsPerPage] = useState(25);
+  const pageSize = consoleMode ? recordsPerPage : notebook ? 3 : 25;
   const sessionKey = `secureplay-admin-invitations:${user?.userId ?? 'unknown'}:${empresaId ?? 'company'}`;
   const emptyResult: ConvitesPaginados = { items: [], page: 1, pageSize: 25, total: 0, totalPages: 0 };
 
@@ -68,18 +71,19 @@ export function InvitationManagementTab({ empresaId: initialCompanyId, selectCom
   useEffect(() => {
     try {
       const saved = sessionStorage.getItem(sessionKey);
-      const state = saved ? JSON.parse(saved) as { search?: string; sort?: 'asc' | 'desc'; page?: number } : {};
+      const state = saved ? JSON.parse(saved) as { search?: string; sort?: 'asc' | 'desc'; page?: number; pageSize?: number } : {};
+      setRecordsPerPage(normalizeAdminListFilters({ pageSize: state.pageSize }).pageSize);
       setSearch(state.search ?? '');
       setSort(state.sort === 'asc' ? 'asc' : 'desc');
       setPage(typeof state.page === 'number' && Number.isInteger(state.page) && state.page > 0 ? state.page : 1);
-    } catch { setSearch(''); setSort('desc'); setPage(1); }
+    } catch { setSearch(''); setSort('desc'); setPage(1); setRecordsPerPage(25); }
     setRestoredKey(sessionKey);
   }, [sessionKey]);
 
   useEffect(() => {
     if (restoredKey !== sessionKey || deferredSearch !== search) return;
-    try { sessionStorage.setItem(sessionKey, JSON.stringify({ search, sort, page })); } catch { /* Optional session preference. */ }
-  }, [page, restoredKey, search, sessionKey, sort]);
+    try { sessionStorage.setItem(sessionKey, JSON.stringify({ search, sort, page, pageSize: recordsPerPage })); } catch { /* Optional session preference. */ }
+  }, [page, recordsPerPage, restoredKey, search, sessionKey, sort]);
 
   const fecharConvite = () => {
     if (dialogRef.current?.open) {
@@ -181,7 +185,9 @@ export function InvitationManagementTab({ empresaId: initialCompanyId, selectCom
           {!consoleMode && <AppButton type="submit" disabled={creating || (user?.role === 'platform_admin' && !empresaId)} icon={<Link2 size={16} />}>{creating ? 'Gerando...' : 'Gerar convite'}</AppButton>}
         </form>
       </FormCard>}
-      {mode !== 'new' && <AdminDataGrid className="admin-invites-card" columns={columns} rows={result.items} rowKey={(convite) => convite.id} loading={loading} error={loadError ? 'Não foi possível carregar os convites.' : undefined} onRetry={query.refetch} empty={deferredSearch ? 'Nenhum convite corresponde à busca.' : 'Nenhum convite criado ainda.'} toolbar={<AdminListToolbar actions={mode === 'list' ? headerActions : undefined}><AppSearchInput label="Buscar convites" value={search} onChange={(event) => { setSearch(event.target.value); setPage(1); }} placeholder="Buscar por e-mail" /><AppSelect aria-label="Ordenar convites por data" value={sort} onChange={(event) => { setSort(event.target.value as 'asc' | 'desc'); setPage(1); }}><option value="desc">Mais recentes</option><option value="asc">Mais antigos</option></AppSelect><span className="admin-invites-total" aria-label="Total de convites">{loading || loadError ? '—' : `${result.total} ${result.total === 1 ? 'convite' : 'convites'}`}</span></AdminListToolbar>} footer={!loading && !loadError ? <AdminPagination alwaysVisible={consoleMode} page={page} totalPages={result.totalPages} ariaLabel="Paginação de convites" disabled={loading} adjacentButtons onPageChange={setPage} /> : null} />}
+      {mode !== 'new' && <AdminDataGrid className="admin-invites-card" columns={columns} rows={result.items} rowKey={(convite) => convite.id} loading={loading} error={loadError ? 'Não foi possível carregar os convites.' : undefined} onRetry={query.refetch} empty={deferredSearch ? 'Nenhum convite corresponde à busca.' : 'Nenhum convite criado ainda.'} toolbar={<AdminListToolbar actions={mode === 'list' ? headerActions : undefined}><AppSearchInput label="Buscar convites" value={search} onChange={(event) => { setSearch(event.target.value); setPage(1); }} placeholder="Buscar por e-mail" /><AppSelect aria-label="Ordenar convites por data" value={sort} onChange={(event) => { setSort(event.target.value as 'asc' | 'desc'); setPage(1); }}><option value="desc">Mais recentes</option><option value="asc">Mais antigos</option></AppSelect>{!consoleMode && <span className="admin-invites-total" aria-label="Total de convites">{loading || loadError ? '—' : `${result.total} ${result.total === 1 ? 'convite' : 'convites'}`}</span>}</AdminListToolbar>} footer={!loading && !loadError ? consoleMode
+        ? <AdminGridPagination page={page} pageSize={recordsPerPage} total={result.total} totalPages={result.totalPages} ariaLabel="Paginação de convites" onPageChange={setPage} onPageSizeChange={(size) => { setRecordsPerPage(size); setPage(1); }} />
+        : <AdminPagination page={page} totalPages={result.totalPages} ariaLabel="Paginação de convites" disabled={loading} adjacentButtons onPageChange={setPage} /> : null} />}
     </div>
     {linkGerado && <dialog ref={dialogRef} className="admin-qr-modal" aria-labelledby="invite-dialog-title" onClose={() => { setLinkGerado(null); setConviteCopiado(false); requestAnimationFrame(() => openerRef.current?.focus()); }}><div className="admin-qr-card"><button ref={closeButtonRef} type="button" className="admin-qr-close" onClick={fecharConvite} aria-label="Fechar">×</button><div className="admin-qr-title"><QrCode size={20} /><div><strong id="invite-dialog-title">Convite pronto</strong><span>Compartilhe pelo link ou QR code.</span></div></div><div className="admin-qr-code"><QRCodeSVG value={linkGerado} size={172} level="M" includeMargin /></div><div className="admin-qr-link"><span>{linkGerado}</span><button type="button" onClick={() => void copiar(linkGerado)}><Copy size={15} /> Copiar</button></div></div></dialog>}
   </div></>;

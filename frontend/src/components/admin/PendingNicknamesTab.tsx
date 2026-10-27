@@ -10,6 +10,8 @@ import { cn } from '@/lib/utils';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { useNotebookLayout } from '@/hooks/useNotebookLayout';
 import { AdminDataGrid, type AdminDataGridColumn } from '@/components/admin/console/AdminDataGrid';
+import { AdminGridPagination } from '@/components/admin/console/AdminGridPagination';
+import { normalizeAdminListFilters } from '@/hooks/useAdminListFilters';
 import {
   aprovarApelido,
   listarApelidosPendentes,
@@ -29,7 +31,8 @@ const emptyResult: ApelidosPendentesPaginados = {
 export function PendingNicknamesTab({ empresaId, consoleMode = false }: PendingNicknamesTabProps) {
   const { user } = useCurrentUser();
   const notebook = useNotebookLayout();
-  const pageSize = consoleMode ? 25 : notebook ? 4 : 25;
+  const [recordsPerPage, setRecordsPerPage] = useState(25);
+  const pageSize = consoleMode ? recordsPerPage : notebook ? 4 : 25;
   const sessionKey = `secureplay-admin-nicknames:${user?.userId ?? 'unknown'}:${empresaId ?? 'company'}`;
   const [search, setSearch] = useState('');
   const [sort, setSort] = useState<'default' | 'asc' | 'desc'>('default');
@@ -46,20 +49,21 @@ export function PendingNicknamesTab({ empresaId, consoleMode = false }: PendingN
   useEffect(() => {
     try {
       const saved = sessionStorage.getItem(sessionKey);
-      const state = saved ? JSON.parse(saved) as { search?: string; sort?: 'default' | 'asc' | 'desc'; page?: number } : {};
+      const state = saved ? JSON.parse(saved) as { search?: string; sort?: 'default' | 'asc' | 'desc'; page?: number; pageSize?: number } : {};
+      setRecordsPerPage(normalizeAdminListFilters({ pageSize: state.pageSize }).pageSize);
       setSearch(state.search ?? '');
       setSort(state.sort === 'asc' || state.sort === 'desc' ? state.sort : 'default');
       setPage(typeof state.page === 'number' && Number.isInteger(state.page) && state.page > 0 ? state.page : 1);
     } catch {
-      setSearch(''); setSort('default'); setPage(1);
+      setSearch(''); setSort('default'); setPage(1); setRecordsPerPage(25);
     }
     setRestoredKey(sessionKey);
   }, [sessionKey]);
 
   useEffect(() => {
     if (restoredKey !== sessionKey || deferredSearch !== search) return;
-    try { sessionStorage.setItem(sessionKey, JSON.stringify({ search, sort, page })); } catch { /* Optional session preference. */ }
-  }, [page, restoredKey, search, sessionKey, sort]);
+    try { sessionStorage.setItem(sessionKey, JSON.stringify({ search, sort, page, pageSize: recordsPerPage })); } catch { /* Optional session preference. */ }
+  }, [page, recordsPerPage, restoredKey, search, sessionKey, sort]);
 
   const filters = { page, pageSize, search: deferredSearch, sort };
   const query = useCachedQuery(adminQueryKey('nicknames', empresaId, filters), () => listarApelidosPendentes(filters, empresaId), { enabled: restoredKey === sessionKey });
@@ -110,7 +114,9 @@ export function PendingNicknamesTab({ empresaId, consoleMode = false }: PendingN
             <option value="asc">Apelido A–Z</option>
             <option value="desc">Apelido Z–A</option>
           </AppSelect>
-        </AdminListToolbar>} footer={!loading && !loadError ? <AdminPagination alwaysVisible={consoleMode} page={page} totalPages={result.totalPages} ariaLabel="Paginação de apelidos pendentes" onPageChange={setPage} /> : null} />
+        </AdminListToolbar>} footer={!loading && !loadError ? consoleMode
+          ? <AdminGridPagination page={page} pageSize={recordsPerPage} total={result.total} totalPages={result.totalPages} ariaLabel="Paginação de apelidos pendentes" onPageChange={setPage} onPageSizeChange={(size) => { setRecordsPerPage(size); setPage(1); }} />
+          : <AdminPagination page={page} totalPages={result.totalPages} ariaLabel="Paginação de apelidos pendentes" onPageChange={setPage} /> : null} />
     </div>
   );
 }

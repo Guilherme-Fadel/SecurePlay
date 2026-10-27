@@ -16,6 +16,8 @@ import { useCachedQuery } from '@/hooks/useCachedQuery';
 import { adminQueryKey } from '@/lib/adminCache';
 import { useAdminUnsavedChanges } from '@/hooks/useAdminUnsavedChanges';
 import { AdminRecordCard } from '@/components/admin/console/AdminRecordCard';
+import { AdminGridPagination } from '@/components/admin/console/AdminGridPagination';
+import { normalizeAdminListFilters } from '@/hooks/useAdminListFilters';
 
 interface UserManagementTabProps { empresaId?: number; consoleMode?: boolean; usuarioId?: number; }
 const emptyResult: UsuariosPaginados = { items: [], page: 1, pageSize: 25, total: 0, totalPages: 0 };
@@ -28,7 +30,8 @@ export function UserManagementTab({ empresaId, consoleMode = false, usuarioId }:
   const openUser = (usuario: UsuarioEmpresa) => navigate(`${listPath}/${usuario.id}/editar`, { state: { selectedId: usuario.id } });
   const { user, setSession } = useCurrentUser();
   const notebook = useNotebookLayout();
-  const pageSize = consoleMode ? 25 : notebook ? 4 : 25;
+  const [recordsPerPage, setRecordsPerPage] = useState(25);
+  const pageSize = consoleMode ? recordsPerPage : notebook ? 4 : 25;
   const sessionKey = `secureplay-admin-users:${user?.userId ?? 'unknown'}:${empresaId ?? 'company'}`;
   const [search, setSearch] = useState('');
   const deferredSearch = useDeferredValue(search);
@@ -93,24 +96,25 @@ export function UserManagementTab({ empresaId, consoleMode = false, usuarioId }:
     try {
       const saved = sessionStorage.getItem(sessionKey);
       if (saved) {
-        const state = JSON.parse(saved) as { search?: string; status?: typeof status; sort?: 'asc' | 'desc'; page?: number };
+        const state = JSON.parse(saved) as { search?: string; status?: typeof status; sort?: 'asc' | 'desc'; page?: number; pageSize?: number };
+        setRecordsPerPage(normalizeAdminListFilters({ pageSize: state.pageSize }).pageSize);
         setSearch(state.search ?? '');
         setStatus(state.status ?? '');
         setSort(state.sort === 'desc' ? 'desc' : 'asc');
         setPage(typeof state.page === 'number' && Number.isInteger(state.page) && state.page > 0 ? state.page : 1);
       } else {
-        setSearch(''); setStatus(''); setSort('asc'); setPage(1);
+        setSearch(''); setStatus(''); setSort('asc'); setPage(1); setRecordsPerPage(25);
       }
     } catch {
-      setSearch(''); setStatus(''); setSort('asc'); setPage(1);
+      setSearch(''); setStatus(''); setSort('asc'); setPage(1); setRecordsPerPage(25);
     }
     setRestoredKey(sessionKey);
   }, [sessionKey]);
 
   useEffect(() => {
     if (restoredKey !== sessionKey || deferredSearch !== search) return;
-    try { sessionStorage.setItem(sessionKey, JSON.stringify({ search, status, sort, page })); } catch { /* Optional session preference. */ }
-  }, [deferredSearch, page, restoredKey, search, sessionKey, status, sort]);
+    try { sessionStorage.setItem(sessionKey, JSON.stringify({ search, status, sort, page, pageSize: recordsPerPage })); } catch { /* Optional session preference. */ }
+  }, [deferredSearch, page, recordsPerPage, restoredKey, search, sessionKey, status, sort]);
 
   useEffect(() => {
     if (query.data && page > Math.max(1, query.data.totalPages)) setPage(Math.max(1, query.data.totalPages));
@@ -257,7 +261,9 @@ export function UserManagementTab({ empresaId, consoleMode = false, usuarioId }:
             <option value="asc">Nome A–Z</option><option value="desc">Nome Z–A</option>
           </AppSelect>
           {(search || status || sort !== 'asc') && <AppButton variant="ghost" size="sm" onClick={() => { setSearch(''); setStatus(''); setSort('asc'); setPage(1); }}>Limpar filtros</AppButton>}
-        </AdminListToolbar>} footer={!loading && !loadError ? <><span className="admin-grid-total">{usuarios.total} registros</span><AdminPagination alwaysVisible={consoleMode} page={page} totalPages={usuarios.totalPages} ariaLabel="Paginação de usuários" onPageChange={setPage} /></> : null} />}
+        </AdminListToolbar>} footer={!loading && !loadError ? consoleMode
+          ? <AdminGridPagination page={page} pageSize={recordsPerPage} total={usuarios.total} totalPages={usuarios.totalPages} ariaLabel="Paginação de usuários" onPageChange={setPage} onPageSizeChange={(size) => { setRecordsPerPage(size); setPage(1); }} />
+          : <><span className="admin-grid-total">{usuarios.total} registros</span><AdminPagination page={page} totalPages={usuarios.totalPages} ariaLabel="Paginação de usuários" onPageChange={setPage} /></> : null} />}
     </div>
   );
 }
