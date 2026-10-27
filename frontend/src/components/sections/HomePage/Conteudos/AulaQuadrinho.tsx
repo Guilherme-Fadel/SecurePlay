@@ -9,6 +9,7 @@ import { usePageNavigation } from '@/hooks/usePageNavigation';
 import { AulaQuiz } from './AulaQuiz';
 import { LearningShell } from './LearningShell';
 import { LessonNavigator } from './LessonNavigator';
+import { ProgressSaveStatus } from './ProgressSaveStatus';
 
 interface AulaQuadrinhoProps {
   aulaId: number;
@@ -40,7 +41,7 @@ const pageVariants = {
 export function AulaQuadrinho({ aulaId, moduloId, onBack, onSelectAula }: AulaQuadrinhoProps) {
   const { aula, setAula, loading, error: aulaError } = useAula(aulaId);
   const { modulo, refetch: refetchModulo } = useModulo(moduloId);
-  const { concluir, salvarProgresso, loading: concluding, error: progressError } = useAulaProgress();
+  const { concluir, salvarProgresso, retryProgress, saveStatus, loading: concluding, error: progressError } = useAulaProgress();
   const [showQuiz, setShowQuiz] = useState(false);
   const [showBriefing, setShowBriefing] = useState(false);
   const [xpGanho, setXpGanho] = useState<number | null>(null);
@@ -66,11 +67,9 @@ export function AulaQuadrinho({ aulaId, moduloId, onBack, onSelectAula }: AulaQu
   }, [aula?.id, pages.length, goTo]);
 
   useEffect(() => {
-    if (!aula || !restored.current || showQuiz) return;
+    if (!aula || !restored.current || showQuiz || aula.completed) return;
     const timer = window.setTimeout(() => {
-      const percent = aula.completed || !pages.length
-        ? aula.completed ? 100 : 0
-        : Math.min(99, Math.round(((currentPage + 1) / pages.length) * 100));
+      const percent = pages.length ? Math.min(99, Math.round(((currentPage + 1) / pages.length) * 100)) : 0;
       void salvarProgresso(aula.id, { progress_percent: percent, last_page: currentPage });
     }, 450);
     return () => window.clearTimeout(timer);
@@ -117,6 +116,7 @@ export function AulaQuadrinho({ aulaId, moduloId, onBack, onSelectAula }: AulaQu
           </div>
           {(aula.completed || xpGanho !== null) && <div className="learning-reader-complete"><CheckCircle2 size={15} /> Leitura concluída</div>}
           {progressError && <p role="alert">{progressError}</p>}
+          <ProgressSaveStatus status={saveStatus} onRetry={retryProgress} />
         </>
       ) : undefined}
     >

@@ -8,6 +8,7 @@ import { usePageNavigation } from '@/hooks/usePageNavigation';
 import { AulaQuiz } from './AulaQuiz';
 import { LearningShell } from './LearningShell';
 import { LessonNavigator } from './LessonNavigator';
+import { ProgressSaveStatus } from './ProgressSaveStatus';
 
 interface AulaTextoProps {
   aulaId: number;
@@ -19,7 +20,7 @@ interface AulaTextoProps {
 export function AulaTexto({ aulaId, moduloId, onBack, onSelectAula }: AulaTextoProps) {
   const { aula, setAula, loading, error: aulaError, refetch } = useAula(aulaId);
   const { modulo } = useModulo(moduloId);
-  const { concluir, salvarProgresso, loading: concluding, error: progressError } = useAulaProgress();
+  const { concluir, salvarProgresso, retryProgress, saveStatus, loading: concluding, error: progressError } = useAulaProgress();
   const [showQuiz, setShowQuiz] = useState(false);
   const [xpGanho, setXpGanho] = useState<number | null>(null);
   const restored = useRef(false);
@@ -83,6 +84,7 @@ export function AulaTexto({ aulaId, moduloId, onBack, onSelectAula }: AulaTextoP
         </div>
         {(aula.completed || xpGanho !== null) && <div className="learning-reader-complete"><CheckCircle2 size={15} /> Leitura concluída</div>}
         {progressError && <p role="alert">{progressError}</p>}
+        <ProgressSaveStatus status={saveStatus} onRetry={retryProgress} />
       </> : undefined}
     >
       {showQuiz ? <AulaQuiz aula={aula} onBack={() => setShowQuiz(false)} onComplete={onBack} /> : (

@@ -6,6 +6,7 @@ import { useAulaProgress } from '@/hooks/useAulaProgress';
 import { useModulo } from '@/hooks/useModulo';
 import { LearningShell } from './LearningShell';
 import { LessonNavigator } from './LessonNavigator';
+import { ProgressSaveStatus } from './ProgressSaveStatus';
 
 interface AulaVideoProps {
   aulaId: number;
@@ -18,7 +19,7 @@ interface AulaVideoProps {
 export function AulaVideo({ aulaId, moduloId, onBack, onSelectAula, onTypeResolved }: AulaVideoProps) {
   const { aula, setAula, loading, error: aulaError, refetch } = useAula(aulaId);
   const { modulo } = useModulo(moduloId);
-  const { concluir, salvarProgresso, loading: concluding } = useAulaProgress();
+  const { concluir, salvarProgresso, retryProgress, saveStatus, loading: concluding } = useAulaProgress();
   const [xpGanho, setXpGanho] = useState<number | null>(null);
   const [videoProgress, setVideoProgress] = useState(0);
   const videoRef = useRef<HTMLVideoElement | null>(null);
@@ -32,6 +33,7 @@ export function AulaVideo({ aulaId, moduloId, onBack, onSelectAula, onTypeResolv
     }
     setVideoProgress(aula.completed ? 100 : Math.max(1, aula.progress.percent));
     lastPersistedSecond.current = aula.progress.lastVideoSecond;
+    if (aula.completed) return;
     void salvarProgresso(aula.id, {
       progress_percent: aula.completed ? 100 : Math.max(1, aula.progress.percent),
       last_video_second: aula.progress.lastVideoSecond,
@@ -92,6 +94,7 @@ export function AulaVideo({ aulaId, moduloId, onBack, onSelectAula, onTypeResolv
               ? <><CheckCircle2 size={17} /><div><span>Status da fase</span><strong>Concluída</strong></div></>
               : <><PlayCircle size={17} /><div><span>Status da fase</span><strong>Em treinamento</strong></div></>}
           </div>
+          <ProgressSaveStatus status={saveStatus} onRetry={retryProgress} />
           {!aula.completed && (
             <AppButton icon={<CheckCircle2 size={16} />} onClick={handleConcluir} disabled={concluding}>
               {concluding ? 'Registrando...' : 'Concluir aula'}
