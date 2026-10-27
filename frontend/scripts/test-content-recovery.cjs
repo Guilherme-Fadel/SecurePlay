@@ -3,6 +3,44 @@ const React = require('react');
 const { test } = require('node:test');
 const { load, hooks, settle, deferred } = require('./helpers/react-hooks.cjs');
 
+test('page loading announces busy state and only takes focus when no control is in use', () => {
+  let focused = 0;
+  const effects = [];
+  const body = {};
+  const document = { body, activeElement: body };
+  const { PageLoading } = load('src/components/shared/PageLoading.tsx', {
+    react: { useEffect: (callback) => effects.push(callback), useRef: () => ({ current: { focus: () => focused++ } }) },
+  }, { document });
+  const view = PageLoading({ label: 'Aguarde a sessão' });
+  assert.equal(view.props.role, 'status');
+  assert.equal(view.props['aria-busy'], 'true');
+  assert.equal(view.props.tabIndex, -1);
+  effects.pop()();
+  assert.equal(focused, 1);
+  document.activeElement = { tagName: 'INPUT' };
+  PageLoading({}); effects.pop()();
+  assert.equal(focused, 1);
+});
+
+test('public and protected guards show loading while session is idle or loading, without rendering protected content', () => {
+  let status = 'idle';
+  const { PrivateRoute, PublicRoute } = load('src/routes/PrivateRoute.tsx', {
+    react: { useEffect() {}, useState: () => [Date.now()] },
+    'react-router-dom': { Navigate: 'navigate' },
+    '@/hooks/useCurrentUser': { useCurrentUser: () => ({ status, ensureSession() {} }) },
+    '@/components/admin/console/consoleNavigation': {},
+    '@/components/ui/buttons/AppButton': {},
+    '@/components/shared/PageLoading': { PageLoading: 'page-loading' },
+  });
+  for (status of ['idle', 'loading']) {
+    for (const Guard of [PrivateRoute, PublicRoute]) {
+      const view = Guard({ children: 'protected content' });
+      assert.equal(view.type, 'page-loading');
+      assert.equal(view.props.label, 'Verificando sua sessão...');
+    }
+  }
+});
+
 test('session: network/503 preserve identity/cache, block protected route, retry; 401/403 clear session', async () => {
   const h = hooks();
   let response;
@@ -43,6 +81,7 @@ test('session: network/503 preserve identity/cache, block protected route, retry
     '@/hooks/useCurrentUser': { useCurrentUser: () => value },
     '@/components/admin/console/consoleNavigation': { initialAuthenticatedPath: () => '/home' },
     '@/components/ui/buttons/AppButton': { AppButton: 'button' },
+    '@/components/shared/PageLoading': { PageLoading: 'loading' },
   });
   const blocked = route.PrivateRoute({ children: 'SECRET' });
   assert.notEqual(blocked, 'SECRET');

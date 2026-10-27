@@ -3,6 +3,7 @@ import { Navigate } from 'react-router-dom';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { initialAuthenticatedPath } from '@/components/admin/console/consoleNavigation';
 import { AppButton } from '@/components/ui/buttons/AppButton';
+import { PageLoading } from '@/components/shared/PageLoading';
 
 export function PrivateRoute({ children }: { children: React.ReactNode }) {
   const { status, user, error, ensureSession, refreshSession } = useCurrentUser();
@@ -18,7 +19,7 @@ export function PrivateRoute({ children }: { children: React.ReactNode }) {
   }, []);
 
   if (status === 'idle' || status === 'loading') {
-    return <div className="app-page" role="status">Verificando sua sessão...</div>;
+    return <PageLoading label="Verificando sua sessão..." />;
   }
 
   if (status === 'unavailable') {
@@ -50,7 +51,7 @@ export function PublicRoute({ children }: { children: React.ReactNode }) {
   }, [ensureSession]);
 
   if (status === 'idle' || status === 'loading') {
-    return null;
+    return <PageLoading label="Verificando sua sessão..." />;
   }
 
   if (status === 'authenticated' && !(user?.trial_ends_at && new Date(user.trial_ends_at).getTime() <= Date.now())) {
