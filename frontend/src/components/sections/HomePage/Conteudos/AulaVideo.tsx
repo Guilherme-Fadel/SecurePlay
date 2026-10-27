@@ -19,7 +19,7 @@ interface AulaVideoProps {
 export function AulaVideo({ aulaId, moduloId, onBack, onSelectAula, onTypeResolved }: AulaVideoProps) {
   const { aula, setAula, loading, error: aulaError, refetch } = useAula(aulaId);
   const { modulo } = useModulo(moduloId);
-  const { concluir, salvarProgresso, retryProgress, saveStatus, loading: concluding } = useAulaProgress();
+  const { concluir, salvarProgresso, retryProgress, saveStatus, loading: concluding, error: progressError } = useAulaProgress();
   const [xpGanho, setXpGanho] = useState<number | null>(null);
   const [videoProgress, setVideoProgress] = useState(0);
   const videoRef = useRef<HTMLVideoElement | null>(null);
@@ -95,9 +95,10 @@ export function AulaVideo({ aulaId, moduloId, onBack, onSelectAula, onTypeResolv
               : <><PlayCircle size={17} /><div><span>Status da fase</span><strong>Em treinamento</strong></div></>}
           </div>
           <ProgressSaveStatus status={saveStatus} onRetry={retryProgress} />
+          {progressError && <p role="alert">{progressError} Tente concluir novamente.</p>}
           {!aula.completed && (
             <AppButton icon={<CheckCircle2 size={16} />} onClick={handleConcluir} disabled={concluding}>
-              {concluding ? 'Registrando...' : 'Concluir aula'}
+              {concluding ? 'Registrando...' : progressError ? 'Tentar concluir novamente' : 'Concluir aula'}
             </AppButton>
           )}
         </>

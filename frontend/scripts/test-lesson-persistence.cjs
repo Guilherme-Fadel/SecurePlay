@@ -170,3 +170,53 @@ test('completed video and comic do not attempt another progress write or show a 
     assert.equal(timers, 0, component);
   }
 });
+
+test('video completion failure stays actionable; retry recovers a server-committed result and shows success only then', async () => {
+  const h = hooks();
+  let requests = 0;
+  let invalidated = 0;
+  const result = { sucesso: true, mensagem: 'ok', xp_ganho: 12 };
+  const save = { salvarProgresso: async () => {}, retryProgress() {}, discardProgress() {}, saveStatus: 'saved' };
+  const { useAulaProgress } = load('src/hooks/useAulaProgress.ts', {
+    react: h.react,
+    axios: { isAxiosError: () => false },
+    '@/services/conteudo': { concluirAula: async () => {
+      requests++;
+      if (requests === 1) throw new Error('response lost after server commit');
+      return result;
+    } },
+    '@/lib/progressCache': { invalidateProgress: () => invalidated++ },
+    '@/lib/queryCache': { invalidate() {} },
+    './useProgressSave': { useProgressSave: () => save },
+  });
+  const lesson = { id: 7, type: 'video', title: 'Vídeo', description: 'Fixture', completed: false,
+    progress: { percent: 35, lastVideoSecond: 20 }, duration: 1, xp: 12, content_url: null };
+  const icons = Object.fromEntries(['CheckCircle2', 'Clock3', 'PlayCircle', 'Sparkles'].map((name) => [name, name]));
+  const { AulaVideo } = load('src/components/sections/HomePage/Conteudos/AulaVideo.tsx', {
+    react: h.react, 'lucide-react': icons,
+    '@/components/ui/buttons/AppButton': { AppButton: 'button' },
+    '@/hooks/useAula': { useAula: () => {
+      const [aula, setAula] = h.react.useState(lesson);
+      return { aula, setAula, loading: false };
+    } },
+    '@/hooks/useModulo': { useModulo: () => ({ modulo: null }) },
+    '@/hooks/useAulaProgress': { useAulaProgress },
+    './LearningShell': { LearningShell: 'shell' }, './LessonNavigator': { LessonNavigator: 'navigator' },
+    './ProgressSaveStatus': { ProgressSaveStatus: 'save-status' },
+  });
+  const render = () => h.render(() => AulaVideo({ aulaId: 7, moduloId: 1, onBack() {}, onSelectAula() {} }));
+  let tree = nodes(render());
+  await tree.find((node) => node.type === 'button').props.onClick();
+  tree = nodes(render());
+  assert.ok(tree.some((node) => node.props.role === 'alert'));
+  assert.equal(tree.find((node) => node.type === 'button').props.children, 'Tentar concluir novamente');
+  assert.equal(invalidated, 0);
+  await tree.find((node) => node.type === 'button').props.onClick();
+  const completed = render();
+  assert.equal(completed.props.progress, 100);
+  assert.equal(completed.props.progressLabel, 'Aula concluída');
+  assert.equal(nodes(completed).filter((node) => node.type === 'button').length, 0);
+  assert.equal(nodes(completed).some((node) => node.props.role === 'alert'), false);
+  assert.equal(invalidated, 1);
+  assert.equal(requests, 2);
+});
