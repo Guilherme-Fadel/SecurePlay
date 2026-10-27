@@ -17,7 +17,7 @@ Referência metodológica: [Geist Design System](https://vercel.com/geist/introd
 
 ## Carregamento de navegação e aprendizagem
 
-- `PageLoading` reutiliza a tela dedicada `LoadingScreen` nos fallbacks de rotas e sessão. O contexto de página usa texto genérico; a Home mantém o contexto do painel. O CSS da tela é carregado pelo próprio componente para cobrir o primeiro acesso.
+- `PageLoading` registra a espera dos fallbacks de rotas e sessão no `PageLoadingProvider`, montado na raiz. A Home registra seu bootstrap no mesmo controlador: uma única `LoadingScreen` acompanha essas etapas, sem reiniciar o progresso. O tema também é fornecido na raiz e aplicado antes da pintura, sem ser removido na troca de página. O CSS da tela é carregado pelo próprio componente para cobrir o primeiro acesso.
 - `ContentLoading` representa ranking, livro do módulo, leitor e roteiro com silhuetas desfocadas, sem dados fictícios ou controles ativos. A espera tem nome acessível e `aria-busy`, sem mensagem de loading visível. Respeita movimento reduzido e usa tokens de tema nas superfícies; o livro reutiliza a arte aprovada.
 - Erros, conteúdo vazio e acesso negado continuam com estados explícitos e ações pertinentes. As listagens administrativas mantêm os estados de `AdminListState` descritos abaixo.
 

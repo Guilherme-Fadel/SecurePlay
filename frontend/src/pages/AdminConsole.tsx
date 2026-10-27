@@ -2,14 +2,13 @@ import { useEffect, useRef, useState } from 'react';
 import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { Building2, ChevronRight, LogOut, Moon, Sun, Users, Settings, Plus, ArrowLeft, Menu, X, GraduationCap } from 'lucide-react';
 import { PageTransition } from '@/components/shared/PageTransition';
-import { ThemeProvider, useTheme } from '@/contexts/ThemeContext';
+import { useTheme } from '@/contexts/ThemeContext';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { useEmpresaTema } from '@/hooks/useEmpresaTema';
 import { useCachedQuery } from '@/hooks/useCachedQuery';
 import { adminQueryKey } from '@/lib/adminCache';
 import { logoutUser } from '@/services/login/logout';
 import { AdminActionGuardProvider, useAdminGuardedAction } from '@/hooks/useAdminUnsavedChanges';
-import { AdminPageHeader } from '@/components/admin/AdminListLayout';
 import { CompanyManagementTab } from '@/components/admin/CompanyManagementTab';
 import { getTema, type EmpresaAdministravel } from '@/services/admin';
 import { AdminOverviewTab } from '@/components/admin/AdminOverviewTab';
@@ -54,9 +53,7 @@ export default function AdminConsole() {
 
   return (
     <PageTransition>
-      <ThemeProvider>
         <AdminActionGuardProvider><AdminConsoleFrame onSignOut={signOut} scope={scope} /></AdminActionGuardProvider>
-      </ThemeProvider>
     </PageTransition>
   );
 }

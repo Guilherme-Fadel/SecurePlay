@@ -1,5 +1,6 @@
 import { PageTransition } from '@/components/shared/PageTransition';
-import { LoadingScreen } from '@/components/shared/LoadingScreen';
+import { PageLoading } from '@/components/shared/PageLoading';
+import { usePageLoading } from '@/contexts/PageLoadingContext';
 import { NicknameWelcomeDialog } from '@/components/shared/NicknameWelcomeDialog';
 import { Header } from "@/components/shared/layout/header/index";
 import { MobileNavigation, Sidebar, SidebarItem } from '@/components/shared/Sidebar';
@@ -9,7 +10,6 @@ import { lazy, Suspense, useCallback, useEffect, useMemo, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Toaster } from 'sonner';
 import { SectionContext, type ContentTarget } from '@/contexts/SectionContext';
-import { ThemeProvider } from '@/contexts/ThemeContext';
 import { useHomeLoading } from '@/hooks/useHomeLoading';
 import { useEmpresaTema } from '@/hooks/useEmpresaTema';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
@@ -63,7 +63,7 @@ function HomeContent() {
         conquistas: <Awards />,
         conteudos: <Conteudos />,
         perfil: <Perfil />,
-        admin: <Suspense fallback={<LoadingScreen />}><Admin platformMode={user?.role === 'platform_admin'} /></Suspense>,
+        admin: <Suspense fallback={<PageLoading />}><Admin platformMode={user?.role === 'platform_admin'} /></Suspense>,
     };
     useEmpresaTema();
     useVisualPreload(user);
@@ -90,6 +90,7 @@ function HomeContent() {
     const enteredContentFrom = useRef<Section | null>(null);
 
     const { isLoading, setLoading, bootstrapReady, registerBootstrap } = useHomeLoading();
+    usePageLoading(!bootstrapReady || isLoading);
 
     // Gate de bootstrap sempre presente, independente da secao inicial. Sem isto,
     // recarregar fora do dashboard (ex.: /home/desafios) deixaria a LoadingScreen
@@ -155,7 +156,6 @@ function HomeContent() {
 
     return (<>
         <SectionContext.Provider value={sectionValue}>
-        <LoadingScreen ready={bootstrapReady}/>
         <Toaster position="top-right" richColors/>
 
         <div className="secure-home flex h-dvh overflow-hidden">
@@ -173,7 +173,6 @@ function HomeContent() {
             <Header />
             <main className={`secure-home-main relative flex-1 min-h-0 overflow-y-auto p-6 bg-[var(--background)] ${activeSection === 'conteudos' && contentTarget?.aulaId ? 'is-classroom-view' : ''}`}>
               {user?.trial_ends_at && <div role="status" className="mb-4 rounded-xl border border-[var(--border)] bg-[var(--surface)] p-3 text-sm">Teste gratuito de aluno até {new Date(user.trial_ends_at).toLocaleDateString('pt-BR')}. Para continuar depois, <a className="underline" href="mailto:contato@secureplay.com?subject=Planos%20SecurePlay">fale com a SecurePlay</a>.</div>}
-              {bootstrapReady && isLoading && <LoadingScreen />}
               {previousSection && (<AppButton onClick={goBack} variant="ghost" size="sm" icon={<ArrowLeft size={16}/>} className="mb-4">
                   Voltar
                 </AppButton>)}
@@ -190,8 +189,6 @@ function HomeContent() {
 export default function Home() {
     const { user } = useCurrentUser();
     return (<PageTransition>
-      <ThemeProvider>
         <HomeContent key={companyIdentityKey(user)} />
-      </ThemeProvider>
     </PageTransition>);
 }

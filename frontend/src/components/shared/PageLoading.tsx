@@ -1,6 +1,7 @@
-import { LoadingScreen } from './LoadingScreen';
+import { usePageLoading } from '@/contexts/PageLoadingContext';
 
 /** Mesmo loading visual para sessão e chunks de todas as rotas. */
-export function PageLoading({ label = 'Carregando página...' }: { label?: string }) {
-  return <LoadingScreen label={label} context="page" />;
+export function PageLoading() {
+  usePageLoading(true);
+  return null;
 }

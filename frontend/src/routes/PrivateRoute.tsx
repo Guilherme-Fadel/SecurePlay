@@ -19,7 +19,7 @@ export function PrivateRoute({ children }: { children: React.ReactNode }) {
   }, []);
 
   if (status === 'idle' || status === 'loading') {
-    return <PageLoading label="Verificando sua sessão..." />;
+    return <PageLoading />;
   }
 
   if (status === 'unavailable') {
@@ -51,7 +51,7 @@ export function PublicRoute({ children }: { children: React.ReactNode }) {
   }, [ensureSession]);
 
   if (status === 'idle' || status === 'loading') {
-    return <PageLoading label="Verificando sua sessão..." />;
+    return <PageLoading />;
   }
 
   if (status === 'authenticated' && !(user?.trial_ends_at && new Date(user.trial_ends_at).getTime() <= Date.now())) {

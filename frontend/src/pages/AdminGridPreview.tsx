@@ -2,14 +2,13 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { AdminDataGrid, type AdminDataGridColumn } from '@/components/admin/console/AdminDataGrid';
 import { adminConsolePath } from '@/components/admin/console/consoleNavigation';
-import { ThemeProvider } from '@/contexts/ThemeContext';
 import '@/styles/app-ui.css';
 import './admin-console.css';
 
 type FixtureRow = { id: number; name: string; detail: string; status: string };
 
 export default function AdminGridPreview() {
-  return <ThemeProvider><ConsoleGridFixture /></ThemeProvider>;
+  return <ConsoleGridFixture />;
 }
 
 function ConsoleGridFixture() {

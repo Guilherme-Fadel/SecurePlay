@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, useCallback, type ReactNode, } from 'react';
+import { createContext, useContext, useState, useLayoutEffect, useCallback, type ReactNode, } from 'react';
 export type Theme = 'dark' | 'light';
 export const THEME_STORAGE_KEY = 'secureplay-theme';
 interface ThemeContextProps {
@@ -39,7 +39,7 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
             return next;
         });
     }, []);
-    useEffect(() => {
+    useLayoutEffect(() => {
         const root = document.documentElement;
         if (theme === 'light') {
             root.setAttribute('data-theme', 'light');

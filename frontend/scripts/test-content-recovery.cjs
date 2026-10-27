@@ -3,23 +3,13 @@ const React = require('react');
 const { test } = require('node:test');
 const { load, hooks, settle, deferred } = require('./helpers/react-hooks.cjs');
 
-test('page loading announces busy state and only takes focus when no control is in use', () => {
-  let focused = 0;
-  const effects = [];
-  const body = {};
-  const document = { body, activeElement: body };
+test('route fallback registers the shared loader without creating another visual screen', () => {
+  const pending = [];
   const { PageLoading } = load('src/components/shared/PageLoading.tsx', {
-    react: { useEffect: (callback) => effects.push(callback), useRef: () => ({ current: { focus: () => focused++ } }) },
-  }, { document });
-  const view = PageLoading({ label: 'Aguarde a sessão' });
-  assert.equal(view.props.role, 'status');
-  assert.equal(view.props['aria-busy'], 'true');
-  assert.equal(view.props.tabIndex, -1);
-  effects.pop()();
-  assert.equal(focused, 1);
-  document.activeElement = { tagName: 'INPUT' };
-  PageLoading({}); effects.pop()();
-  assert.equal(focused, 1);
+    '@/contexts/PageLoadingContext': { usePageLoading: (active) => pending.push(active) },
+  });
+  assert.equal(PageLoading(), null);
+  assert.deepEqual(pending, [true]);
 });
 
 test('public and protected guards show loading while session is idle or loading, without rendering protected content', () => {
@@ -36,7 +26,7 @@ test('public and protected guards show loading while session is idle or loading,
     for (const Guard of [PrivateRoute, PublicRoute]) {
       const view = Guard({ children: 'protected content' });
       assert.equal(view.type, 'page-loading');
-      assert.equal(view.props.label, 'Verificando sua sessão...');
+      assert.equal(view.props.children, undefined);
     }
   }
 });
@@ -190,6 +180,7 @@ test('module view: API/frame failure offers retry and back; loading has an exit'
   let loading = false;
   let frame = 'ready';
   const { ModuloDetalhes } = load('src/components/sections/HomePage/Conteudos/ModuloDetalhes.tsx', {
+    '@/components/shared/ContentLoading': { ContentLoading: 'content-loading' },
     react: { ...React, useState: () => [0], useEffect() {} },
     '@/hooks/useModulo': { useModulo: () => ({ modulo: null, loading, error, refetch: () => actions.push('fetch') }) },
     '@/hooks/useModuleBookFrame': { useModuleBookFrame: () => ({ status: frame, retry: () => actions.push('frame') }) },
@@ -216,6 +207,6 @@ test('module view: API/frame failure offers retry and back; loading has an exit'
   }
   assert.deepEqual(actions, ['fetch', 'frame', 'back', 'fetch', 'frame', 'back']);
   error = null; loading = true; frame = 'loading';
-  assert.ok(render().some((n) => n.props.role === 'status'));
+  assert.ok(render().some((n) => n.type === 'content-loading' && n.props.variant === 'book'));
   assert.equal(render().filter((n) => n.type === 'button').length, 1);
 });

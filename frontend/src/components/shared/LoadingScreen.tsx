@@ -24,9 +24,10 @@ interface LoadingScreenProps {
   ready?: boolean;
   label?: string;
   context?: 'home' | 'page';
+  onHidden?: () => void;
 }
 
-export function LoadingScreen({ ready = false, label = 'Carregando página', context = 'home' }: LoadingScreenProps) {
+export function LoadingScreen({ ready = false, label = 'Carregando página', context = 'home', onHidden }: LoadingScreenProps) {
   const [isVisible, setIsVisible] = useState(true);
   const [progress, setProgress] = useState(0);
   const [minTimePassed, setMinTimePassed] = useState(false);
@@ -51,6 +52,11 @@ export function LoadingScreen({ ready = false, label = 'Carregando página', con
   }, []);
 
   useEffect(() => {
+    if (!ready) {
+      setIsVisible(true);
+      setProgress(value => Math.min(value, 90));
+      return;
+    }
     if (ready && minTimePassed) {
       setProgress(100);
       const timer = setTimeout(() => setIsVisible(false), 500);
@@ -59,7 +65,7 @@ export function LoadingScreen({ ready = false, label = 'Carregando página', con
   }, [ready, minTimePassed]);
 
   return (
-    <AnimatePresence>
+    <AnimatePresence onExitComplete={onHidden}>
       {isVisible && (
         <motion.div
           initial={{ opacity: 1 }}
