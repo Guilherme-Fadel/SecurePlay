@@ -1,3 +1,4 @@
+import { ContentLoading } from '@/components/shared/ContentLoading';
 import { useEffect, useState } from 'react';
 import { ArrowDown, ArrowUp, BookOpen, Building2, CalendarDays, Crown, Globe2, Medal, RefreshCw, Shield } from 'lucide-react';
 import { PageTransition } from '@/components/shared/PageTransition';
@@ -103,7 +104,7 @@ function RankingContent({ scope, companyId, companies, onCompanyChange, onScopeC
           </div>
         </header>
         {waitingForSeasonChoice ? <div className="ranking-history-empty" role="status"><h2>Nenhum histórico completo disponível</h2><p>{closedSeasons.length === 0 ? 'Ainda não há uma temporada encerrada para consultar.' : 'Escolha uma temporada encerrada para verificar os dados disponíveis. Os períodos sem histórico completo serão identificados e não exibidos como resultados finais.'}</p></div> :
-        loading && !ranking ? <div className="ranking-status" role="status">Carregando a Galeria de Honra…</div> :
+        loading && !ranking ? <ContentLoading variant="ranking" /> :
           error || !ranking ? <div className="ranking-status" role="alert"><h2>Não foi possível carregar o ranking</h2><p>Tente novamente para atualizar a classificação.</p><AppButton onClick={refetch}>Tentar novamente</AppButton></div> :
           viewMode === 'season' && ranking.dataCompleteness === 'unavailable' ? <div className="ranking-history-empty" role="status"><h2>Histórico não disponível</h2><p>Não há dados completos para montar a classificação final desta temporada.</p></div> :
           <div className="ranking-content">

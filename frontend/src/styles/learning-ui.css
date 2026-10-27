@@ -47,7 +47,6 @@
 .lesson-navigator > header h2 { margin: 2px 0 0; color: var(--dashboard-text); font-size: 12px; }
 .lesson-navigator > header > strong { color: var(--dashboard-text); font-family: 'JetBrains Mono', monospace; font-size: 10px; }
 .lesson-navigator-complete { display: flex; align-items: center; justify-content: center; gap: 7px; margin-top: 12px; padding: 9px; border-radius: 9px; background: rgba(var(--secondary-rgb), 0.09); color: var(--secondary); font-size: 9px; font-weight: 700; }
-.lesson-navigator-loading { display: grid; min-height: 180px; place-items: center; color: var(--dashboard-muted); font-size: 10px; }
 
 
 .video-learning-stage { display: flex; width: 100%; max-width: 980px; margin: 0 auto; flex-direction: column; gap: 12px; }

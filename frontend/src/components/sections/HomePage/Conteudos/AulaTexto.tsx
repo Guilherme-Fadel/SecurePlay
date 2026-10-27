@@ -1,3 +1,4 @@
+import { ContentLoading } from '@/components/shared/ContentLoading';
 import { useEffect, useRef, useState } from 'react';
 import { BookOpen, CheckCircle2, ChevronLeft, ChevronRight, Sparkles } from 'lucide-react';
 import { AppButton } from '@/components/ui/buttons/AppButton';
@@ -55,9 +56,8 @@ export function AulaTexto({ aulaId, moduloId, onBack, onSelectAula }: AulaTextoP
   };
 
   if (loading || !aula) {
-    return <div className="learning-content-loading">{aulaError
-      ? <div role="alert"><p>{aulaError}</p><AppButton onClick={() => void refetch()}>Tentar novamente</AppButton><AppButton variant="ghost" onClick={onBack}>Voltar ao módulo</AppButton></div>
-      : 'Preparando a leitura...'}</div>;
+    if (!aulaError) return <ContentLoading variant="reader" />;
+    return <div className="learning-content-loading"><div role="alert"><p>{aulaError}</p><AppButton onClick={() => void refetch()}>Tentar novamente</AppButton><AppButton variant="ghost" onClick={onBack}>Voltar ao módulo</AppButton></div></div>;
   }
 
   const readerProgress = aula.completed ? 100 : pages.length ? Math.round(((currentPage + 1) / pages.length) * 100) : 0;

@@ -1,3 +1,4 @@
+import { ContentLoading } from '@/components/shared/ContentLoading';
 import { BookOpen, Check, CheckCircle2, Lock, Video } from 'lucide-react';
 import type { ModuloDetalhes } from '@/services/conteudo';
 import { getModuleArtwork, missionRoomAssets } from '@/lib/staticArtwork';
@@ -22,7 +23,7 @@ export function LessonNavigator({ modulo, activeAulaId, onSelectAula }: LessonNa
     setPage(Math.floor(Math.max(0, index) / 2));
   }, [modulo?.id, activeAulaId]);
   if (!modulo) {
-    return <div className="lesson-navigator-loading">Carregando roteiro...</div>;
+    return <ContentLoading variant="trail" />;
   }
 
   const orderedAulas = sortAulasByModuleSequence(modulo.aulas);

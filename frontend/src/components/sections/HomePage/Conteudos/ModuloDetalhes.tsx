@@ -1,3 +1,4 @@
+import { ContentLoading } from '@/components/shared/ContentLoading';
 import { useModulo } from '@/hooks/useModulo';
 import { AulaListItem } from './AulaListItem';
 import { AulaResumo } from '@/services/conteudo';
@@ -33,9 +34,9 @@ export function ModuloDetalhes({ moduloId, onBack, onSelectAula }: ModuloDetalhe
     </div>
   );
   if (loading || !modulo || frame.status === 'loading') return (
-    <div className="app-page flex flex-col items-center justify-center gap-4 min-h-64">
-      <p role="status">Abrindo o livro da missão...</p>
+    <div className="app-page module-book-page">
       <AppButton onClick={onBack} variant="ghost">Voltar aos conteúdos</AppButton>
+      <ContentLoading variant="book" />
     </div>
   );
 

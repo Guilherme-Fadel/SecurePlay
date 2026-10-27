@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { ShieldCheck } from 'lucide-react';
+import '@/styles/app-ui.css';
 
 const LOADING_MESSAGES = [
   { max: 30, text: 'Inicializando sua área segura...' },
@@ -9,15 +10,23 @@ const LOADING_MESSAGES = [
   { max: 100, text: 'Tudo pronto!' },
 ];
 
-function getLoadingMessage(progress: number) {
-  return LOADING_MESSAGES.find(m => progress <= m.max)?.text;
+function getLoadingMessage(progress: number, context: 'home' | 'page') {
+  const messages = context === 'home' ? LOADING_MESSAGES : [
+    { max: 30, text: 'Preparando o SecurePlay...' },
+    { max: 60, text: 'Organizando os recursos...' },
+    { max: 90, text: 'Quase pronto...' },
+    { max: 100, text: 'Tudo pronto!' },
+  ];
+  return messages.find(m => progress <= m.max)?.text;
 }
 
 interface LoadingScreenProps {
   ready?: boolean;
+  label?: string;
+  context?: 'home' | 'page';
 }
 
-export function LoadingScreen({ ready = false }: LoadingScreenProps) {
+export function LoadingScreen({ ready = false, label = 'Carregando página', context = 'home' }: LoadingScreenProps) {
   const [isVisible, setIsVisible] = useState(true);
   const [progress, setProgress] = useState(0);
   const [minTimePassed, setMinTimePassed] = useState(false);
@@ -44,7 +53,8 @@ export function LoadingScreen({ ready = false }: LoadingScreenProps) {
   useEffect(() => {
     if (ready && minTimePassed) {
       setProgress(100);
-      setTimeout(() => setIsVisible(false), 500);
+      const timer = setTimeout(() => setIsVisible(false), 500);
+      return () => clearTimeout(timer);
     }
   }, [ready, minTimePassed]);
 
@@ -55,6 +65,7 @@ export function LoadingScreen({ ready = false }: LoadingScreenProps) {
           initial={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.4 }}
+          role="status" aria-label={label} aria-busy="true"
           className="app-loading-screen fixed inset-0 z-[100] flex items-center justify-center"
         >
           <div className="app-loading-orbit app-loading-orbit-left" aria-hidden="true" />
@@ -82,8 +93,8 @@ export function LoadingScreen({ ready = false }: LoadingScreenProps) {
               className="app-loading-copy"
             >
               <span className="app-loading-brand">SecurePlay</span>
-              <h1>Preparando seu painel</h1>
-              <p>Sua jornada de aprendizado está quase pronta.</p>
+              <h1>{context === 'home' ? 'Preparando seu painel' : 'Preparando o SecurePlay'}</h1>
+              <p>{context === 'home' ? 'Sua jornada de aprendizado está quase pronta.' : 'Estamos preparando a próxima página.'}</p>
             </motion.div>
 
             <motion.div
@@ -93,7 +104,7 @@ export function LoadingScreen({ ready = false }: LoadingScreenProps) {
               className="app-loading-progress"
             >
               <div className="app-loading-progress-meta">
-                <span>{getLoadingMessage(progress)}</span>
+                <span>{getLoadingMessage(progress, context)}</span>
                 <strong>{progress}%</strong>
               </div>
 
