@@ -7,6 +7,7 @@ import {
   useRef,
   useState,
 } from 'react';
+import { isAxiosError } from 'axios';
 import { getMe, type CurrentUser } from '@/services/me';
 import { clearQueryCache } from '@/lib/queryCache';
 import { companySessionKey } from '@/config/features';
@@ -15,6 +16,7 @@ export type SessionStatus =
   | 'idle'
   | 'loading'
   | 'authenticated'
+  | 'unavailable'
   | 'unauthenticated';
 
 interface CurrentUserContextValue {
@@ -87,8 +89,13 @@ export function CurrentUserProvider({ children }: { children: React.ReactNode })
         updateStatus('authenticated');
         return nextUser;
       })
-      .catch(() => {
+      .catch((failure: unknown) => {
         if (requestVersion !== requestVersionRef.current) return userRef.current;
+        if (!isAxiosError(failure) || ![401, 403].includes(failure.response?.status ?? 0)) {
+          setError('Não foi possível verificar sua sessão. Confira a conexão e tente novamente.');
+          updateStatus('unavailable');
+          return null;
+        }
         userRef.current = null;
         setUser(null);
         clearQueryCache();

@@ -2,9 +2,10 @@ import { useEffect, useState } from 'react';
 import { Navigate } from 'react-router-dom';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { initialAuthenticatedPath } from '@/components/admin/console/consoleNavigation';
+import { AppButton } from '@/components/ui/buttons/AppButton';
 
 export function PrivateRoute({ children }: { children: React.ReactNode }) {
-  const { status, user, ensureSession } = useCurrentUser();
+  const { status, user, error, ensureSession, refreshSession } = useCurrentUser();
   const [now, setNow] = useState(Date.now());
 
   useEffect(() => {
@@ -17,7 +18,16 @@ export function PrivateRoute({ children }: { children: React.ReactNode }) {
   }, []);
 
   if (status === 'idle' || status === 'loading') {
-    return null;
+    return <div className="app-page" role="status">Verificando sua sessão...</div>;
+  }
+
+  if (status === 'unavailable') {
+    return (
+      <div className="app-page flex flex-col items-center justify-center gap-4 min-h-64">
+        <p role="alert">{error}</p>
+        <AppButton onClick={() => void refreshSession()}>Tentar novamente</AppButton>
+      </div>
+    );
   }
 
   if (status === 'unauthenticated') {

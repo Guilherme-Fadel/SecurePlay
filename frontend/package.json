@@ -4,6 +4,7 @@
   "version": "0.0.1",
   "type": "module",
   "scripts": {
+    "test:content-recovery": "node --test scripts/test-content-recovery.cjs",
     "test:progress-sync": "node --test scripts/test-progress-sync.cjs",
     "test:api-proxy": "node --test scripts/test-api-proxy.mjs",
     "build": "vite build",
