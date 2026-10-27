@@ -115,13 +115,14 @@ export class AchievementsService {
     wallet: PrestigeWallet,
     level: number,
   ): Promise<void> {
-    for (let currentLevel = 2; currentLevel <= level; currentLevel += 1) {
+    for (let currentLevel = 1; currentLevel <= level; currentLevel += 1) {
       await this.addTransaction(
         manager,
         wallet,
         1,
         PrestigeTransactionType.LEVEL,
-        `level:${currentLevel}`,
+        // Preserva a chave histórica do mesmo marco de XP, evitando regrants.
+        `level:${currentLevel + 1}`,
         `Chaves Digitais recebidas ao alcançar o nível ${currentLevel}`,
       );
     }
@@ -153,7 +154,9 @@ export class AchievementsService {
           !definition.prerequisite_slug ||
           unlockedSlugs.has(definition.prerequisite_slug);
         const metric = metricValue(metrics, definition.requirement_type);
-        const progress = Math.min(metric, definition.requirement_value);
+        const progress = record?.unlocked
+          ? definition.requirement_value
+          : Math.min(metric, definition.requirement_value);
         const shouldUnlock =
           prerequisiteMet && metric >= definition.requirement_value;
         if (!record) {

@@ -12,6 +12,16 @@ import { validateSync } from 'class-validator';
 import { UpdateAdminUserDto } from './dto/update-admin-user.dto';
 
 describe('Administrative user editing', () => {
+  it('accepts level zero and rejects negative levels', () => {
+    expect(
+      validateSync(Object.assign(new UpdateAdminUserDto(), { level: 0 })),
+    ).toHaveLength(0);
+    expect(
+      validateSync(Object.assign(new UpdateAdminUserDto(), { level: -1 })).map(
+        (error) => error.property,
+      ),
+    ).toEqual(['level']);
+  });
   it('preserva e-mail de conta confirmada/trial mesmo quando há username', async () => {
     const { service, manager } = setup(Role.PLATFORM_ADMIN, {
       username: 'aluno.teste',

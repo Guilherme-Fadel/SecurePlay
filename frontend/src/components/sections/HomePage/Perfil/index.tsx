@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { levelProgress } from '@/lib/levelProgress';
 import {
   BadgeCheck,
   Building2,
@@ -67,8 +68,7 @@ export function Perfil() {
 
   const points = stats?.totalPoints ?? 0;
   const xpToNextLevel = stats?.xpToNextLevel ?? 0;
-  const xpCeiling = points + xpToNextLevel;
-  const xpProgress = stats && xpCeiling > 0 ? Math.min(100, Math.round((points / xpCeiling) * 100)) : 0;
+  const xpProgress = levelProgress(stats).percent;
   const isManagementUser = user?.role === 'admin' || user?.role === 'platform_admin';
   const displayName = (isManagementUser ? user?.name : user?.nickname || user?.name) || (userLoading ? 'Carregando perfil...' : 'Participante SecurePlay');
   const companyName = user?.empresa_nome || 'Comunidade SecurePlay';

@@ -1,7 +1,7 @@
 const XP_PER_LEVEL = 1000;
 
 export function calcLevel(totalPoints: number): number {
-  return Math.floor(totalPoints / XP_PER_LEVEL) + 1;
+  return Math.floor(totalPoints / XP_PER_LEVEL);
 }
 
 export function calcXpToNextLevel(totalPoints: number): number {

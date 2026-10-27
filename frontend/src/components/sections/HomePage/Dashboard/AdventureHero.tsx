@@ -5,6 +5,7 @@ import type { DashboardStats, JourneyNodeData, WeeklyStreak } from '@/services/d
 import { getModuleArtwork, missionRoomAssets } from '@/lib/staticArtwork';
 import streakCalendar from '@/assets/dashboard/streak-calendar-pixel-v1.png';
 import missionPageTab from '@/assets/dashboard/mission-page-tab-pixel-v1.png';
+import { levelProgress } from '@/lib/levelProgress';
 
 const weekDays = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'];
 
@@ -18,8 +19,10 @@ interface AdventureHeroProps {
 
 export function AdventureHero({ stats, streak, currentModule, onContinue }: AdventureHeroProps) {
   const totalPoints = stats?.totalPoints ?? 0;
-  const levelTarget = totalPoints + (stats?.xpToNextLevel ?? 0);
-  const xpPercent = levelTarget ? Math.round((totalPoints / levelTarget) * 100) : 0;
+  const { range: levelRange, points: levelPoints, percent: xpPercent } = levelProgress(stats);
+  const xpProgressLabel = stats
+    ? `${levelPoints.toLocaleString('pt-BR')} de ${levelRange.toLocaleString('pt-BR')} XP neste nível. Faltam ${stats.xpToNextLevel.toLocaleString('pt-BR')} XP para o nível ${stats.level + 1}.`
+    : 'Aguardando dados de experiência';
   const moduleProgress = currentModule?.progress ?? 0;
   const checkedDays = streak?.checkedDays ?? weekDays.map(() => false);
   const missionArtwork = currentModule
@@ -61,8 +64,9 @@ export function AdventureHero({ stats, streak, currentModule, onContinue }: Adve
       <aside className="hall-player-card" aria-label="Nível e sequência semanal">
         <div className="hall-level-copy">
           <h2>Nível {stats?.level ?? '—'}</h2>
-          <div><Star size={19} /><strong>{totalPoints.toLocaleString('pt-BR')}</strong><span>/ {levelTarget.toLocaleString('pt-BR')} XP</span></div>
-          <div className="hall-progress-track" role="progressbar" aria-label="Progresso de experiência" aria-valuemin={0} aria-valuemax={100} aria-valuenow={xpPercent}><i style={{ width: `${xpPercent}%` }} /></div>
+          <div><Star size={19} /><strong>{totalPoints.toLocaleString('pt-BR')}</strong><span>XP totais</span></div>
+          <div className="hall-progress-track" role="progressbar" aria-label="Progresso de experiência" aria-valuetext={xpProgressLabel} title={xpProgressLabel} aria-valuemin={0} aria-valuemax={100} aria-valuenow={xpPercent}><i style={{ width: `${xpPercent}%` }} /></div>
+          {stats && <span>Faltam {stats.xpToNextLevel.toLocaleString('pt-BR')} XP para o nível {stats.level + 1}</span>}
         </div>
         <div className="hall-player-separator" />
         <div className="hall-streak-summary">

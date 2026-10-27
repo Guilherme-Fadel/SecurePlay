@@ -24,6 +24,75 @@ const repository = () => ({
 });
 
 describe('AchievementsService', () => {
+  it.each([
+    [0, false, 0],
+    [1000, false, 1],
+    [1000, true, 0],
+  ])(
+    'preserva marco e idempotência do ledger com %i XP (legado=%s)',
+    async (totalPoints, hasLegacyGrant, grants) => {
+      const wallet = {
+        usuario_id: 7,
+        balance: hasLegacyGrant ? 1 : 0,
+        total_earned: hasLegacyGrant ? 1 : 0,
+      };
+      const transactions = repository();
+      transactions.findOne.mockImplementation(
+        ({ where }: { where: { source_key: string } }) =>
+          Promise.resolve(
+            hasLegacyGrant && where.source_key === 'level:2'
+              ? { source_key: 'level:2' }
+              : null,
+          ),
+      );
+      const wallets = repository();
+      wallets.findOneOrFail.mockResolvedValue(wallet);
+      const definitions = repository();
+      definitions.find.mockResolvedValue([]);
+      const records = repository();
+      records.find.mockResolvedValue([]);
+      const stats = repository();
+      stats.findOne.mockResolvedValue({ total_points: totalPoints });
+      const counts = repository();
+      counts.count.mockResolvedValue(0);
+      const arcade = repository();
+      arcade.find.mockResolvedValue([]);
+      const manager = {
+        query: jest.fn().mockResolvedValue([]),
+        getRepository: (entity: unknown) =>
+          new Map<unknown, unknown>([
+            [
+              Usuario,
+              { findOneOrFail: jest.fn().mockResolvedValue({ id: 7 }) },
+            ],
+            [PrestigeWallet, wallets],
+            [PrestigeTransaction, transactions],
+            [Achievement, definitions],
+            [UsuarioAchievement, records],
+            [UsuarioStats, stats],
+            [UsuarioChallenge, counts],
+            [UsuarioAula, counts],
+            [UsuarioArcadeStats, arcade],
+          ]).get(entity),
+      };
+      const service = new AchievementsService(
+        {} as never,
+        {} as never,
+        {
+          transaction: (callback: (value: typeof manager) => unknown) =>
+            callback(manager),
+        } as never,
+      );
+      const trail = await service.getTrail(7);
+      expect(trail.summary.level).toBe(totalPoints === 0 ? 0 : 1);
+      expect(transactions.save).toHaveBeenCalledTimes(grants);
+      expect(wallet.balance).toBe(hasLegacyGrant ? 1 : grants);
+      if (grants)
+        expect(transactions.create).toHaveBeenCalledWith(
+          expect.objectContaining({ source_key: 'level:2' }),
+        );
+    },
+  );
   it('Nest propaga erro de conquista para permitir retry do produtor', async () => {
     const service = new AchievementsService(
       {} as never,
@@ -83,7 +152,7 @@ describe('AchievementsService', () => {
     userAchievements.find.mockResolvedValue([]);
     wallets.findOneOrFail.mockImplementation(() => Promise.resolve(wallet));
     transactions.findOne.mockResolvedValue(null);
-    stats.findOne.mockResolvedValue({ total_points: 1000, current_streak: 1 });
+    stats.findOne.mockResolvedValue({ total_points: 2000, current_streak: 1 });
     challenges.count.mockResolvedValue(0);
     lessons.count.mockResolvedValue(0);
     arcade.find.mockResolvedValue([]);
@@ -118,9 +187,30 @@ describe('AchievementsService', () => {
 
     expect(result.summary.level).toBe(2);
     expect(result.summary.unlocked).toBe(1);
-    expect(result.summary.prestigeBalance).toBe(2);
+    expect(result.summary.prestigeBalance).toBe(3);
     expect(result.nodes[0].status).toBe('unlocked');
-    expect(transactions.save).toHaveBeenCalledTimes(2);
+    expect(transactions.save).toHaveBeenCalledTimes(3);
+
+    // Conquista já concluída na regra anterior permanece completa e sem novo grant.
+    stats.findOne.mockResolvedValue({ total_points: 1000, current_streak: 1 });
+    userAchievements.find.mockResolvedValue([
+      {
+        achievement_id: 1,
+        progress: 2,
+        unlocked: true,
+        unlocked_at: new Date('2026-01-01'),
+      },
+    ]);
+    transactions.findOne.mockResolvedValue({ source_key: 'already-granted' });
+    const legacy = await service.getTrail(7);
+    expect(legacy.summary.level).toBe(1);
+    expect(legacy.nodes[0]).toMatchObject({
+      status: 'unlocked',
+      progress: 2,
+      progressPercent: 100,
+    });
+    expect(legacy.summary.prestigeBalance).toBe(3);
+    expect(transactions.save).toHaveBeenCalledTimes(3);
   });
 
   it('equipa automaticamente o cosmético adquirido e substitui o item do mesmo tipo', async () => {

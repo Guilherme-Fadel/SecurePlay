@@ -30,7 +30,7 @@ export class UpdateAdminUserDto {
 
   @ValidateIf((_object, value) => value !== undefined)
   @IsInt()
-  @Min(1)
+  @Min(0)
   @Max(100000)
   level?: number;
 
