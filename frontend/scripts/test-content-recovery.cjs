@@ -116,3 +116,67 @@ test('module: A slow/B fast, stale failure, overlapping retries, invalid respons
   requests[5].resolve({ id: 3 }); await settle();
   assert.equal(requests.length, 6);
 });
+
+test('book frame: error, retry success, timeout and cleanup', () => {
+  const h = hooks();
+  const images = [];
+  const timers = new Map();
+  let next = 0;
+  const { useModuleBookFrame } = load('src/hooks/useModuleBookFrame.ts', { react: h.react }, {
+    Image: class { constructor() { images.push(this); } },
+    window: { setTimeout(fn) { timers.set(++next, fn); return next; }, clearTimeout(id) { timers.delete(id); } },
+  });
+  let src = '/frame.png';
+  const render = () => h.render(() => useModuleBookFrame(src));
+  assert.equal(render().status, 'loading');
+  images[0].onerror();
+  assert.equal(render().status, 'error');
+  render().retry();
+  assert.equal(render().status, 'loading');
+  images[1].onload();
+  assert.equal(render().status, 'ready');
+  src = '/other.png'; render();
+  [...timers.values()][0]();
+  assert.equal(render().status, 'error');
+  render().retry(); render(); h.unmount();
+  assert.equal(timers.size, 0);
+  assert.equal(images.at(-1).onload, null);
+  src = undefined;
+  assert.equal(render().status, 'error');
+});
+
+test('module view: API/frame failure offers retry and back; loading has an exit', () => {
+  const actions = [];
+  let error = 'Falha na missão';
+  let loading = false;
+  let frame = 'ready';
+  const { ModuloDetalhes } = load('src/components/sections/HomePage/Conteudos/ModuloDetalhes.tsx', {
+    react: { ...React, useState: () => [0], useEffect() {} },
+    '@/hooks/useModulo': { useModulo: () => ({ modulo: null, loading, error, refetch: () => actions.push('fetch') }) },
+    '@/hooks/useModuleBookFrame': { useModuleBookFrame: () => ({ status: frame, retry: () => actions.push('frame') }) },
+    './AulaListItem': {}, '@/services/conteudo': {}, 'lucide-react': {},
+    '@/components/ui/buttons/AppButton': { AppButton: 'button' },
+    '@/hooks/useMissionRoomAssets': { useMissionRoomAssets: () => ({}) },
+    '@/components/ui/visuals/ProgressiveImage': {}, '@/lib/staticArtwork': {},
+    '@/lib/lessonOrder': {}, '@/styles/module-library-room.css': {},
+    '@/hooks/useNotebookLayout': { useNotebookLayout: () => false },
+    '@/components/ui/navigation/PageControls': {},
+  });
+  function nodes(node) {
+    if (!node || typeof node !== 'object') return [];
+    return [node, ...React.Children.toArray(node.props?.children).flatMap(nodes)];
+  }
+  const render = () => nodes(ModuloDetalhes({ moduloId: 1, onBack: () => actions.push('back'), onSelectAula() {} }));
+  for (const kind of ['api', 'frame']) {
+    error = kind === 'api' ? 'Falha na missão' : null;
+    frame = kind === 'frame' ? 'error' : 'ready';
+    const tree = render();
+    assert.ok(tree.some((n) => n.props.role === 'alert'));
+    const buttons = tree.filter((n) => n.type === 'button');
+    buttons.forEach((button) => button.props.onClick());
+  }
+  assert.deepEqual(actions, ['fetch', 'frame', 'back', 'fetch', 'frame', 'back']);
+  error = null; loading = true; frame = 'loading';
+  assert.ok(render().some((n) => n.props.role === 'status'));
+  assert.equal(render().filter((n) => n.type === 'button').length, 1);
+});

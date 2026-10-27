@@ -11,16 +11,33 @@ import '@/styles/module-library-room.css';
 import { useEffect, useState } from 'react';
 import { useNotebookLayout } from '@/hooks/useNotebookLayout';
 import { PageControls } from '@/components/ui/navigation/PageControls';
+import { useModuleBookFrame } from '@/hooks/useModuleBookFrame';
 
 interface ModuloDetalhesProps { moduloId: number; onBack: () => void; onSelectAula: (aulaId: number) => void; }
 
 export function ModuloDetalhes({ moduloId, onBack, onSelectAula }: ModuloDetalhesProps) {
-  const { modulo, loading } = useModulo(moduloId);
+  const { modulo, loading, error, refetch } = useModulo(moduloId);
   const assets = useMissionRoomAssets();
+  const frame = useModuleBookFrame(assets['module-book-frame-clean']);
   const compact = useNotebookLayout();
   const [page, setPage] = useState(0);
   useEffect(() => setPage(0), [moduloId]);
-  if (loading || !modulo || !assets['module-book-frame-clean']) return <div className="flex items-center justify-center h-64"><p className="text-[var(--text-secondary)]">Abrindo o livro da missão...</p></div>;
+  const failure = error || (frame.status === 'error' ? 'Não foi possível abrir a imagem do livro.' : null);
+  if (failure || (!loading && !modulo)) return (
+    <div className="app-page flex flex-col items-center justify-center gap-4 min-h-64">
+      <p role="alert">{failure || 'Esta missão não está disponível.'}</p>
+      <div className="flex flex-wrap justify-center gap-3">
+        <AppButton onClick={() => { void refetch(); frame.retry(); }}>Tentar novamente</AppButton>
+        <AppButton onClick={onBack} variant="secondary">Voltar aos conteúdos</AppButton>
+      </div>
+    </div>
+  );
+  if (loading || !modulo || frame.status === 'loading') return (
+    <div className="app-page flex flex-col items-center justify-center gap-4 min-h-64">
+      <p role="status">Abrindo o livro da missão...</p>
+      <AppButton onClick={onBack} variant="ghost">Voltar aos conteúdos</AppButton>
+    </div>
+  );
 
   const orderedAulas = sortAulasByModuleSequence(modulo.aulas);
   const sections = groupAulasBySections(orderedAulas);
