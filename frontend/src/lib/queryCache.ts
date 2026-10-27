@@ -89,7 +89,10 @@ export function subscribe(key: string, callback: () => void): () => void {
   }
   keyListeners.add(callback);
   return () => {
-    listeners.get(key)?.delete(callback);
+    keyListeners.delete(callback);
+    if (keyListeners.size === 0 && listeners.get(key) === keyListeners) {
+      listeners.delete(key);
+    }
   };
 }
 

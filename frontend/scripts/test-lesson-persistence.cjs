@@ -123,7 +123,25 @@ test('a new save queued while a discarded request settles is still sent', async 
   assert.equal(f.render().saveStatus, 'saved');
 });
 
-
+test('empty listener sets are released without removing live subscribers or a replacement subscription', () => {
+  const maps = [];
+  class ObservedMap extends Map { constructor(...args) { super(...args); maps.push(this); } }
+  const cache = load('src/lib/queryCache.ts', {}, { Map: ObservedMap });
+  let calls = 0;
+  const old = cache.subscribe('lesson:7', () => calls++);
+  const remaining = cache.subscribe('lesson:7', () => calls++);
+  old(); cache.setCache('lesson:7', true);
+  assert.equal(calls, 1);
+  remaining();
+  assert.equal(maps[1].size, 0);
+  const replacement = cache.subscribe('lesson:7', () => calls++);
+  old(); remaining();
+  cache.setCache('lesson:7', false);
+  assert.equal(calls, 2);
+  replacement();
+  for (let i = 0; i < 100; i++) cache.subscribe(`lesson:${i}`, () => {})();
+  assert.equal(maps[1].size, 0);
+});
 
 function nodes(node) {
   if (!node || typeof node !== 'object') return [];
