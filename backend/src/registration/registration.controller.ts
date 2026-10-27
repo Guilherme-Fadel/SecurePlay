@@ -4,6 +4,7 @@ import { IsEmail, IsString, Matches } from 'class-validator';
 import { Public } from '../auth/public.decorator';
 import { TrialRegisterDto } from './dto/trial-register.dto';
 import { RegistrationService } from './registration.service';
+import { PublicRegistrationService } from './public-registration.service';
 import { IsSecurePassword } from '../common/validators/password.validator';
 import { RegistrationUsernameDto } from './dto/registration-contact.dto';
 
@@ -38,13 +39,16 @@ class ResetStudentPasswordDto {
 
 @Controller('registration')
 export class RegistrationController {
-  constructor(private readonly registrationService: RegistrationService) {}
+  constructor(
+    private readonly registrationService: RegistrationService,
+    private readonly publicRegistration: PublicRegistrationService,
+  ) {}
 
   @Public()
   @Post('trial')
   @Throttle({ short: { limit: 3, ttl: 60000 } })
   startTrial(@Body() dto: TrialRegisterDto) {
-    return this.registrationService.startTrial(dto);
+    return this.publicRegistration.startTrial(dto);
   }
 
   @Public()
@@ -65,7 +69,7 @@ export class RegistrationController {
   @Post('resend')
   @Throttle({ short: { limit: 3, ttl: 60000 } })
   resend(@Body() dto: ResendEmailDto) {
-    return this.registrationService.resend(dto.email);
+    return this.publicRegistration.resend(dto.email);
   }
 
   @Public()

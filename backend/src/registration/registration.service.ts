@@ -37,6 +37,7 @@ type RegistrationContext = {
   inviteExpiresAt: Date | null;
   inviteRole: Role | null;
   schoolStudent?: boolean;
+  existingAccountGuidance?: (address: string) => Promise<void>;
 };
 
 @Injectable()
@@ -46,13 +47,17 @@ export class RegistrationService {
     private readonly emailService: EmailService,
   ) {}
 
-  async startTrial(dto: TrialRegisterDto) {
+  async startTrial(
+    dto: TrialRegisterDto,
+    existingAccountGuidance?: (address: string) => Promise<void>,
+  ) {
     return this.createPending(dto, {
       kind: 'trial',
       inviteId: null,
       invitedEmail: null,
       inviteExpiresAt: null,
       inviteRole: null,
+      existingAccountGuidance,
     });
   }
 
@@ -197,9 +202,15 @@ export class RegistrationService {
     ) {
       throw new BadRequestException('Administradores não utilizam apelidos');
     }
-    if (
-      await this.dataSource.getRepository(Usuario).findOne({ where: { email } })
-    ) {
+    const existingUser = await this.dataSource
+      .getRepository(Usuario)
+      .findOne({ where: { email } });
+    if (existingUser) {
+      if (context.kind === 'trial') {
+        if (existingUser.email)
+          await context.existingAccountGuidance?.(existingUser.email);
+        return { sucesso: true };
+      }
       throw new BadRequestException(
         'Este e-mail já possui um acesso cadastrado',
       );
@@ -234,7 +245,31 @@ export class RegistrationService {
       ),
     );
     pending.last_sent_at = new Date();
-    await pendingRepository.save(pending).catch(registrationConflict);
+    const saved = await pendingRepository
+      .save(pending)
+      .catch(async (error: unknown) => {
+        const failure = error as {
+          code?: string;
+          sqlMessage?: string;
+          driverError?: { code?: string; sqlMessage?: string };
+        };
+        if (
+          context.kind === 'trial' &&
+          (failure.code ?? failure.driverError?.code) === 'ER_DUP_ENTRY' &&
+          (
+            failure.sqlMessage ??
+            failure.driverError?.sqlMessage ??
+            ''
+          ).includes('ux_pending_registration_email')
+        ) {
+          const concurrent = await pendingRepository.findOne({
+            where: { email },
+          });
+          if (concurrent && concurrent.expires_at > new Date()) return null;
+        }
+        return registrationConflict(error);
+      });
+    if (!saved) return { sucesso: true };
     await this.emailService.sendVerification(email, token);
     return {
       sucesso: true,

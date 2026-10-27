@@ -19,13 +19,14 @@ export function CheckEmail() {
   };
   return <PageTransition><div className="invite-page"><main className="invite-card">
     <div className="invite-brand">secure<em>play</em></div>
-    <h1>{passwordSetup ? 'Defina sua senha' : 'Confira seu e-mail'}</h1>
+    <h1>{passwordSetup ? 'Instruções de acesso' : 'Confira seu e-mail'}</h1>
     <p className="invite-intro">{passwordSetup
-      ? 'Seu e-mail já foi confirmado. Solicite um novo link para definir sua senha antes de entrar.'
-      : 'Enviamos um link para confirmar seu endereço. Abra-o para criar sua senha e liberar o acesso.'}</p>
+      ? 'Se seu acesso ainda precisa de confirmação ou da senha inicial, solicite novas instruções por e-mail. Se a conta já está ativa, entre normalmente.'
+      : 'Se este endereço puder continuar o cadastro, você receberá instruções por e-mail. Confira também a pasta de spam. Se já possui acesso, entre na sua conta.'}</p>
     <div className="invite-form"><label>E-mail<input type="email" value={email} onChange={(event) => setEmail(event.target.value)} required /></label>
-      <button type="button" onClick={resend} disabled={!email}>{passwordSetup ? 'Enviar link para definir senha' : 'Reenviar confirmação'}</button></div>
+      <button type="button" onClick={resend} disabled={!email}>{passwordSetup ? 'Enviar instruções de acesso' : 'Reenviar confirmação'}</button></div>
     {message && <p role="status" className="invite-legal-note">{message}</p>}
+    <p className="invite-legal-note"><Link to="/login">Já tenho acesso: entrar</Link></p>
     <p className="invite-legal-note">Digitou o endereço errado? <Link to="/teste-gratuito">Refaça o cadastro do teste</Link> ou use novamente seu convite.</p>
   </main></div></PageTransition>;
 }

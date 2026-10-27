@@ -27,35 +27,71 @@ export class EmailService {
     );
   }
 
+  async sendAccessGuidance(to: string, requestId: string): Promise<void> {
+    const login = this.siteLink('/login').toString();
+    const setup = this.siteLink('/verifique-email?mode=password').toString();
+    return this.sendMessage(
+      to,
+      'Orientações de acesso à SecurePlay',
+      'Recebemos uma solicitação de cadastro para este endereço. Se você já possui acesso, entre em ' +
+        login +
+        '\nSe ainda precisa confirmar seu endereço ou definir a senha inicial, peça instruções em ' +
+        setup +
+        '\nPara recuperar uma senha já definida, procure o responsável pelo seu acesso. Se não fez esta solicitação, ignore esta mensagem. Sua conta não foi alterada.',
+      'access-guidance-' + requestId,
+    );
+  }
+
   private async sendLink(
     to: string,
     token: string,
     subject: string,
     introduction: string,
   ): Promise<void> {
-    const apiKey = process.env.RESEND_API_KEY?.trim();
-    const from = process.env.EMAIL_FROM?.trim();
-    const siteUrl = process.env.PUBLIC_SITE_URL?.trim();
-    if (!apiKey || !from || !siteUrl) {
-      throw new ServiceUnavailableException('Envio de e-mail indisponível');
-    }
-    const url = new URL('/confirmar-email', siteUrl);
+    const url = this.siteLink('/confirmar-email');
     url.hash = token;
     const link = url.toString();
+    return this.sendMessage(
+      to,
+      subject,
+      introduction + link + '\nO link expira em até 24 horas.',
+      'verify-' + createHash('sha256').update(token).digest('hex'),
+    );
+  }
+
+  private siteLink(path: string): URL {
+    try {
+      const url = new URL(path, process.env.PUBLIC_SITE_URL?.trim());
+      if (!['http:', 'https:'].includes(url.protocol)) throw new Error();
+      return url;
+    } catch {
+      throw new ServiceUnavailableException('Envio de e-mail indisponível');
+    }
+  }
+
+  private async sendMessage(
+    to: string,
+    subject: string,
+    text: string,
+    idempotencyKey: string,
+  ): Promise<void> {
+    const apiKey = process.env.RESEND_API_KEY?.trim();
+    const from = process.env.EMAIL_FROM?.trim();
+    if (!apiKey || !from)
+      throw new ServiceUnavailableException('Envio de e-mail indisponível');
     try {
       const response = await fetch('https://api.resend.com/emails', {
         method: 'POST',
         headers: {
           Authorization: 'Bearer ' + apiKey,
           'Content-Type': 'application/json',
-          'Idempotency-Key':
-            'verify-' + createHash('sha256').update(token).digest('hex'),
+          'Idempotency-Key': idempotencyKey,
         },
         body: JSON.stringify({
           from,
           to: [to],
           subject,
-          text: introduction + link + '\nO link expira em até 24 horas.',
+          text,
         }),
         signal: AbortSignal.timeout(10000),
       });
@@ -64,9 +100,7 @@ export class EmailService {
       this.logger.warn(
         error instanceof Error ? error.message : 'Falha no envio de e-mail',
       );
-      throw new ServiceUnavailableException(
-        'Não foi possível enviar o e-mail',
-      );
+      throw new ServiceUnavailableException('Não foi possível enviar o e-mail');
     }
   }
 
