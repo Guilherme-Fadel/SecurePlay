@@ -15,6 +15,26 @@ Referência metodológica: [Geist Design System](https://vercel.com/geist/introd
 - `AppInput` cobre texto, e-mail e URL; `AppSearchInput` cobre busca e exige `label`; `AppSelect` apresenta opções em lista própria com tema claro/escuro, mantendo um select oculto para valor de formulário e evento `onChange`. O controle visível aceita clique, setas, Home/End, busca por letras, Enter, Escape e Tab. Todos têm altura, borda, tipografia, foco, hover e desabilitado em `app-ui.css`. Campos de cor, arquivo, checkbox e switches mantêm suas estruturas próprias.
 - `AppButton` usa variantes `primary`, `secondary`, `soft` e `ghost`, com tamanhos `sm`, `control` e `md`. `AppFilterChip` é para filtros categóricos curtos com `aria-pressed`; não substitui select com muitas opções. `AppSectionHeader` é para seções internas, não para o título de página.
 
+## Carregamento de navegação e aprendizagem
+
+- `PageLoading` reutiliza a tela dedicada `LoadingScreen` nos fallbacks de rotas e sessão. O contexto de página usa texto genérico; a Home mantém o contexto do painel. O CSS da tela é carregado pelo próprio componente para cobrir o primeiro acesso.
+- `ContentLoading` representa ranking, livro do módulo, leitor e roteiro com silhuetas desfocadas, sem dados fictícios ou controles ativos. A espera tem nome acessível e `aria-busy`, sem mensagem de loading visível. Respeita movimento reduzido e usa tokens de tema nas superfícies; o livro reutiliza a arte aprovada.
+- Erros, conteúdo vazio e acesso negado continuam com estados explícitos e ações pertinentes. As listagens administrativas mantêm os estados de `AdminListState` descritos abaixo.
+
+## Dimensões de formulários administrativos
+
+- Cadastro e edição usam `admin-form-grid`, com o cadastro de usuário como referência: área máxima de 900 px, duas colunas iguais e intervalo de 20 px; em até 600 px, uma coluna. Esse limite evita esticar os campos pela largura inteira de monitores grandes.
+- Campos comuns usam `AppInput`/`AppSelect` com altura de `--app-control-height` (40 px), fonte de `--font-label` (13 px) e labels de 13 px, peso 600, com 7 px até o controle. Não criar alturas ou fontes locais para campos equivalentes.
+- Nome, razão social, contato e complemento ocupam uma coluna por padrão. Largura total só quando a natureza do conteúdo exigir (por exemplo, um texto longo em textarea), com justificativa funcional.
+- Novos formulários devem reutilizar a grade e esses tokens. Exceções de telas públicas de autenticação mantêm sua composição própria; não substituir suas medidas por este padrão administrativo.
+
+## Uso de ícones
+
+- Use ícones para identificar navegação (como sidebar), ações ou o significado de uma mensagem/estado. A função deve ser clara; mantenha nome acessível nas ações sem texto.
+- Não acrescente ícones decorativos avulsos em modais, cards ou cabeçalhos para preencher espaço ou ornamentar conteúdo. Esse uso só entra com pedido explícito do usuário.
+- Se título e texto já identificam o conteúdo, prefira a composição textual. Nas boas-vindas de apelido e nos destaques semanais, não usar ícone solto acima ou ao lado do conteúdo. Avatares identificam participantes e permanecem funcionais.
+- Preserve ilustrações, pixel art e elementos de identidade já aprovados. Esta regra não autoriza removê-los nem fazer uma limpeza geral fora do escopo pedido.
+
 ## Listagens administrativas
 
 `src/components/admin/AdminListLayout.tsx` fornece a estrutura. O CSS fica em `src/pages/admin-users.css`.
@@ -22,7 +42,7 @@ Referência metodológica: [Geist Design System](https://vercel.com/geist/introd
 | Componente | Anatomia e uso | Estados e responsividade |
 | --- | --- | --- |
 | `AdminPageHeader` | Título `h1`, descrição em `AdminHelpTip`, contador e ação opcionais. Use em todas as abas administrativas; não use eyebrow. | Ajuda funciona por mouse, teclado e toque; contador é anunciado por `role=status` e no mobile fica abaixo do título. |
-| `AdminCardHeading` | Título `h2`, ícone e descrição em `AdminHelpTip` para seções internas com explicação. | Use texto visível quando a instrução for necessária para tomar uma decisão imediata. |
+| `AdminCardHeading` | Título `h2` e descrição em `AdminHelpTip` para seções internas com explicação; ícone opcional quando cumprir função de identificação. | Use texto visível quando a instrução for necessária para tomar uma decisão imediata. |
 | `AdminListCard` | Superfície e borda da listagem; conteúdo por composição. | Recebe `loading` para `aria-busy`. |
 | `AdminListToolbar` | Busca primeiro, filtros/ordenação depois. Aceita `onSubmit` quando a busca depende de envio. | Uma linha quando cabe; controles passam a largura total no mobile. A borda inferior é o único separador sob a busca. |
 | `AdminListContent` e `AdminListState` | Conteúdo da lista ou mensagem `loading`, `empty`, `error` com retry opcional. | Loading usa `role=status`, erro usa `role=alert`; não renderize linhas antigas durante loading ou erro. |
