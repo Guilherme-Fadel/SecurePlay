@@ -25,6 +25,9 @@ import { getRankingWeekStart } from '../../dashboard/ranking-season';
 import { ActivityCompletion } from './activity-completion.entity';
 import { ActivityCompletionService } from './activity-completion.service';
 import { ActivityCompletion1793232000000 } from '../../database/migrations/1793232000000-activity-completion';
+import { DailyCheckin1793404800000 } from '../../database/migrations/1793404800000-daily-checkin';
+import { DailyCheckin } from '../../dashboard/daily-checkin.entity';
+import { DailyCheckinService } from '../../dashboard/daily-checkin.service';
 
 // Opt-in: somente o Compose descartável C123, sem .env/AppModule ou serviços externos.
 const isolated =
@@ -57,6 +60,7 @@ isolated('C01/C02/C03 — MySQL e Redis descartáveis', () => {
     RankingSeasonClose,
     RankingSeasonSnapshot,
     ActivityCompletion,
+    DailyCheckin,
   ];
 
   beforeAll(async () => {
@@ -207,6 +211,7 @@ isolated('C01/C02/C03 — MySQL e Redis descartáveis', () => {
       await migration.up(runner);
       await migration.down(runner);
       await migration.up(runner);
+      await new DailyCheckin1793404800000().up(runner);
       expect(await repo.findOneByOrFail({ id: first.id })).toMatchObject({
         progress: 55,
         completed: false,
@@ -249,14 +254,14 @@ isolated('C01/C02/C03 — MySQL e Redis descartáveis', () => {
     );
     for (const result of results) expect(result).toEqual(results[0]);
     expect(results[0].pointsEarned).toBe(100);
-    expect(await points()).toBe(100);
-    expect(await monthlyPoints()).toBe(100);
+    expect(await points()).toBe(105);
+    expect(await monthlyPoints()).toBe(105);
     expect(
       await source
         .getRepository(UsuarioChallenge)
         .countBy({ usuario_id: user.id }),
     ).toBe(1);
-    expect(await redis.get(`xp-today:${user.id}`)).toBe('100');
+    expect(await redis.get(`xp-today:${user.id}`)).toBe('105');
     expect(
       await redis.get(
         `ranking:week:${getRankingWeekStart()}:challenges:${user.id}`,
@@ -288,7 +293,7 @@ isolated('C01/C02/C03 — MySQL e Redis descartáveis', () => {
     await expect(
       challenges.submitChallenge(challenge.id, user.id, answers()),
     ).resolves.toMatchObject({ pointsEarned: 100 });
-    expect(await points()).toBe(100);
+    expect(await points()).toBe(105);
   });
 
   it('falha no Redis pós-commit mantém resultado e outbox recuperável sem recreditar XP', async () => {
@@ -301,7 +306,7 @@ isolated('C01/C02/C03 — MySQL e Redis descartáveis', () => {
       answers(),
     );
     expect(result.pointsEarned).toBe(100);
-    expect(await points()).toBe(100);
+    expect(await points()).toBe(105);
     expect(
       await source
         .getRepository(ActivityCompletion)
@@ -312,8 +317,9 @@ isolated('C01/C02/C03 — MySQL e Redis descartáveis', () => {
     await expect(
       challenges.submitChallenge(challenge.id, user.id, { answers: [] }),
     ).resolves.toEqual(result);
-    expect(await points()).toBe(100);
-    expect(await redis.get(`xp-today:${user.id}`)).toBe('100');
+    expect(await points()).toBe(105);
+    await completion.flushPending(); // Recupera também a outbox do bônus de check-in.
+    expect(await redis.get(`xp-today:${user.id}`)).toBe('105');
   });
 
   it('crash após Redis e antes do ack SQL não duplica métricas no reprocessamento', async () => {
@@ -326,19 +332,95 @@ isolated('C01/C02/C03 — MySQL e Redis descartáveis', () => {
       user.id,
       answers(),
     );
-    expect(await redis.get(`xp-today:${user.id}`)).toBe('100');
+    expect(await redis.get(`xp-today:${user.id}`)).toBe('105');
     fail = false;
     await completion.flushPending();
     await expect(
       challenges.submitChallenge(challenge.id, user.id, answers()),
     ).resolves.toEqual(result);
-    expect(await points()).toBe(100);
-    expect(await redis.get(`xp-today:${user.id}`)).toBe('100');
+    expect(await points()).toBe(105);
+    expect(await redis.get(`xp-today:${user.id}`)).toBe('105');
     expect(
       await redis.get(
         `ranking:week:${getRankingWeekStart()}:challenges:${user.id}`,
       ),
     ).toBe('1');
+  });
+
+  it('primeira leitura já marca o check-in com efeitos Redis atrasados', async () => {
+    let release!: () => void;
+    const gate = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    const spy = jest
+      .spyOn(redis, 'applyActivityCompletion')
+      .mockImplementation(async (record) => {
+        await gate;
+        await RedisService.prototype.applyActivityCompletion.call(
+          redis,
+          record,
+        );
+      });
+    try {
+      const result = await challenges.submitChallenge(
+        challenge.id,
+        user.id,
+        answers(),
+      );
+      expect(result.pointsEarned).toBe(100);
+      const checkins = new DailyCheckinService(
+        source,
+        completion,
+        {} as never,
+        redis,
+      );
+      expect(await checkins.weekly(user.id)).toMatchObject({
+        checkedToday: true,
+        streak: 1,
+      });
+      expect(await points()).toBe(105);
+      expect(await monthlyPoints()).toBe(105);
+      expect(
+        await source
+          .getRepository(DailyCheckin)
+          .countBy({ usuario_id: user.id }),
+      ).toBe(1);
+    } finally {
+      release();
+      spy.mockRestore();
+      await completion.flushPending();
+    }
+  });
+
+  it('falha SQL do check-in reverte também missão, resultado e XP', async () => {
+    await source.query(`CREATE TRIGGER fixture_checkin_failure BEFORE INSERT ON daily_checkin
+      FOR EACH ROW SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'fixture checkin failure'`);
+    try {
+      await expect(
+        challenges.submitChallenge(challenge.id, user.id, answers()),
+      ).rejects.toThrow('fixture checkin failure');
+      expect(await points()).toBe(0);
+      expect(await monthlyPoints()).toBe(0);
+      expect(
+        await source
+          .getRepository(UsuarioChallenge)
+          .countBy({ usuario_id: user.id }),
+      ).toBe(0);
+      expect(
+        await source
+          .getRepository(ActivityCompletion)
+          .countBy({ usuario_id: user.id }),
+      ).toBe(0);
+      expect(
+        await source
+          .getRepository(DailyCheckin)
+          .countBy({ usuario_id: user.id }),
+      ).toBe(0);
+    } finally {
+      await source.query('DROP TRIGGER fixture_checkin_failure');
+    }
+    await challenges.submitChallenge(challenge.id, user.id, answers());
+    expect(await points()).toBe(105);
   });
 
   it('replay pertence ao usuário autenticado, não a outro aluno', async () => {
@@ -461,7 +543,7 @@ isolated('C01/C02/C03 — MySQL e Redis descartáveis', () => {
         .getRepository(UsuarioChallenge)
         .countBy({ usuario_id: user.id }),
     ).toBe(1);
-    expect(await points()).toBe(100);
+    expect(await points()).toBe(105);
   });
 
   it('cache perdido mantém missão parcial atribuída no mesmo dia', async () => {
@@ -532,8 +614,8 @@ isolated('C01/C02/C03 — MySQL e Redis descartáveis', () => {
         .getRepository(ActivityCompletion)
         .findOneBy({ usuario_id: user.id, activity_type: 'challenge' }),
     ).toMatchObject({ effects_processed: true });
-    expect(await points()).toBe(100);
-    expect(await redis.get(`xp-today:${user.id}`)).toBe('100');
+    expect(await points()).toBe(105);
+    expect(await redis.get(`xp-today:${user.id}`)).toBe('105');
   });
 
   it('efeito atrasado usa a semana original e não aumenta o XP de hoje', async () => {
@@ -608,7 +690,7 @@ isolated('C01/C02/C03 — MySQL e Redis descartáveis', () => {
       await source.query('DROP TRIGGER fixture_completion_failure');
     }
     await challenges.submitChallenge(challenge.id, user.id, answers());
-    expect(await points()).toBe(100);
+    expect(await points()).toBe(105);
   });
 
   it('synchronize não cria o índice sensível antes do preflight da migração', async () => {

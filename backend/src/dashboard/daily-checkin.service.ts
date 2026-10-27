@@ -5,6 +5,10 @@ import { TokenService } from '../arcade/token.service';
 import { ActivityCompletion } from '../common/gamification/activity-completion.entity';
 import { ActivityCompletionService } from '../common/gamification/activity-completion.service';
 import {
+  createDailyCheckinDraft,
+  type CheckinResult,
+} from '../common/gamification/daily-checkin';
+import {
   getLocalDateKey,
   getMondayOfWeek,
   getTodayWeekIndex,
@@ -13,12 +17,9 @@ import { RedisService } from '../redis/redis.service';
 import { UsuarioStats } from '../usuario-stats/usuario-stats.entity';
 import { DailyCheckin } from './daily-checkin.entity';
 
-export interface CheckinResult {
-  day: string;
-  streak: number;
-  bonusXp: number;
-  legacy: boolean;
-}
+export type { CheckinResult } from '../common/gamification/daily-checkin';
+
+class CheckinDayExpired extends Error {}
 
 @Injectable()
 export class DailyCheckinService {
@@ -32,42 +33,32 @@ export class DailyCheckinService {
   ) {}
 
   async register(usuarioId: number): Promise<CheckinResult> {
+    return this.registerInDay(usuarioId);
+  }
+
+  async registerForDay(usuarioId: number, day: string): Promise<void> {
+    try {
+      await this.registerInDay(usuarioId, day);
+    } catch (error) {
+      if (!(error instanceof CheckinDayExpired)) throw error;
+    }
+  }
+
+  private async registerInDay(
+    usuarioId: number,
+    expectedDay?: string,
+  ): Promise<CheckinResult> {
     return this.completions.complete(
       usuarioId,
       'checkin',
-      (createdAt) => Number(getLocalDateKey(createdAt).replaceAll('-', '')),
-      async (manager, { createdAt }) => {
+      (createdAt) => {
         const day = getLocalDateKey(createdAt);
-        const statsRepo = manager.getRepository(UsuarioStats);
-        let stats = await statsRepo.findOneBy({ usuario_id: usuarioId });
-        stats ??= statsRepo.create({ usuario_id: usuarioId, total_points: 0 });
-        // Não concede de novo o bônus legado nem regride uma data já registrada.
-        const legacy =
-          !!stats.last_checkin_date && stats.last_checkin_date >= day;
-        if (!legacy) {
-          const gap = stats.last_checkin_date
-            ? (Date.parse(`${day}T00:00:00Z`) -
-                Date.parse(`${stats.last_checkin_date}T00:00:00Z`)) /
-              86_400_000
-            : null;
-          stats.current_streak = gap === 1 ? stats.current_streak + 1 : 1;
-          stats.last_checkin_date = day;
-          await statsRepo.save(stats);
-        }
-        const bonusXp = legacy ? 0 : stats.current_streak * 5;
-        await manager.getRepository(DailyCheckin).insert({
-          usuario_id: usuarioId,
-          day,
-          streak: stats.current_streak,
-          bonus_xp: bonusXp,
-          refill_status: legacy ? 'skipped' : 'pending',
-          refill_started_at: null,
-        });
-        return {
-          xp: bonusXp,
-          result: { day, streak: stats.current_streak, bonusXp, legacy },
-        };
+        // createdAt é obtido após o lock: a espera não pode premiar o dia seguinte.
+        if (expectedDay && expectedDay !== day) throw new CheckinDayExpired();
+        return Number(day.replaceAll('-', ''));
       },
+      (manager, { createdAt }) =>
+        createDailyCheckinDraft(manager, usuarioId, createdAt),
     );
   }
 

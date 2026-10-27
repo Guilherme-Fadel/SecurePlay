@@ -375,8 +375,13 @@ export class DashboardService implements OnModuleInit, OnModuleDestroy {
   async handleProgressChanged(payload: {
     usuarioId: number;
     skipCheckin?: boolean;
+    checkinDay?: string;
   }): Promise<void> {
     if (payload.skipCheckin) return;
-    await this.checkins.register(payload.usuarioId);
+    if (payload.checkinDay) {
+      await this.checkins.registerForDay(payload.usuarioId, payload.checkinDay);
+    } else {
+      await this.checkins.register(payload.usuarioId);
+    }
   }
 }

@@ -8,6 +8,7 @@ import {
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { randomUUID } from 'crypto';
 import { DataSource, EntityManager } from 'typeorm';
+import { getLocalDateKey } from '../utils/date.utils';
 import { UsuarioStats } from '../../usuario-stats/usuario-stats.entity';
 import { Usuario } from '../../usuario/usuario.entity';
 import { RedisService } from '../../redis/redis.service';
@@ -20,6 +21,7 @@ import {
   creditSeasonXpInTransaction,
   withSeasonXpTransaction,
 } from './credit-season-xp';
+import { createDailyCheckinDraft } from './daily-checkin';
 
 export interface CompletionDraft<T> {
   result: T;
@@ -95,7 +97,7 @@ export class ActivityCompletionService
       context: { createdAt: Date; seasonId: string },
     ) => Promise<CompletionDraft<T>>,
   ): Promise<T> {
-    const record = await withSeasonXpTransaction(
+    const { record, checkin } = await withSeasonXpTransaction(
       this.source.getRepository(UsuarioStats),
       usuarioId,
       async (manager, seasonId, createdAt) => {
@@ -109,7 +111,7 @@ export class ActivityCompletionService
             activity_id: resolvedActivityId,
           },
         });
-        if (existing) return existing;
+        if (existing) return { record: existing, checkin: null };
         const draft = await action(manager, { createdAt, seasonId });
         const previousPoints = await creditSeasonXpInTransaction(
           manager,
@@ -117,7 +119,7 @@ export class ActivityCompletionService
           draft.xp,
           seasonId,
         );
-        return repository.save(
+        const record = await repository.save(
           repository.create({
             usuario_id: usuarioId,
             activity_type: type,
@@ -130,10 +132,55 @@ export class ActivityCompletionService
             created_at: createdAt,
           }),
         );
+        let checkin: ActivityCompletion | null = null;
+        if (type === 'challenge') {
+          // A primeira consulta da tela deve enxergar o check-in junto da missão.
+          // Ambos usam o mesmo lock, dia, temporada e commit; Redis fica na outbox.
+          const checkinId = Number(
+            getLocalDateKey(createdAt).replaceAll('-', ''),
+          );
+          checkin = await repository.findOne({
+            where: {
+              usuario_id: usuarioId,
+              activity_type: 'checkin',
+              activity_id: checkinId,
+            },
+          });
+          if (!checkin) {
+            const draft = await createDailyCheckinDraft(
+              manager,
+              usuarioId,
+              createdAt,
+            );
+            const previousPoints = await creditSeasonXpInTransaction(
+              manager,
+              usuarioId,
+              draft.xp,
+              seasonId,
+            );
+            checkin = await repository.save(
+              repository.create({
+                usuario_id: usuarioId,
+                activity_type: 'checkin',
+                activity_id: checkinId,
+                result: { ...draft.result },
+                xp: draft.xp,
+                previous_points: previousPoints,
+                notifications: null,
+                effects_processed: false,
+                created_at: createdAt,
+              }),
+            );
+          }
+        }
+        return { record, checkin };
       },
     );
     // O SQL já confirmou o resultado; indisponibilidade posterior fica na outbox.
-    await this.deliverWithinBudget(record.id);
+    await Promise.all([
+      this.deliverWithinBudget(record.id),
+      ...(checkin ? [this.deliverWithinBudget(checkin.id)] : []),
+    ]);
     return record.result as T;
   }
 
@@ -215,10 +262,10 @@ export class ActivityCompletionService
       }
       // Eventos são at-least-once. O SQL do prêmio e os incrementos Redis têm
       // dedupe própria; listeners existentes mantêm seus contratos de retry.
-      await this.events.emitAsync('progress.changed', {
-        usuarioId: record.usuario_id,
-        ...(record.activity_type === 'checkin' ? { skipCheckin: true } : {}),
-      });
+      await this.events.emitAsync(
+        'progress.changed',
+        await this.progressPayload(record),
+      );
       for (const notification of record.notifications ?? []) {
         this.events.emit('notification.created', notification);
       }
@@ -234,5 +281,29 @@ export class ActivityCompletionService
         }
       }
     }
+  }
+
+  private async progressPayload(record: ActivityCompletion): Promise<{
+    usuarioId: number;
+    skipCheckin?: boolean;
+    checkinDay?: string;
+  }> {
+    const payload = { usuarioId: record.usuario_id };
+    if (record.activity_type === 'checkin')
+      return { ...payload, skipCheckin: true };
+    if (record.activity_type !== 'challenge') return payload;
+    const day = getLocalDateKey(new Date(record.created_at));
+    // Pendências legadas só podem acionar o check-in no próprio dia da missão.
+    if (day !== getLocalDateKey()) return { ...payload, skipCheckin: true };
+    const registered = await this.source
+      .getRepository(ActivityCompletion)
+      .existsBy({
+        usuario_id: record.usuario_id,
+        activity_type: 'checkin',
+        activity_id: Number(day.replaceAll('-', '')),
+      });
+    return registered
+      ? { ...payload, skipCheckin: true }
+      : { ...payload, checkinDay: day };
   }
 }

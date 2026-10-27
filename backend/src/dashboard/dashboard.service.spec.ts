@@ -6,6 +6,7 @@ describe('DashboardService — entrega de progresso/check-in', () => {
   const build = () => {
     const checkins = {
       register: jest.fn().mockResolvedValue({ bonusXp: 5 }),
+      registerForDay: jest.fn().mockResolvedValue(undefined),
       weekly: jest.fn().mockResolvedValue({ checkedToday: true }),
     };
     const service = new DashboardService(
@@ -32,6 +33,16 @@ describe('DashboardService — entrega de progresso/check-in', () => {
   it('não cria outro check-in ao entregar o bônus do próprio check-in', async () => {
     const { service, checkins } = build();
     await service.handleProgressChanged({ usuarioId: 7, skipCheckin: true });
+    expect(checkins.register).not.toHaveBeenCalled();
+  });
+
+  it('encaminha o dia original da missão para validação transacional do fallback', async () => {
+    const { service, checkins } = build();
+    await service.handleProgressChanged({
+      usuarioId: 7,
+      checkinDay: '2026-10-27',
+    });
+    expect(checkins.registerForDay).toHaveBeenCalledWith(7, '2026-10-27');
     expect(checkins.register).not.toHaveBeenCalled();
   });
 
