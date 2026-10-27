@@ -11,7 +11,7 @@ import { Usuario } from '../../usuario/usuario.entity';
 import { ArcadeGameType } from './arcade-game.entity';
 import type { GameCorrection } from '../games/game-handler';
 
-@Entity({ name: 'arcade_run', synchronize: false })
+@Entity({ name: 'arcade_run'})
 @Index('ux_arcade_run_uuid', ['run_id'], { unique: true })
 @Index('ix_arcade_run_pending', ['completed', 'submitted_at'])
 @Index('ix_arcade_run_expiry', ['expires_at'])
