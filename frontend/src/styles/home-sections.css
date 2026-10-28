@@ -105,3 +105,43 @@
   .secure-home .home-section .ranking-mode-select .app-filter-select { max-width:none; }
   .secure-home .home-section .ranking-season-pill { min-width:0; white-space:normal; flex:1; padding:8px 10px; }
 }
+/* Identity applies to interface chrome; illustrated rooms keep their materials. */
+:root .secure-home .ranking-page {
+  --rank-ink: var(--dashboard-text);
+  --rank-muted: var(--dashboard-muted);
+  --rank-border: var(--dashboard-border);
+  --rank-surface: var(--dashboard-surface);
+}
+.secure-home .ranking-season-pill {
+  border-color: rgba(var(--primary-rgb), .35);
+  background: rgba(var(--primary-rgb), .10);
+  color: var(--primary-dark);
+}
+.secure-home .ranking-card-icon,
+.secure-home .ranking-level-badge,
+.secure-home .ranking-journey-name > span,
+.secure-home .ranking-table-row.is-personal {
+  background: rgba(var(--primary-rgb), .10);
+}
+.secure-home .ranking-mode-select .app-filter-select {
+  --app-control-border: var(--dashboard-border);
+  --app-control-surface: var(--dashboard-surface);
+  --app-control-text: var(--dashboard-text);
+}
+.secure-home .ranking-card-heading h2 {
+  color: var(--dashboard-text);
+  font-family: var(--font-family-ui);
+}
+:root:not([data-theme='light']) .secure-home :is(.ranking-history-notice, .ranking-history-empty, .ranking-level-badge, .ranking-journey-name > span) {
+  color: var(--dashboard-text);
+}
+:root:not([data-theme='light']) .secure-home .ranking-season-pill {
+  color: var(--dashboard-text);
+}
+.secure-home :is(.learning-shell, .achievements-page, .ranking-page, .hall-dashboard) :is(button, a):focus-visible {
+  outline: 3px solid var(--primary);
+  outline-offset: 3px;
+}
+.secure-home .learning-shell:not(.classroom-library) .learning-shell-header {
+  background: linear-gradient(110deg, rgba(var(--primary-rgb), .07), transparent);
+}

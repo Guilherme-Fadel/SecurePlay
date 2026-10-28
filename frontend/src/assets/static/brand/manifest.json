@@ -1,0 +1,314 @@
+{
+  "version": 1,
+  "status": "prepared-raster-alternatives",
+  "palette": {
+    "blue": "#2662E7",
+    "cream": "#F9EEDC",
+    "ink": "#000000",
+    "white": "#FFFFFF",
+    "yellow": "#FED501",
+    "orange": "#FF7101",
+    "pink": "#FE96C7",
+    "red": "#F51300"
+  },
+  "transform": "Monochrome recolor to PDF palette preserving alpha; trim fully transparent margins; Lanczos resize; lossless WebP. No shape or signature element removed.",
+  "assets": [
+    {
+      "file": "secureplay-horizontal-blue.webp",
+      "width": 1280,
+      "height": 175,
+      "color": "#2662E7",
+      "sourceCrop": [
+        9,
+        2,
+        3832,
+        525
+      ],
+      "source": "Logo/Logo_SP_Horizontal/Logo_SP_Horizontal_02.png",
+      "sourceSha256": "06fae023f07ff05d00b49f04d79291aab224301811ac2afbeb0bc6670a239c49",
+      "bytes": 23306,
+      "sha256": "d8ce6ce004d0f7bbe11acaa7e70fe2db5b4991dfd6f2b8ded2e1c232b5c88c53"
+    },
+    {
+      "file": "secureplay-horizontal-cream.webp",
+      "width": 1280,
+      "height": 175,
+      "color": "#F9EEDC",
+      "sourceCrop": [
+        9,
+        2,
+        3832,
+        525
+      ],
+      "source": "Logo/Logo_SP_Horizontal/Logo_SP_Horizontal_01.png",
+      "sourceSha256": "e05ac70de987aeadfd12c548f675e403ac88ecf2c11e9486d316d099702b3bda",
+      "bytes": 23306,
+      "sha256": "6c93e5be9aff8065876172d9dea18c383ebeba8498fc9ea88ba9f98a38df4f56"
+    },
+    {
+      "file": "secureplay-horizontal-ink.webp",
+      "width": 1280,
+      "height": 175,
+      "color": "#000000",
+      "sourceCrop": [
+        9,
+        2,
+        3832,
+        525
+      ],
+      "source": "Logo/Logo_SP_Horizontal/Logo_SP_Horizontal_03.png",
+      "sourceSha256": "a7f99c6a2260fb53baea5cf37cd77c403216c5a3567b1185c4b95b857c231496",
+      "bytes": 23300,
+      "sha256": "f7367a50594d0844dc07929b1864f2dec2157d9b2f14ead56443341635ff6fa8"
+    },
+    {
+      "file": "secureplay-horizontal-white.webp",
+      "width": 1280,
+      "height": 175,
+      "color": "#FFFFFF",
+      "sourceCrop": [
+        9,
+        2,
+        3832,
+        525
+      ],
+      "source": "Logo/Logo_SP_Horizontal/Logo_SP_Horizontal_08.png",
+      "sourceSha256": "b415c40cfbc96bb5d9911828ff9b380fc3b0668ebd89475756a5c9014efa3ba8",
+      "bytes": 23306,
+      "sha256": "12f23fbe000231a6e9877845f5524f07a12523c17f9dea56d31c4a9ba0540ab0"
+    },
+    {
+      "file": "secureplay-stacked-blue.webp",
+      "width": 768,
+      "height": 263,
+      "color": "#2662E7",
+      "sourceCrop": [
+        0,
+        0,
+        1506,
+        515
+      ],
+      "source": "Logo/Logo_SP_Vertical-assets/02.png",
+      "sourceSha256": "8d01b35f0ccbca1a0ffdc0702530790222f55a6e1502e53103aa6996dd19c856",
+      "bytes": 22160,
+      "sha256": "ac46d950754c8f3b9ff4f90123dc50f3aada8be61dc106b16e9439b009aae2b9"
+    },
+    {
+      "file": "secureplay-stacked-cream.webp",
+      "width": 768,
+      "height": 263,
+      "color": "#F9EEDC",
+      "sourceCrop": [
+        0,
+        0,
+        1506,
+        515
+      ],
+      "source": "Logo/Logo_SP_Vertical-assets/06.png",
+      "sourceSha256": "530b1e91e649ab12e025371d856b65df8598412a9a5726924035cc463def262b",
+      "bytes": 22160,
+      "sha256": "64ca0a34cde333692d79cc62d640f596f1cfc06bc798b43a294236b6ec1c922a"
+    },
+    {
+      "file": "secureplay-stacked-ink.webp",
+      "width": 768,
+      "height": 263,
+      "color": "#000000",
+      "sourceCrop": [
+        0,
+        0,
+        1506,
+        515
+      ],
+      "source": "Logo/Logo_SP_Vertical-assets/03.png",
+      "sourceSha256": "5990d1a572e77e2ea9178ca20003bd530b66550256682c93eb8afb198d22ac8c",
+      "bytes": 22156,
+      "sha256": "4c30caf6a3d421e3e00d8a433c21f9aeab8676219f096be60986121e7399f60c"
+    },
+    {
+      "file": "secureplay-stacked-white.webp",
+      "width": 768,
+      "height": 263,
+      "color": "#FFFFFF",
+      "sourceCrop": [
+        0,
+        0,
+        1506,
+        515
+      ],
+      "source": "Logo/Logo_SP_Vertical-assets/01.png",
+      "sourceSha256": "1e77160545b2533998585056a1e9d596e54ab8fbe043620f75ac42a4d8959c2e",
+      "bytes": 22160,
+      "sha256": "3d83cf4c7d17702876866c4087e959fbfc79ee687254aab7f4cfa5ae892d6556"
+    },
+    {
+      "file": "secureplay-symbol-blue.webp",
+      "width": 256,
+      "height": 233,
+      "color": "#2662E7",
+      "sourceCrop": [
+        0,
+        0,
+        1743,
+        1587
+      ],
+      "source": "Logo/Symbol_SP-assets/01.png",
+      "sourceSha256": "a77366c9cbdfb2e2d8f4ad364bb0b7e737abfb12b4947c33cba6faeda804cab4",
+      "bytes": 5384,
+      "sha256": "a4515e3d5d15bf66a361def850d34dae4f9e20c7122a7a6db68889c8f082335a"
+    },
+    {
+      "file": "secureplay-symbol-cream.webp",
+      "width": 256,
+      "height": 233,
+      "color": "#F9EEDC",
+      "sourceCrop": [
+        0,
+        0,
+        1743,
+        1587
+      ],
+      "source": "Logo/Symbol_SP-assets/05.png",
+      "sourceSha256": "c5362b0d274ac26204c3d114b410752e5180e846c57b3566891e0ec139c6e103",
+      "bytes": 5384,
+      "sha256": "d5d9be20dddaa04f8282cb199397111c04018e3a107028f41005f574833549c7"
+    },
+    {
+      "file": "secureplay-symbol-ink.webp",
+      "width": 256,
+      "height": 233,
+      "color": "#000000",
+      "sourceCrop": [
+        0,
+        0,
+        1743,
+        1587
+      ],
+      "source": "Logo/Symbol_SP-assets/02.png",
+      "sourceSha256": "b9560efdbd49b60959ab0579ce718566beda55b7f92cb8310bc9c44a5e0b18f5",
+      "bytes": 5380,
+      "sha256": "f30a26f66803d927f37de64818a3b1da3c1f1dd996877641048c98deb6d0045f"
+    },
+    {
+      "file": "secureplay-symbol-white.webp",
+      "width": 256,
+      "height": 233,
+      "color": "#FFFFFF",
+      "sourceCrop": [
+        0,
+        0,
+        1743,
+        1587
+      ],
+      "source": "Logo/Symbol_SP-assets/08.png",
+      "sourceSha256": "69a541dc2698f31fda55a42b0c9a8f53b4e0a2b292e12f8d1e5fe186bedb8c40",
+      "bytes": 5386,
+      "sha256": "d6659019032c5f8f0cdb2ad0f79f9e29614403469d16398245a8616e670ddbb3"
+    },
+    {
+      "file": "secureplay-favicon-blue-16.png",
+      "width": 16,
+      "height": 16,
+      "source": "Logo/Symbol_SP-assets/01.png",
+      "sourceSha256": "a77366c9cbdfb2e2d8f4ad364bb0b7e737abfb12b4947c33cba6faeda804cab4",
+      "bytes": 680,
+      "sha256": "8086017dd25457767a121d8ae7f45111445355296dc0ed6f82d948222c6cc019"
+    },
+    {
+      "file": "secureplay-favicon-blue-32.png",
+      "width": 32,
+      "height": 32,
+      "source": "Logo/Symbol_SP-assets/01.png",
+      "sourceSha256": "a77366c9cbdfb2e2d8f4ad364bb0b7e737abfb12b4947c33cba6faeda804cab4",
+      "bytes": 1666,
+      "sha256": "66c2992aeb4e21e843c8df9e7006a7d9926cef9392fe6d2de5028b56a87c3ec8"
+    },
+    {
+      "file": "secureplay-favicon-blue-48.png",
+      "width": 48,
+      "height": 48,
+      "source": "Logo/Symbol_SP-assets/01.png",
+      "sourceSha256": "a77366c9cbdfb2e2d8f4ad364bb0b7e737abfb12b4947c33cba6faeda804cab4",
+      "bytes": 2686,
+      "sha256": "ce74b0e8ed65e9ea703ee4866542df19427c687548b998a131f0a746e2265dfd"
+    },
+    {
+      "file": "secureplay-favicon-blue-180.png",
+      "width": 180,
+      "height": 180,
+      "source": "Logo/Symbol_SP-assets/01.png",
+      "sourceSha256": "a77366c9cbdfb2e2d8f4ad364bb0b7e737abfb12b4947c33cba6faeda804cab4",
+      "bytes": 11090,
+      "sha256": "e91ea30a647b09e4b254ab631a8a484784e25c129815a4a40f26e325d3a8d13d"
+    },
+    {
+      "file": "secureplay-favicon-blue-192.png",
+      "width": 192,
+      "height": 192,
+      "source": "Logo/Symbol_SP-assets/01.png",
+      "sourceSha256": "a77366c9cbdfb2e2d8f4ad364bb0b7e737abfb12b4947c33cba6faeda804cab4",
+      "bytes": 11864,
+      "sha256": "c1c9f0bb04aeed57078f957cba1e9be12046cdecdf06c9cca19a93b9b3422fae"
+    },
+    {
+      "file": "secureplay-favicon-blue-512.png",
+      "width": 512,
+      "height": 512,
+      "source": "Logo/Symbol_SP-assets/01.png",
+      "sourceSha256": "a77366c9cbdfb2e2d8f4ad364bb0b7e737abfb12b4947c33cba6faeda804cab4",
+      "bytes": 33681,
+      "sha256": "77047f39c8def98dfdf8e86f4d885a2f05669dc4f68c5651f0c8f39239e48a3b"
+    },
+    {
+      "file": "secureplay-favicon.ico",
+      "sizes": [
+        16,
+        32,
+        48
+      ],
+      "source": "Logo/Symbol_SP-assets/01.png",
+      "sourceSha256": "a77366c9cbdfb2e2d8f4ad364bb0b7e737abfb12b4947c33cba6faeda804cab4",
+      "bytes": 5417,
+      "sha256": "928110670ef5ed430d181911827654499cbf665ec983308ab72dde1bda5278f6"
+    },
+    {
+      "file": "secureplay-favicon-cream-16.png",
+      "width": 16,
+      "height": 16,
+      "source": "Logo/Symbol_SP-assets/05.png",
+      "sourceSha256": "c5362b0d274ac26204c3d114b410752e5180e846c57b3566891e0ec139c6e103",
+      "bytes": 447,
+      "sha256": "fe8016e652a7f66f592408c5404228ce6d8980bd372085aae049fe94576ec222"
+    },
+    {
+      "file": "secureplay-favicon-cream-32.png",
+      "width": 32,
+      "height": 32,
+      "source": "Logo/Symbol_SP-assets/05.png",
+      "sourceSha256": "c5362b0d274ac26204c3d114b410752e5180e846c57b3566891e0ec139c6e103",
+      "bytes": 999,
+      "sha256": "f65757898d7396b63525b7b21b3941a15a7b8e401dfc9e35be9f390e95c31c0c"
+    },
+    {
+      "file": "secureplay-favicon-cream-48.png",
+      "width": 48,
+      "height": 48,
+      "source": "Logo/Symbol_SP-assets/05.png",
+      "sourceSha256": "c5362b0d274ac26204c3d114b410752e5180e846c57b3566891e0ec139c6e103",
+      "bytes": 1571,
+      "sha256": "d921345ba6d4b88fa5ca615b7e99f00dd7c4a5655ffe8d786760e12dec28745f"
+    },
+    {
+      "file": "secureplay-favicon-cream.ico",
+      "sizes": [
+        16,
+        32,
+        48
+      ],
+      "source": "Logo/Symbol_SP-assets/05.png",
+      "sourceSha256": "c5362b0d274ac26204c3d114b410752e5180e846c57b3566891e0ec139c6e103",
+      "bytes": 4200,
+      "sha256": "16c761af73231ba0b35c421109c631e92a6cd80a398beb85eb1f40a75a3534b0"
+    }
+  ]
+}

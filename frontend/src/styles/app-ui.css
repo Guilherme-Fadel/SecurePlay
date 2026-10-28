@@ -12,12 +12,13 @@
   --font-2xl: 26px;
   --font-3xl: 30px;
   --font-4xl: 36px;
-  --dashboard-bg: #111827;
-  --dashboard-surface: #1e293b;
-  --dashboard-surface-soft: #253247;
+  --dashboard-bg: #101B30;
+  --dashboard-surface: #192740;
+  --dashboard-surface-soft: #22334F;
   --dashboard-text: #f1f5f9;
   --dashboard-muted: #94a3b8;
-  --dashboard-border: #334155;
+  --dashboard-border: #3C4F6C;
+  --app-control-border: #70819D;
   --dashboard-shadow: 0 2px 4px rgba(0, 0, 0, 0.12), 0 10px 28px rgba(0, 0, 0, 0.16);
   --app-control-height: 40px;
   --app-control-radius: 10px;
@@ -33,12 +34,13 @@
 }
 
 [data-theme='light'] :is(.secure-home, .admin-console) {
-  --dashboard-bg: #f8fafc;
+  --dashboard-bg: #F9EEDC;
   --dashboard-surface: #ffffff;
-  --dashboard-surface-soft: #f8fafc;
-  --dashboard-text: #1e293b;
-  --dashboard-muted: #64748b;
-  --dashboard-border: #e2e8f0;
+  --dashboard-surface-soft: #FFFCF7;
+  --dashboard-text: #142747;
+  --dashboard-muted: #526074;
+  --dashboard-border: #C5CFDF;
+  --app-control-border: #7E8DA5;
   --dashboard-shadow: 0 2px 4px rgba(15, 23, 42, 0.03), 0 8px 24px rgba(15, 23, 42, 0.05);
 }
 
@@ -512,8 +514,12 @@
   width: 100%;
   height: 100%;
   border-radius: inherit;
-  object-fit: cover;
+  object-fit: contain;
 }
+
+.secure-sidebar-logo-icon--brand { background: transparent; box-shadow: none; }
+.secure-sidebar-logo-icon--brand .brand-mark { width: 40px; }
+.secure-sidebar-logo-icon--brand .brand-mark img { position: static; height: auto; border-radius: 0; }
 
 .secure-sidebar-logo-copy {
   display: flex;
@@ -993,29 +999,10 @@
   height: 72px;
   margin: 0 auto 22px;
   place-items: center;
-  border-radius: 20px;
-  background: var(--primary);
-  box-shadow: 0 10px 24px rgba(var(--primary-rgb), 0.24);
-  color: #ffffff;
+  background: transparent;
 }
 
-.app-loading-logo::after {
-  position: absolute;
-  top: -4px;
-  right: -4px;
-  width: 19px;
-  height: 19px;
-  border: 3px solid var(--loading-surface);
-  border-radius: 7px;
-  background: var(--secondary);
-  content: '';
-}
-
-.app-loading-logo svg {
-  width: 34px;
-  height: 34px;
-  stroke-width: 2;
-}
+.app-loading-logo .brand-mark { width: 72px; }
 
 .app-loading-copy {
   margin-bottom: 30px;

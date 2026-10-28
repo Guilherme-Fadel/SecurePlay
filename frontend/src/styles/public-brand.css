@@ -1,0 +1,48 @@
+@font-face {
+  font-family: 'Bricolage Grotesque';
+  font-style: normal;
+  font-weight: 200 800;
+  font-stretch: 100%;
+  font-display: swap;
+  src: url(../assets/fonts/bricolage-grotesque-latin-ext.woff2) format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C4, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+
+@font-face {
+  font-family: 'Bricolage Grotesque';
+  font-style: normal;
+  font-weight: 200 800;
+  font-stretch: 100%;
+  font-display: swap;
+  src: url(../assets/fonts/bricolage-grotesque-latin.woff2) format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+/* Scoped to public entry pages; company and internal theme tokens stay unchanged. */
+.kids-landing,
+.login-page {
+  --public-brand-blue: #2662E7;
+  --public-brand-blue-hover: #1D50C2;
+  --public-brand-blue-deep: #143D91;
+  --public-brand-blue-soft: #E7EEFF;
+  --public-brand-cream: #F9EEDC;
+  --public-brand-surface: #FFFCF7;
+  --public-brand-yellow: #FED501;
+  --public-brand-orange: #FF7101;
+  --public-brand-pink: #FE96C7;
+  --public-brand-ink: #142747;
+  --public-brand-muted: #526074;
+  --public-brand-border: #C5CFDF;
+  --public-display-font: 'Bricolage Grotesque', 'Plus Jakarta Sans', sans-serif;
+}
+
+:is(.kids-landing, .login-page) :is(a, button):focus-visible {
+  outline: 3px solid var(--public-brand-blue-hover);
+  outline-offset: 4px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .kids-landing { scroll-behavior: auto; }
+  .kids-landing :is(button, a), .login-page button { transition: none; }
+  .kids-button:hover { transform: none; }
+}

@@ -1,7 +1,7 @@
 /* Hall da Aventura: imagens são cenários/ornamentos; conteúdo, estados e posições são código. */
 .hall-dashboard {
-  --hall-ink: #17133f;
-  --hall-muted: #69637e;
+  --hall-ink: #142747;
+  --hall-muted: #526074;
   --hall-brand: var(--primary);
   width: min(100%, 1480px);
   margin: 0 auto;
@@ -298,9 +298,9 @@
   .hall-support-grid .sp-card { height: auto; min-height: 240px; }
 }
 
-:root:not([data-theme='light']) .hall-dashboard { --hall-ink: #f6f2ff; --hall-muted: #b9b2cc; }
+:root:not([data-theme='light']) .hall-dashboard { --hall-ink: var(--dashboard-text); --hall-muted: var(--dashboard-muted); }
 :root:not([data-theme='light']) .hall-mission-card,
-:root:not([data-theme='light']) .hall-player-card { background: linear-gradient(145deg,#241b43,#30234d); border-color: rgba(242,181,46,.35); }
+:root:not([data-theme='light']) .hall-player-card { background: linear-gradient(145deg,var(--dashboard-surface),var(--dashboard-surface-soft)); border-color: rgba(var(--accent-rgb),.35); }
 :root:not([data-theme='light']) .hall-lesson-line,
 :root:not([data-theme='light']) .hall-level-copy span,
 :root:not([data-theme='light']) .hall-week-row small { color: #d1c9e0; }

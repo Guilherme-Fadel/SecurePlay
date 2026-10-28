@@ -1,0 +1,160 @@
+{
+  "version": 1,
+  "status": "partially-integrated-blue-and-cream",
+  "converter": "PyMuPDF 2.0",
+  "source": "Logo/Aberto/LOGOS_SP_01.pdf",
+  "sourceSha256": "186fa0ed3e666c367b9b5c518983951e56738db801327acbfd0cb0993a2793f6",
+  "page": 2,
+  "method": "Native PDF paths preserved; full-page background and other signatures excluded; integer bounding box with <1pt margin; SVG group translation; fill normalized to brand palette. No tracing or embedded raster.",
+  "assets": [
+    {
+      "file": "secureplay-horizontal-blue.svg",
+      "width": 1054,
+      "height": 145,
+      "color": "#2662E7",
+      "pathCount": 41,
+      "bytes": 30179,
+      "sha256": "7ac44132edc664e9aec9eb357ad15854f28fd6de088382eb40e2faa398d87d64"
+    },
+    {
+      "file": "secureplay-horizontal-cream.svg",
+      "width": 1054,
+      "height": 145,
+      "color": "#F9EEDC",
+      "pathCount": 41,
+      "bytes": 30179,
+      "sha256": "e34d2b8eecf322dbbeddb00ab6ae7fd7d5d9d9e0f84e83314a1fced4cf1373a9"
+    },
+    {
+      "file": "secureplay-horizontal-ink.svg",
+      "width": 1054,
+      "height": 145,
+      "color": "#000000",
+      "pathCount": 41,
+      "bytes": 30179,
+      "sha256": "16179177e5ef8d3e2166b9b5831ed099a47df49c6846cf64fc2f688f16224d7b"
+    },
+    {
+      "file": "secureplay-horizontal-white.svg",
+      "width": 1054,
+      "height": 145,
+      "color": "#FFFFFF",
+      "pathCount": 41,
+      "bytes": 30179,
+      "sha256": "6ad9ea6267ba6a92fb5053b3ed606ef1a6e8766bf803328808c134c6fbacdc3b"
+    },
+    {
+      "file": "secureplay-stacked-blue.svg",
+      "width": 456,
+      "height": 156,
+      "color": "#2662E7",
+      "pathCount": 41,
+      "bytes": 29304,
+      "sha256": "a7c791a33842a9e53fa77490146b5bb3dbc261306d17d128bcab9be326207b69"
+    },
+    {
+      "file": "secureplay-stacked-cream.svg",
+      "width": 456,
+      "height": 156,
+      "color": "#F9EEDC",
+      "pathCount": 41,
+      "bytes": 29304,
+      "sha256": "094e5c1148b4b9fc4391a04a5c6823acb1a04fe615dc8a4c05857b40627b877e"
+    },
+    {
+      "file": "secureplay-stacked-ink.svg",
+      "width": 456,
+      "height": 156,
+      "color": "#000000",
+      "pathCount": 41,
+      "bytes": 29304,
+      "sha256": "7cfa767c4b60bc5273368e70da952551660618a9a9991dd6eedf5fb799d0b5dc"
+    },
+    {
+      "file": "secureplay-stacked-white.svg",
+      "width": 456,
+      "height": 156,
+      "color": "#FFFFFF",
+      "pathCount": 41,
+      "bytes": 29304,
+      "sha256": "bc38cfddc948ae5c7af4ad6f6cc03cc3262c9237f2b32bf22c34bf5500a9ea60"
+    },
+    {
+      "file": "secureplay-symbol-blue.svg",
+      "width": 159,
+      "height": 144,
+      "color": "#2662E7",
+      "pathCount": 3,
+      "bytes": 1849,
+      "sha256": "0cbcfcfe5a269b809dc304c2f7a22e9aa510f4db77e639dbf15683943ed14515"
+    },
+    {
+      "file": "secureplay-symbol-cream.svg",
+      "width": 159,
+      "height": 144,
+      "color": "#F9EEDC",
+      "pathCount": 3,
+      "bytes": 1849,
+      "sha256": "2e3c86e7d90710a2e87c6fd7f517e758011bb7f485211bb4ae5c385f959d36f5"
+    },
+    {
+      "file": "secureplay-symbol-ink.svg",
+      "width": 159,
+      "height": 144,
+      "color": "#000000",
+      "pathCount": 3,
+      "bytes": 1849,
+      "sha256": "32696a075c3862f1bcaf610bdc77ed904f0eaca1eee5b28541312fd9b9483a73"
+    },
+    {
+      "file": "secureplay-symbol-white.svg",
+      "width": 159,
+      "height": 144,
+      "color": "#FFFFFF",
+      "pathCount": 3,
+      "bytes": 1849,
+      "sha256": "50ca2d0103d662b576b0e57d951ff7a624e39464ce6aa1d5088c4f27661e5de1"
+    }
+  ],
+  "validation": {
+    "horizontal": {
+      "scale": 3,
+      "comparedTo": "Original PDF clipped to same integer bounds",
+      "meanAbsoluteRgbDifference": 0.67067087371347,
+      "fractionPixelsDifferenceOver16": 0.0,
+      "pathCount": 41,
+      "sourceBounds": [
+        433.0,
+        321.0,
+        1487.0,
+        466.0
+      ]
+    },
+    "stacked": {
+      "scale": 3,
+      "comparedTo": "Original PDF clipped to same integer bounds",
+      "meanAbsoluteRgbDifference": 0.671635240165942,
+      "fractionPixelsDifferenceOver16": 0.0,
+      "pathCount": 41,
+      "sourceBounds": [
+        433.0,
+        603.0,
+        889.0,
+        759.0
+      ]
+    },
+    "symbol": {
+      "scale": 3,
+      "comparedTo": "Original PDF clipped to same integer bounds",
+      "meanAbsoluteRgbDifference": 0.6698469084038615,
+      "fractionPixelsDifferenceOver16": 0.0,
+      "pathCount": 3,
+      "sourceBounds": [
+        1120.0,
+        603.0,
+        1279.0,
+        747.0
+      ]
+    }
+  }
+}

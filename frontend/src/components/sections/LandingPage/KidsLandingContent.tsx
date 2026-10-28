@@ -3,6 +3,7 @@ import type { ReactNode } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { AnimatePresence, MotionConfig, motion } from 'motion/react';
 import { ArrowRight, ChevronDown, Menu, X } from 'lucide-react';
+import { BrandMark } from '@/components/shared/BrandMark';
 import heroAcademiaMissoes640 from '@/assets/kids/hero-academia-missoes-pixel-640.webp';
 import heroAcademiaMissoes1200 from '@/assets/kids/hero-academia-missoes-pixel-1200.webp';
 import escolhaAventura640 from '@/assets/kids/escolha-aventura-pixel-640.webp';
@@ -98,7 +99,7 @@ export function KidsLandingContent() {
     <>
       <header className="kids-header">
         <Link to="/" className="kids-brand" aria-label="SecurePlay - início">
-          secure<strong>play</strong>
+          <BrandMark tone="blue" decorative />
         </Link>
         <nav className="kids-nav" aria-label="Navegação principal">
           <button onClick={() => go('inicio')}>A proposta</button>
@@ -274,7 +275,7 @@ export function KidsLandingContent() {
       </main>
 
       <footer className="kids-footer">
-        <Link to="/" className="kids-brand">secure<strong>play</strong></Link>
+        <Link to="/" className="kids-brand" aria-label="SecurePlay - início"><BrandMark tone="blue" decorative /></Link>
         <p>Aprender a navegar com mais segurança, juntos.</p>
         <div><Link to="/privacidade">Privacidade</Link><Link to="/termos">Termos</Link><a href="mailto:contato@secureplay.com">Contato</a></div>
         <small>© 2026 SecurePlay. Todos os direitos reservados.</small>

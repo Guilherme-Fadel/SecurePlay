@@ -16,7 +16,7 @@ import {
 import type { CurrentUser } from "@/services/me";
 
 const bundledImages = import.meta.glob<string>(
-  "../assets/**/*.{png,jpg,jpeg,webp,svg}",
+  ["../assets/**/*.{png,jpg,jpeg,webp,svg}", "!../assets/static/brand/**"],
   { eager: true, query: "?url", import: "default" },
 );
 const bundledImageUrls = Object.values(bundledImages);

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { ShieldCheck } from 'lucide-react';
+import { BrandMark } from './BrandMark';
 import '@/styles/app-ui.css';
 
 const LOADING_MESSAGES = [
@@ -89,7 +89,7 @@ export function LoadingScreen({ ready = false, label = 'Carregando página', con
               animate={{ y: [0, -5, 0] }}
               transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
             >
-              <ShieldCheck aria-hidden="true" />
+              <BrandMark decorative />
             </motion.div>
 
             <motion.div

@@ -1,5 +1,6 @@
 import type { Section } from "@/pages/Home"
-import { Award, BookOpen, ChevronLeft, Gamepad2, LayoutDashboard, Menu, ShieldCheck, ShieldIcon, Trophy, UserRound, X } from "lucide-react"
+import { Award, BookOpen, ChevronLeft, Gamepad2, LayoutDashboard, Menu, ShieldIcon, Trophy, UserRound, X } from "lucide-react"
+import { BrandMark } from './BrandMark'
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react"
 
 interface SidebarContextProps {
@@ -37,10 +38,10 @@ export function Sidebar({ children, logoUrl }: SidebarProps) {
             {expanded && (
 
                 <div className="secure-sidebar-logo">
-                  <span className="secure-sidebar-logo-icon" aria-hidden="true">
+                  <span className={`secure-sidebar-logo-icon${logoUrl && logoUrl !== failedLogoUrl ? '' : ' secure-sidebar-logo-icon--brand'}`} aria-hidden="true">
                     {logoUrl && logoUrl !== failedLogoUrl
                       ? <img src={logoUrl} alt="" onError={() => setFailedLogoUrl(logoUrl)} />
-                      : <ShieldCheck size={21} />}
+                      : <BrandMark decorative />}
                   </span>
                   <span className="secure-sidebar-logo-copy">
                     <strong>SecurePlay</strong>

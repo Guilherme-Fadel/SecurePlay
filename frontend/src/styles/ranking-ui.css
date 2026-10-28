@@ -1,5 +1,5 @@
 .app-page.ranking-page { --rank-ink:#1b2440; --rank-muted:#66708a; --rank-border:#e8dcc8; --rank-surface:#fffdfb; width:100%; max-width:1280px; min-width:0; margin:0 auto; padding:0 0 36px; color:var(--rank-ink); font-family:var(--font-family-ui); }
-.secure-home-main:has(.ranking-page) { background:#f6f4fb !important; }
+.secure-home-main:has(.ranking-page) { background:var(--dashboard-bg) !important; }
 .ranking-page :where(span) { font-size:inherit; }
 .ranking-heading { display:flex; align-items:center; justify-content:space-between; gap:24px; margin:0 0 18px; }
 .ranking-card-heading h2 { margin:0; color:#17213c; font-family:Georgia,serif; font-weight:700; letter-spacing:-.035em; }

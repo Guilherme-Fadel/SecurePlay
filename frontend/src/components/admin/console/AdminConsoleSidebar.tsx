@@ -1,7 +1,8 @@
 import { useId, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Link, useLocation } from 'react-router-dom';
-import { Building2, ChevronLeft, ChevronRight, FileText, History, LayoutDashboard, MailPlus, Palette, School, ScrollText, ShieldCheck, UserRoundPen, Users, type LucideIcon } from 'lucide-react';
+import { Building2, ChevronLeft, ChevronRight, FileText, History, LayoutDashboard, MailPlus, Palette, School, ScrollText, UserRoundPen, Users, type LucideIcon } from 'lucide-react';
+import { BrandMark } from '@/components/shared/BrandMark';
 import { resolveConsolePage, type AdminConsoleScope } from './consoleNavigation';
 
 interface Item { label: string; to: string; icon: LucideIcon; active: boolean; }
@@ -38,7 +39,7 @@ export function AdminConsoleSidebar({ scope, collapsed = false, onToggle }: { sc
   };
   return <aside className={`admin-console-sidebar${collapsed ? ' is-collapsed' : ''}`} aria-label="Navegação administrativa">
     <div className="admin-console-sidebar-header">
-      <Link className="admin-console-brand" to="/admin/inicio" aria-label="SecurePlay, visão geral"><span className="admin-console-brand-mark"><ShieldCheck size={19} aria-hidden="true" /></span><span className="admin-console-brand-copy"><strong>SecurePlay</strong><small>Administração</small></span></Link>
+      <Link className="admin-console-brand" to="/admin/inicio" aria-label="SecurePlay, visão geral"><span className="admin-console-brand-mark"><BrandMark decorative /></span><span className="admin-console-brand-copy"><strong>SecurePlay</strong><small>Administração</small></span></Link>
       {onToggle && <button type="button" className="admin-console-icon-button admin-console-collapse-menu" aria-controls={navId} aria-expanded={!collapsed} aria-label={collapsed ? 'Expandir menu lateral' : 'Recolher menu lateral'} title={collapsed ? 'Expandir menu lateral' : 'Recolher menu lateral'} onClick={() => { setTooltip(null); onToggle(); }}>{collapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}</button>}
     </div>
     <nav id={navId} className="admin-console-nav" aria-label="Menu principal" onScroll={() => setTooltip(null)}>

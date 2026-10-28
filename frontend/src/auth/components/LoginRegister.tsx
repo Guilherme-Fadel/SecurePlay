@@ -4,6 +4,7 @@ import { motion } from 'motion/react';
 import { ArrowRight, Eye, EyeOff, KeyRound, LockKeyhole, Mail, ShieldCheck } from 'lucide-react';
 import { toast } from 'sonner';
 import learningScene from '@/assets/kids/academia-missoes-login-v1.png';
+import { BrandMark } from '@/components/shared/BrandMark';
 
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { loginService } from '@/services/login/login';
@@ -68,7 +69,7 @@ export function LoginRegister() {
         transition={{ duration: 0.55, ease: 'easeOut' }}
       >
         <div className="login-brand">
-          <span>secure<span>play</span></span>
+          <BrandMark variant="horizontal" tone="blue" className="login-brand-full" />
         </div>
 
         <div className="login-showcase-copy">
@@ -98,7 +99,7 @@ export function LoginRegister() {
         transition={{ duration: 0.45, delay: 0.1, ease: 'easeOut' }}
       >
         <div className="login-mobile-brand">
-          <span>secure<span>play</span></span>
+          <BrandMark tone="blue" />
         </div>
 
         <section className="login-card" aria-labelledby="login-title">
