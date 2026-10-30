@@ -1,5 +1,6 @@
 import { ServiceUnavailableException } from '@nestjs/common';
 import { createHash } from 'crypto';
+import { renderEmailHtml } from './email-layout';
 import { EmailService } from './email.service';
 
 describe('E-mails de cadastro e orientação', () => {
@@ -32,10 +33,20 @@ describe('E-mails de cadastro e orientação', () => {
         'fixture-token',
       );
       const [, options] = fetchMock.mock.calls[0] as [string, RequestInit];
-      const payload = JSON.parse(options.body as string) as { text: string };
+      const payload = JSON.parse(options.body as string) as {
+        text: string;
+        html: string;
+      };
       expect(payload.text).toContain(
         'https://secureplay.example.test/confirmar-email#fixture-token',
       );
+      expect(payload.html).toContain(
+        'href="https://secureplay.example.test/confirmar-email#fixture-token"',
+      );
+      expect(payload.html).toContain(
+        'src="https://secureplay.example.test/email/secureplay-logo-blue.png"',
+      );
+      expect(payload.html).toContain('O link expira em até 24 horas.');
       expect(options.headers).toMatchObject({
         'Idempotency-Key':
           'verify-' +
@@ -52,13 +63,47 @@ describe('E-mails de cadastro e orientação', () => {
     const [, options] = fetchMock.mock.calls[0] as [string, RequestInit];
     const payload = JSON.parse(options.body as string) as {
       text: string;
+      html: string;
       to: string[];
     };
     expect(payload.to).toEqual(['recipient@example.test']);
     expect(payload.text).toContain('https://secureplay.example.test/login');
     expect(payload.text).toContain('Sua conta não foi alterada');
-    expect(payload.text).not.toContain('confirmar-email');
-    expect(payload.text).not.toContain('fixture-request-id');
+    expect(payload.html).toContain(
+      'href="https://secureplay.example.test/login"',
+    );
+    expect(payload.html).toContain('Sua conta não foi alterada');
+    for (const body of [payload.text, payload.html]) {
+      expect(body).not.toContain('confirmar-email');
+      expect(body).not.toContain('fixture-request-id');
+    }
+  });
+
+  it('escapa conteúdo dinâmico no HTML', () => {
+    const html = renderEmailHtml(
+      'Assunto <teste>',
+      {
+        preheader: 'a',
+        eyebrow: 'b',
+        title: '<script>alert(1)</script>',
+        highlight: 'c',
+        paragraphs: ['d'],
+        action: { label: 'e', url: 'https://example.test/?a=1&b="2"' },
+        safety: 'f',
+      },
+      {
+        home: 'https://example.test/',
+        logo: 'https://example.test/logo.png',
+        logoDark: 'https://example.test/logo-dark.png',
+        symbol: 'https://example.test/symbol.png',
+      },
+    );
+    expect(html).not.toContain('<script>');
+    expect(html).toContain('&lt;script&gt;alert(1)&lt;/script&gt;');
+    expect(html).toContain(
+      'href="https://example.test/?a=1&amp;b=&quot;2&quot;"',
+    );
+    expect(html).toContain('<title>Assunto &lt;teste&gt;</title>');
   });
 
   it('configuração inválida vira indisponibilidade sem enviar ou divulgar detalhes', async () => {
