@@ -15,6 +15,12 @@ export const PUBLIC_REGISTRATION_RESPONSE = {
     'Se este endereço puder continuar o cadastro, enviaremos instruções por e-mail. Se já possui acesso, entre na sua conta.',
 };
 
+export const PUBLIC_PASSWORD_RESET_RESPONSE = {
+  sucesso: true,
+  mensagem:
+    'Se houver uma conta com este e-mail, enviaremos um link para criar uma nova senha.',
+};
+
 @Injectable()
 export class PublicRegistrationService {
   private readonly logger = new Logger(PublicRegistrationService.name);
@@ -36,7 +42,17 @@ export class PublicRegistrationService {
     return this.acknowledge(() => this.registration.resend(address));
   }
 
-  private async acknowledge(action: () => Promise<unknown>) {
+  async forgotPassword(address: string) {
+    return this.acknowledge(
+      () => this.registration.requestPasswordReset(address),
+      PUBLIC_PASSWORD_RESET_RESPONSE,
+    );
+  }
+
+  private async acknowledge(
+    action: () => Promise<unknown>,
+    response = PUBLIC_REGISTRATION_RESPONSE,
+  ) {
     try {
       await action();
     } catch (error: unknown) {
@@ -46,7 +62,7 @@ export class PublicRegistrationService {
         'Entrega de instruções de cadastro indisponível; resposta pública preservada.',
       );
     }
-    return { ...PUBLIC_REGISTRATION_RESPONSE };
+    return { ...response };
   }
 
   private async existingAccountGuidance(address: string) {

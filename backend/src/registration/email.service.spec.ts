@@ -55,6 +55,28 @@ describe('E-mails de cadastro e orientação', () => {
     },
   );
 
+  it('envia recuperação de senha para a tela de redefinição com validade informada', async () => {
+    await new EmailService().sendPasswordReset(
+      'recipient@example.test',
+      'fixture-token',
+      30,
+    );
+    const [, options] = fetchMock.mock.calls[0] as [string, RequestInit];
+    const payload = JSON.parse(options.body as string) as {
+      subject: string;
+      text: string;
+      html: string;
+    };
+    const link =
+      'https://secureplay.example.test/recuperar-acesso#fixture-token';
+    expect(payload.subject).toBe('Recupere sua senha na SecurePlay');
+    expect(payload.text).toContain(link);
+    expect(payload.text).toContain('30 minutos');
+    expect(payload.html).toContain(`href="${link}"`);
+    expect(payload.html).toContain('Recuperação de senha');
+    expect(payload.html).not.toContain('confirmar-email');
+  });
+
   it('orientação de conta existente não envia token nem link de ativação ou altera acesso', async () => {
     await new EmailService().sendAccessGuidance(
       'recipient@example.test',

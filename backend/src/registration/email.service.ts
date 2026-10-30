@@ -9,7 +9,13 @@ import { EmailContent, renderEmailHtml } from './email-layout';
 type LinkEmailContent = Omit<
   EmailContent,
   'action' | 'note' | 'showFallbackLink'
-> & { subject: string; introduction: string; actionLabel: string };
+> & {
+  subject: string;
+  introduction: string;
+  actionLabel: string;
+  path?: string;
+  expiry?: string;
+};
 
 interface EmailMessage {
   subject: string;
@@ -55,6 +61,30 @@ export class EmailService {
     });
   }
 
+  async sendPasswordReset(
+    to: string,
+    token: string,
+    minutes: number,
+  ): Promise<void> {
+    return this.sendLink(to, token, {
+      subject: 'Recupere sua senha na SecurePlay',
+      introduction:
+        'Recebemos um pedido para redefinir sua senha. Abra o link para criar uma nova: ',
+      path: '/recuperar-acesso',
+      expiry: `O link expira em ${minutes} minutos e só pode ser usado uma vez.`,
+      preheader: `Use o link para criar uma nova senha. Ele vale por ${minutes} minutos.`,
+      eyebrow: 'Recuperação de senha',
+      title: 'Vamos criar uma nova senha e voltar ao',
+      highlight: 'jogo.',
+      paragraphs: [
+        'Recebemos um pedido para redefinir a senha da sua conta na SecurePlay. Use o botão abaixo para criar uma nova.',
+      ],
+      actionLabel: 'Criar nova senha',
+      safety:
+        'Não pediu para trocar a senha? Ignore este e-mail: sua senha atual continua valendo.',
+    });
+  }
+
   async sendAccessGuidance(to: string, requestId: string): Promise<void> {
     const login = this.siteLink('/login').toString();
     const setup = this.siteLink('/verifique-email?mode=password').toString();
@@ -68,7 +98,7 @@ export class EmailService {
           login +
           '\nSe ainda precisa confirmar seu endereço ou definir a senha inicial, peça instruções em ' +
           setup +
-          '\nPara recuperar uma senha já definida, procure o responsável pelo seu acesso. Se não fez esta solicitação, ignore esta mensagem. Sua conta não foi alterada.',
+          '\nPara recuperar uma senha já definida, use "Esqueci minha senha" na tela de entrada. Se não fez esta solicitação, ignore esta mensagem. Sua conta não foi alterada.',
         html: renderEmailHtml(
           subject,
           {
@@ -79,7 +109,7 @@ export class EmailService {
             highlight: 'este e-mail.',
             paragraphs: [
               'Se você já possui acesso, é só entrar com seu e-mail e senha.',
-              'Se ainda precisa confirmar seu endereço ou definir a senha inicial, peça novas instruções. Para recuperar uma senha já definida, procure o responsável pelo seu acesso.',
+              'Se ainda precisa confirmar seu endereço ou definir a senha inicial, peça novas instruções. Para recuperar uma senha já definida, use "Esqueci minha senha" na tela de entrada.',
             ],
             action: { label: 'Entrar na SecurePlay', url: login },
             secondary: { label: 'Pedir novas instruções', url: setup },
@@ -96,12 +126,18 @@ export class EmailService {
   private async sendLink(
     to: string,
     token: string,
-    { subject, introduction, actionLabel, ...content }: LinkEmailContent,
+    {
+      subject,
+      introduction,
+      actionLabel,
+      path = '/confirmar-email',
+      expiry = 'O link expira em até 24 horas.',
+      ...content
+    }: LinkEmailContent,
   ): Promise<void> {
-    const url = this.siteLink('/confirmar-email');
+    const url = this.siteLink(path);
     url.hash = token;
     const link = url.toString();
-    const expiry = 'O link expira em até 24 horas.';
     return this.sendMessage(
       to,
       {

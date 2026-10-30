@@ -281,12 +281,12 @@ describe('Usuário de acesso por convite', () => {
       {} as never,
     );
     await expect(
-      service.resetSchoolStudentPassword('token', 'nova-senha'),
+      service.resetPassword('token', 'nova-senha'),
     ).resolves.toMatchObject({ username: 'aluno.teste', login_code: null });
     expect(await bcrypt.compare('nova-senha', user.password)).toBe(true);
     expect(user.session_version).toBe(2);
-    await expect(
-      service.resetSchoolStudentPassword('token', 'outra-senha'),
-    ).rejects.toThrow('Link de recuperação inválido');
+    await expect(service.resetPassword('token', 'outra-senha')).rejects.toThrow(
+      'Link de recuperação inválido',
+    );
   });
 });
