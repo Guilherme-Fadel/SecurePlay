@@ -5,6 +5,7 @@ import { ArrowRight, Eye, EyeOff, KeyRound, LockKeyhole, Mail, ShieldCheck } fro
 import { toast } from 'sonner';
 import learningScene from '@/assets/kids/academia-missoes-login-v1.png';
 import { BrandMark } from '@/components/shared/BrandMark';
+import { ForgotPasswordDialog } from './ForgotPasswordDialog';
 
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { loginService } from '@/services/login/login';
@@ -17,6 +18,7 @@ export function LoginRegister() {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [forgotOpen, setForgotOpen] = useState(false);
   const { setSession, refreshSession } = useCurrentUser();
   const navigate = useNavigate();
 
@@ -154,9 +156,10 @@ export function LoginRegister() {
               <button
                 type="button"
                 className="login-forgot-password"
-                onClick={() => toast.info('Peça ajuda a um responsável ou educador para entrar de novo.')}
+                aria-haspopup="dialog"
+                onClick={() => setForgotOpen(true)}
               >
-                Preciso de ajuda
+                Esqueci minha senha
               </button>
             </div>
 
@@ -173,6 +176,8 @@ export function LoginRegister() {
         </section>
 
         <p className="login-footer"><ShieldCheck size={14} aria-hidden="true" /> Um lugar para aprender e se cuidar na internet</p>
+
+        {forgotOpen && <ForgotPasswordDialog initialEmail={identifier} onClose={() => setForgotOpen(false)} />}
       </motion.main>
     </div>
   );

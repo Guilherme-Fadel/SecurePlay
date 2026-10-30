@@ -132,14 +132,14 @@ describe('Cadastro com confirmação por e-mail', () => {
     );
 
     await expect(
-      service.resetSchoolStudentPassword(token, 'nova-senha-segura'),
+      service.resetPassword(token, 'nova-senha-segura'),
     ).resolves.toMatchObject({ sucesso: true, login_code: user.login_code });
     expect(await bcrypt.compare('nova-senha-segura', user.password)).toBe(true);
     expect(user.password_reset_token_hash).toBeNull();
     expect(user.password_reset_expires_at).toBeNull();
     expect(user.session_version).toBe(3);
     await expect(
-      service.resetSchoolStudentPassword(token, 'outra-senha-segura'),
+      service.resetPassword(token, 'outra-senha-segura'),
     ).rejects.toThrow('Link de recuperação inválido ou expirado');
   });
 
@@ -620,5 +620,174 @@ describe('Cadastro com confirmação por e-mail', () => {
     expect(user.password_change_required).toBe(false);
     expect(user.password_setup_token_hash).toBeNull();
     expect(userRepository.save).toHaveBeenCalledWith(user);
+  });
+});
+
+describe('Recuperação de senha por e-mail', () => {
+  function setupPasswordReset(overrides: Record<string, unknown> = {}) {
+    const user = {
+      id: 12,
+      email: 'aluno@example.test',
+      role: Role.USER,
+      active: true,
+      email_verified_at: new Date(),
+      password: 'old-hash',
+      password_change_required: false,
+      password_reset_token_hash: null as string | null,
+      password_reset_expires_at: null as Date | null,
+      session_version: 4,
+      ...overrides,
+    };
+    const lockedQuery = {
+      setLock: jest.fn().mockReturnThis(),
+      where: jest.fn().mockReturnThis(),
+      getOne: jest.fn().mockImplementation(() => Promise.resolve(user)),
+    };
+    const rollbackQuery = {
+      update: jest.fn().mockReturnThis(),
+      set: jest.fn().mockReturnThis(),
+      where: jest.fn().mockReturnThis(),
+      execute: jest.fn().mockResolvedValue({ affected: 1 }),
+    };
+    const userRepository = {
+      findOne: jest
+        .fn()
+        .mockImplementation(({ where }: { where: { email: string } }) =>
+          Promise.resolve(where.email === user.email ? user : null),
+        ),
+      save: jest.fn().mockImplementation((value) => Promise.resolve(value)),
+      createQueryBuilder: jest.fn().mockReturnValue(rollbackQuery),
+    };
+    const emailService = {
+      sendPasswordReset: jest.fn().mockResolvedValue(undefined),
+      sendPasswordSetup: jest.fn().mockResolvedValue(undefined),
+    };
+    const service = new RegistrationService(
+      {
+        getRepository: () => userRepository,
+        transaction: (callback: (value: unknown) => unknown) =>
+          callback({
+            getRepository: () => ({
+              createQueryBuilder: () => lockedQuery,
+              save: userRepository.save,
+            }),
+          }),
+      } as never,
+      emailService as never,
+    );
+    return { user, userRepository, emailService, service, rollbackQuery };
+  }
+
+  it('envia link de 30 minutos para conta verificada e limita pedidos repetidos', async () => {
+    const { user, emailService, service } = setupPasswordReset();
+
+    await service.requestPasswordReset('  Aluno@Example.test ');
+    expect(user.password_reset_token_hash).toMatch(/^[a-f0-9]{64}$/);
+    const minutes =
+      (user.password_reset_expires_at!.getTime() - Date.now()) / 60000;
+    expect(minutes).toBeGreaterThan(29);
+    expect(minutes).toBeLessThanOrEqual(30);
+    expect(emailService.sendPasswordReset).toHaveBeenCalledWith(
+      user.email,
+      expect.stringMatching(/^[A-Za-z0-9_-]{43}$/),
+      30,
+    );
+    const [, token] = emailService.sendPasswordReset.mock.calls[0] as [
+      string,
+      string,
+    ];
+    expect(createHash('sha256').update(token).digest('hex')).toBe(
+      user.password_reset_token_hash,
+    );
+
+    const firstHash = user.password_reset_token_hash;
+    await service.requestPasswordReset(user.email);
+    expect(emailService.sendPasswordReset).toHaveBeenCalledTimes(1);
+    expect(user.password_reset_token_hash).toBe(firstHash);
+  });
+
+  it.each([
+    ['e-mail desconhecido', {}, 'outra@example.test'],
+    ['conta inativa', { active: false }, 'aluno@example.test'],
+    [
+      'e-mail não verificado',
+      { email_verified_at: null },
+      'aluno@example.test',
+    ],
+  ])('não envia nada para %s', async (_case, overrides, address) => {
+    const { emailService, service, userRepository } =
+      setupPasswordReset(overrides);
+
+    await expect(
+      service.requestPasswordReset(address),
+    ).resolves.toBeUndefined();
+    expect(emailService.sendPasswordReset).not.toHaveBeenCalled();
+    expect(userRepository.save).not.toHaveBeenCalled();
+  });
+
+  it('envia link de definição para conta que ainda não criou a senha', async () => {
+    const { user, emailService, service } = setupPasswordReset({
+      password_change_required: true,
+      password_setup_last_sent_at: null,
+    });
+
+    await service.requestPasswordReset(user.email);
+    expect(emailService.sendPasswordSetup).toHaveBeenCalledWith(
+      user.email,
+      expect.any(String),
+    );
+    expect(emailService.sendPasswordReset).not.toHaveBeenCalled();
+  });
+
+  it('restaura o link anterior quando o envio falha', async () => {
+    const previousHash = 'e'.repeat(64);
+    const previousExpiry = new Date(Date.now() + 10 * 60000);
+    const { user, emailService, service, rollbackQuery } = setupPasswordReset({
+      password_reset_token_hash: previousHash,
+      password_reset_expires_at: previousExpiry,
+    });
+    emailService.sendPasswordReset.mockRejectedValueOnce(
+      new Error('E-mail indisponível'),
+    );
+
+    await expect(service.requestPasswordReset(user.email)).rejects.toThrow(
+      'E-mail indisponível',
+    );
+    expect(rollbackQuery.set).toHaveBeenCalledWith({
+      password_reset_token_hash: previousHash,
+      password_reset_expires_at: previousExpiry,
+    });
+  });
+
+  it('redefine senha de conta com e-mail e invalida sessões', async () => {
+    const token = 'email-reset-token';
+    const { user, service } = setupPasswordReset({
+      password_reset_token_hash: createHash('sha256')
+        .update(token)
+        .digest('hex'),
+      password_reset_expires_at: new Date(Date.now() + 60000),
+    });
+
+    await expect(
+      service.resetPassword(token, 'nova-senha-segura'),
+    ).resolves.toMatchObject({ sucesso: true, email: user.email });
+    expect(await bcrypt.compare('nova-senha-segura', user.password)).toBe(true);
+    expect(user.password_reset_token_hash).toBeNull();
+    expect(user.session_version).toBe(5);
+  });
+
+  it('recusa redefinição de conta com e-mail não verificado', async () => {
+    const token = 'email-reset-token';
+    const { service } = setupPasswordReset({
+      email_verified_at: null,
+      password_reset_token_hash: createHash('sha256')
+        .update(token)
+        .digest('hex'),
+      password_reset_expires_at: new Date(Date.now() + 60000),
+    });
+
+    await expect(
+      service.resetPassword(token, 'nova-senha-segura'),
+    ).rejects.toThrow('Link de recuperação inválido ou expirado');
   });
 });
