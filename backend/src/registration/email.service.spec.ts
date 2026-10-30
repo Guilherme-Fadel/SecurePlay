@@ -44,7 +44,7 @@ describe('E-mails de cadastro e orientação', () => {
         'href="https://secureplay.example.test/confirmar-email#fixture-token"',
       );
       expect(payload.html).toContain(
-        'src="https://secureplay.example.test/email/secureplay-logo-blue.png"',
+        'src="https://secureplay.example.test/email/secureplay-logo-blue.png?v=2"',
       );
       expect(payload.html).toContain('O link expira em até 24 horas.');
       expect(options.headers).toMatchObject({

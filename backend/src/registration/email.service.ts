@@ -6,6 +6,8 @@ import {
 import { createHash } from 'crypto';
 import { EmailContent, renderEmailHtml } from './email-layout';
 
+const EMAIL_ASSETS_VERSION = '2';
+
 type LinkEmailContent = Omit<
   EmailContent,
   'action' | 'note' | 'showFallbackLink'
@@ -159,11 +161,18 @@ export class EmailService {
   }
 
   private brand() {
+    const asset = (file: string) => {
+      const url = this.siteLink('/email/' + file);
+      // O proxy de imagens do Gmail guarda o resultado por endereço, inclusive falhas;
+      // trocar a versão força uma nova busca quando as imagens mudam.
+      url.searchParams.set('v', EMAIL_ASSETS_VERSION);
+      return url.toString();
+    };
     return {
       home: this.siteLink('/').toString(),
-      logo: this.siteLink('/email/secureplay-logo-blue.png').toString(),
-      logoDark: this.siteLink('/email/secureplay-logo-cream.png').toString(),
-      symbol: this.siteLink('/email/secureplay-symbol-cream.png').toString(),
+      logo: asset('secureplay-logo-blue.png'),
+      logoDark: asset('secureplay-logo-cream.png'),
+      symbol: asset('secureplay-symbol-cream.png'),
     };
   }
 
