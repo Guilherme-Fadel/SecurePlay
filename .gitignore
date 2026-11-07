@@ -24,6 +24,7 @@ brand-exploration
 !frontend/src/assets/kids/academia-missoes-login-v1.png
 !frontend/src/assets/dashboard/
 !frontend/public/challenges/*-pixel.png
+!frontend/public/email/*.png
 /tmp/
 backend/eslint.config.mjs
 docs/security-audit/relatorio-auditoria-seguranca.pdf

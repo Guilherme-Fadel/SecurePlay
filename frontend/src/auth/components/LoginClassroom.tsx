@@ -1,6 +1,8 @@
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowRight } from 'lucide-react';
 import { BrandMark } from '@/components/shared/BrandMark';
+import { ForgotPasswordDialog } from './ForgotPasswordDialog';
 import { LoginCrew } from './LoginCrew';
 import { IdentifierField, PasswordField } from './LoginFields';
 import { HELP_PANEL_ID, LoginFeedbackRegions, LoginHelpPanel } from './LoginNotices';
@@ -37,35 +39,43 @@ function SubmitButton({ busy }: { busy: boolean }) {
 }
 
 function LoginForm({ state }: { state: LoginClassroomState }) {
+  const [forgotOpen, setForgotOpen] = useState(false);
   const busy = state.submitting || state.feedback?.kind === 'success';
   return (
-    <form className="lgc-form" method="post" noValidate onSubmit={(event) => void state.handleSubmit(event)}>
-      <IdentifierField
-        value={state.identifier}
-        invalid={state.fieldErrors.identifier}
-        focus={state.focus}
-        inputRef={state.identifierRef}
-        onChange={state.onIdentifierChange}
-        onFocusChange={state.setFocus}
-      />
-      <PasswordField
-        value={state.password}
-        invalid={state.fieldErrors.password}
-        focus={state.focus}
-        visible={state.showPassword}
-        inputRef={state.passwordRef}
-        onChange={state.onPasswordChange}
-        onFocusChange={state.setFocus}
-        onToggleVisible={state.togglePassword}
-      />
-      <div className="lgc-row">
-        <button type="button" className="lgc-link" aria-expanded={state.helpOpen} aria-controls={HELP_PANEL_ID} onClick={state.toggleHelp}>
-          Preciso de ajuda
-        </button>
-      </div>
-      <LoginHelpPanel open={state.helpOpen} />
-      <SubmitButton busy={busy} />
-    </form>
+    <>
+      <form className="lgc-form" method="post" noValidate onSubmit={(event) => void state.handleSubmit(event)}>
+        <IdentifierField
+          value={state.identifier}
+          invalid={state.fieldErrors.identifier}
+          focus={state.focus}
+          inputRef={state.identifierRef}
+          onChange={state.onIdentifierChange}
+          onFocusChange={state.setFocus}
+        />
+        <PasswordField
+          value={state.password}
+          invalid={state.fieldErrors.password}
+          focus={state.focus}
+          visible={state.showPassword}
+          inputRef={state.passwordRef}
+          onChange={state.onPasswordChange}
+          onFocusChange={state.setFocus}
+          onToggleVisible={state.togglePassword}
+        />
+        <div className="lgc-row">
+          <button type="button" className="lgc-link" aria-expanded={state.helpOpen} aria-controls={HELP_PANEL_ID} onClick={state.toggleHelp}>
+            Preciso de ajuda
+          </button>
+          <button type="button" className="lgc-link" aria-haspopup="dialog" onClick={() => setForgotOpen(true)}>
+            Esqueci minha senha
+          </button>
+        </div>
+        <LoginHelpPanel open={state.helpOpen} />
+        <SubmitButton busy={busy} />
+      </form>
+      {/* Fora do <form>: o diálogo tem o próprio formulário e formulários não se aninham. */}
+      {forgotOpen && <ForgotPasswordDialog initialEmail={state.identifier} onClose={() => setForgotOpen(false)} />}
+    </>
   );
 }
 

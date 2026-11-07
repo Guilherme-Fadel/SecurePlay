@@ -14,9 +14,10 @@ function useStudentPasswordReset() {
   const [mismatch, setMismatch] = useState(false);
   const [loginCode, setLoginCode] = useState<string | null>(null);
   const [username, setUsername] = useState<string | null>(null);
+  const [email, setEmail] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [feedback, setFeedback] = useState<AccountFeedback | null>(null);
-  const identifier = username || loginCode;
+  const identifier = email || username || loginCode;
 
   const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -31,6 +32,7 @@ function useStudentPasswordReset() {
       const result = await resetStudentPassword(token, password);
       setLoginCode(result.login_code);
       setUsername(result.username ?? null);
+      setEmail(result.email ?? null);
       window.history.replaceState(null, '', window.location.pathname);
       setFeedback({ tone: 'success', title: 'Tudo certo!', message: result.mensagem });
     } catch (error: unknown) {
@@ -46,7 +48,7 @@ function useStudentPasswordReset() {
 
   return {
     validToken: /^[A-Za-z0-9_-]{43}$/.test(token),
-    password, confirmation, mismatch, username, identifier, submitting, feedback, submit, copy,
+    password, confirmation, mismatch, username, email, identifier, submitting, feedback, submit, copy,
     setPassword: (value: string) => { setPassword(value); setMismatch(false); },
     setConfirmation: (value: string) => { setConfirmation(value); setMismatch(false); },
   };
@@ -86,21 +88,21 @@ export default function StudentPasswordReset() {
 
   if (state.identifier) {
     return (
-      <PublicAccountShell {...common} title={<>Acesso <em>atualizado</em></>} lead={`Use ${state.username ? 'seu usuário' : 'seu código de acesso'} com a nova senha.`}>
-        <AccountCode value={state.identifier} copyLabel={`Copiar ${state.username ? 'usuário' : 'código'}`} onCopy={state.copy} />
+      <PublicAccountShell {...common} title={<>Acesso <em>atualizado</em></>} lead={state.email ? 'Agora é só entrar com seu e-mail e a nova senha.' : `Use ${state.username ? 'seu usuário' : 'seu código de acesso'} com a nova senha.`}>
+        <AccountCode value={state.identifier} copyLabel={`Copiar ${state.email ? 'e-mail' : state.username ? 'usuário' : 'código'}`} onCopy={state.copy} />
         <Link className="pas-cta" to="/login">Ir para o login</Link>
       </PublicAccountShell>
     );
   }
   if (!state.validToken) {
     return (
-      <PublicAccountShell {...common} title={<>Link <em>indisponível</em></>} lead="Peça à administração da escola um novo link de redefinição.">
+      <PublicAccountShell {...common} title={<>Link <em>indisponível</em></>} lead="Peça um novo link em “Esqueci minha senha”, na tela de entrada, ou fale com a administração da escola.">
         <Link className="pas-cta" to="/login">Ir para o login</Link>
       </PublicAccountShell>
     );
   }
   return (
-    <PublicAccountShell {...common} title={<>Defina uma <em>nova senha</em></>} lead="Depois de salvar, use seu usuário ou código de acesso com a nova senha para entrar.">
+    <PublicAccountShell {...common} title={<>Defina uma <em>nova senha</em></>} lead="Depois de salvar, entre com seu e-mail, usuário ou código de acesso e a nova senha.">
       <ResetForm state={state} />
     </PublicAccountShell>
   );

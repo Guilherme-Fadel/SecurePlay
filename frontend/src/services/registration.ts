@@ -18,7 +18,12 @@ export async function resendEmail(email: string): Promise<string> {
   return response.data.mensagem as string;
 }
 
-export async function resetStudentPassword(token: string, password: string): Promise<{ sucesso: boolean; mensagem: string; username?: string | null; login_code: string | null }> {
+export async function requestPasswordReset(email: string): Promise<string> {
+  const response = await api.post('/registration/forgot-password', { email });
+  return response.data.mensagem as string;
+}
+
+export async function resetStudentPassword(token: string, password: string): Promise<{ sucesso: boolean; mensagem: string; email?: string | null; username?: string | null; login_code: string | null }> {
   const response = await api.post('/registration/student-password-reset', { token, password });
   return response.data;
 }
