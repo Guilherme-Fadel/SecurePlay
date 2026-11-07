@@ -1,0 +1,40 @@
+/*
+ * Cosméticos equipáveis (molduras e fundos). Os nomes das classes vêm do backend
+ * (`cosmetic_item.visual_value`) e valem em qualquer avatar: trilho/menu da conta
+ * (`UserMenu`) e provador de Colecionáveis. Extraído do antigo awards-ui.css (Parte 9).
+ */
+.cosmetic-avatar {
+  transition: border-color 180ms ease, box-shadow 180ms ease, background 180ms ease;
+}
+
+.cosmetic-avatar.frame-violet {
+  border-color: var(--primary) !important;
+  background: rgba(var(--primary-rgb), 0.12) !important;
+  box-shadow: 0 0 0 3px rgba(var(--primary-rgb), 0.22), 0 6px 16px rgba(var(--primary-rgb), 0.16) !important;
+  color: var(--primary);
+}
+
+.cosmetic-avatar.frame-sentinel {
+  border-color: var(--secondary) !important;
+  box-shadow: 0 0 0 3px rgba(var(--secondary-rgb), 0.25), 0 6px 16px rgba(var(--secondary-rgb), 0.14) !important;
+}
+
+.cosmetic-avatar.frame-elite {
+  border-color: var(--accent) !important;
+  box-shadow: 0 0 0 3px rgba(var(--accent-rgb), 0.3), 0 6px 16px rgba(var(--accent-rgb), 0.16) !important;
+}
+
+.secure-home .cosmetic-background-host.background-academy {
+  border-color: rgba(var(--primary-rgb), 0.24) !important;
+  background: radial-gradient(circle at 82% 18%, rgba(var(--secondary-rgb), 0.13), transparent 28%), linear-gradient(135deg, rgba(var(--primary-rgb), 0.12), var(--dashboard-surface)) !important;
+}
+
+/* Fundo escuro por natureza: grafite da marca no lugar do antigo azul-marinho. */
+.secure-home .cosmetic-background-host.background-investigator {
+  border-color: rgba(var(--secondary-rgb), 0.28) !important;
+  background: radial-gradient(circle at 78% 24%, rgba(var(--secondary-rgb), 0.2), transparent 26%), linear-gradient(145deg, var(--sp-ink-700), var(--sp-ink-900)) !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cosmetic-avatar { transition: none; }
+}

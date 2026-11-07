@@ -1,0 +1,511 @@
+/*
+ * Conquistas › Álbum (canvas Conquistas-tela / -mobile-tela / -escala).
+ * "Quase lá!" e a faixa da coleção seguem --primary (card principal, D8) com
+ * texto creme/branco (D12); figurinhas, amarelo de "colada" e personagem usam
+ * a paleta fixa --sp-*. Superfícies e texto seguem o tema (claro com
+ * data-theme='light'; grafite sem atributo). Reset tipográfico com escopo
+ * porque theme.css define fonte, tamanho e espaçamento em p/span/button/h*.
+ */
+.album-v {
+  --al-bg: var(--dashboard-bg);
+  --al-card: var(--dashboard-surface);
+  --al-soft: var(--dashboard-surface-soft);
+  --al-text: var(--dashboard-text);
+  --al-muted: var(--dashboard-muted);
+  --al-border: var(--dashboard-border);
+  --al-rule: var(--app-rule);
+  --al-heading: var(--app-heading);
+  --al-band: var(--primary);
+  --al-on-band: var(--app-eyebrow-on-primary, var(--sp-paper));
+  /* Texto azul pequeno sobre cartão (AA nos dois temas). */
+  --al-blue-text: #9DB8FF;
+  --al-blue-soft: rgba(38, 98, 231, 0.26);
+  --al-yellow-soft: rgba(254, 213, 1, 0.14);
+  --al-yellow-text: #FFE45C;
+  --al-slot: #16161A;
+  --al-slot-border: #6A6258;
+  --al-q: #8A8276;
+  --al-silhouette: brightness(0) invert(1) opacity(0.16);
+  --al-sticker-edge: var(--sp-paper);
+  container: album-v / inline-size;
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 1560px;
+  margin: 0 auto;
+  padding: 4px 0 48px;
+  color: var(--al-text);
+  font-family: var(--font-family-brand);
+  font-size: 15px;
+  line-height: 1.45;
+}
+
+:root[data-theme='light'] .album-v {
+  --al-blue-text: #1D50C2;
+  --al-blue-soft: #E7EEFF;
+  --al-yellow-soft: #FFF6C2;
+  --al-yellow-text: #5C4A00;
+  --al-slot: #FFFCF7;
+  --al-slot-border: #A89F92;
+  --al-q: #8A8276;
+  --al-silhouette: brightness(0) opacity(0.16);
+}
+
+.album-v *, .album-v *::before, .album-v *::after { box-sizing: border-box; }
+
+/* O reset não entra na aba Colecionáveis (.cole-v tem o próprio); :not(:where()) não soma especificidade. */
+.album-v :where(p, span, small, strong, em, a, button, li, h1, h2, h3, h4, label):not(:where(.cole-v *)) {
+  font-family: inherit;
+  font-size: inherit;
+  line-height: inherit;
+  letter-spacing: inherit;
+}
+
+.album-v :where(p, h1, h2, h3, h4, ul, ol):not(:where(.cole-v *)) { margin: 0; }
+.album-v :where(ul, ol):not(:where(.cole-v *)) { padding: 0; list-style: none; }
+.album-v :where(button):not(:where(.cole-v *)) { font: inherit; color: inherit; cursor: pointer; }
+.album-v :where(button, a, [tabindex]):focus-visible { outline: var(--app-focus-ring); outline-offset: 3px; }
+.album-v img { display: block; }
+
+.al-display {
+  font-weight: 800;
+  font-stretch: 75%;
+  font-variation-settings: 'wdth' 75;
+  text-transform: uppercase;
+  line-height: 0.9;
+  letter-spacing: -0.005em;
+}
+
+/* Cabeçalho */
+.al-header { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 16px 24px; }
+.al-title { color: var(--al-heading); font-size: clamp(44px, 7vw, 64px); }
+.al-lead { margin-top: 10px; color: var(--al-muted); font-size: 16px; font-weight: 600; }
+.al-lead strong { color: var(--al-text); font-weight: 800; }
+.al-header-side { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+.al-tabs { display: inline-flex; padding: 4px; border: 1.5px solid var(--al-border); border-radius: 999px; background: var(--al-card); }
+.al-tab { min-height: 40px; padding: 0 18px; border: 0; border-radius: 999px; background: transparent; font-size: 14px; font-weight: 700; }
+.al-tab:hover { background: var(--al-soft); }
+.al-tab[aria-selected='true'] { background: var(--al-band); color: #FFFFFF; }
+.al-key { display: inline-flex; align-items: center; gap: 8px; min-height: 48px; padding: 0 16px 0 10px; border: 1.5px solid var(--al-border); border-radius: 999px; background: var(--al-card); color: var(--al-muted); font-size: 13px; font-weight: 600; }
+.al-key strong { color: var(--al-text); font-size: 18px; font-weight: 800; }
+.al-key .digital-key-icon { image-rendering: pixelated; }
+.al-panel { margin-top: 32px; }
+
+/* Faixa "Quase lá!" e "Álbum completo!" */
+.al-band {
+  --app-focus-color: var(--sp-cream);
+  --app-focus-ring: 3px solid var(--sp-cream);
+  padding: 28px;
+  border-radius: 30px;
+  background: var(--al-band);
+  color: var(--al-on-band);
+  box-shadow: 0 8px 0 var(--sp-black);
+}
+.al-band-head { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 12px; margin-bottom: 22px; }
+.al-band-title { font-size: clamp(38px, 6vw, 56px); }
+.al-band-head p, .al-band--done p { margin-top: 8px; font-size: 15px; font-weight: 600; }
+.al-band-toggle { min-height: 44px; padding: 0 18px; border: 2px solid currentColor; border-radius: 999px; background: transparent; font-size: 14px; font-weight: 800; }
+.al-band-toggle:hover { background: rgba(255, 255, 255, 0.12); }
+.al-band--done { display: flex; align-items: center; gap: 20px; background: var(--sp-yellow); color: var(--sp-black); --app-focus-color: var(--sp-black); --app-focus-ring: 3px solid var(--sp-black); }
+.al-band-pet { flex: 0 0 auto; width: 96px; }
+.al-band-pet .brand-character { display: block; width: 100%; }
+
+.al-almost { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr)); gap: 16px; }
+.al-almost-card {
+  --app-focus-color: var(--sp-blue);
+  --app-focus-ring: 3px solid var(--sp-blue);
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-width: 0;
+  padding: 14px;
+  border-radius: 22px;
+  background: var(--al-card);
+  color: var(--al-text);
+}
+:root:not([data-theme='light']) .al-almost-card { --app-focus-color: var(--sp-yellow); --app-focus-ring: 3px solid var(--sp-yellow); }
+.al-almost-box { display: grid; flex: 0 0 auto; width: 112px; height: 112px; padding: 0; place-items: center; border: 2.5px dashed var(--sp-blue); border-radius: 20px; background: var(--al-blue-soft); }
+.al-almost-box .al-art { opacity: 0.38; }
+.al-almost-body { display: flex; min-width: 0; flex: 1 1 auto; flex-direction: column; gap: 6px; }
+.al-meta { color: var(--al-blue-text); font-size: 11px; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; }
+.al-almost-name { font-size: 16px; font-weight: 800; line-height: 1.2; overflow-wrap: anywhere; }
+.al-almost-progress { color: var(--al-muted); font-size: 12px; font-weight: 700; }
+.al-go { align-self: flex-start; max-width: 100%; margin-top: 4px; text-align: center; }
+
+.al-bar { display: block; height: 8px; overflow: hidden; border-radius: 99px; background: var(--al-border); }
+.al-bar > span { display: block; height: 100%; border-radius: inherit; background: var(--sp-blue); }
+.al-bar--slot { width: 80px; height: 6px; }
+.al-bar--big { height: 10px; }
+
+/* Primeira figurinha */
+.al-note { display: flex; align-items: center; gap: 16px; margin-top: 24px; padding: 18px 20px; border: 1.5px dashed var(--al-border); border-radius: 22px; background: var(--al-card); }
+.al-note-pet { flex: 0 0 auto; width: 64px; }
+.al-note-pet .brand-character { display: block; width: 100%; }
+.al-note-title { font-size: 17px; font-weight: 800; line-height: 1.25; }
+.al-note p { margin-top: 4px; color: var(--al-muted); font-size: 14px; font-weight: 600; }
+
+/* Coleções */
+.al-sec-head { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 8px 12px; margin: 48px 0 20px; }
+.al-sec-title { color: var(--al-heading); font-size: clamp(34px, 5vw, 44px); }
+.al-sec-head p { color: var(--al-muted); font-size: 14px; font-weight: 700; }
+.al-collections { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr)); gap: 22px; }
+.al-card {
+  display: flex;
+  width: 100%;
+  height: 100%;
+  flex-direction: column;
+  overflow: hidden;
+  padding: 0;
+  border: var(--app-line);
+  border-radius: 26px;
+  background: var(--al-card);
+  box-shadow: var(--app-shadow-hard);
+  text-align: left;
+  transition: transform 0.15s ease;
+}
+.al-card-band { display: flex; align-items: flex-end; justify-content: space-between; gap: 10px; padding: 18px 20px 16px; border-bottom: 1.5px solid var(--al-border); background: var(--al-blue-soft); color: var(--al-heading); }
+.al-card-title { display: block; font-size: 38px; overflow-wrap: anywhere; }
+.al-card-band small, .al-card-range { color: var(--al-muted); font-size: 13px; font-weight: 700; }
+.al-card-band small { display: block; margin-top: 6px; }
+.al-card-range { flex: 0 0 auto; font-size: 12px; font-weight: 800; }
+.al-card.is-complete .al-card-band { background: var(--sp-yellow); color: var(--sp-black); }
+.al-card.is-complete .al-card-band small, .al-card.is-complete .al-card-range { color: var(--sp-black); }
+.al-fan {
+  display: flex;
+  height: 150px;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  background-color: var(--al-soft);
+  background-image: radial-gradient(rgba(38, 98, 231, 0.16) 1.4px, transparent 1.7px);
+  background-size: 22px 22px;
+}
+.al-fan-item { display: block; margin: 0 -8px; }
+.al-fan-item:nth-child(odd) { transform: rotate(-6deg); }
+.al-fan-item:nth-child(even) { transform: rotate(5deg) translateY(6px); }
+.al-fan-item.is-ghost, .al-fan-item.is-silhouette { display: grid; width: 104px; height: 104px; margin: 0 6px; place-items: center; border: 2.5px dashed var(--sp-blue); border-radius: 18px; background: var(--al-blue-soft); transform: none; }
+.al-fan-item.is-ghost .al-art { opacity: 0.38; }
+.al-fan-item.is-silhouette { border-color: var(--al-slot-border); background: var(--al-slot); }
+.al-fan-item.is-silhouette .al-art { filter: var(--al-silhouette); }
+.al-card-foot { display: flex; flex-direction: column; gap: 8px; padding: 16px 20px 18px; border-top: 1.5px solid var(--al-rule); }
+.al-card-count { font-size: 14px; font-weight: 800; }
+.al-card-next { color: var(--al-muted); font-size: 13px; font-weight: 600; overflow-wrap: anywhere; }
+.al-card-next strong { color: var(--al-blue-text); font-weight: 800; }
+
+.al-segs { display: flex; gap: 4px; }
+.al-seg { height: 10px; min-width: 4px; flex: 1 1 0; border-radius: 4px; background: var(--al-rule); }
+.al-seg.is-on { background: var(--sp-yellow); box-shadow: inset 0 0 0 1.5px rgba(0, 0, 0, 0.2); }
+.al-seg.is-next { background: var(--al-blue-soft); box-shadow: inset 0 0 0 2px var(--sp-blue); }
+
+/* Figurinhas: colada com borda branca de adesivo, próxima esmaecida, bloqueada em silhueta */
+.al-art { display: block; line-height: 0; }
+.al-q { color: var(--al-q); font-size: 44px; font-weight: 800; line-height: 1; }
+.is-stuck > .al-art,
+.is-stuck .al-box .al-art,
+.al-fan-item.is-stuck .al-art {
+  filter:
+    drop-shadow(3px 0 0 var(--al-sticker-edge)) drop-shadow(-3px 0 0 var(--al-sticker-edge))
+    drop-shadow(0 3px 0 var(--al-sticker-edge)) drop-shadow(0 -3px 0 var(--al-sticker-edge))
+    drop-shadow(0 6px 6px rgba(0, 0, 0, 0.25));
+}
+
+/* Página da coleção */
+.al-back { display: inline-flex; min-height: 44px; align-items: center; gap: 6px; padding: 0 16px 0 10px; border: 1.5px solid var(--al-border); border-radius: 999px; background: var(--al-card); font-size: 14px; font-weight: 700; }
+.al-back:hover { background: var(--al-soft); }
+.al-cover {
+  --app-focus-color: var(--sp-cream);
+  --app-focus-ring: 3px solid var(--sp-cream);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 16px;
+  padding: 26px 28px;
+  border-radius: 28px;
+  background: var(--al-band);
+  color: var(--al-on-band);
+  box-shadow: 0 8px 0 var(--sp-black);
+}
+.al-cover-title { font-size: clamp(44px, 8vw, 76px); overflow-wrap: anywhere; }
+.al-cover-title:focus { outline: none; }
+.al-cover-title:focus-visible { outline: var(--app-focus-ring); outline-offset: 4px; }
+.al-cover p { margin-top: 8px; font-size: 15px; font-weight: 700; }
+.al-cover-progress { min-width: min(100%, 260px); }
+.al-cover-progress strong { display: block; margin-bottom: 8px; font-size: 15px; font-weight: 800; }
+.al-cover .al-seg { background: rgba(255, 255, 255, 0.28); box-shadow: none; }
+.al-cover .al-seg.is-on { background: var(--sp-yellow); }
+.al-cover .al-seg.is-next { background: #FFFFFF; }
+.al-cover.is-complete { background: var(--sp-yellow); color: var(--sp-black); --app-focus-color: var(--sp-black); --app-focus-ring: 3px solid var(--sp-black); }
+.al-cover.is-complete .al-seg { background: rgba(0, 0, 0, 0.15); }
+.al-cover.is-complete .al-seg.is-on { background: var(--sp-black); }
+
+.al-chips { display: flex; flex-wrap: wrap; gap: 8px; margin: 22px 0 16px; }
+.al-chip { display: inline-flex; min-height: 44px; flex: 0 0 auto; align-items: center; gap: 8px; padding: 0 16px; border: 1.5px solid var(--al-border); border-radius: 999px; background: var(--al-card); font-size: 14px; font-weight: 700; }
+.al-chip small { color: var(--al-muted); font-size: 12px; font-weight: 800; }
+.al-chip:hover { background: var(--al-soft); }
+.al-chip[aria-pressed='true'] { border-color: var(--al-text); background: var(--al-text); color: var(--al-bg); }
+.al-chip[aria-pressed='true'] small { color: inherit; }
+
+.al-page { padding: 28px; border-radius: 26px; background: var(--al-soft); box-shadow: 0 14px 0 rgba(0, 0, 0, 0.1); }
+.al-page-empty { padding: 30px; color: var(--al-muted); font-size: 15px; font-weight: 700; text-align: center; }
+.al-slots { display: grid; grid-template-columns: repeat(auto-fill, minmax(112px, 1fr)); gap: 22px 14px; }
+.al-slot { display: flex; justify-content: center; min-width: 0; }
+.al-slot-button { display: flex; width: 100%; max-width: 132px; flex-direction: column; align-items: center; gap: 6px; padding: 0; border: 0; border-radius: 20px; background: transparent; text-align: center; }
+.al-box { position: relative; display: grid; width: 112px; height: 112px; place-items: center; border: 2.5px dashed var(--al-slot-border); border-radius: 20px; background: var(--al-slot); transition: transform 0.15s ease; }
+.al-num { position: absolute; top: 6px; left: 8px; color: var(--al-muted); font-size: 11px; font-weight: 800; line-height: 1.2; }
+.al-slot-name { min-height: 30px; font-size: 12px; font-weight: 700; line-height: 1.25; overflow-wrap: anywhere; }
+.al-slot-left { color: var(--al-blue-text); font-size: 11px; font-weight: 800; }
+.al-slot.is-stuck .al-box { border-color: transparent; background: transparent; }
+.al-slot.is-stuck .al-art { transform: rotate(-3deg); }
+.al-slot.is-next .al-box { border-color: var(--sp-blue); background: var(--al-blue-soft); }
+.al-slot.is-next .al-num, .al-slot.is-next .al-slot-name { color: var(--al-blue-text); }
+.al-slot.is-next .al-art { opacity: 0.38; }
+.al-slot.is-locked .al-art { filter: var(--al-silhouette); }
+.al-slot.is-locked .al-slot-name { color: var(--al-muted); font-weight: 600; }
+.al-slot.is-secret .al-box { border-color: var(--al-text); background: var(--al-bg); }
+.al-slot.is-secret .al-num, .al-slot.is-secret .al-slot-name, .al-slot.is-secret .al-q { color: var(--al-text); }
+
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+  .al-card:hover { transform: translateY(-4px); }
+  .al-slot-button:hover .al-box { transform: translateY(-3px); }
+}
+
+/* Detalhe: gaveta lateral (desktop) e bottom sheet (< 760 px) */
+/* overscroll: o gesto dentro da gaveta/sheet não rola a página por baixo. */
+.al-dialog {
+  overscroll-behavior: contain;
+  position: fixed;
+  inset: 0 0 0 auto;
+  width: min(440px, 100%);
+  max-width: 100%;
+  height: 100%;
+  max-height: 100%;
+  margin: 0 0 0 auto;
+  padding: 0;
+  overflow: auto;
+  border: 0;
+  border-left: var(--app-line);
+  background: var(--dashboard-surface);
+  color: var(--dashboard-text);
+  font-family: var(--font-family-brand);
+  font-size: 15px;
+  line-height: 1.45;
+  box-shadow: -20px 0 40px rgba(0, 0, 0, 0.2);
+}
+.al-dialog::backdrop { background: rgba(0, 0, 0, 0.5); }
+.al-dialog[open] { animation: al-drawer-in 0.22s ease-out; }
+.al-detail { position: relative; min-height: 100%; padding: 0 28px 32px; }
+.al-detail-close { position: absolute; top: 18px; right: 18px; z-index: 2; display: grid; width: 44px; height: 44px; place-items: center; border: 1.5px solid var(--al-border); border-radius: 999px; background: var(--al-card); }
+.al-detail-handle { display: none; }
+.al-detail-art {
+  display: grid;
+  height: 260px;
+  margin: 0 -28px 22px;
+  padding-top: 12px;
+  place-items: center;
+  background-color: var(--al-bg);
+  background-image: radial-gradient(rgba(38, 98, 231, 0.16) 1.4px, transparent 1.7px);
+  background-size: 22px 22px;
+}
+.al-detail-art .al-q { font-size: 110px; }
+.al-detail-art.is-stuck .al-art { transform: rotate(-3deg); }
+.al-detail-art.is-next .al-art { opacity: 0.38; }
+.al-detail-art.is-locked .al-art { filter: var(--al-silhouette); }
+.al-detail-art.is-secret .al-q { color: var(--al-text); }
+.al-detail-top { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.al-rarity { display: inline-flex; padding: 4px 10px; border-radius: 999px; font-size: 12px; font-weight: 800; }
+.al-rarity.is-common, .al-rarity.is-uncommon { background: var(--al-bg); color: var(--al-text); box-shadow: inset 0 0 0 1.5px var(--al-border); }
+.al-rarity.is-rare { background: var(--al-blue-soft); color: var(--al-blue-text); }
+.al-rarity.is-epic { background: var(--sp-blue); color: #FFFFFF; }
+.al-rarity.is-legendary { background: var(--sp-yellow); color: var(--sp-black); }
+.al-detail-title { margin-top: 14px; color: var(--al-heading); font-size: 44px; overflow-wrap: anywhere; }
+.al-detail-text { margin-top: 10px; color: var(--al-muted); font-size: 15px; line-height: 1.5; }
+.al-detail-progress { display: flex; flex-direction: column; gap: 8px; margin-top: 18px; }
+.al-detail-progress-head { display: flex; justify-content: space-between; gap: 8px; font-size: 13px; font-weight: 700; }
+.al-detail-status { margin-top: 14px; padding: 10px 14px; border-radius: 14px; font-size: 14px; font-weight: 700; }
+.al-detail-status.is-stuck { background: var(--al-yellow-soft); color: var(--al-yellow-text); }
+.al-detail-status.is-next { background: var(--al-blue-soft); color: var(--al-blue-text); }
+.al-detail-status.is-locked { background: var(--al-bg); color: var(--al-muted); }
+.al-detail-status.is-secret { background: var(--al-bg); color: var(--al-text); }
+.al-detail-reward { display: flex; align-items: center; gap: 8px; margin-top: 16px; font-size: 14px; font-weight: 700; }
+.al-detail-reward .digital-key-icon { image-rendering: pixelated; }
+.al-detail-go { width: 100%; margin-top: 18px; }
+
+/* Estados */
+.al-state { display: flex; align-items: center; gap: 24px; padding: 28px; border: var(--app-line); border-radius: 26px; background: var(--al-card); box-shadow: var(--app-shadow-hard); }
+.al-state-pet { flex: 0 0 auto; width: 104px; }
+.al-state-pet .brand-character { display: block; width: 100%; }
+.al-state-copy { display: flex; flex-direction: column; align-items: flex-start; gap: 10px; }
+.al-state-title { color: var(--al-heading); font-size: 24px; font-weight: 800; line-height: 1.15; }
+.al-state-copy p { color: var(--al-muted); font-size: 15px; font-weight: 600; }
+
+.al-loading { display: flex; flex-direction: column; gap: 22px; }
+.al-loading-band, .al-loading-card { border-radius: 26px; background: var(--al-soft); animation: al-pulse 1.4s ease-in-out infinite; }
+.al-loading-band { height: 200px; }
+.al-loading-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr)); gap: 22px; }
+.al-loading-card { height: 300px; }
+
+@keyframes al-pulse { 50% { opacity: 0.55; } }
+@keyframes al-drawer-in { from { transform: translateX(32px); opacity: 0; } }
+@keyframes al-sheet-in { from { transform: translateY(40px); opacity: 0; } }
+
+/* Celular: bottom sheet, "Quase lá!" em scroller e coleções em linhas */
+@media (max-width: 759px) {
+  .al-dialog {
+    inset: auto 0 0 0;
+    width: 100%;
+    height: auto;
+    max-height: 88dvh;
+    margin: auto 0 0;
+    border-left: 0;
+    border-top: var(--app-line);
+    border-radius: 28px 28px 0 0;
+    box-shadow: 0 -20px 40px rgba(0, 0, 0, 0.25);
+  }
+  .al-dialog[open] { animation-name: al-sheet-in; }
+  .al-detail { padding: 12px 16px 22px; }
+  .al-detail-handle { display: block; width: 44px; height: 5px; margin: 0 auto 12px; border-radius: 99px; background: var(--al-border); }
+  .al-detail-close { top: 12px; right: 12px; }
+  .al-detail-art { height: 180px; margin: 0 -16px 16px; }
+  .al-detail-title { font-size: 36px; }
+}
+
+@container album-v (max-width: 759px) {
+  .al-header { align-items: flex-start; }
+  .al-header-side { width: 100%; }
+  .al-tabs { display: flex; flex: 1 1 auto; }
+  .al-tab { flex: 1 1 0; }
+  .al-key { min-height: 44px; padding: 0 12px 0 8px; }
+  .al-key-label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  .al-panel { margin-top: 20px; }
+  .al-band { padding: 18px 0 18px 16px; border-radius: 24px; }
+  .al-band-head { padding-right: 16px; margin-bottom: 14px; }
+  .al-band--done { padding-right: 16px; }
+  .al-band-pet { width: 72px; }
+  .al-almost { display: flex; gap: 10px; padding-right: 16px; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; }
+  .al-almost-card { flex: 0 0 min(260px, 82%); scroll-snap-align: start; padding: 10px; gap: 10px; }
+  .al-almost-box { width: 100px; height: 100px; }
+  /* Como no canvas do celular: o destino fica no bottom sheet da figurinha. */
+  .al-almost-card .al-go { display: none; }
+  .al-sec-head { margin: 30px 0 14px; }
+  .al-collections { grid-template-columns: minmax(0, 1fr); gap: 12px; }
+  .al-card { display: grid; grid-template-columns: auto minmax(0, 1fr); grid-template-rows: auto auto; border-radius: 22px; }
+  .al-card-band { grid-column: 1 / -1; padding: 12px 14px; }
+  .al-card-title { font-size: 26px; }
+  .al-fan { width: 112px; height: auto; min-height: 112px; }
+  .al-fan-item { display: none; }
+  .al-fan-item:first-child { display: grid; margin: 0; transform: rotate(-5deg); }
+  .al-fan-item.is-ghost:first-child, .al-fan-item.is-silhouette:first-child { width: 96px; height: 96px; transform: none; }
+  .al-card-foot { padding: 12px 14px; border-top: 0; border-left: 1.5px solid var(--al-rule); }
+  .al-cover { padding: 18px; border-radius: 22px; }
+  .al-chips { flex-wrap: nowrap; margin: 14px 0; padding-bottom: 4px; overflow-x: auto; scrollbar-width: none; }
+  .al-page { padding: 14px 12px; border-radius: 22px; }
+  .al-slots { grid-template-columns: repeat(auto-fill, minmax(min(100%, 112px), 1fr)); gap: 16px 10px; }
+  .al-state { flex-direction: column; align-items: flex-start; padding: 20px; }
+  .al-state-pet { width: 80px; }
+}
+
+@container album-v (max-width: 360px) {
+  .al-fan { width: 96px; min-height: 96px; }
+  .al-almost-card { flex-basis: 88%; }
+}
+
+/* Desktop (>= 1100 x 700): a aba cabe na altura útil do <main> (--sp-fit-h).
+   Cabeçalho e "Quase lá!" compactos; a grade de coleções e a página da
+   coleção rolam por dentro. Colecionáveis (.cole-v) se ajusta em collectibles.css. */
+@media (min-width: 1100px) and (min-height: 700px) {
+  .album-v {
+    display: flex;
+    height: var(--sp-fit-h);
+    min-height: 0;
+    max-width: 1560px;
+    flex-direction: column;
+    padding: 0;
+  }
+  .al-header { flex: none; gap: 10px 20px; }
+  .al-title { font-size: clamp(32px, 5.4vh, 52px); }
+  .al-lead { margin-top: 4px; font-size: 14px; }
+  .al-tab { min-height: 36px; padding: 0 16px; }
+  .al-key { min-height: 40px; padding: 0 14px 0 8px; }
+  .al-key .digital-key-icon { width: 26px; height: 26px; }
+  .al-panel { display: flex; min-height: 0; flex: 1 1 auto; flex-direction: column; margin-top: clamp(10px, 1.8vh, 18px); }
+
+  /* "Quase lá!" */
+  .al-band { flex: none; padding: clamp(12px, 2vh, 20px) clamp(14px, 1.6vw, 22px); border-radius: 24px; box-shadow: 0 6px 0 var(--sp-black); }
+  .al-band-head { margin-bottom: clamp(8px, 1.4vh, 14px); }
+  .al-band-title { font-size: clamp(26px, 4.2vh, 42px); }
+  .al-band-head p, .al-band--done p { margin-top: 4px; font-size: 14px; }
+  .al-band-toggle { min-height: 36px; padding: 0 14px; font-size: 13px; }
+  .al-band-pet { width: clamp(52px, 8vh, 80px); }
+  /* Expandida, a lista não empurra a grade: rola dentro da faixa. */
+  .al-almost { max-height: 34vh; gap: 12px; overflow-y: auto; overscroll-behavior: contain; grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr)); }
+  .al-almost-card { gap: 12px; padding: 10px; border-radius: 18px; }
+  .al-almost-box { width: clamp(64px, 9vh, 88px); height: clamp(64px, 9vh, 88px); border-radius: 16px; }
+  .al-almost-box .al-art :where(img, svg) { width: clamp(48px, 7vh, 72px) !important; height: clamp(48px, 7vh, 72px) !important; }
+  .al-almost-body { gap: 4px; }
+  .al-almost-name { font-size: 15px; }
+  .al-almost-card .app-button.app-button--chunky-sm { min-height: 36px; padding: 0 14px; font-size: 13px !important; }
+  .al-go { margin-top: 2px; }
+
+  .al-note { flex: none; gap: 12px; margin-top: clamp(10px, 1.6vh, 16px); padding: 10px 14px; }
+  .al-note-pet { width: 44px; }
+  .al-note-title { font-size: 15px; }
+  .al-note p { margin-top: 2px; font-size: 13px; }
+
+  /* Coleções: a grade rola por dentro. */
+  .al-sec-head { flex: none; margin: clamp(12px, 2.2vh, 24px) 0 clamp(8px, 1.2vh, 12px); }
+  .al-sec-title { font-size: clamp(24px, 3.6vh, 36px); }
+  .al-sec-head p { font-size: 13px; }
+  .al-collections {
+    min-height: 0;
+    flex: 1 1 auto;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 260px), 1fr));
+    align-content: start;
+    gap: clamp(10px, 1.6vh, 16px);
+    /* Respiro para a sombra dura e o hover sem cortar no limite da rolagem. */
+    margin: 0 -6px;
+    padding: 6px 6px 12px;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+  .al-card { border-radius: 22px; }
+  .al-card-band { padding: clamp(10px, 1.4vh, 14px) 16px; }
+  .al-card-title { font-size: clamp(22px, 3.2vh, 32px); }
+  .al-card-band small { margin-top: 2px; font-size: 12px; }
+  .al-fan { height: clamp(84px, 12vh, 124px); }
+  .al-fan-item .al-art :where(img, svg) { width: clamp(60px, 9vh, 84px) !important; height: clamp(60px, 9vh, 84px) !important; }
+  .al-fan-item.is-ghost, .al-fan-item.is-silhouette { width: clamp(66px, 9.6vh, 90px); height: clamp(66px, 9.6vh, 90px); border-radius: 16px; }
+  .al-card-foot { gap: 6px; padding: 10px 16px 12px; }
+  .al-card-count { font-size: 13px; }
+  .al-card-next { font-size: 12px; }
+  .al-seg { height: 8px; }
+
+  /* Página da coleção: capa e filtros fixos; figurinhas rolam por dentro. */
+  .al-back { flex: none; align-self: flex-start; min-height: 38px; font-size: 13px; }
+  .al-cover { flex: none; gap: 12px; margin-top: clamp(8px, 1.4vh, 14px); padding: clamp(12px, 2vh, 20px) clamp(14px, 1.6vw, 24px); border-radius: 24px; box-shadow: 0 6px 0 var(--sp-black); }
+  .al-cover-title { font-size: clamp(30px, 5vh, 56px); }
+  .al-cover p { margin-top: 4px; font-size: 14px; }
+  .al-cover-progress strong { margin-bottom: 6px; font-size: 14px; }
+  .al-chips { flex: none; margin: clamp(8px, 1.6vh, 16px) 0 clamp(8px, 1.2vh, 12px); }
+  .al-chip { min-height: 38px; padding: 0 14px; font-size: 13px; }
+  .al-page { min-height: 0; flex: 1 1 auto; padding: clamp(12px, 2vh, 22px); overflow-y: auto; overscroll-behavior: contain; box-shadow: 0 8px 0 rgba(0, 0, 0, 0.1); }
+  .al-slots { grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); gap: 16px 12px; }
+  .al-box { width: 96px; height: 96px; border-radius: 18px; }
+  .al-box .al-art :where(img, svg) { width: 80px !important; height: 80px !important; }
+  .al-q { font-size: 36px; }
+  .al-slot-name { min-height: 28px; }
+
+  /* Estados */
+  .al-state { flex: none; padding: 20px 24px; }
+  .al-state-pet { width: 80px; }
+  .al-loading { min-height: 0; flex: 1 1 auto; gap: 14px; overflow: hidden; }
+  .al-loading-band { height: clamp(120px, 20vh, 200px); }
+  .al-loading-grid { gap: 14px; }
+  .al-loading-card { height: clamp(180px, 30vh, 300px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .album-v *, .al-dialog, .al-dialog * { animation: none !important; transition: none !important; }
+}
+/* Espelha useReducedMotion (motion/react) quando a preferência vem do app. */
+.album-v.is-reduced-motion * { animation: none !important; transition: none !important; }
