@@ -114,7 +114,7 @@ test('module: A slow/B fast, stale failure, overlapping retries, invalid respons
   const h = hooks();
   const requests = [];
   const { useModulo } = load('src/hooks/useModulo.ts', {
-    react: h.react, '@/services/conteudo': { getModulo: (id) => {
+    react: h.react, axios: { isAxiosError: (e) => e?.isAxiosError === true }, '@/services/conteudo': { getModulo: (id) => {
       const request = deferred(); requests.push({ id, ...request }); return request.promise;
     } },
   });
@@ -146,67 +146,152 @@ test('module: A slow/B fast, stale failure, overlapping retries, invalid respons
   assert.equal(requests.length, 6);
 });
 
-test('book frame: error, retry success, timeout and cleanup', () => {
+test('module: 403 keeps the backend reason as denied, 404 is missing and network failure is retryable', async () => {
   const h = hooks();
-  const images = [];
-  const timers = new Map();
-  let next = 0;
-  const { useModuleBookFrame } = load('src/hooks/useModuleBookFrame.ts', { react: h.react }, {
-    Image: class { constructor() { images.push(this); } },
-    window: { setTimeout(fn) { timers.set(++next, fn); return next; }, clearTimeout(id) { timers.delete(id); } },
+  let next;
+  const { useModulo } = load('src/hooks/useModulo.ts', {
+    react: h.react, axios: { isAxiosError: (e) => e?.isAxiosError === true },
+    '@/services/conteudo': { getModulo: () => { next = deferred(); return next.promise; } },
   });
-  let src = '/frame.png';
-  const render = () => h.render(() => useModuleBookFrame(src));
-  assert.equal(render().status, 'loading');
-  images[0].onerror();
-  assert.equal(render().status, 'error');
-  render().retry();
-  assert.equal(render().status, 'loading');
-  images[1].onload();
-  assert.equal(render().status, 'ready');
-  src = '/other.png'; render();
-  [...timers.values()][0]();
-  assert.equal(render().status, 'error');
-  render().retry(); render(); h.unmount();
-  assert.equal(timers.size, 0);
-  assert.equal(images.at(-1).onload, null);
-  src = undefined;
-  assert.equal(render().status, 'error');
+  const render = () => h.render(() => useModulo(5));
+  render();
+  next.reject({ isAxiosError: true, response: { status: 403, data: { message: 'Módulo bloqueado. Conclua o módulo anterior.' } } }); await settle();
+  assert.deepEqual([render().errorKind, render().error], ['denied', 'Módulo bloqueado. Conclua o módulo anterior.']);
+  void render().refetch();
+  next.reject({ isAxiosError: true, response: { status: 404 } }); await settle();
+  assert.equal(render().errorKind, 'missing');
+  void render().refetch();
+  next.reject(new Error('offline')); await settle();
+  assert.equal(render().errorKind, 'failed');
+  void render().refetch();
+  next.resolve({ id: 5 }); await settle();
+  assert.equal(render().errorKind, null);
+  assert.equal(render().modulo.id, 5);
+  h.unmount();
 });
 
-test('module view: API/frame failure offers retry and back; loading has an exit', () => {
-  const actions = [];
-  let error = 'Falha na missão';
-  let loading = false;
-  let frame = 'ready';
-  const { ModuloDetalhes } = load('src/components/sections/HomePage/Conteudos/ModuloDetalhes.tsx', {
-    '@/components/shared/ContentLoading': { ContentLoading: 'content-loading' },
-    react: { ...React, useState: () => [0], useEffect() {} },
-    '@/hooks/useModulo': { useModulo: () => ({ modulo: null, loading, error, refetch: () => actions.push('fetch') }) },
-    '@/hooks/useModuleBookFrame': { useModuleBookFrame: () => ({ status: frame, retry: () => actions.push('frame') }) },
-    './AulaListItem': {}, '@/services/conteudo': {}, 'lucide-react': {},
-    '@/components/ui/buttons/AppButton': { AppButton: 'button' },
-    '@/hooks/useMissionRoomAssets': { useMissionRoomAssets: () => ({}) },
-    '@/components/ui/visuals/ProgressiveImage': {}, '@/lib/staticArtwork': {},
-    '@/lib/lessonOrder': {}, '@/styles/module-library-room.css': {},
-    '@/hooks/useNotebookLayout': { useNotebookLayout: () => false },
-    '@/components/ui/navigation/PageControls': {},
+function nodes(node) {
+  if (!node || typeof node !== 'object') return [];
+  // Expande componentes sem hooks para alcançar os botões reais dos estados.
+  if (typeof node.type === 'function') return nodes(node.type(node.props));
+  return [node, ...React.Children.toArray(node.props?.children).flatMap(nodes)];
+}
+
+function loadModuleView(state, actions) {
+  const AppButton = 'app-button';
+  const lucide = new Proxy({}, { get: (_, name) => name === '__esModule' ? false : String(name) });
+  const statePart = load('src/components/sections/HomePage/Conteudos/ModulePageState.tsx', {
+    'lucide-react': lucide, '@/components/ui/buttons/AppButton': { AppButton },
   });
-  function nodes(node) {
-    if (!node || typeof node !== 'object') return [];
-    return [node, ...React.Children.toArray(node.props?.children).flatMap(nodes)];
-  }
+  const hero = load('src/components/sections/HomePage/Conteudos/ModulePageHero.tsx', {
+    react: React, 'lucide-react': lucide, '@/components/ui/buttons/AppButton': { AppButton },
+    '@/components/ui/visuals/Pebble': { Pebble: 'pebble' }, '@/lib/staticArtwork': { getModuleArtwork: () => '/art.png' },
+    './ModulePageModel': { formatModuleNumber: String },
+  });
+  return load('src/components/sections/HomePage/Conteudos/ModuloDetalhes.tsx', {
+    '@/components/shared/ContentLoading': { ContentLoading: 'content-loading' },
+    '@/hooks/useModulo': { useModulo: () => ({ ...state(), refetch: () => actions.push('fetch') }) },
+    '@/hooks/useConteudos': { useConteudos: () => ({ modulos: null }) },
+    './learnMapModel': loadLearnMapModel(),
+    './ModulePageModel': loadModuleModel(),
+    './ModulePageHero': hero,
+    './ModulePageChapters': { ModulePageChapters: 'module-chapters' },
+    './ModulePageState': statePart,
+    '@/styles/module-page.css': {},
+  }).ModuloDetalhes;
+}
+
+function loadLearnMapModel() {
+  return load('src/components/sections/HomePage/Conteudos/learnMapModel.ts', {});
+}
+
+function loadModuleModel() {
+  return load('src/components/sections/HomePage/Conteudos/ModulePageModel.ts', {
+    '@/lib/lessonOrder': load('src/lib/lessonOrder.ts', {}),
+    './learnMapModel': loadLearnMapModel(),
+  });
+}
+
+test('module view: API failure offers retry and back; 403 shows reason and only back; loading has an exit', () => {
+  const actions = [];
+  let current = { modulo: null, loading: false, error: 'Falha na missão', errorKind: 'failed' };
+  const ModuloDetalhes = loadModuleView(() => current, actions);
   const render = () => nodes(ModuloDetalhes({ moduloId: 1, onBack: () => actions.push('back'), onSelectAula() {} }));
-  for (const kind of ['api', 'frame']) {
-    error = kind === 'api' ? 'Falha na missão' : null;
-    frame = kind === 'frame' ? 'error' : 'ready';
-    const tree = render();
-    assert.ok(tree.some((n) => n.props.role === 'alert'));
-    const buttons = tree.filter((n) => n.type === 'button');
-    buttons.forEach((button) => button.props.onClick());
-  }
-  assert.deepEqual(actions, ['fetch', 'frame', 'back', 'fetch', 'frame', 'back']);
-  error = null; loading = true; frame = 'loading';
-  assert.ok(render().some((n) => n.type === 'content-loading' && n.props.variant === 'book'));
-  assert.equal(render().filter((n) => n.type === 'button').length, 1);
+  const clickAll = (tree) => tree.filter((n) => n.type === 'button' || n.type === 'app-button').forEach((b) => b.props.onClick());
+
+  let tree = render();
+  assert.ok(tree.some((n) => n.props.role === 'alert' && n.props.children === 'Falha na missão'));
+  clickAll(tree);
+  assert.deepEqual([...actions].sort(), ['back', 'back', 'fetch']);
+
+  actions.length = 0;
+  current = { modulo: null, loading: false, error: 'Módulo bloqueado. Conclua o módulo anterior para liberá-lo.', errorKind: 'denied' };
+  tree = render();
+  assert.ok(tree.some((n) => n.props.role === 'alert' && /Conclua o módulo anterior/.test(n.props.children)));
+  clickAll(tree);
+  assert.ok(!actions.includes('fetch'), 'acesso negado não oferece tentar de novo');
+  assert.ok(actions.length > 0 && actions.every((a) => a === 'back'));
+
+  actions.length = 0;
+  current = { modulo: null, loading: true, error: null, errorKind: null };
+  tree = render();
+  assert.ok(tree.some((n) => n.type === 'content-loading' && n.props.variant === 'module'));
+  const exits = tree.filter((n) => n.type === 'button' || n.type === 'app-button');
+  assert.equal(exits.length, 1);
+  exits[0].props.onClick();
+  assert.deepEqual(actions, ['back']);
+});
+
+test('module view: module without lessons shows an empty state with a way back', () => {
+  const actions = [];
+  const modulo = { id: 1, title: 'Vazio', description: '', difficulty: 'iniciante', category: 'X', order: 1, xp_total: 0, xp_bonus: 0, aulas: [] };
+  const ModuloDetalhes = loadModuleView(() => ({ modulo, loading: false, error: null, errorKind: null }), actions);
+  const tree = nodes(ModuloDetalhes({ moduloId: 1, onBack: () => actions.push('back'), onSelectAula: () => actions.push('aula') }));
+  assert.ok(tree.some((n) => n.props.role === 'status'));
+  assert.ok(!tree.some((n) => n.type === 'module-chapters'));
+  assert.ok(!tree.some((n) => n.type === 'app-button' && /aula/.test(String(n.props.children))));
+});
+
+test('module model: chapters follow lesson order, next lesson comes from backend status, locked stays locked', () => {
+  const { buildModulePage } = loadModuleModel();
+  const aula = (id, order, section, status, extra = {}) => ({ id, order, section_name: section, status, type: 'video', duration: 0, xp: 30, progress_percent: 0, title: `A${id}`, ...extra });
+  const page = buildModulePage({
+    id: 1, title: 'M', difficulty: 'intermediario', category: 'C', order: 2, xp_total: 300, xp_bonus: 50,
+    aulas: [aula(3, 3, 'Dois', 'locked'), aula(1, 1, 'Um', 'completed'), aula(2, 2, 'Um', 'unlocked', { type: 'quadrinho', progress_percent: 40 })],
+  });
+  assert.deepEqual(JSON.parse(JSON.stringify(page.chapters.map((c) => [c.title, c.lessons.map((l) => l.number), c.state]))), [['Um', [1, 2], 'current'], ['Dois', [3], 'locked']]);
+  assert.equal(page.next.aula.id, 2);
+  assert.equal(page.started, true);
+  assert.equal(page.completed, 1);
+  assert.equal(page.territory, 'Vale dos Guardiões');
+  assert.equal(page.levelLabel, 'Nível Médio');
+  assert.equal(page.typesLabel, 'vídeo e quadrinho');
+  const none = buildModulePage({ id: 1, title: 'M', difficulty: 'iniciante', category: 'C', order: 1, xp_total: 0, xp_bonus: 0, aulas: [aula(9, 1, null, 'locked')] });
+  assert.equal(none.next, null, 'o cliente não libera aula que o backend bloqueou');
+  assert.equal(none.chapters[0].title, 'Aulas do módulo');
+});
+
+test('module chapters: the tab that opens first is the chapter of the next lesson', () => {
+  const { buildModulePage, initialChapterIndex } = loadModuleModel();
+  const aula = (id, section, status) => ({ id, order: id, section_name: section, status, type: 'texto', duration: 0, xp: 10, progress_percent: 0, title: `A${id}` });
+  const base = { id: 1, title: 'M', difficulty: 'iniciante', category: 'C', order: 1, xp_total: 0, xp_bonus: 0 };
+  const midway = buildModulePage({ ...base, aulas: [aula(1, 'Um', 'completed'), aula(2, 'Dois', 'completed'), aula(3, 'Tres', 'unlocked'), aula(4, 'Quatro', 'locked')] });
+  assert.equal(initialChapterIndex(midway), 2);
+  const finished = buildModulePage({ ...base, aulas: [aula(1, 'Um', 'completed'), aula(2, 'Dois', 'completed')] });
+  assert.equal(initialChapterIndex(finished), 0, 'sem próxima aula, abre o primeiro capítulo');
+  const allLocked = buildModulePage({ ...base, aulas: [aula(1, 'Um', 'locked')] });
+  assert.equal(initialChapterIndex(allLocked), 0);
+});
+
+test('module number: same API position on the map and on the module page, never the raw order field', () => {
+  const { buildLearnJourney, moduleNumberOf } = loadLearnMapModel();
+  const mod = (id, difficulty, order) => ({ id, difficulty, order, progress: 0, totalAulas: 1, completedAulas: 0, hasStarted: false, locked: false });
+  // API intercala dificuldades e usa `order` não sequencial.
+  const modulos = [mod(7, 'intermediario', 40), mod(3, 'iniciante', 10), mod(9, 'iniciante', 90)];
+  const journey = buildLearnJourney(modulos, null);
+  const byId = Object.fromEntries(journey.modules.map((item) => [item.modulo.id, item.number]));
+  assert.deepEqual(byId, { 7: 1, 3: 2, 9: 3 });
+  assert.equal(moduleNumberOf(modulos, 9), 3);
+  assert.equal(moduleNumberOf(modulos, 99), null);
+  assert.equal(moduleNumberOf(null, 9), null);
 });

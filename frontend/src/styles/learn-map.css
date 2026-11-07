@@ -1,0 +1,364 @@
+/*
+ * Aprender · mapa de módulos (canvas Aprender-tela V4).
+ * Card "Continue" e barras seguem --primary (cor da escola); segmentos,
+ * personagem, chips e mapa usam a paleta fixa --sp-*. Superfícies e texto
+ * seguem o tema. Reset tipográfico com escopo porque theme.css define fonte,
+ * tamanho e espaçamento em p/span/button/small/h*.
+ */
+.learn-v {
+  --lv-card: var(--dashboard-surface);
+  --lv-paper: var(--dashboard-surface-soft);
+  --lv-bg: var(--dashboard-bg);
+  --lv-text: var(--dashboard-text);
+  --lv-muted: var(--dashboard-muted);
+  --lv-line: var(--app-line-color);
+  --lv-rule: var(--app-rule);
+  --lv-heading: var(--app-heading);
+  --lv-accent: var(--app-eyebrow);
+  container: learn-v / inline-size;
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 1560px;
+  margin: 0 auto;
+  padding: 4px 0 48px;
+  color: var(--lv-text);
+  font-family: var(--font-family-brand);
+  font-size: 15px;
+  line-height: 1.45;
+}
+
+:root[data-theme='light'] .learn-v {
+  --lv-card: var(--dashboard-surface);
+  --lv-paper: var(--dashboard-surface-soft);
+}
+
+.learn-v *, .learn-v *::before, .learn-v *::after { box-sizing: border-box; }
+
+.learn-v :where(p, span, small, strong, em, b, a, button, li, h1, h2, h3, h4, label) {
+  font-family: inherit;
+  font-size: inherit;
+  line-height: inherit;
+  letter-spacing: inherit;
+}
+
+.learn-v :where(p, h1, h2, h3, h4, ol, ul) { margin: 0; }
+.learn-v :where(ol, ul) { padding: 0; list-style: none; }
+.learn-v :where(button, a):focus-visible { outline: var(--app-focus-ring); outline-offset: 3px; }
+
+.lv-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+.lv-display {
+  font-family: var(--font-family-brand);
+  font-stretch: 75%;
+  font-weight: 800;
+  line-height: 0.88;
+  letter-spacing: -0.005em;
+  text-transform: uppercase;
+  overflow-wrap: anywhere;
+}
+
+.lv-eyebrow {
+  color: var(--lv-accent);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.lv-bar { display: block; height: 10px; overflow: hidden; border-radius: 999px; background: var(--lv-rule); }
+.lv-bar > span { display: block; height: 100%; border-radius: inherit; background: var(--primary); }
+
+/* ---------- Cabeçalho e segmentos ---------- */
+.lv-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px 24px;
+  margin-bottom: 26px;
+}
+
+.lv-head h1 { color: var(--lv-heading); font-size: 76px; }
+.lv-lead { max-width: 520px; margin-top: 12px; color: var(--lv-muted); font-size: 17px; font-weight: 600; }
+
+.lv-seg {
+  display: flex;
+  flex-wrap: wrap;
+  padding: 4px;
+  border: var(--app-line-width) solid var(--lv-line);
+  border-radius: 20px;
+  background: var(--lv-paper);
+  box-shadow: 0 5px 0 var(--sp-black);
+}
+
+.lv-seg button {
+  display: flex;
+  min-height: 56px;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 18px 8px 12px;
+  border: 0;
+  border-radius: 14px;
+  background: transparent;
+  color: var(--lv-text);
+  text-align: left;
+  cursor: pointer;
+}
+
+.lv-seg button:hover { background: var(--lv-bg); }
+.lv-seg button[aria-pressed='true'] { background: var(--lv-text); color: var(--lv-bg); }
+.lv-seg i { width: 18px; height: 18px; flex: 0 0 auto; border: 2px solid var(--sp-black); border-radius: 50%; background: var(--lv-dot); }
+.lv-seg button[aria-pressed='true'] i { box-shadow: 0 0 0 2px var(--lv-bg); }
+.lv-seg span { display: flex; flex-direction: column; line-height: 1.15; }
+.lv-seg b { font-size: 16px; font-weight: 800; }
+.lv-seg small { font-size: 11px; font-weight: 700; opacity: 0.8; }
+
+/* ---------- Continue de onde parou (cor da escola) ---------- */
+.lv-next {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 20px 34px;
+  margin-bottom: 40px;
+  padding: 26px 32px;
+  border: var(--app-line-width) solid var(--sp-black);
+  border-radius: 34px;
+  background: var(--primary);
+  box-shadow: 0 8px 0 var(--sp-black);
+  color: var(--sp-cream);
+  /* Foco visível sobre o azul da escola. */
+  --app-focus-color: var(--sp-cream);
+  --app-focus-ring: 3px solid var(--sp-cream);
+}
+
+.lv-next-art { width: 140px; flex: 0 0 auto; }
+.lv-next-art .app-pebble-badge { display: none; }
+.lv-next-copy { display: flex; min-width: 0; flex: 1 1 380px; flex-direction: column; gap: 8px; }
+/* D12: texto pequeno sobre azul em creme/branco, nunca amarelo. */
+.lv-next .lv-eyebrow { color: var(--app-eyebrow-on-primary); }
+.lv-next h2 { color: var(--sp-cream); font-size: 58px; text-wrap: balance; }
+.lv-next-line { font-size: 16px; font-weight: 600; }
+
+.lv-path { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; font-size: 14px; font-weight: 700; }
+.lv-path li { display: inline-flex; min-width: 0; flex-wrap: wrap; align-items: center; gap: 6px; }
+.lv-path li + li::before { content: '›'; margin-right: 2px; font-size: 18px; font-weight: 800; opacity: 0.8; }
+.lv-path b { padding: 2px 7px; border-radius: 6px; background: rgba(0, 0, 0, 0.32); color: #FFFFFF; font-size: 10px; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; }
+
+.lv-next-progress { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin-top: 4px; font-size: 13px; font-weight: 800; }
+.lv-next-progress .lv-bar { min-width: 120px; flex: 1 1 auto; background: rgba(0, 0, 0, 0.3); }
+.lv-next-progress .lv-bar > span { background: var(--sp-yellow); }
+.lv-next-cta { flex: 0 0 auto; }
+
+.lv-next.is-quiet { align-items: center; }
+.lv-next-hero { width: 110px; flex: 0 0 auto; }
+
+/* ---------- Território e mapa ---------- */
+.lv-columns { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 34px 44px; }
+.lv-territory { display: flex; min-width: 0; flex: 1 1 380px; flex-direction: column; gap: 12px; }
+.lv-map { min-width: 0; flex: 1.25 1 460px; }
+/* Altura fixa: a trilha rola dentro do mapa (JourneyMap scrollable) e a página não cresce com ela. */
+.lv-map .jm { height: clamp(380px, 62vh, 620px); }
+
+.lv-territory-head { display: flex; align-items: center; gap: 16px; }
+.lv-territory-art { width: 74px; flex: 0 0 auto; }
+.lv-territory-head .lv-display { margin-top: 8px; color: var(--lv-heading); font-size: 52px; }
+.lv-territory-text { color: var(--lv-muted); font-size: 16px; line-height: 1.5; }
+.lv-territory-empty { padding: 16px; border: 2px dashed var(--lv-rule); border-radius: 18px; color: var(--lv-muted); font-weight: 600; }
+
+.lv-territory-progress {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 14px 16px;
+  border: 2px solid var(--lv-rule);
+  border-radius: 18px;
+  background: var(--lv-paper);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.lv-mods-title { margin-top: 10px; color: var(--lv-muted); font-size: 12px; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase; }
+.lv-mods { display: flex; flex-direction: column; gap: 10px; }
+
+.lv-mod {
+  position: relative;
+  display: flex;
+  width: 100%;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 14px;
+  border: var(--app-line-width) solid var(--lv-line);
+  border-radius: 20px;
+  background: var(--lv-card);
+  color: var(--lv-text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: transform 120ms ease;
+}
+
+button.lv-mod:hover { transform: translateX(4px); }
+.lv-mod.is-here { box-shadow: 0 5px 0 var(--sp-black); }
+.lv-mod.is-locked { border-style: dashed; background: transparent; color: var(--lv-muted); cursor: default; }
+.lv-mod-art { width: 64px; flex: 0 0 auto; }
+.lv-mod-copy { display: flex; min-width: 0; flex: 1 1 auto; flex-direction: column; gap: 4px; }
+.lv-mod-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; }
+.lv-mod-num { color: var(--lv-muted); font-size: 11px; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; }
+.lv-mod-copy strong { font-size: 16px; font-weight: 800; line-height: 1.25; }
+.lv-mod-copy small { color: var(--lv-muted); font-size: 12px; font-weight: 700; }
+.lv-mod.is-locked .lv-mod-copy strong { color: var(--lv-text); }
+.lv-mod-go { display: inline-flex; flex: 0 0 auto; align-items: center; gap: 6px; color: var(--lv-heading); font-size: 13px; font-weight: 800; }
+
+.lv-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border: 2px solid var(--sp-black);
+  border-radius: 999px;
+  background: var(--sp-paper);
+  color: var(--sp-black);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  line-height: 1.4;
+  text-transform: uppercase;
+}
+
+.lv-chip.is-video { background: var(--sp-black); color: #FFFFFF; }
+.lv-chip.is-quadrinho { background: var(--sp-pink); }
+.lv-chip.is-misto { background: var(--sp-yellow); }
+:root:not([data-theme='light']) .lv-chip { border-color: var(--sp-cream); }
+:root:not([data-theme='light']) .lv-chip.is-video { background: var(--sp-cream); color: var(--sp-black); }
+.lv-xp { font-size: 13px; font-weight: 800; }
+
+.lv-legend { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px 18px; margin-top: 16px; color: var(--lv-muted); font-size: 13px; font-weight: 700; }
+.lv-legend b { color: var(--lv-text); font-weight: 800; }
+.lv-legend > span { display: inline-flex; align-items: center; gap: 7px; }
+.lv-legend i { display: grid; width: 22px; height: 22px; place-items: center; border-radius: 50%; }
+.lv-legend i.is-done { background: var(--sp-black); color: #FFFFFF; }
+:root:not([data-theme='light']) .lv-legend i.is-done { box-shadow: 0 0 0 2px var(--sp-cream); }
+.lv-legend i.is-here { background: var(--sp-paper); box-shadow: inset 0 0 0 4px var(--sp-blue); }
+.lv-legend i.is-next { background: var(--sp-paper); box-shadow: inset 0 0 0 2px var(--sp-black); outline: 2px dashed var(--sp-black); outline-offset: -2px; }
+.lv-legend i.is-locked { background: #E9DCC4; box-shadow: inset 0 0 0 2px #7B6A4F; color: #7B6A4F; }
+
+/* ---------- Estados ---------- */
+.lv-state {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 28px;
+  border: var(--app-line-width) solid var(--lv-line);
+  border-radius: 28px;
+  background: var(--lv-card);
+}
+
+.lv-state h2 { color: var(--lv-heading); font-size: 40px; }
+.lv-state p { color: var(--lv-muted); font-size: 16px; font-weight: 600; }
+.lv-state-art { width: 90px; }
+
+.lv-skeleton-wrap { display: flex; flex-direction: column; gap: 34px; }
+.lv-skeleton-col { display: flex; min-width: 0; flex: 1 1 380px; flex-direction: column; gap: 12px; }
+.lv-skeleton {
+  display: block;
+  border-radius: 20px;
+  background: color-mix(in srgb, var(--lv-muted) 22%, transparent);
+  animation: lv-pulse 1.4s ease-in-out infinite;
+}
+
+.lv-skeleton.is-next { height: 220px; border-radius: 34px; }
+.lv-skeleton.is-title { width: 60%; height: 48px; }
+.lv-skeleton.is-row { height: 88px; }
+.lv-skeleton.is-map { min-width: 0; height: clamp(380px, 62vh, 620px); flex: 1.25 1 460px; border-radius: 26px; }
+
+@keyframes lv-pulse { 50% { opacity: 0.45; } }
+
+/* ---------- Responsivo ---------- */
+@container learn-v (max-width: 900px) {
+  .lv-head h1 { font-size: 60px; }
+  .lv-next h2 { font-size: 44px; }
+}
+
+@container learn-v (max-width: 640px) {
+  .lv-head h1 { font-size: 52px; }
+  .lv-lead { font-size: 15px; }
+  .lv-seg { width: 100%; }
+  .lv-seg button { flex: 1 1 0; justify-content: center; gap: 8px; padding: 8px; }
+  .lv-seg small { display: none; }
+  .lv-next { gap: 16px; margin-bottom: 30px; padding: 20px 18px 22px; border-radius: 28px; }
+  .lv-next-art { width: 96px; }
+  .lv-next h2 { font-size: 38px; }
+  .lv-next-cta { flex: 1 1 100%; }
+  .lv-territory, .lv-map, .lv-skeleton-col, .lv-skeleton.is-map { flex-basis: 100%; }
+  .lv-territory-art { width: 56px; }
+  .lv-territory-head .lv-display { font-size: 38px; }
+  .lv-mod { gap: 12px; padding: 10px 12px; }
+  .lv-mod-art { width: 54px; }
+  .lv-mod-go-text { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  .lv-state { padding: 20px 16px; }
+  .lv-state h2 { font-size: 32px; }
+}
+
+@container learn-v (max-width: 360px) {
+  .lv-head h1 { font-size: 44px; }
+  .lv-next h2 { font-size: 32px; }
+  .lv-territory-head .lv-display { font-size: 32px; }
+  .lv-seg b { font-size: 14px; }
+}
+
+/*
+ * Desktop (≥ 1100 × 700): a tela cabe na área útil do <main> (--sp-fit-h) sem
+ * rolar a página. Cabeçalho e card "Continue" ficam compactos; a lista de
+ * módulos do território e o mapa ocupam o resto e rolam por dentro.
+ */
+@media (min-width: 1100px) and (min-height: 700px) {
+  .learn-v { display: flex; height: var(--sp-fit-h); min-height: 0; flex-direction: column; padding: 0; }
+  .lv-head { flex: 0 0 auto; margin-bottom: clamp(10px, 1.8vh, 18px); }
+  .lv-head h1 { font-size: clamp(44px, 6.6vh, 64px); }
+  .lv-lead { max-width: 440px; margin-top: 6px; font-size: 15px; line-height: 1.4; }
+  .lv-seg { box-shadow: 0 4px 0 var(--sp-black); }
+  .lv-seg button { min-height: 46px; padding: 6px 14px 6px 10px; }
+
+  .lv-next { flex: 0 0 auto; flex-wrap: nowrap; gap: 24px; margin-bottom: clamp(12px, 2vh, 22px); padding: clamp(12px, 1.8vh, 20px) 26px; border-radius: 28px; box-shadow: 0 6px 0 var(--sp-black); }
+  .lv-next-art { width: clamp(72px, 10.5vh, 108px); }
+  .lv-next-hero { width: clamp(64px, 9vh, 96px); }
+  .lv-next-copy { gap: 6px; }
+  .lv-next h2 { font-size: clamp(28px, 4.6vh, 46px); }
+  .lv-path { font-size: 13px; }
+
+  .lv-columns { display: grid; min-height: 0; flex: 1 1 auto; grid-template-columns: minmax(0, 1fr) minmax(320px, 440px); grid-template-rows: minmax(0, 1fr); align-items: stretch; gap: 28px; }
+  .lv-territory { min-height: 0; gap: 10px; }
+  .lv-territory-head { gap: 12px; }
+  .lv-territory-art { width: clamp(48px, 7vh, 64px); }
+  .lv-territory-head .lv-display { margin-top: 4px; font-size: clamp(30px, 4.4vh, 44px); }
+  .lv-territory-text { font-size: 14px; line-height: 1.45; }
+  .lv-territory-progress { gap: 6px; padding: 10px 14px; }
+  .lv-mods-title { margin-top: 2px; }
+  /* Folga lateral/inferior: sombra do card atual, deslocamento no hover e anel de foco. */
+  .lv-mods { min-height: 0; flex: 1 1 auto; gap: 8px; margin: -4px; padding: 4px 10px 10px 4px; }
+  .lv-mod { padding: 8px 12px; }
+  .lv-mod-art { width: 52px; }
+
+  /* contain: size — a altura do mapa vem da coluna dos módulos, não do próprio conteúdo. */
+  .lv-map { display: flex; min-height: 0; flex-direction: column; contain: size; }
+  .lv-map .jm { height: auto; min-height: 0; flex: 1 1 0; }
+
+  .lv-skeleton-wrap { min-height: 0; flex: 1 1 auto; gap: 18px; }
+  .lv-skeleton.is-next { height: clamp(110px, 16vh, 150px); flex: 0 0 auto; }
+  .lv-skeleton-wrap .lv-columns { min-height: 0; flex: 1 1 auto; }
+  .lv-skeleton.is-row { height: 72px; }
+  .lv-skeleton.is-map { height: auto; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lv-skeleton { animation: none; }
+  .lv-mod { transition: none; }
+  button.lv-mod:hover { transform: none; }
+}

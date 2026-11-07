@@ -1,125 +1,107 @@
-import { ArrowLeft, ChevronDown, ChevronLeft, ChevronRight, ChevronUp, Maximize, Minimize } from 'lucide-react';
-import { useEffect, useId, useRef, useState, type ReactNode } from 'react';
-import { AppButton } from '@/components/ui/buttons/AppButton';
-import { missionRoomAssets } from '@/lib/staticArtwork';
-import '@/styles/classroom-library.css';
+import { ArrowLeft, Maximize, Minimize, Star } from 'lucide-react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
+import type { ModuloDetalhes } from '@/services/conteudo';
+import { LESSON_TYPE_LABEL, formatXp, lessonPosition, type LessonType } from './lessonContext';
+import '@/styles/lesson.css';
 
 interface LearningShellProps {
-  eyebrow: string;
+  aulaId: number;
   title: string;
-  description?: string | null;
+  type: LessonType;
+  xp: number;
+  /** Minutos; o chip só aparece quando > 0. */
+  duration?: number;
+  /** Tamanho da aula, como "4 etapas + quiz". */
+  sizeLabel?: string | null;
+  modulo: ModuloDetalhes | null;
   onBack: () => void;
   progress: number;
   progressLabel: string;
-  meta?: Array<{ label: string; value: ReactNode }>;
+  steps?: ReactNode;
   children: ReactNode;
   aside?: ReactNode;
   footer?: ReactNode;
-  readerTools?: ReactNode;
-  hideReaderProgressLabel?: boolean;
 }
 
+/** Casca da aula: voltar ao módulo, título, chips, modo foco, etapas, conteúdo, aside e rodapé de progresso. */
 export function LearningShell({
-  eyebrow,
+  aulaId,
   title,
-  description,
+  type,
+  xp,
+  duration = 0,
+  sizeLabel,
+  modulo,
   onBack,
   progress,
   progressLabel,
-  meta = [],
+  steps,
   children,
   aside,
   footer,
-  readerTools,
-  hideReaderProgressLabel = false,
 }: LearningShellProps) {
-  const safeProgress = Math.max(0, Math.min(100, progress));
+  const safeProgress = Math.max(0, Math.min(100, Math.round(progress)));
   const [focused, setFocused] = useState(false);
-  const [asideOpen, setAsideOpen] = useState(false);
-  const asideId = useId();
   const shellRef = useRef<HTMLDivElement>(null);
   const focusButtonRef = useRef<HTMLButtonElement>(null);
-  const asideButtonRef = useRef<HTMLButtonElement>(null);
+  const position = lessonPosition(modulo, aulaId);
+  const positionLabel = position.number ? `Aula ${position.number} de ${position.total}` : LESSON_TYPE_LABEL[type];
 
   useEffect(() => {
-    if (!focused && !asideOpen) return;
+    if (!focused) return;
     const handleEscape = (event: KeyboardEvent) => {
       if (event.key !== 'Escape' || event.defaultPrevented) return;
-      if (focused) {
-        setFocused(false);
-        focusButtonRef.current?.focus();
-      } else {
-        if (!(event.target instanceof Node) || !shellRef.current?.contains(event.target)) return;
-        setAsideOpen(false);
-        asideButtonRef.current?.focus();
-      }
+      setFocused(false);
+      focusButtonRef.current?.focus();
     };
     window.addEventListener('keydown', handleEscape);
-    if (focused) shellRef.current?.scrollIntoView({ block: 'start', behavior: 'instant' });
+    shellRef.current?.scrollIntoView({ block: 'start', behavior: 'instant' });
     return () => window.removeEventListener('keydown', handleEscape);
-  }, [focused, asideOpen]);
+  }, [focused]);
 
   return (
-    <div ref={shellRef} className={`learning-shell classroom-library ${focused ? 'is-focused' : ''}`}>
-      <header className="learning-shell-header">
-        <AppButton variant="ghost" size="sm" icon={<ArrowLeft size={15} />} onClick={onBack}>
-          Voltar ao módulo
-        </AppButton>
+    <div ref={shellRef} className={`lesson-v ${focused ? 'is-focused' : ''}`}>
+      <button type="button" className="lesson-back" onClick={onBack}>
+        <ArrowLeft size={16} strokeWidth={2.6} aria-hidden="true" />Voltar ao módulo
+      </button>
 
-        <div className="learning-shell-identity">
-          <div><img src={missionRoomAssets['missions-room-emblem']} alt="" /></div>
-          <section>
-            <span>{eyebrow}</span>
-            <h1>{title}</h1>
-            {description && <p>{description}</p>}
-          </section>
+      <header className="lesson-head">
+        <div>
+          <p className="lesson-eyebrow">{positionLabel}</p>
+          <h1 className="lesson-display">{title}</h1>
+          <div className="lesson-meta">
+            <span className={`lesson-chip is-${type}`}>{LESSON_TYPE_LABEL[type]}</span>
+            {sizeLabel && <span>{sizeLabel}</span>}
+            {duration > 0 && <span>{duration} min</span>}
+            <span className="lesson-xp"><Star size={15} fill="var(--sp-yellow)" stroke="var(--sp-black)" strokeWidth={1.6} aria-hidden="true" />{formatXp(xp)} XP</span>
+          </div>
         </div>
-
-        <div className="learning-shell-meta">
-          {meta.filter((item) => item.label === 'Recompensa').map((item) => (
-            <div className="learning-shell-reward" key={item.label}>
-              <img src={missionRoomAssets['icon-star']} alt="" />
-              <span>{item.label}</span><strong>{item.value}</strong>
-            </div>
-          ))}
-        </div>
+        <button ref={focusButtonRef} type="button" className="lesson-focus-toggle" aria-pressed={focused} onClick={() => setFocused((value) => !value)}>
+          {focused ? <Minimize size={16} aria-hidden="true" /> : <Maximize size={16} aria-hidden="true" />}
+          {focused ? 'Sair do modo foco' : 'Modo foco'}
+        </button>
       </header>
 
-      <main className={`learning-shell-stage ${aside && asideOpen ? 'has-aside' : ''}`}>
-        <section className="learning-shell-content" aria-label={title}>
-          <div className="classroom-reader-tools">
-            {readerTools}
-            {!hideReaderProgressLabel && <span aria-live="polite">{focused && <strong>{title} · </strong>}{progressLabel}</span>}
-            {aside && !focused && <button
-              ref={asideButtonRef}
-              className="classroom-aside-toggle"
-              type="button"
-              aria-expanded={asideOpen}
-              aria-controls={asideId}
-              onClick={() => setAsideOpen((value) => !value)}
-            >
-              {asideOpen ? <ChevronLeft className="classroom-aside-icon-desktop" size={16} aria-hidden="true" /> : <ChevronRight className="classroom-aside-icon-desktop" size={16} aria-hidden="true" />}
-              {asideOpen ? <ChevronUp className="classroom-aside-icon-mobile" size={16} aria-hidden="true" /> : <ChevronDown className="classroom-aside-icon-mobile" size={16} aria-hidden="true" />}
-              {asideOpen ? 'Ocultar aulas' : 'Ver aulas do módulo'}
-            </button>}
-            <button ref={focusButtonRef} type="button" aria-pressed={focused} onClick={() => {
-              setFocused((value) => !value);
-              if (!focused) setAsideOpen(false);
-            }}>
-              {focused ? <Minimize size={17} /> : <Maximize size={17} />}
-              {focused ? 'Sair do modo foco' : 'Modo foco'}
-            </button>
-          </div>
-          {children}
-        </section>
-        {aside && <aside id={asideId} className="learning-shell-aside" hidden={!asideOpen || focused}>{aside}</aside>}
-      </main>
+      {steps}
 
-      {footer && <footer className="learning-shell-footer">{footer}
-        <div className="classroom-reading-progress" role="progressbar" aria-label={progressLabel} aria-valuemin={0} aria-valuemax={100} aria-valuenow={safeProgress}>
-          <span style={{ width: `${safeProgress}%` }} />
-        </div>
-      </footer>}
+      <div className="lesson-layout">
+        <main className="lesson-main">
+          {children}
+          {footer && (
+            <footer className="lesson-footer">
+              <div className="lesson-progress">
+                <span>{progressLabel}</span>
+                <div className="lesson-progress-bar" role="progressbar" aria-label={progressLabel} aria-valuemin={0} aria-valuemax={100} aria-valuenow={safeProgress}>
+                  <span style={{ width: `${safeProgress}%` }} />
+                </div>
+                <strong>{safeProgress}%</strong>
+              </div>
+              {footer}
+            </footer>
+          )}
+        </main>
+        {aside && !focused && <aside className="lesson-aside" aria-label="Sua posição na trilha">{aside}</aside>}
+      </div>
     </div>
   );
 }

@@ -1,146 +1,119 @@
-import { useEffect, useMemo, useState } from 'react';
-import { ChevronLeft, ChevronRight, Play } from 'lucide-react';
-import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
-import { useConteudos } from '@/hooks/useConteudos';
-import { Modulo } from '@/services/conteudo';
-import { ModuloCard } from './ModuloCard';
-import { SkeletonList } from './SkeletonCard';
+import { useMemo, useState, type ReactNode } from 'react';
+import { RotateCcw } from 'lucide-react';
 import { AppButton } from '@/components/ui/buttons/AppButton';
-import { AppFilterChip } from '@/components/ui/buttons/AppFilterChip';
-import { useMissionRoomAssets } from '@/hooks/useMissionRoomAssets';
-import { ProgressiveImage } from '@/components/ui/visuals/ProgressiveImage';
+import { BrandCharacter } from '@/components/shared/BrandCharacter';
+import { useConteudos } from '@/hooks/useConteudos';
+import { useDashboardJourney } from '@/hooks/useDashboard';
+import { useSectionContext } from '@/contexts/SectionContext';
+import { LearnContinue } from './LearnContinue';
+import { LearnLevels, LearnTerritoryPanel } from './LearnTerritory';
+import { LearnMap } from './LearnMap';
+import { buildLearnJourney, type LearnJourney, type TerritoryIndex } from './learnMapModel';
+import '@/styles/learn-map.css';
 
 interface ModuloListProps { onSelectModulo: (moduloId: number) => void; }
-type Difficulty = Modulo['difficulty'];
-type SlideDirection = 'next' | 'prev';
-const MODULES_PER_PAGE = 3;
 
-const moduleCardVariants = {
-  enter: (direction: SlideDirection) => ({ opacity: 0, x: direction === 'next' ? 72 : -72 }),
-  center: { opacity: 1, x: 0 },
-  exit: (direction: SlideDirection) => ({ opacity: 0, x: direction === 'next' ? -72 : 72 }),
-};
+const LEAD = 'Escolha o nível. Cada parada do mapa é um módulo, com capítulos e aulas dentro.';
 
-const levels: Array<{ key: Difficulty; name: string; eyebrow: string; description: string; artKey: string }> = [
-  { key: 'iniciante', name: 'Nível Fácil', eyebrow: 'COMECE SUA JORNADA', description: 'Aprenda os primeiros poderes para explorar a internet com segurança.', artKey: 'level-easy' },
-  { key: 'intermediario', name: 'Nível Médio', eyebrow: 'NOVOS DESAFIOS', description: 'Use o que você aprendeu para resolver missões mais desafiadoras.', artKey: 'level-medium' },
-  { key: 'avancado', name: 'Nível Difícil', eyebrow: 'MISSÕES DE MESTRE', description: 'Enfrente os desafios finais e torne-se um guardião digital.', artKey: 'level-hard' },
-];
+function LearnHeader({ children }: { children?: ReactNode }) {
+  return (
+    <header className="lv-head">
+      <div>
+        <h1 className="lv-display">Aprender</h1>
+        <p className="lv-lead">{LEAD}</p>
+      </div>
+      {children}
+    </header>
+  );
+}
 
-const statusFilters = [
-  { key: 'todos', label: 'Todas' },
-  { key: 'em_progresso', label: 'Em andamento' },
-  { key: 'concluidos', label: 'Concluídas' },
-] as const;
-
-export function ModuloList({ onSelectModulo }: ModuloListProps) {
-  const { modulos, allModulos: queriedModulos, loading, error, refetch, filterStatus, setFilterStatus } = useConteudos();
-  const assets = useMissionRoomAssets();
-  const prefersReducedMotion = useReducedMotion();
-  const [levelIndex, setLevelIndex] = useState(0);
-  const [carouselStart, setCarouselStart] = useState(0);
-  const [levelSlideDirection, setLevelSlideDirection] = useState<SlideDirection>('next');
-  const [carouselDirection, setCarouselDirection] = useState<SlideDirection>('next');
-  const level = levels[levelIndex];
-  const allModulos = queriedModulos ?? [];
-  const levelAllModules = useMemo(() => allModulos.filter((modulo) => modulo.difficulty === level.key), [allModulos, level.key]);
-  const levelModules = useMemo(() => modulos.filter((modulo) => modulo.difficulty === level.key), [modulos, level.key]);
-  const totalLessons = levelAllModules.reduce((total, modulo) => total + modulo.totalAulas, 0);
-  const completedLessons = levelAllModules.reduce((total, modulo) => total + modulo.completedAulas, 0);
-  const availableXp = levelAllModules.reduce((total, modulo) => total + modulo.xp_total + modulo.xp_bonus, 0);
-  const completedModules = levelAllModules.filter((modulo) => modulo.progress === 100).length;
-  const accessibleModules = levelAllModules.filter((modulo) => modulo.locked !== true);
-  const nextModule = accessibleModules.find((modulo) => modulo.hasStarted && modulo.progress < 100)
-    ?? accessibleModules.find((modulo) => modulo.progress < 100)
-    ?? accessibleModules[0];
-  const selectLevel = (index: number) => {
-    if (index === levelIndex) return;
-    setLevelSlideDirection(index > levelIndex ? 'next' : 'prev');
-    setCarouselStart(0);
-    setLevelIndex(index);
-  };
-  const visibleModules = levelModules.slice(carouselStart, carouselStart + MODULES_PER_PAGE);
-  const carouselMax = Math.max(0, Math.floor((levelModules.length - 1) / MODULES_PER_PAGE) * MODULES_PER_PAGE);
-
-  useEffect(() => setCarouselStart(0), [filterStatus]);
-
-  if (loading || !assets['castle-library-bg']) return <div className="app-page home-section flex flex-col gap-6"><SkeletonList /></div>;
-  if (error) return <div className="app-page home-section missions-room-page">
-    <h1 className="sr-only">Aprender</h1>
-    <div className="missions-empty-state" role="alert">
-      <h2>Não foi possível carregar as missões</h2>
-      <p>Confira sua conexão e tente novamente.</p>
-      <AppButton onClick={refetch}>Tentar novamente</AppButton>
+function LearnSkeleton() {
+  return (
+    <div className="lv-skeleton-wrap" aria-busy="true" aria-label="Carregando os módulos">
+      <span className="lv-skeleton is-next" />
+      <div className="lv-columns">
+        <div className="lv-skeleton-col">
+          <span className="lv-skeleton is-title" />
+          <span className="lv-skeleton is-row" />
+          <span className="lv-skeleton is-row" />
+          <span className="lv-skeleton is-row" />
+        </div>
+        <span className="lv-skeleton is-map" />
+      </div>
     </div>
-  </div>;
+  );
+}
+
+type LoadStatus = 'loading' | 'error' | 'empty' | 'ready';
+
+/**
+ * Módulos (/conteudo/modulos) e jornada (mesmo hook/cache do Início) saem em
+ * paralelo. O módulo atual vem do `currentModuleId` da jornada; só se ela
+ * falhar o modelo usa a regra equivalente.
+ */
+function useLearnData() {
+  const { modulos, loading, error, refetch } = useConteudos();
+  const { journey, loading: journeyLoading, error: journeyError } = useDashboardJourney();
+  const currentModuleId = journey ? journey.currentModuleId : undefined;
+  const learn = useMemo(() => buildLearnJourney(modulos ?? [], currentModuleId), [modulos, currentModuleId]);
+  const waitingJourney = journeyLoading && !journey && !journeyError;
+  let status: LoadStatus = 'ready';
+  if (error && !modulos) status = 'error';
+  else if ((loading && !modulos) || waitingJourney) status = 'loading';
+  else if (learn.modules.length === 0) status = 'empty';
+  return { learn, status, refetch };
+}
+
+/** Território escolhido; por padrão, o do módulo atual. */
+function useTerritorySelection(learn: LearnJourney) {
+  const [picked, setPicked] = useState<TerritoryIndex | null>(null);
+  const visible = learn.territories.filter((territory) => territory.modules.length > 0);
+  const fallback = learn.current?.territory ?? visible[0]?.index ?? 0;
+  const index = picked !== null && visible.some((territory) => territory.index === picked) ? picked : fallback;
+  return { visible, index, territory: learn.territories[index], setPicked };
+}
+
+function LearnMessage({ status, onRetry }: { status: Exclude<LoadStatus, 'ready'>; onRetry: () => void }) {
+  if (status === 'loading') return <LearnSkeleton />;
+  if (status === 'error') {
+    return (
+      <div className="lv-state" role="alert">
+        <h2 className="lv-display">Não foi possível carregar os módulos</h2>
+        <p>Confira sua conexão e tente novamente.</p>
+        <AppButton variant="chunky" tone="ghost" size="sm" icon={<RotateCcw size={16} aria-hidden="true" />} onClick={onRetry}>Tentar novamente</AppButton>
+      </div>
+    );
+  }
+  return (
+    <div className="lv-state">
+      <BrandCharacter className="lv-state-art" expression="sleepy" />
+      <h2 className="lv-display">Nenhum módulo por aqui ainda</h2>
+      <p>Quando sua escola publicar módulos, eles aparecem neste mapa.</p>
+    </div>
+  );
+}
+
+/** Mapa de módulos do Aprender (canvas Aprender-tela V4). */
+export function ModuloList({ onSelectModulo }: ModuloListProps) {
+  const { learn, status, refetch } = useLearnData();
+  const selection = useTerritorySelection(learn);
+  const { setContentTarget } = useSectionContext();
+  const openAula = (moduloId: number, aulaId: number) => setContentTarget({ moduloId, aulaId });
+
+  if (status !== 'ready') {
+    return <div className="learn-v"><LearnHeader /><LearnMessage status={status} onRetry={refetch} /></div>;
+  }
 
   return (
-    <div className="app-page home-section missions-room-page">
-      <h1 className="sr-only">Aprender</h1>
-      <header className="home-section-toolbar">
-        <div className="home-section-tabs" role="group" aria-label="Nível das missões">
-          {levels.map((item, index) => <button key={item.key} type="button" aria-pressed={index === levelIndex} onClick={() => selectLevel(index)}>{item.name.replace('Nível ', '')}</button>)}
-        </div>
-        <span className="home-section-summary">{completedModules} de {levelAllModules.length} missões concluídas</span>
-      </header>
-
-      <section className="missions-room-stage" style={{ '--missions-room-bg': `url(${assets['castle-library-bg']})` } as React.CSSProperties}>
-        <div className={`missions-level-board slide-${levelSlideDirection}`} key={level.key}>
-          <div className="missions-level-art"><ProgressiveImage src={assets[level.artKey]} alt="" /></div>
-          <div className="missions-level-copy">
-            <span>{level.eyebrow}</span><h2>{level.name}</h2><p>{level.description}</p>
-            <div className="missions-level-metrics">
-              <div><ProgressiveImage src={assets['icon-star']} alt="" /><strong>{availableXp}</strong><span>XP disponíveis neste nível</span></div>
-            </div>
-            <AppButton disabled={!nextModule} icon={<Play size={17} />} onClick={() => nextModule && onSelectModulo(nextModule.id)}>{!nextModule && levelAllModules.length > 0 ? 'Nível bloqueado' : nextModule?.hasStarted || (nextModule?.progress ?? 0) > 0 ? 'Continuar aventura' : 'Começar aventura'}</AppButton>
-          </div>
-          <div className="missions-level-progress"><span>Progresso do nível</span><strong>{completedModules}/{levelAllModules.length}</strong><div><i style={{ width: `${levelAllModules.length ? (completedModules / levelAllModules.length) * 100 : 0}%` }} /></div><small>{completedLessons} de {totalLessons} aulas</small></div>
-        </div>
-      </section>
-
-      <section className="missions-shelf-section">
-        <div className="missions-filter-bar">
-          <h2>Missões deste nível</h2>
-          <div>{statusFilters.map((filter) => <AppFilterChip key={filter.key} selected={filterStatus === filter.key} onClick={() => setFilterStatus(filter.key)}>{filter.label}</AppFilterChip>)}</div>
-        </div>
-        <div className="missions-carousel">
-          <div className={`missions-module-grid ${levelModules.length === 0 ? 'is-empty' : ''}`}>
-            {levelModules.length === 0 ? (
-              <div className="missions-empty-state">
-                <ProgressiveImage src={assets[level.artKey]} alt="" />
-                <h3>Nenhuma missão por aqui</h3>
-                <p>{filterStatus === 'em_progresso' ? 'Você ainda não possui missões em andamento neste nível.' : filterStatus === 'concluidos' ? 'Você ainda não concluiu missões neste nível.' : 'Novas aventuras podem chegar a este nível em breve.'}</p>
-              </div>
-            ) : (
-              <>
-              <AnimatePresence initial={false} custom={carouselDirection} mode="popLayout">
-                {visibleModules.map((modulo, index) => (
-                  <motion.div
-                    key={modulo.id}
-                    className="missions-module-card-motion"
-                    layout="position"
-                    custom={carouselDirection}
-                    variants={moduleCardVariants}
-                    initial="enter"
-                    animate="center"
-                    exit="exit"
-                    transition={{ duration: prefersReducedMotion ? 0 : 0.3, ease: [0.22, 1, 0.36, 1] }}
-                  >
-                    <ModuloCard modulo={modulo} index={carouselStart + index} onClick={() => onSelectModulo(modulo.id)} />
-                  </motion.div>
-                ))}
-              </AnimatePresence>
-              </>
-            )}
-          </div>
-          {levelModules.length > MODULES_PER_PAGE && (
-            <nav className="missions-carousel-controls" aria-label="Navegação das missões deste nível">
-              <button type="button" className="missions-carousel-arrow is-prev" disabled={carouselStart === 0} onClick={() => { setCarouselDirection('prev'); setCarouselStart((current) => Math.max(0, current - MODULES_PER_PAGE)); }} aria-label="Ver página anterior de missões"><ChevronLeft size={24} /></button>
-              <button type="button" className="missions-carousel-arrow is-next" disabled={carouselStart >= carouselMax} onClick={() => { setCarouselDirection('next'); setCarouselStart((current) => Math.min(carouselMax, current + MODULES_PER_PAGE)); }} aria-label="Ver próxima página de missões"><ChevronRight size={24} /></button>
-            </nav>
-          )}
-        </div>
-      </section>
+    <div className="learn-v">
+      <LearnHeader>
+        {selection.visible.length > 1 && <LearnLevels territories={selection.visible} selected={selection.index} onSelect={selection.setPicked} />}
+      </LearnHeader>
+      <LearnContinue journey={learn} onOpenAula={openAula} onOpenModulo={onSelectModulo} />
+      <div className="lv-columns">
+        {selection.territory && <LearnTerritoryPanel territory={selection.territory} onOpenModulo={onSelectModulo} />}
+        <LearnMap journey={learn} activeTerritory={selection.index} onOpenModulo={onSelectModulo} />
+      </div>
     </div>
   );
 }

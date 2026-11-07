@@ -18,7 +18,19 @@ export interface Modulo {
   hasStarted: boolean;
   lastAccessedAt: string | null;
   nextAulaId?: number | null;
+  /** B1: detalhe da próxima aula não concluída (posição 1-based na sequência do módulo). */
+  nextAula?: ProximaAula | null;
   locked?: boolean;
+}
+
+export interface ProximaAula {
+  id: number;
+  title: string;
+  type: 'video' | 'quadrinho' | 'texto';
+  xp: number;
+  duration: number;
+  section_name: string | null;
+  position: number;
 }
 
 export interface AulaResumo {

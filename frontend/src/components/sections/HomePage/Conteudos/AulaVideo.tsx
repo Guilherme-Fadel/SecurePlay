@@ -1,12 +1,16 @@
 import { ContentLoading } from '@/components/shared/ContentLoading';
 import { useEffect, useRef, useState } from 'react';
-import { CheckCircle2, Clock3, PlayCircle, Sparkles } from 'lucide-react';
+import { ArrowRight, CheckCircle2, PlayCircle, RotateCcw } from 'lucide-react';
 import { AppButton } from '@/components/ui/buttons/AppButton';
 import { useAula } from '@/hooks/useAula';
 import { useAulaProgress } from '@/hooks/useAulaProgress';
 import { useModulo } from '@/hooks/useModulo';
 import { LearningShell } from './LearningShell';
+import { LessonCheckpoint } from './LessonCheckpoint';
 import { LessonNavigator } from './LessonNavigator';
+import { LessonState } from './LessonState';
+import { LessonStepper } from './LessonStepper';
+import { formatClock } from './lessonContext';
 import { ProgressSaveStatus } from './ProgressSaveStatus';
 
 interface AulaVideoProps {
@@ -18,11 +22,12 @@ interface AulaVideoProps {
 }
 
 export function AulaVideo({ aulaId, moduloId, onBack, onSelectAula, onTypeResolved }: AulaVideoProps) {
-  const { aula, setAula, loading, error: aulaError, refetch } = useAula(aulaId);
-  const { modulo } = useModulo(moduloId);
+  const { aula, setAula, loading, error: aulaError, errorKind, refetch } = useAula(aulaId);
+  const { modulo, refetch: refetchModulo } = useModulo(moduloId);
   const { concluir, salvarProgresso, retryProgress, saveStatus, loading: concluding, error: progressError } = useAulaProgress();
   const [xpGanho, setXpGanho] = useState<number | null>(null);
   const [videoProgress, setVideoProgress] = useState(0);
+  const [started, setStarted] = useState(false);
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const lastPersistedSecond = useRef(0);
 
@@ -60,83 +65,105 @@ export function AulaVideo({ aulaId, moduloId, onBack, onSelectAula, onTypeResolv
     }
   };
 
+  const handleResume = () => {
+    const player = videoRef.current;
+    if (!player || !aula) return;
+    if (aula.progress.lastVideoSecond > 0 && aula.progress.lastVideoSecond < player.duration) {
+      player.currentTime = aula.progress.lastVideoSecond;
+    }
+    void player.play().catch(() => undefined);
+    player.focus();
+  };
+
   const handleConcluir = async () => {
     const result = await concluir(aulaId);
     if (result) {
       setXpGanho(result.xp_ganho);
       setVideoProgress(100);
       setAula((previous) => previous ? { ...previous, completed: true, progress: { ...previous.progress, percent: 100 } } : previous);
+      void refetchModulo();
     }
   };
 
   if (loading || !aula) {
     if (!aulaError) return <ContentLoading variant="reader" />;
-    return <div className="learning-content-loading"><div role="alert"><p>{aulaError}</p><AppButton onClick={() => void refetch()}>Tentar novamente</AppButton><AppButton variant="ghost" onClick={onBack}>Voltar ao módulo</AppButton></div></div>;
+    return <LessonState message={aulaError} kind={errorKind} onRetry={refetch} onBack={onBack} />;
   }
   if (onTypeResolved && aula.type !== 'video') return <ContentLoading variant="reader" />;
 
+  const resumeAt = !aula.completed && !started && aula.content_url && aula.progress.lastVideoSecond > 0
+    ? formatClock(aula.progress.lastVideoSecond) : null;
+
   return (
     <LearningShell
-      eyebrow={modulo?.title ?? 'Treinamento em andamento'}
+      aulaId={aulaId}
       title={aula.title}
-      description={aula.description}
+      type="video"
+      xp={aula.xp}
+      duration={aula.duration}
+      modulo={modulo}
       onBack={onBack}
       progress={videoProgress}
       progressLabel={aula.completed ? 'Aula concluída' : `${videoProgress}% assistido`}
-      meta={[
-        { label: 'Duração', value: `${aula.duration} min` },
-        { label: 'Recompensa', value: `${aula.xp} XP` },
-        { label: 'Formato', value: 'Vídeo' },
-      ]}
+      steps={<LessonStepper steps={[
+        { key: 'watch', label: 'Assistir', status: aula.completed ? 'done' : 'current' },
+        { key: 'done', label: 'Concluir', status: aula.completed ? 'done' : 'next' },
+      ]} />}
       aside={<LessonNavigator modulo={modulo} activeAulaId={aulaId} onSelectAula={onSelectAula} />}
-      footer={
-        <>
-          <div className="learning-lesson-footer-status">
-            {aula.completed
-              ? <><CheckCircle2 size={17} /><div><span>Status da fase</span><strong>Concluída</strong></div></>
-              : <><PlayCircle size={17} /><div><span>Status da fase</span><strong>Em treinamento</strong></div></>}
-          </div>
-          <ProgressSaveStatus status={saveStatus} onRetry={retryProgress} />
-          {progressError && <p role="alert">{progressError} Tente concluir novamente.</p>}
-          {!aula.completed && (
-            <AppButton icon={<CheckCircle2 size={16} />} onClick={handleConcluir} disabled={concluding}>
-              {concluding ? 'Registrando...' : progressError ? 'Tentar concluir novamente' : 'Concluir aula'}
-            </AppButton>
-          )}
-        </>
-      }
+      footer={<ProgressSaveStatus status={saveStatus} onRetry={retryProgress} />}
     >
-      <div className="video-learning-stage">
-        <div className="video-learning-player">
+      <section className="lesson-pane" aria-label="Vídeo da aula">
+        <div className="lesson-player">
           {aula.content_url ? (
             <video
               ref={videoRef}
               controls
+              preload="metadata"
               src={aula.content_url}
+              aria-label={`Vídeo: ${aula.title}`}
               onLoadedMetadata={handleLoadedMetadata}
+              onPlay={() => setStarted(true)}
               onTimeUpdate={() => persistVideoPosition()}
               onPause={() => persistVideoPosition(true)}
             >
               Seu navegador não suporta vídeo.
             </video>
           ) : (
-            <div className="video-learning-empty"><PlayCircle size={42} /><strong>Vídeo indisponível</strong><span>O material ainda não foi publicado.</span></div>
+            <div className="lesson-player-empty" role="status">
+              <PlayCircle size={42} aria-hidden="true" />
+              <strong>Vídeo indisponível</strong>
+              <span>O material ainda não foi publicado.</span>
+            </div>
           )}
         </div>
 
-        <div className="video-learning-briefing">
-          <div><span>BRIEFING DA FASE</span><h2>O que você vai aprender</h2></div>
-          <p>{aula.description || 'Assista ao treinamento e conclua a fase para liberar o próximo conteúdo.'}</p>
-          <div className="video-learning-facts">
-            <span><Clock3 size={14} /> {aula.duration} minutos</span>
-            <span><Sparkles size={14} /> {aula.xp} XP ao concluir</span>
+        {resumeAt && (
+          <div className="lesson-resume">
+            <button type="button" onClick={handleResume}>
+              <RotateCcw size={16} aria-hidden="true" />Continuar de {resumeAt}
+            </button>
           </div>
-        </div>
+        )}
 
         {xpGanho !== null && (
-          <div className="learning-xp-reveal"><Sparkles size={18} /><div><span>Fase concluída</span><strong>+{xpGanho} XP adicionados</strong></div></div>
+          <LessonCheckpoint variant="compact" title="Checkpoint! Aula concluída" xp={xpGanho}
+            actions={<AppButton variant="chunky" tone="blue" icon={<ArrowRight size={18} aria-hidden="true" />} onClick={onBack}>Seguir na trilha</AppButton>} />
         )}
-      </div>
+
+        <nav className="lesson-nav" aria-label="Conclusão do vídeo">
+          <span>{aula.completed
+            ? <><CheckCircle2 size={16} aria-hidden="true" /> Aula concluída</>
+            : `${videoProgress}% assistido`}</span>
+          {progressError && <p className="lesson-error" role="alert">{progressError} Tente concluir novamente.</p>}
+          {!aula.completed && (
+            <AppButton variant="chunky" tone="blue" onClick={handleConcluir} disabled={concluding}>
+              {concluding ? 'Registrando...' : progressError ? 'Tentar concluir novamente' : 'Concluir aula'}
+            </AppButton>
+          )}
+        </nav>
+
+        {aula.description && <div className="lesson-brief"><strong>O que você vai aprender</strong>{aula.description}</div>}
+      </section>
     </LearningShell>
   );
 }

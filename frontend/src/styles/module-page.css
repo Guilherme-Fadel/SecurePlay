@@ -1,0 +1,282 @@
+/*
+ * Página do módulo no Aprender (canvas Aprender-livro-tela, V4).
+ * Card principal, capítulo atual e marcador "Você está aqui" seguem --primary
+ * (cor da escola); amarelo/preto/creme são a paleta fixa --sp-*. Superfícies e
+ * texto seguem o tema. Reset tipográfico com escopo porque theme.css define
+ * fonte, tamanho e espaçamento em p/span/button/small/h*.
+ */
+.module-v {
+  --mv-bg: var(--dashboard-bg);
+  --mv-paper: var(--dashboard-surface);
+  --mv-sf: var(--dashboard-surface-raised);
+  --mv-text: var(--dashboard-text);
+  --mv-muted: var(--dashboard-muted);
+  --mv-line: var(--app-line-color);
+  --mv-rule: var(--app-rule);
+  --mv-accent: var(--app-eyebrow);
+  container: module-v / inline-size;
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 1560px;
+  margin: 0 auto;
+  padding: 4px 0 56px;
+  color: var(--mv-text);
+  font-family: var(--font-family-brand);
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+:root[data-theme='light'] .module-v {
+  --mv-paper: var(--dashboard-surface-soft);
+  --mv-sf: var(--dashboard-surface);
+}
+
+.module-v *, .module-v *::before, .module-v *::after { box-sizing: border-box; }
+
+.module-v :where(p, span, small, strong, em, b, a, button, li, h1, h2, h3, h4, label) {
+  font-family: inherit;
+  font-size: inherit;
+  line-height: inherit;
+  letter-spacing: inherit;
+}
+
+.module-v :where(p, h1, h2, h3, h4, ol, ul) { margin: 0; }
+.module-v :where(ol, ul) { padding: 0; list-style: none; }
+.module-v :where(button, a, [role='tabpanel']):focus-visible { outline: var(--app-focus-ring); outline-offset: 3px; }
+
+.mv-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+.mv-display {
+  font-family: var(--font-family-brand);
+  font-stretch: 75%;
+  font-weight: 800;
+  line-height: 0.9;
+  letter-spacing: -0.005em;
+  text-transform: uppercase;
+  overflow-wrap: anywhere;
+}
+
+.mv-eyebrow { font-size: 12px; font-weight: 800; letter-spacing: 0.16em; text-transform: uppercase; }
+
+/* ---------- Voltar (módulo → mapa) ---------- */
+.mv-back {
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 20px;
+  padding: 0 16px 0 10px;
+  border: var(--app-line);
+  border-radius: 999px;
+  background: var(--mv-paper);
+  color: var(--mv-text);
+  font-size: 14px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.mv-back:hover { background: var(--mv-sf); }
+
+/* ---------- Card do módulo (cor da escola) ---------- */
+.mv-hero {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 22px 34px;
+  padding: 28px 32px;
+  border: var(--app-line-width) solid var(--sp-black);
+  border-radius: 34px;
+  background: var(--primary);
+  box-shadow: 0 8px 0 var(--sp-black);
+  color: var(--sp-cream);
+  /* Foco visível sobre a cor da escola. */
+  --app-focus-color: var(--sp-cream);
+  --app-focus-ring: 3px solid var(--sp-cream);
+}
+
+.mv-hero-pebble { width: 150px; flex: 0 0 auto; filter: drop-shadow(0 8px 0 rgba(0, 0, 0, 0.25)); }
+.mv-hero-pebble .app-pebble-badge { display: none; }
+.mv-hero-copy { display: flex; min-width: 0; flex: 1 1 400px; flex-direction: column; gap: 10px; }
+/* D12: texto pequeno sobre azul em creme/branco, nunca amarelo. */
+.mv-hero .mv-eyebrow { color: var(--app-eyebrow-on-primary); }
+.mv-hero h1 { color: var(--sp-cream); font-size: 66px; text-wrap: balance; }
+.mv-hero-desc { font-size: 16px; font-weight: 600; }
+
+.mv-facts { display: flex; flex-wrap: wrap; gap: 8px; }
+.mv-fact { display: inline-flex; max-width: 100%; align-items: center; gap: 8px; padding: 6px 12px 6px 9px; border-radius: 999px; background: rgba(0, 0, 0, 0.3); font-size: 13px; font-weight: 700; }
+.mv-fact svg { flex: 0 0 auto; }
+.mv-fact b { color: #FFFFFF; font-weight: 800; }
+.mv-star { fill: var(--sp-yellow); color: var(--sp-black); }
+
+.mv-hero-side { display: flex; min-width: min(220px, 100%); flex: 0 1 300px; flex-direction: column; gap: 12px; }
+.mv-count { color: var(--sp-cream); font-size: 58px; }
+.mv-count small { color: var(--sp-cream); font-size: 0.5em; }
+.mv-track { position: relative; height: 18px; border: 2px solid var(--sp-black); border-radius: 999px; background: var(--sp-black); }
+.mv-track-fill { position: absolute; top: 0; bottom: 0; left: 0; border-radius: 999px; background: var(--sp-yellow); }
+.mv-track > i { position: absolute; inset: 0; border-radius: 999px; background: repeating-linear-gradient(90deg, transparent 0 calc(100% / var(--mv-steps, 10) - 2px), rgba(0, 0, 0, 0.35) calc(100% / var(--mv-steps, 10) - 2px) calc(100% / var(--mv-steps, 10))); }
+.mv-hero-side .app-button { width: 100%; }
+.mv-hero-done, .mv-hero-note { display: inline-flex; min-height: 52px; align-items: center; justify-content: center; gap: 8px; padding: 0 16px; border: 3px dashed var(--sp-cream); border-radius: 16px; font-size: 15px; font-weight: 800; text-align: center; }
+
+/* ---------- Capítulos em abas ---------- */
+.mv-chapters { display: flex; flex-direction: column; margin-top: 32px; }
+.mv-section-title { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; color: var(--mv-accent); font-size: 12px; font-weight: 800; letter-spacing: 0.16em; text-transform: uppercase; }
+.mv-section-title strong { color: var(--mv-text); font-size: 32px; font-stretch: 75%; font-weight: 800; letter-spacing: 0; line-height: 1; }
+.mv-cbar { display: flex; align-items: stretch; gap: 8px; margin: 14px 0 20px; }
+.mv-tabs { display: flex; min-width: 0; flex: 1 1 auto; gap: 10px; }
+.mv-cbar-arrow { display: grid; width: 44px; flex: 0 0 auto; place-items: center; padding: 0; border: var(--app-line); border-radius: 16px; background: var(--mv-paper); color: var(--mv-text); cursor: pointer; }
+.mv-cbar-arrow:hover:not(:disabled) { background: var(--mv-sf); }
+.mv-cbar-arrow:disabled { border-style: dashed; color: var(--mv-muted); cursor: default; opacity: 0.55; }
+/* Até cinco cards por vez, todos com a mesma largura (sem compactar). */
+.mv-cseg { display: flex; min-width: 0; flex: 1 1 0; flex-direction: column; gap: 5px; padding: 12px 14px; border: 3px solid var(--mv-rule); border-radius: 18px; background: var(--mv-sf); color: var(--mv-text); font: inherit; text-align: left; cursor: pointer; transition: transform 120ms ease; }
+.mv-cseg:hover { border-color: var(--mv-line); }
+.mv-cseg.is-done { border-color: var(--mv-line); }
+.mv-cseg.is-current { border-color: var(--primary); }
+.mv-cseg.is-locked { border-style: dashed; background: transparent; color: var(--mv-muted); }
+/* Aba escolhida: elevada, com sombra dura; no capítulo da próxima aula a sombra segue a cor da escola. */
+.mv-cseg[aria-selected='true'] { border-color: var(--mv-line); background: var(--mv-paper); box-shadow: 0 5px 0 var(--app-shadow-color); transform: translateY(-3px); }
+.mv-cseg.is-current[aria-selected='true'] { border-color: var(--primary); box-shadow: 0 5px 0 var(--primary); }
+.mv-cseg[aria-selected='true'] strong { color: var(--app-heading); }
+.mv-cseg small { display: flex; align-items: center; gap: 6px; color: var(--mv-muted); font-size: 11px; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; }
+.mv-cseg strong { font-size: 14px; font-weight: 800; line-height: 1.25; overflow-wrap: anywhere; }
+.mv-cseg em { color: var(--mv-muted); font-size: 12px; font-style: normal; font-weight: 700; }
+.mv-pbar { display: block; height: 8px; margin-top: auto; overflow: hidden; border-radius: 999px; background: var(--mv-rule); }
+.mv-pbar > span { display: block; height: 100%; border-radius: inherit; background: var(--primary); }
+.mv-cseg.is-done .mv-pbar > span { background: var(--mv-line); }
+
+/* ---------- Capítulo escolhido (tabpanel) ---------- */
+.mv-chapter { display: flex; flex-direction: column; overflow: hidden; border: var(--app-line); border-radius: 26px; background: var(--mv-paper); animation: mv-panel-in 180ms ease both; }
+@keyframes mv-panel-in { from { opacity: 0; transform: translateY(6px); } }
+.mv-chapter.is-current { box-shadow: 0 6px 0 var(--app-shadow-color); }
+.mv-chapter.is-locked { border-style: dashed; background: transparent; }
+.mv-chapter-head { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; padding: 16px 20px; border-bottom: var(--app-line); background: var(--mv-bg); }
+.mv-chapter.is-locked .mv-chapter-head { border-bottom-style: dashed; }
+.mv-chapter-icon { display: grid; width: 46px; height: 46px; flex: 0 0 auto; place-items: center; border: var(--app-line); border-radius: 14px; background: var(--mv-sf); }
+.mv-chapter.is-done .mv-chapter-icon { border-color: var(--sp-black); background: var(--sp-black); color: #FFFFFF; }
+.mv-chapter.is-current .mv-chapter-icon { border-color: var(--sp-black); background: var(--primary); color: #FFFFFF; }
+.mv-chapter-title { display: flex; min-width: 0; flex: 1 1 220px; flex-direction: column; gap: 4px; }
+.mv-chapter-title small { color: var(--mv-accent); font-size: 11px; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase; }
+.mv-chapter-title h3 { font-size: 32px; line-height: 0.95; }
+.mv-chapter-status { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; font-size: 13px; font-weight: 800; }
+.mv-status { padding: 4px 10px; border: 2px solid var(--mv-line); border-radius: 999px; font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; }
+.mv-status.is-done { border-color: var(--sp-black); background: var(--sp-black); color: #FFFFFF; }
+.mv-status.is-current { border-color: var(--sp-black); background: var(--primary); color: #FFFFFF; }
+.mv-status.is-locked { border-style: dashed; color: var(--mv-muted); }
+.mv-chapter-body li + li { border-top: 2px solid var(--mv-rule); }
+
+/* ---------- Linhas de aula ---------- */
+.mv-row {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  gap: 16px;
+  padding: 14px 18px;
+  border: 0;
+  background: transparent;
+  color: var(--mv-text);
+  text-align: left;
+}
+
+button.mv-row { cursor: pointer; }
+button.mv-row:hover { background: var(--mv-sf); }
+button.mv-row:hover .mv-row-title { text-decoration: underline; text-underline-offset: 3px; }
+.mv-row:focus-visible { outline-offset: -4px; }
+.mv-row.is-current { background: var(--mv-sf); box-shadow: inset 6px 0 0 var(--primary); }
+.mv-row.is-locked { color: var(--mv-muted); cursor: not-allowed; }
+
+.mv-dot { display: grid; width: 46px; height: 46px; flex: 0 0 auto; place-items: center; border: var(--app-line); border-radius: 50%; font-size: 16px; font-weight: 800; }
+.mv-row.is-done .mv-dot { border-color: var(--sp-black); background: var(--sp-black); color: #FFFFFF; }
+.mv-row.is-current .mv-dot { border-color: var(--sp-black); background: var(--sp-yellow); color: var(--sp-black); }
+.mv-row.is-locked .mv-dot { border-style: dashed; }
+
+.mv-row-copy { display: flex; min-width: 0; flex: 1 1 auto; flex-direction: column; gap: 3px; }
+.mv-row-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; color: var(--mv-muted); font-size: 12px; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; }
+.mv-type { display: inline-flex; align-items: center; gap: 5px; padding: 1px 8px; border: 1.5px solid currentColor; border-radius: 999px; }
+.mv-row-title { font-size: 17px; font-weight: 800; line-height: 1.3; overflow-wrap: anywhere; }
+.mv-row-desc, .mv-row-lock { color: var(--mv-muted); font-size: 13px; line-height: 1.4; }
+.mv-row-lock { font-weight: 700; }
+.mv-row.is-done .mv-row-copy { opacity: 0.85; }
+
+.mv-row-side { display: flex; flex: 0 0 auto; flex-direction: column; align-items: flex-end; gap: 6px; }
+.mv-here { padding: 3px 10px; border: 2px solid var(--sp-black); border-radius: 999px; background: var(--primary); color: #FFFFFF; font-size: 11px; font-weight: 800; white-space: nowrap; }
+.mv-xp { font-size: 13px; font-weight: 800; white-space: nowrap; }
+
+/* ---------- Estados ---------- */
+.mv-state { display: flex; flex-direction: column; align-items: flex-start; gap: 12px; margin-top: 8px; padding: 28px 30px; border: var(--app-line); border-radius: 28px; background: var(--mv-paper); box-shadow: 0 6px 0 var(--app-shadow-color); }
+.mv-hero + .mv-state { margin-top: 32px; }
+.mv-state-icon { display: grid; width: 52px; height: 52px; place-items: center; border: var(--app-line); border-radius: 16px; background: var(--mv-sf); }
+.mv-state h2 { color: var(--app-heading); font-size: 40px; }
+.mv-state p { max-width: 60ch; font-size: 16px; font-weight: 600; }
+.mv-state-actions { display: flex; flex-wrap: wrap; gap: 12px 16px; margin-top: 6px; }
+
+@container module-v (max-width: 900px) {
+  .mv-hero h1 { font-size: 50px; }
+}
+
+@container module-v (max-width: 640px) {
+  .module-v { padding-bottom: 36px; }
+  .mv-hero { padding: 20px 18px 22px; border-radius: 28px; }
+  .mv-hero-pebble { width: 100px; }
+  .mv-hero h1 { font-size: 40px; }
+  .mv-count { font-size: 44px; }
+  .mv-hero-side { flex: 1 1 100%; }
+  .mv-section-title strong { font-size: 26px; }
+  .mv-chapters { margin-top: 26px; }
+  .mv-tabs { flex-direction: column; }
+  /* Setas lado a lado abaixo da lista de capítulos. */
+  .mv-cbar.is-paged { flex-wrap: wrap; }
+  .mv-cbar.is-paged .mv-tabs { order: -1; flex-basis: 100%; }
+  .mv-cbar.is-paged .mv-cbar-arrow { height: 44px; flex: 1 1 0; }
+  .mv-chapter-head { padding: 14px; }
+  .mv-chapter-title h3 { font-size: 26px; }
+  .mv-row { flex-wrap: wrap; gap: 8px 12px; padding: 12px; }
+  .mv-dot { width: 38px; height: 38px; }
+  .mv-row-copy { flex-basis: calc(100% - 50px); }
+  .mv-row-side { width: 100%; flex-direction: row; align-items: center; justify-content: flex-start; padding-left: 50px; }
+  .mv-state { padding: 22px 18px; }
+  .mv-state h2 { font-size: 32px; }
+  .mv-state-actions .app-button { width: 100%; }
+}
+
+/*
+ * Desktop (≥ 1100 × 700): a página cabe na área útil do <main> (--sp-fit-h).
+ * Card do módulo e abas compactos; as aulas do capítulo rolam por dentro.
+ */
+@media (min-width: 1100px) and (min-height: 700px) {
+  .module-v { display: flex; min-height: var(--sp-fit-h); flex-direction: column; padding: 0; }
+  .module-v > * { flex: 0 0 auto; }
+  .mv-back { min-height: 38px; align-self: flex-start; margin-bottom: clamp(8px, 1.4vh, 14px); font-size: 13px; }
+
+  .mv-hero { flex-wrap: nowrap; gap: 18px 28px; padding: clamp(12px, 2vh, 22px) 28px; border-radius: 28px; box-shadow: 0 6px 0 var(--sp-black); }
+  .mv-hero-pebble { width: clamp(78px, 12vh, 124px); }
+  .mv-hero-copy { gap: 6px; }
+  .mv-hero h1 { font-size: clamp(32px, 5.2vh, 54px); }
+  .mv-hero-desc { display: -webkit-box; overflow: hidden; font-size: 14px; line-height: 1.4; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
+  .mv-fact { padding: 4px 10px 4px 8px; font-size: 12px; }
+  .mv-hero-side { gap: 8px; }
+  .mv-count { font-size: clamp(34px, 5vh, 50px); }
+  .mv-track { height: 14px; }
+
+  .module-v > .mv-chapters { flex: 0 0 auto; margin-top: clamp(14px, 2.4vh, 26px); }
+  .mv-section-title strong { font-size: clamp(22px, 3.2vh, 30px); }
+  .mv-cbar { flex: 0 0 auto; margin: 10px 0 clamp(10px, 1.8vh, 16px); }
+  .mv-cseg { gap: 3px; padding: 8px 12px; border-radius: 16px; }
+  .mv-cseg strong { display: -webkit-box; overflow: hidden; font-size: 13px; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
+  .mv-cseg em { font-size: 11px; }
+  .mv-pbar { height: 6px; }
+
+  .mv-chapter { flex: 0 0 auto; }
+  .mv-chapter-head { flex: 0 0 auto; flex-wrap: nowrap; padding: 10px 18px; }
+  .mv-chapter-icon { width: 38px; height: 38px; border-radius: 12px; }
+  .mv-chapter-title h3 { font-size: clamp(22px, 3.2vh, 30px); }
+  .mv-row { gap: 14px; padding: 10px 18px; }
+  .mv-dot { width: 40px; height: 40px; }
+  .mv-row-title { font-size: 16px; }
+  .mv-row-desc { display: -webkit-box; overflow: hidden; -webkit-box-orient: vertical; -webkit-line-clamp: 1; }
+
+  .module-v > .mv-state { margin-top: 12px; }
+  .mv-hero + .mv-state { margin-top: 20px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .module-v *, .module-v *::before, .module-v *::after { transition: none !important; animation: none !important; }
+}

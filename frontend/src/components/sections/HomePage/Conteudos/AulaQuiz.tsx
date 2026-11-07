@@ -1,26 +1,53 @@
-import { useState } from 'react';
-import { ArrowLeft, ArrowRight, BookOpen, Check, HelpCircle, Sparkles, ThumbsUp, Trophy } from 'lucide-react';
-import type { AulaDetalhes, QuizAnswer } from '@/services/conteudo';
+import { useEffect, useRef, useState, type KeyboardEvent } from 'react';
+import { ArrowRight } from 'lucide-react';
+import type { AulaDetalhes, QuizAnswer, QuizResult } from '@/services/conteudo';
 import { useAulaProgress } from '@/hooks/useAulaProgress';
 import { AppButton } from '@/components/ui/buttons/AppButton';
+import { LessonCheckpoint } from './LessonCheckpoint';
 
 interface AulaQuizProps {
   aula: AulaDetalhes;
+  /** Volta para a leitura (descarta as respostas ainda não enviadas). */
   onBack: () => void;
+  /** "Seguir na trilha". */
   onComplete: () => void;
+  /** "Rever a leitura" depois do resultado. */
+  onReread: () => void;
+  /** Resultado aceito pelo servidor (a aula fica concluída). */
+  onResult?: (result: QuizResult) => void;
 }
 
-export function AulaQuiz({ aula, onBack, onComplete }: AulaQuizProps) {
+const resultTitle = (score: number) => (score >= 80 ? 'Excelente domínio!' : score >= 50 ? 'Bom progresso!' : 'Continue praticando');
+
+/** Quiz embutido como etapa final. Acerto e XP vêm de `submitQuiz`; o cliente só exibe. */
+export function AulaQuiz({ aula, onBack, onComplete, onReread, onResult }: AulaQuizProps) {
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [answers, setAnswers] = useState<QuizAnswer[]>([]);
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
-  const [result, setResult] = useState<{ score: number; correctCount: number; totalQuestions: number; xpEarned: number } | null>(null);
+  const [result, setResult] = useState<QuizResult | null>(null);
   const { enviarQuiz, loading, error } = useAulaProgress();
+  const headingRef = useRef<HTMLHeadingElement | null>(null);
+  const optionsRef = useRef<HTMLDivElement | null>(null);
 
   const questions = aula.quiz;
   const question = questions[currentQuestion];
   const isLastQuestion = currentQuestion >= questions.length - 1;
-  const progress = questions.length ? ((currentQuestion + 1) / questions.length) * 100 : 0;
+
+  // O quiz só monta por ação do aluno ("Ir para o quiz"); o botão que abriu some,
+  // então o foco vai para a pergunta já na montagem e a cada troca de pergunta/resultado.
+  useEffect(() => {
+    headingRef.current?.focus({ preventScroll: true });
+  }, [currentQuestion, result]);
+
+  /** Padrão de radiogroup: setas movem e selecionam; só a opção marcada entra no Tab. */
+  const handleOptionKey = (event: KeyboardEvent<HTMLButtonElement>, index: number, total: number) => {
+    const step = event.key === 'ArrowDown' || event.key === 'ArrowRight' ? 1 : event.key === 'ArrowUp' || event.key === 'ArrowLeft' ? -1 : 0;
+    if (!step) return;
+    event.preventDefault();
+    const next = (index + step + total) % total;
+    setSelectedIndex(next);
+    optionsRef.current?.querySelectorAll<HTMLButtonElement>('[role="radio"]')[next]?.focus();
+  };
 
   const handleNext = async () => {
     if (selectedIndex === null || !question) return;
@@ -29,7 +56,12 @@ export function AulaQuiz({ aula, onBack, onComplete }: AulaQuizProps) {
 
     if (isLastQuestion) {
       const quizResult = await enviarQuiz(aula.id, nextAnswers);
-      if (quizResult) setResult(quizResult);
+      if (quizResult) {
+        setResult(quizResult);
+        onResult?.(quizResult);
+      } else {
+        setAnswers(answers);
+      }
       return;
     }
 
@@ -37,66 +69,64 @@ export function AulaQuiz({ aula, onBack, onComplete }: AulaQuizProps) {
     setSelectedIndex(null);
   };
 
-  if (!question && !result) {
-    return <div className="learning-content-loading">Nenhuma pergunta disponível para esta avaliação.</div>;
-  }
-
   if (result) {
-    const ResultIcon = result.score >= 80 ? Trophy : result.score >= 50 ? ThumbsUp : BookOpen;
     return (
-      <div className="learning-quiz-result">
-        <div className="learning-quiz-result-emblem"><ResultIcon size={31} /></div>
-        <span>AVALIAÇÃO CONCLUÍDA</span>
-        <h2>{result.score >= 80 ? 'Excelente domínio!' : result.score >= 50 ? 'Bom progresso!' : 'Continue praticando'}</h2>
-        <p>Você acertou {result.correctCount} de {result.totalQuestions} perguntas.</p>
-        <div className="learning-quiz-score">
-          <div><strong>{result.score}%</strong><span>desempenho</span></div>
-          <div><Sparkles size={18} /><strong>+{result.xpEarned} XP</strong><span>recompensa</span></div>
-        </div>
-        <AppButton icon={<ArrowRight size={16} />} onClick={onComplete}>Continuar jornada</AppButton>
+      <div className="lesson-page">
+        <LessonCheckpoint
+          headingRef={headingRef}
+          title={resultTitle(result.score)}
+          summary={`Você acertou ${result.correctCount} de ${result.totalQuestions} perguntas · ${result.score}% de desempenho.`}
+          xp={result.xpEarned}
+          actions={<>
+            <AppButton variant="chunky" tone="blue" icon={<ArrowRight size={18} aria-hidden="true" />} onClick={onComplete}>Seguir na trilha</AppButton>
+            <AppButton variant="chunky" tone="ghost" onClick={onReread}>Rever a leitura</AppButton>
+          </>}
+        />
       </div>
     );
   }
 
-  return (
-    <div className="learning-quiz-workspace">
-      <aside className="learning-quiz-rail">
-        <div className="learning-quiz-icon"><HelpCircle size={27} /></div>
-        <span>VERIFICAÇÃO DE CONHECIMENTO</span>
-        <h2>Confirme o que aprendeu</h2>
-        <p>Responda com atenção. A pontuação define a recompensa desta fase.</p>
-        <div className="learning-quiz-map">
-          {questions.map((_, index) => (
-            <i key={index} className={`${index < currentQuestion ? 'is-complete' : ''} ${index === currentQuestion ? 'is-current' : ''}`}>
-              {index < currentQuestion ? <Check size={12} /> : index + 1}
-            </i>
-          ))}
-        </div>
-        <AppButton variant="ghost" size="sm" icon={<ArrowLeft size={14} />} onClick={onBack}>Voltar à leitura</AppButton>
-      </aside>
+  if (!question) {
+    return (
+      <>
+        <div className="lesson-page"><p className="lesson-empty" role="status">Nenhuma pergunta disponível para esta avaliação.</p></div>
+        <nav className="lesson-nav" aria-label="Navegação do quiz">
+          <AppButton variant="chunky" tone="ghost" size="sm" onClick={onBack}>Voltar à leitura</AppButton>
+        </nav>
+      </>
+    );
+  }
 
-      <section className="learning-quiz-question">
-        <div className="learning-quiz-question-top">
-          <span>Questão {currentQuestion + 1} de {questions.length}</span>
-          <strong>{Math.round(progress)}%</strong>
-        </div>
-        <div className="learning-quiz-question-progress"><div style={{ width: `${progress}%` }} /></div>
-        <h2>{question.text}</h2>
-        <div className="learning-quiz-options">
+  return (
+    <>
+      <div className="lesson-page lesson-quiz">
+        <div className="lesson-quiz-top"><span>Pergunta {currentQuestion + 1} de {questions.length}</span><span>Avaliação</span></div>
+        <h2 ref={headingRef} tabIndex={-1} id={`lesson-question-${question.id}`}>{question.text}</h2>
+        <div ref={optionsRef} className="lesson-options" role="radiogroup" aria-labelledby={`lesson-question-${question.id}`}>
           {question.options.map((option, index) => (
-            <button key={index} onClick={() => setSelectedIndex(index)} className={selectedIndex === index ? 'is-selected' : ''}>
-              <i>{String.fromCharCode(65 + index)}</i><span>{option}</span><Check size={16} />
+            <button
+              key={`${question.id}-${index}`}
+              type="button"
+              role="radio"
+              className="lesson-option"
+              aria-checked={selectedIndex === index}
+              tabIndex={(selectedIndex ?? 0) === index ? 0 : -1}
+              onClick={() => setSelectedIndex(index)}
+              onKeyDown={(event) => handleOptionKey(event, index, question.options.length)}
+            >
+              <b aria-hidden="true">{String.fromCharCode(65 + index)}</b><span>{option}</span>
             </button>
           ))}
         </div>
-        {error && <p className="learning-quiz-error">{error}</p>}
-        <div className="learning-quiz-action">
-          <span>{selectedIndex === null ? 'Selecione uma alternativa para continuar.' : 'Alternativa selecionada.'}</span>
-          <AppButton onClick={handleNext} disabled={selectedIndex === null || loading} icon={<ArrowRight size={15} />}>
-            {loading ? 'Enviando...' : isLastQuestion ? 'Finalizar avaliação' : 'Próxima pergunta'}
-          </AppButton>
-        </div>
-      </section>
-    </div>
+        {error && <p className="lesson-error" role="alert">{error}</p>}
+      </div>
+      <nav className="lesson-nav" aria-label="Navegação do quiz">
+        <AppButton variant="chunky" tone="ghost" size="sm" onClick={onBack}>Voltar à leitura</AppButton>
+        <span aria-live="polite">{selectedIndex === null ? 'Escolha uma alternativa' : `Quiz · pergunta ${currentQuestion + 1} de ${questions.length}`}</span>
+        <AppButton variant="chunky" tone="blue" onClick={() => void handleNext()} disabled={selectedIndex === null || loading}>
+          {loading ? 'Enviando...' : isLastQuestion ? 'Enviar respostas' : 'Confirmar resposta'}
+        </AppButton>
+      </nav>
+    </>
   );
 }
