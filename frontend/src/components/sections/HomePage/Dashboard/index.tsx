@@ -1,39 +1,47 @@
 import { useEffect, useMemo } from 'react';
 import { PageTransition } from '@/components/shared/PageTransition';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
-import {
-  useDashboardJourney,
-  useDashboardStats,
-  useWeeklyStreak,
-} from '@/hooks/useDashboard';
-import { useSectionContext } from '@/contexts/SectionContext';
-import { ActiveTraining } from './ActiveTraining';
-import { DailyChallenge } from './DailyChallenge';
-import { RankingWidget } from './RankingWidget';
-import { Achievements } from './Achievements';
-import { AdventureHero } from './AdventureHero';
-import { JourneyPreview } from './JourneyPreview';
-import type { JourneyNodeData } from '@/services/dashboard';
-import '@/styles/hall-dashboard.css';
+import { useDashboardJourney, useDashboardStats, useWeeklyStreak } from '@/hooks/useDashboard';
+import { useSectionContext, type ContentTarget } from '@/contexts/SectionContext';
+import type { CurrentUser } from '@/services/me';
 import { useCompanyFeatures } from '@/hooks/useCompanyFeatures';
+import { DailyChallenge } from './DailyChallenge';
+import { HomeHero } from './HomeHero';
+import { HomeLevelWeek } from './HomeLevelWeek';
+import { HomeJourney } from './HomeJourney';
+import { HomeRanking } from './HomeRanking';
+import { HomeAchievements } from './HomeAchievements';
+import { buildHomeJourney, type HomeJourneyNode } from './homeJourneyModel';
+import '@/styles/home-start.css';
+
+/** Gestão vê os mesmos cards do aluno (pedido do usuário); só muda a saudação. */
+const MANAGEMENT_ROLES = new Set(['admin', 'platform_admin']);
+
+/** Aula em andamento abre direto; módulo novo ou completo abre o livro do módulo. */
+function contentTargetOf(node: HomeJourneyNode): ContentTarget {
+  const resume = !!node.nextAulaId && (node.hasStarted || node.completedAulas > 0) && node.state !== 'done';
+  return resume && node.nextAulaId ? { moduloId: node.id, aulaId: node.nextAulaId } : { moduloId: node.id };
+}
+
+function greetingFor(user: CurrentUser | null, management: boolean): string {
+  const name = user?.nickname || user?.name?.split(' ')[0] || '';
+  return `${management ? 'Olá' : 'Oi'}${name ? `, ${name}` : ''}!`;
+}
+
+function gridClass(ranking: boolean, achievements: boolean): string {
+  return ['home-v-grid', ranking ? '' : 'is-without-ranking', achievements ? '' : 'is-without-achievements']
+    .filter(Boolean)
+    .join(' ');
+}
 
 export function Dashboard() {
   const features = useCompanyFeatures();
   const { user, loading: userLoading } = useCurrentUser();
+  const management = MANAGEMENT_ROLES.has(user?.role ?? '');
   const { stats, loading: statsLoading } = useDashboardStats();
   const { streak } = useWeeklyStreak();
-  const {
-    journey,
-    loading: journeyLoading,
-    error: journeyError,
-    refetch,
-  } = useDashboardJourney();
-  const {
-    setLoading,
-    registerBootstrap,
-    navigateToSection,
-    navigateToContent,
-  } = useSectionContext();
+  const { journey, loading: journeyLoading, error: journeyError, refetch } = useDashboardJourney();
+  const { setLoading, registerBootstrap, navigateToSection, navigateToContent } = useSectionContext();
 
   useEffect(() => registerBootstrap('dashboard'), [registerBootstrap]);
   useEffect(() => {
@@ -41,68 +49,53 @@ export function Dashboard() {
     return () => setLoading('dashboard', false);
   }, [userLoading, statsLoading, setLoading]);
 
-  const allNodes = useMemo(
-    () => journey?.stages.flatMap((stage) => stage.nodes) ?? [],
-    [journey],
-  );
-  const currentModule = allNodes.find(
-    (node) => node.id === journey?.currentModuleId,
-  );
+  const home = useMemo(() => buildHomeJourney(journey), [journey]);
+  const summary = journey?.summary ?? null;
 
-  const openNode = (node: JourneyNodeData) => {
-    navigateToContent({
-      moduloId: node.id,
-      ...(node.nextAulaId && node.hasStarted
-        ? { aulaId: node.nextAulaId }
-        : {}),
-    });
-  };
-  const continueAdventure = () => {
-    if (currentModule) openNode(currentModule);
+  const openNode = (node: HomeJourneyNode) => navigateToContent(contentTargetOf(node));
+  const continueTrail = () => {
+    if (home.current && home.current.state !== 'done') openNode(home.current);
     else navigateToSection('conteudos');
   };
 
+  const greeting = greetingFor(user, management);
+  const layout = gridClass(features.ranking, features.achievements);
+
   return (
     <PageTransition>
-      <main className="hall-dashboard">
-        <AdventureHero
-          user={user}
-          stats={stats}
-          streak={streak}
-          currentModule={currentModule}
-          onContinue={continueAdventure}
-        />
-
-        <JourneyPreview
-          journey={journey}
-          loading={journeyLoading}
-          error={journeyError}
-          onOpenNode={openNode}
-          onOpenAll={() => navigateToSection('conteudos')}
-          onRetry={refetch}
-        />
-
-        <div className={`hall-support-grid${features.achievements ? '' : ' is-without-achievements'}${features.ranking ? '' : ' is-without-ranking'}`}>
-          <section className="hall-panel hall-training-panel" aria-labelledby="training-title">
-            <header className="hall-section-heading"><div><h2 id="training-title">Próximas aulas</h2></div></header>
-            <ActiveTraining currentModuleId={currentModule?.id} />
-          </section>
-          <section className="hall-panel hall-daily-panel" aria-labelledby="daily-title">
-            <header className="hall-section-heading"><div><h2 id="daily-title">Missão do dia</h2></div></header>
-            <DailyChallenge />
-          </section>
-          {features.achievements && (
-            <section className="hall-panel hall-achievements-panel" aria-labelledby="achievements-title">
-              <header className="hall-section-heading"><div><h2 id="achievements-title">Conquistas recentes</h2></div></header>
-              <Achievements />
-            </section>
+      <div className="home-v">
+        <h1 className="hv-sr">{greeting} Este é o seu início.</h1>
+        <div className={layout}>
+          <HomeHero
+            journey={home}
+            summary={summary}
+            loading={journeyLoading}
+            error={!!journeyError}
+            onRetry={refetch}
+            onContinue={openNode}
+            onOpenLearn={() => navigateToSection('conteudos')}
+          />
+          <HomeLevelWeek stats={stats} streak={streak} />
+          <DailyChallenge />
+          <HomeJourney
+            journey={home}
+            summary={summary}
+            loading={journeyLoading}
+            error={!!journeyError}
+            onRetry={refetch}
+            onOpenNode={openNode}
+          />
+          {features.ranking && (
+            <HomeRanking
+              onContinue={continueTrail}
+              onPractice={() => navigateToSection('desafios')}
+              onOpenRanking={() => navigateToSection('ranking')}
+              showPractice={features.games.length > 0}
+            />
           )}
-          {features.ranking && <section className="hall-panel hall-ranking-panel" aria-labelledby="ranking-title">
-            <header className="hall-section-heading"><div><h2 id="ranking-title">Ranking</h2></div></header>
-            <RankingWidget />
-          </section>}
+          {features.achievements && <HomeAchievements onOpen={() => navigateToSection('conquistas')} />}
         </div>
-      </main>
+      </div>
     </PageTransition>
   );
 }
