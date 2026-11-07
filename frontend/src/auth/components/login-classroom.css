@@ -205,3 +205,28 @@
   .lgc *, .lgc *::before, .lgc *::after { animation: none !important; transition: none !important; }
   .lgc-submit:active { transform: none; }
 }
+
+/* Esqueci minha senha (diálogo nativo): usa os tokens do login para valer nos dois temas. */
+.forgot-dialog { width: min(440px, calc(100vw - 32px)); padding: 0; border: 3px solid var(--sp-black); border-radius: 26px; background: var(--lgc-surface, var(--sp-paper)); box-shadow: 0 8px 0 var(--sp-black); color: var(--lgc-text, var(--sp-black)); }
+.forgot-dialog::backdrop { background: rgba(0, 0, 0, .6); }
+.forgot-dialog[open] { animation: forgot-dialog-in 180ms ease-out; }
+@keyframes forgot-dialog-in { from { opacity: 0; transform: translateY(12px) scale(.98); } }
+.forgot-dialog-body { position: relative; padding: 34px 28px 26px; }
+.forgot-dialog-close { position: absolute; top: 12px; right: 12px; display: grid; width: 44px; height: 44px; place-items: center; border: 0; border-radius: 12px; background: transparent; color: var(--lgc-muted, var(--sp-muted)); cursor: pointer; }
+.forgot-dialog-close:hover { color: var(--lgc-text, var(--sp-black)); }
+.forgot-dialog-icon { display: grid; width: 52px; height: 52px; margin-bottom: 16px; place-items: center; border: 3px solid var(--sp-black); border-radius: 16px; background: var(--sp-yellow); color: var(--sp-black); }
+.forgot-dialog h2 { margin: 0; font-size: 28px; font-weight: 800; line-height: 1.05; }
+.forgot-dialog-lead { margin: 10px 0 20px; color: var(--lgc-muted, var(--sp-muted)); font-size: 15px; font-weight: 600; line-height: 1.5; }
+.forgot-dialog-field { display: grid; gap: 8px; font-size: 14px; font-weight: 800; }
+.forgot-dialog-field > div { display: flex; align-items: center; gap: 10px; min-height: 54px; padding: 0 14px; border: 3px solid var(--sp-black); border-radius: 16px; background: var(--lgc-field, var(--sp-paper)); }
+.forgot-dialog-field input { flex: 1 1 auto; min-width: 0; border: 0; outline: 0; background: transparent; color: inherit; font: inherit; font-weight: 700; }
+.forgot-dialog-field > div:focus-within { outline: 3px solid var(--sp-blue); outline-offset: 2px; }
+.forgot-dialog-error { margin: 10px 0 0; color: var(--sp-red); font-size: 13px; font-weight: 800; }
+.forgot-dialog-actions { display: flex; gap: 10px; margin-top: 20px; }
+.forgot-dialog-actions .lgc-submit { flex: 1; }
+.forgot-dialog-cancel { min-height: 60px; padding: 0 20px; border: 3px solid var(--sp-black); border-radius: 18px; background: transparent; color: inherit; cursor: pointer; font-size: 15px; font-weight: 800; }
+.forgot-dialog-note { margin: 16px 0 0; padding: 12px 14px; border-radius: 14px; background: var(--lgc-surface-2, var(--sp-cream)); color: var(--lgc-muted, var(--sp-muted)); font-size: 13px; font-weight: 600; line-height: 1.45; }
+.forgot-dialog-address { display: flex; align-items: center; gap: 8px; margin: 0; padding: 12px 14px; border: 2px solid var(--sp-black); border-radius: 14px; font-size: 14px; font-weight: 800; overflow-wrap: anywhere; }
+.forgot-dialog-done { margin-top: 20px; }
+@media (max-width: 480px) { .forgot-dialog-body { padding: 28px 18px 20px; } .forgot-dialog h2 { font-size: 24px; } .forgot-dialog-actions { flex-direction: column-reverse; } }
+@media (prefers-reduced-motion: reduce) { .forgot-dialog[open] { animation: none; } }

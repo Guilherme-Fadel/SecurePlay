@@ -8,7 +8,7 @@ export class AdminAuditService {
 
   constructor(@Inject('DATA_SOURCE') private readonly dataSource: DataSource) {}
 
-  async registrar(evento: {
+  async registrar(evento: { 
     empresaId: number;
     atorId: number;
     acao: string;

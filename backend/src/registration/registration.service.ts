@@ -30,6 +30,7 @@ const TRIAL_DAYS = 7;
 const TRIAL_COMPANY_NAME = 'SecurePlay Teste Gratuito';
 const TRIAL_COMPANY_KEY = 'free_trial';
 const RESEND_COOLDOWN_MS = 60_000;
+const PASSWORD_RESET_MINUTES = 30;
 type RegistrationContext = {
   kind: 'trial' | 'invite';
   inviteId: number | null;
@@ -475,7 +476,7 @@ export class RegistrationService {
     });
   }
 
-  async resetSchoolStudentPassword(token: string, password: string) {
+  async resetPassword(token: string, password: string) {
     return this.dataSource.transaction(async (manager) => {
       const user = await manager
         .getRepository(Usuario)
@@ -485,15 +486,7 @@ export class RegistrationService {
           tokenHash: this.hash(token),
         })
         .getOne();
-      if (
-        !user ||
-        !user.active ||
-        user.role !== Role.USER ||
-        user.email !== null ||
-        !(user.username || user.login_code) ||
-        !user.password_reset_expires_at ||
-        user.password_reset_expires_at <= new Date()
-      ) {
+      if (!user || !this.passwordResetAvailable(user)) {
         throw new NotFoundException('Link de recuperação inválido ou expirado');
       }
 
@@ -505,12 +498,94 @@ export class RegistrationService {
       await manager.getRepository(Usuario).save(user);
       return {
         sucesso: true,
-        mensagem:
-          'Senha atualizada. Use seu usuário ou código de acesso para entrar.',
+        mensagem: user.email
+          ? 'Senha atualizada. Use seu e-mail e a nova senha para entrar.'
+          : 'Senha atualizada. Use seu usuário ou código de acesso para entrar.',
+        email: user.email ?? null,
         username: user.username ?? null,
         login_code: user.login_code,
       };
     });
+  }
+
+  // Conta com e-mail precisa tê-lo verificado; sem e-mail, só alunos com usuário ou código.
+  private passwordResetAvailable(user: Usuario) {
+    const ownerAllowed = user.email
+      ? !!user.email_verified_at
+      : user.role === Role.USER && !!(user.username || user.login_code);
+    return (
+      user.active &&
+      ownerAllowed &&
+      !!user.password_reset_expires_at &&
+      user.password_reset_expires_at > new Date()
+    );
+  }
+
+  async requestPasswordReset(emailInput: string) {
+    const email = emailInput.trim().toLowerCase();
+    const user = await this.dataSource
+      .getRepository(Usuario)
+      .findOne({ where: { email } });
+    if (!user?.active || !user.email || !user.email_verified_at) return;
+    // Conta que ainda não definiu a senha inicial recebe o link de definição.
+    if (user.password_change_required) return this.startPasswordSetup(user);
+
+    const issue = await this.dataSource.transaction(async (manager) => {
+      const locked = await manager
+        .getRepository(Usuario)
+        .createQueryBuilder('user')
+        .setLock('pessimistic_write')
+        .where('user.id = :id', { id: user.id })
+        .getOne();
+      if (
+        !locked?.active ||
+        !locked.email_verified_at ||
+        locked.password_change_required
+      ) {
+        return null;
+      }
+      const issuedAt = locked.password_reset_expires_at
+        ? new Date(locked.password_reset_expires_at).getTime() -
+          PASSWORD_RESET_MINUTES * 60 * 1000
+        : 0;
+      if (
+        locked.password_reset_token_hash &&
+        Date.now() - issuedAt < RESEND_COOLDOWN_MS
+      ) {
+        return null;
+      }
+      const previous = {
+        password_reset_token_hash: locked.password_reset_token_hash,
+        password_reset_expires_at: locked.password_reset_expires_at,
+      };
+      const token = randomBytes(32).toString('base64url');
+      locked.password_reset_token_hash = this.hash(token);
+      locked.password_reset_expires_at = new Date(
+        Date.now() + PASSWORD_RESET_MINUTES * 60 * 1000,
+      );
+      await manager.getRepository(Usuario).save(locked);
+      return { token, tokenHash: locked.password_reset_token_hash, previous };
+    });
+    if (!issue) return;
+    try {
+      await this.emailService.sendPasswordReset(
+        user.email,
+        issue.token,
+        PASSWORD_RESET_MINUTES,
+      );
+    } catch (error) {
+      await this.dataSource
+        .getRepository(Usuario)
+        .createQueryBuilder()
+        .update(Usuario)
+        .set(issue.previous)
+        .where('id = :id AND password_reset_token_hash = :tokenHash', {
+          id: user.id,
+          tokenHash: issue.tokenHash,
+        })
+        .execute();
+      throw error;
+    }
   }
 
   async startPlatformAdminVerification(user: Usuario) {
