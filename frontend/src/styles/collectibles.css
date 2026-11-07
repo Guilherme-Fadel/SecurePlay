@@ -1,0 +1,676 @@
+/*
+ * Conquistas › Colecionáveis (canvas Colecionaveis-tela, proposta A "Provador").
+ * Tema: grafite sem atributo; claro com :root[data-theme='light'].
+ * Moldura e fundo do provador NÃO são definidos aqui: vêm das classes de
+ * cosmético de styles/cosmetics.css (cosmetic-avatar + frame-*, cosmetic-background-host
+ * + background-*), as mesmas do avatar do trilho (UserMenu).
+ * Pixel art dos cosméticos sem suavização; amarelo da marca só como preenchimento.
+ */
+.cole-v {
+  --cole-text: var(--dashboard-text);
+  --cole-muted: var(--dashboard-muted);
+  --cole-surface: var(--dashboard-surface);
+  --cole-soft: var(--dashboard-surface-soft);
+  --cole-border: var(--dashboard-border);
+  --cole-rule: var(--app-rule);
+  --cole-heading: var(--app-heading);
+  --cole-eyebrow: var(--app-eyebrow);
+  --cole-line: var(--app-line, 3px solid var(--sp-cream));
+  --cole-hard: var(--app-shadow-hard, 0 5px 0 var(--sp-black));
+  --cole-blue: var(--sp-blue);
+  /* Texto azul legível sobre as superfícies (AA nos dois temas). */
+  --cole-blue-ink: #9DB8FF;
+  --cole-blue-soft: rgba(38, 98, 231, 0.26);
+  --cole-dot: rgba(180, 172, 159, 0.12);
+  --cole-sil: grayscale(1) opacity(0.45);
+  box-sizing: border-box;
+  min-width: 0;
+  color: var(--cole-text);
+  font-family: var(--font-family-brand, 'Bricolage Grotesque', system-ui, sans-serif);
+}
+
+:root[data-theme='light'] .cole-v {
+  --cole-blue-ink: #1D50C2;
+  --cole-blue-soft: #E7EEFF;
+  --cole-dot: rgba(38, 98, 231, 0.14);
+}
+
+.cole-v *,
+.cole-v *::before,
+.cole-v *::after { box-sizing: border-box; }
+
+.cole-v :where(p, span, small, strong, em, a, button, li, h1, h2, h3, h4, label) {
+  font-family: inherit;
+  font-size: inherit;
+  line-height: inherit;
+  letter-spacing: inherit;
+}
+
+.cole-v :where(p, h2, ul) { margin: 0; }
+.cole-v :where(button) { color: inherit; }
+.cole-v :focus-visible { outline: var(--app-focus-ring, 3px solid var(--sp-blue)); outline-offset: 3px; }
+
+.cole-display {
+  font-weight: 800;
+  font-stretch: 75%;
+  font-variation-settings: 'wdth' 75;
+  text-transform: uppercase;
+  line-height: 0.9;
+  letter-spacing: -0.005em;
+}
+
+.cole-eyebrow {
+  display: block;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--cole-eyebrow);
+}
+
+.cole-art { display: block; image-rendering: pixelated; object-fit: contain; }
+.cole-art--fallback {
+  display: grid;
+  place-items: center;
+  border-radius: 12px;
+  background: var(--cole-blue-soft);
+  color: var(--cole-blue-ink);
+  font-size: 24px;
+  font-weight: 800;
+}
+
+/* ---------- Grade: provador + loja ---------- */
+.cole-grid {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 28px;
+}
+
+.cole-stage {
+  position: sticky;
+  top: 16px;
+  flex: 1 1 360px;
+  min-width: 0;
+  max-width: 480px;
+  padding: 22px;
+  border: var(--cole-line);
+  border-radius: 28px;
+  background-color: var(--cole-soft);
+  background-image: radial-gradient(var(--cole-dot) 1.4px, transparent 1.7px);
+  background-size: 22px 22px;
+  box-shadow: var(--cole-hard);
+}
+
+.cole-stage-title {
+  margin: 6px 0 16px;
+  font-size: 30px;
+  color: var(--cole-heading);
+}
+
+.cole-side {
+  flex: 999 1 420px;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+@media (max-width: 759px) {
+  .cole-stage { position: static; max-width: none; flex-basis: 100%; }
+  .cole-side { flex-basis: 100%; }
+}
+
+/* ---------- Cartão do perfil ---------- */
+.cole-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  overflow: hidden;
+  padding: 26px 18px 22px;
+  border: 1.5px solid var(--cole-border);
+  border-radius: 24px;
+  background: var(--cole-surface);
+  color: var(--cole-text);
+  text-align: center;
+  transition: background 0.25s ease;
+}
+
+/* Fundo escuro do Investigador: texto creme em qualquer tema. */
+.cole-card.background-investigator { color: var(--sp-cream); }
+
+.cole-card-avatar {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 176px;
+  height: 176px;
+}
+
+.cole-card.has-effect .cole-card-avatar::before {
+  content: '';
+  position: absolute;
+  inset: 10%;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(254, 213, 1, 0.5), transparent 68%);
+  animation: cole-glow 2.6s ease-in-out infinite;
+}
+
+@keyframes cole-glow { 50% { transform: scale(1.12); opacity: 0.7; } }
+
+.cole-card-effect {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 160px;
+  height: 160px;
+  transform: translate(-50%, -56%);
+}
+
+.cole-avatar {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  width: 116px;
+  height: 116px;
+  overflow: hidden;
+  border: 4px solid var(--cole-border);
+  border-radius: 24px;
+  background: var(--sp-blue);
+  color: var(--sp-cream);
+  font-size: 54px;
+  font-weight: 800;
+  font-stretch: 75%;
+  line-height: 1;
+}
+
+.cole-avatar .sp-avatar-img { width: 100%; height: 100%; object-fit: cover; }
+
+.cole-card-id {
+  min-width: 0;
+  max-width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.cole-card-name {
+  max-width: 100%;
+  font-size: 40px;
+  overflow-wrap: anywhere;
+}
+
+.cole-card-title {
+  display: inline-flex;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--sp-black);
+  color: var(--sp-cream);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+}
+
+:root:not([data-theme='light']) .cole-card:not(.background-investigator) .cole-card-title,
+.cole-card.background-investigator .cole-card-title {
+  background: var(--sp-cream);
+  color: var(--sp-black);
+}
+
+.cole-card-meta { font-size: 13px; font-weight: 700; }
+
+.cole-card-badge {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  width: 56px;
+  height: 56px;
+}
+
+/* ---------- O que está vestido ---------- */
+.cole-worn {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 8px;
+  margin: 16px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.cole-worn-item {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px 12px;
+  border: 1.5px solid var(--cole-border);
+  border-radius: 14px;
+  background: var(--cole-surface);
+}
+
+.cole-worn-item small {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--cole-muted);
+}
+
+.cole-worn-item b { font-size: 13px; font-weight: 800; overflow-wrap: anywhere; }
+.cole-worn-item.is-none b { font-weight: 600; color: var(--cole-muted); }
+.cole-worn-item.is-trying { border-color: var(--cole-blue); background: var(--cole-blue-soft); }
+
+/* ---------- Painel do item ---------- */
+.cole-act {
+  margin-top: 16px;
+  padding: 16px;
+  border: 1.5px solid var(--cole-border);
+  border-radius: 20px;
+  background: var(--cole-surface);
+}
+
+.cole-feedback {
+  margin: 0 0 12px;
+  padding: 10px 14px;
+  border-radius: 14px;
+  background: var(--sp-black);
+  color: var(--sp-cream);
+  font-size: 14px;
+  font-weight: 700;
+}
+
+:root:not([data-theme='light']) .cole-feedback { background: var(--sp-cream); color: var(--sp-black); }
+
+.cole-v .cole-feedback.is-error {
+  border: 1.5px solid var(--danger);
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+
+/* Vazias continuam montadas (regiões vivas), sem ocupar espaço. */
+.cole-v .cole-act .cole-feedback:empty { margin: 0; padding: 0; border: 0; background: none; }
+
+.cole-act-empty {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.45;
+  color: var(--cole-muted);
+}
+
+.cole-act-character { flex: 0 0 auto; width: 52px; }
+.cole-act-zero { margin-top: 6px; color: var(--cole-text); }
+
+.cole-act-head { display: flex; align-items: center; gap: 12px; }
+.cole-act-head strong { display: block; font-size: 17px; font-weight: 800; line-height: 1.2; }
+.cole-act-head small { display: block; margin-top: 2px; font-size: 12px; color: var(--cole-muted); }
+
+.cole-act-desc,
+.cole-note {
+  margin-top: 10px;
+  font-size: 14px;
+  line-height: 1.45;
+  color: var(--cole-muted);
+}
+
+.cole-note { font-size: 12px; font-weight: 600; }
+
+.cole-cost {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 12px;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.cole-keybar { display: flex; gap: 3px; }
+.cole-keybar span { flex: 1 1 0; height: 10px; border-radius: 3px; background: var(--cole-rule); }
+.cole-keybar span.is-on { background: var(--sp-yellow); box-shadow: inset 0 0 0 1.5px rgba(0, 0, 0, 0.25); }
+
+.cole-acts {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.cole-acts .app-button { max-width: 100%; }
+.cole-acts .digital-key-icon { image-rendering: pixelated; }
+
+.cole-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--cole-blue-ink);
+  font-size: 14px;
+  font-weight: 800;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+.cole-req {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 14px;
+  padding: 12px 14px;
+  border-radius: 18px;
+  background: var(--cole-soft);
+  border: 1.5px solid var(--cole-rule);
+}
+
+.cole-req-art {
+  display: grid;
+  flex: 0 0 auto;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  color: var(--cole-muted);
+}
+
+.cole-req strong { display: block; font-size: 14px; font-weight: 800; }
+.cole-req small { display: block; margin-top: 2px; font-size: 12px; line-height: 1.4; color: var(--cole-muted); }
+
+/* ---------- Abas e lista ---------- */
+.cole-shop { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+
+.cole-tabs { display: flex; flex-wrap: wrap; gap: 8px; }
+
+.cole-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0 16px;
+  border: 1.5px solid var(--cole-border);
+  border-radius: 999px;
+  background: var(--cole-surface);
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.cole-tab small { font-size: 12px; font-weight: 800; color: var(--cole-muted); }
+.cole-tab:hover { border-color: var(--cole-text); }
+.cole-tab.is-active { border-color: var(--cole-text); background: var(--cole-text); color: var(--dashboard-bg); }
+.cole-tab.is-active small { color: inherit; }
+
+.cole-list {
+  container-type: inline-size;
+  padding: 10px;
+  border-radius: 24px;
+  background: var(--cole-soft);
+  box-shadow: var(--dashboard-shadow);
+}
+
+.cole-list-empty { padding: 18px 12px; font-size: 14px; font-weight: 600; color: var(--cole-muted); }
+
+.cole-items { display: flex; flex-direction: column; gap: 8px; padding: 0; list-style: none; }
+
+.cole-row {
+  display: grid;
+  grid-template-columns: 72px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  padding: 10px 12px;
+  border: 2px solid transparent;
+  border-radius: 20px;
+  background: var(--cole-surface);
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.cole-row:hover { border-color: var(--cole-border); }
+.cole-row.is-selected { border-color: var(--cole-blue); background: var(--cole-blue-soft); }
+
+.cole-tile {
+  display: grid;
+  flex: 0 0 auto;
+  place-items: center;
+  width: 72px;
+  height: 72px;
+  border-radius: 16px;
+  background: var(--dashboard-bg);
+}
+
+.cole-tile.is-locked .cole-art { filter: var(--cole-sil); }
+
+.cole-row-text { display: flex; min-width: 0; flex-direction: column; gap: 4px; }
+.cole-row-text strong { font-size: 15px; font-weight: 800; line-height: 1.2; overflow-wrap: anywhere; }
+.cole-row-tags { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.cole-row-tags small { font-size: 12px; line-height: 1.35; color: var(--cole-muted); }
+
+.cole-row-end { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; }
+.cole-row-miss { font-size: 12px; font-weight: 700; color: var(--cole-muted); white-space: nowrap; }
+
+@container (max-width: 440px) {
+  .cole-row { grid-template-columns: 72px minmax(0, 1fr); }
+  .cole-row-end { grid-column: 2; flex-direction: row; flex-wrap: wrap; align-items: center; }
+}
+
+.cole-rarity {
+  display: inline-flex;
+  padding: 3px 9px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.cole-rarity--common,
+.cole-rarity--uncommon { background: var(--dashboard-bg); color: var(--cole-text); box-shadow: inset 0 0 0 1.5px var(--cole-border); }
+.cole-rarity--rare { background: var(--cole-blue-soft); color: var(--cole-blue-ink); }
+.cole-rarity--epic { background: var(--sp-blue); color: #FFFFFF; }
+.cole-rarity--legendary { background: var(--sp-yellow); color: var(--sp-black); }
+
+.cole-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 28px;
+  padding: 0 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.cole-pill--equipped { background: var(--sp-yellow); color: var(--sp-black); }
+.cole-pill--own { background: var(--cole-blue-soft); color: var(--cole-blue-ink); }
+.cole-pill--lock { background: var(--dashboard-bg); color: var(--cole-muted); }
+
+.cole-price { display: inline-flex; align-items: center; gap: 6px; font-size: 16px; font-weight: 800; }
+.cole-price .digital-key-icon,
+.cole-earn-keys .digital-key-icon { image-rendering: pixelated; }
+
+/* ---------- Como ganhar mais chaves ---------- */
+.cole-earn {
+  overflow: hidden;
+  border-radius: 24px;
+  background: var(--cole-surface);
+  box-shadow: var(--dashboard-shadow);
+  scroll-margin-top: 16px;
+}
+
+.cole-earn-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 6px 10px;
+  padding: 16px 20px 14px;
+  border-bottom: 1.5px solid var(--cole-border);
+  background: var(--cole-blue-soft);
+}
+
+.cole-earn-head h2 { font-size: 26px; color: var(--cole-heading); }
+.cole-earn-head h2:focus { outline: none; }
+.cole-earn-head h2:focus-visible { outline: var(--app-focus-ring, 3px solid var(--sp-blue)); outline-offset: 3px; }
+.cole-earn-head small { font-size: 12px; font-weight: 700; color: var(--cole-muted); }
+
+.cole-earn-body { display: flex; flex-direction: column; gap: 14px; padding: 16px 20px 18px; }
+
+.cole-earn-zero {
+  padding: 10px 14px;
+  border-radius: 14px;
+  background: rgba(254, 213, 1, 0.14);
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.cole-earn-text,
+.cole-earn-more { font-size: 14px; line-height: 1.45; color: var(--cole-muted); }
+
+.cole-earn-list { display: flex; flex-direction: column; gap: 14px; padding: 0; list-style: none; }
+.cole-earn-list li { display: grid; grid-template-columns: 56px minmax(0, 1fr) auto; align-items: center; gap: 12px; }
+.cole-earn-art { display: grid; place-items: center; width: 56px; height: 56px; }
+.cole-earn-copy { min-width: 0; }
+.cole-earn-copy strong { display: block; font-size: 14px; font-weight: 800; }
+.cole-earn-copy small { display: block; font-size: 12px; line-height: 1.4; color: var(--cole-muted); }
+.cole-earn-bar { display: block; height: 8px; margin-top: 6px; overflow: hidden; border-radius: 99px; background: var(--cole-border); }
+.cole-earn-bar span { display: block; height: 100%; border-radius: inherit; background: var(--cole-blue); }
+.cole-earn-keys { display: inline-flex; align-items: center; gap: 4px; font-size: 13px; font-weight: 800; white-space: nowrap; }
+
+.cole-earn-level {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding-top: 14px;
+  border-top: 1.5px dashed var(--cole-rule);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--cole-muted);
+}
+
+.cole-earn-level svg { flex: 0 0 auto; }
+
+/* ---------- Estados ---------- */
+.cole-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  max-width: 520px;
+  margin: 24px auto;
+  padding: 28px 22px;
+  border: var(--cole-line);
+  border-radius: 28px;
+  background: var(--cole-surface);
+  box-shadow: var(--cole-hard);
+  text-align: center;
+}
+
+.cole-state h2 { font-size: 30px; color: var(--cole-heading); }
+.cole-state p { font-size: 15px; line-height: 1.45; color: var(--cole-muted); }
+.cole-state-character { width: 88px; }
+
+.cole-skeleton { display: flex; flex-direction: column; gap: 14px; min-height: 420px; }
+.cole-skeleton span,
+.cole-skeleton-tabs i,
+.cole-skeleton-list i {
+  display: block;
+  border-radius: 18px;
+  background: var(--cole-rule);
+  animation: cole-pulse 1.4s ease-in-out infinite;
+}
+.cole-skeleton span:nth-child(1) { width: 40%; height: 28px; }
+.cole-skeleton span:nth-child(2) { height: 240px; }
+.cole-skeleton span:nth-child(3) { height: 90px; }
+.cole-skeleton-tabs i { width: 96px; height: 44px; border-radius: 999px; }
+.cole-skeleton-list { display: flex; flex-direction: column; gap: 8px; }
+.cole-skeleton-list i { height: 92px; }
+
+@keyframes cole-pulse { 50% { opacity: 0.55; } }
+
+@media (max-width: 560px) {
+  .cole-stage { padding: 14px; border-radius: 24px; }
+  .cole-stage-title { font-size: 26px; }
+  .cole-card { padding: 18px 12px; }
+  .cole-card-avatar { width: 132px; height: 132px; }
+  .cole-card-effect { width: 124px; height: 124px; }
+  .cole-avatar { width: 84px; height: 84px; border-radius: 18px; font-size: 40px; }
+  .cole-card-name { font-size: 32px; }
+  .cole-card-badge { top: 10px; right: 10px; width: 44px; height: 44px; }
+  .cole-earn-head, .cole-earn-body { padding-left: 14px; padding-right: 14px; }
+  .cole-earn-list li { grid-template-columns: 44px minmax(0, 1fr) auto; }
+  .cole-earn-art { width: 44px; height: 44px; }
+}
+
+/* Desktop (>= 1100 x 700): a aba ocupa o espaço restante do álbum (.al-panel,
+   que já cabe em --sp-fit-h). Provador fixo à esquerda; a coluna da loja e
+   "Como ganhar mais chaves" rola por dentro. Se o provador não couber numa
+   janela baixa, ele também rola por dentro, sem rolar a página. */
+@media (min-width: 1100px) and (min-height: 700px) {
+  .al-panel > .cole-v { display: flex; min-height: 0; flex: 1 1 auto; flex-direction: column; }
+  .cole-grid { min-height: 0; flex: 1 1 auto; flex-wrap: nowrap; align-items: stretch; gap: clamp(14px, 1.8vw, 24px); }
+  .cole-stage {
+    position: static;
+    min-height: 0;
+    flex: 0 1 clamp(340px, 34%, 440px);
+    padding: clamp(12px, 1.8vh, 20px);
+    border-radius: 24px;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+  .cole-side {
+    min-height: 0;
+    gap: clamp(12px, 1.8vh, 18px);
+    /* Respiro para a sombra dos cartões e o anel de foco no limite da rolagem. */
+    margin: -6px;
+    padding: 6px 6px 10px;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+  .cole-stage-title { margin: 4px 0 clamp(8px, 1.4vh, 14px); font-size: clamp(22px, 3.2vh, 30px); }
+  .cole-card { gap: 8px; padding: clamp(12px, 2vh, 22px) 14px clamp(10px, 1.8vh, 18px); }
+  .cole-card-avatar { width: clamp(112px, 17vh, 176px); height: clamp(112px, 17vh, 176px); }
+  .cole-card-effect { width: clamp(100px, 15.5vh, 160px); height: clamp(100px, 15.5vh, 160px); }
+  .cole-avatar { width: clamp(74px, 11vh, 116px); height: clamp(74px, 11vh, 116px); border-radius: 20px; font-size: clamp(34px, 5vh, 54px); }
+  .cole-card-id { gap: 4px; }
+  .cole-card-name { font-size: clamp(26px, 3.8vh, 40px); }
+  .cole-card-badge { top: 12px; right: 12px; width: clamp(40px, 5.6vh, 56px); height: clamp(40px, 5.6vh, 56px); }
+  .cole-worn { margin-top: clamp(8px, 1.4vh, 14px); gap: 6px; }
+  .cole-worn-item { padding: 6px 10px; }
+  .cole-act { margin-top: clamp(8px, 1.4vh, 14px); padding: 12px 14px; }
+  .cole-acts { margin-top: 12px; }
+  .cole-tab { min-height: 38px; padding: 0 14px; font-size: 13px; }
+  .cole-row { grid-template-columns: 60px minmax(0, 1fr) auto; gap: 12px; padding: 8px 10px; border-radius: 16px; }
+  .cole-tile { width: 60px; height: 60px; border-radius: 14px; }
+  .cole-tile .cole-art { width: 52px !important; height: 52px !important; }
+  .cole-earn-head { padding: 12px 16px 10px; }
+  .cole-earn-head h2 { font-size: clamp(20px, 3vh, 26px); }
+  .cole-earn-body { gap: 10px; padding: 12px 16px 14px; }
+  .cole-earn-list { gap: 10px; }
+  .cole-earn-list li { grid-template-columns: 44px minmax(0, 1fr) auto; }
+  .cole-earn-art { width: 44px; height: 44px; }
+  .cole-earn-art :where(img, svg) { width: 40px !important; height: 40px !important; }
+  .cole-state { margin: 8px auto; padding: 20px; }
+  .cole-skeleton { min-height: 0; }
+  .cole-loading .cole-shop { min-width: 0; flex: 1 1 auto; overflow: hidden; }
+}
+
+@media (min-width: 1100px) and (min-height: 700px) {
+  @container (max-width: 440px) {
+    .cole-row { grid-template-columns: 60px minmax(0, 1fr); }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cole-v *,
+  .cole-v *::before,
+  .cole-v *::after { transition: none !important; animation: none !important; }
+}
