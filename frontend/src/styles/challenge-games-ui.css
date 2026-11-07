@@ -2,13 +2,6 @@
 
 /* Challenge listing and arcade mission shell. */
 
-.app-token-bar {
-  padding: 9px 13px;
-  border: 1px solid var(--dashboard-border);
-  border-radius: 999px;
-  background: var(--dashboard-surface);
-}
-
 .arcade-mission-shell {
   position: relative;
   display: flex;

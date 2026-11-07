@@ -1,0 +1,557 @@
+/*
+ * Jogos · mão de cartas (canvas Jogos-tela V2 "Deck de cartas").
+ * Mesa segue --primary (cor da escola, como o card principal do Início/Aprender);
+ * cartas, faixas por slug, moedas e botão amarelo usam a paleta fixa --sp-*.
+ * Cabeçalho e fichas seguem o tema. Reset tipográfico com escopo porque
+ * theme.css define fonte, tamanho e espaçamento em p/span/button/small/h*.
+ */
+.deck-v {
+  --dk-text: var(--dashboard-text);
+  --dk-muted: var(--dashboard-muted);
+  --dk-heading: var(--app-heading);
+  --dk-surface: var(--dashboard-surface);
+  --dk-border: var(--dashboard-border);
+  --dk-table: var(--primary);
+  /* Texto sobre a mesa: papel (creme puro fica abaixo de 4,5:1 no azul). */
+  --dk-on-table: var(--sp-paper);
+  container: deck-v / inline-size;
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 1560px;
+  margin: 0 auto;
+  padding: 4px 0 48px;
+  color: var(--dk-text);
+  font-family: var(--font-family-brand);
+  font-size: 15px;
+  line-height: 1.45;
+}
+
+/* Escuro (sem atributo): mesa mais fechada, como no canvas, ainda na cor da escola. */
+:root:not([data-theme='light']) .deck-v {
+  --dk-table: color-mix(in srgb, var(--primary) 62%, var(--sp-ink-900));
+}
+
+.deck-v *, .deck-v *::before, .deck-v *::after { box-sizing: border-box; }
+
+.deck-v :where(p, span, small, strong, em, b, a, button, li, h1, h2, h3, h4, label) {
+  font-family: inherit;
+  font-size: inherit;
+  line-height: inherit;
+  letter-spacing: inherit;
+}
+
+.deck-v :where(p, h1, h2, h3, h4) { margin: 0; }
+.deck-v :where(button, a):focus-visible { outline: var(--app-focus-ring); outline-offset: 3px; }
+
+.dk-display {
+  font-family: var(--font-family-brand);
+  font-stretch: 75%;
+  font-variation-settings: 'wdth' 75;
+  font-weight: 800;
+  line-height: 0.9;
+  letter-spacing: -0.005em;
+  text-transform: uppercase;
+  overflow-wrap: anywhere;
+}
+
+/* ---------- Cabeçalho e fichas ---------- */
+.dk-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px 24px;
+  margin-bottom: 26px;
+}
+
+.dk-head h1 { color: var(--dk-heading); font-size: 64px; }
+.dk-lead { max-width: 520px; margin-top: 12px; color: var(--dk-muted); font-size: 17px; font-weight: 600; }
+
+.dk-tokens {
+  display: inline-flex;
+  min-height: 52px;
+  align-items: center;
+  gap: 12px;
+  padding: 6px 18px 6px 14px;
+  border: var(--app-line);
+  border-radius: 999px;
+  background: var(--dk-surface);
+  box-shadow: var(--app-shadow-hard);
+}
+
+.dk-coins { display: inline-flex; flex-wrap: wrap; gap: 4px; }
+
+.dk-coin-mini {
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--sp-yellow);
+  box-shadow: inset 0 0 0 2px #B89400, inset 0 0 0 5px var(--sp-yellow), inset 0 0 0 6px rgba(92, 74, 0, 0.35);
+}
+
+.dk-coin-mini.is-off { background: transparent; box-shadow: inset 0 0 0 2px var(--dk-border); }
+.dk-tokens-text { display: flex; flex-direction: column; line-height: 1.2; }
+.dk-tokens-text strong { font-size: 15px; font-weight: 800; }
+.dk-tokens-text small { color: var(--dk-muted); font-size: 12px; font-weight: 700; font-variant-numeric: tabular-nums; }
+
+/* ---------- Mesa ---------- */
+.dk-table {
+  position: relative;
+  overflow: hidden;
+  padding: 26px 28px 28px;
+  border: var(--app-line-width) solid var(--sp-black);
+  border-radius: 30px;
+  background-color: var(--dk-table);
+  background-image: radial-gradient(rgba(255, 255, 255, 0.16) 1.4px, transparent 1.7px);
+  background-size: 22px 22px;
+  box-shadow: 0 8px 0 var(--sp-black);
+  color: var(--dk-on-table);
+  /* Foco visível sobre a mesa (o anel azul do tema claro sumiria). */
+  --app-focus-color: var(--sp-paper);
+  --app-focus-ring: 3px solid var(--sp-paper);
+}
+
+.dk-top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px 20px;
+}
+
+.dk-top h2 { font-size: 44px; }
+.dk-top p { margin-top: 8px; font-size: 15px; font-weight: 600; }
+
+/* ---------- Mão de cartas ---------- */
+.dk-hand {
+  container: dk-hand / inline-size;
+  position: relative;
+  height: 560px;
+  margin-top: 6px;
+  border-radius: 24px;
+  outline: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.dk-hand:focus-visible { outline: 3px solid var(--sp-paper); outline-offset: -4px; }
+.dk-hand.is-pile { height: 430px; touch-action: pan-y pinch-zoom; }
+.dk-hand.is-single { height: 500px; }
+.dk-hand.is-pile.is-single { height: 400px; }
+
+.dk-slot {
+  position: absolute;
+  bottom: 24px;
+  left: 50%;
+  width: 250px;
+  height: 360px;
+  margin-left: -125px;
+  transform-origin: 50% 100%;
+  transition: transform 0.6s cubic-bezier(0.25, 0.8, 0.25, 1), opacity 0.3s ease;
+}
+
+.dk-hand.is-pile .dk-slot {
+  bottom: 34px;
+  width: 232px;
+  height: 334px;
+  margin-left: -116px;
+  transform-origin: 50% 50%;
+}
+
+.dk-slot.is-hidden { opacity: 0; pointer-events: none; }
+.dk-hand.is-pile .dk-slot.is-front { translate: var(--dk-dx, 0px) 0; }
+.dk-hand[data-dragging] .dk-slot { transition: none; }
+.dk-hand[data-dragging] { cursor: grabbing; }
+
+.dk-slot.is-deal { animation: dk-deal 0.75s cubic-bezier(0.2, 0.9, 0.3, 1.15) backwards; }
+@keyframes dk-deal { from { transform: translate(0, 420px) rotate(-14deg) scale(0.6); opacity: 0; } }
+
+.dk-tilt { position: relative; width: 100%; height: 100%; transition: transform 0.2s ease-out; }
+.dk-slot.is-front .dk-tilt { transform: perspective(900px) rotateX(var(--dk-rx, 0deg)) rotateY(var(--dk-ry, 0deg)); }
+.dk-slot.is-launching .dk-tilt { animation: dk-lift 0.65s cubic-bezier(0.3, 0, 0.3, 1) forwards; }
+@keyframes dk-lift { 0% { transform: none; } 40% { transform: translateY(-30px) scale(1.04); } 100% { transform: translateY(-16px) scale(1.02); } }
+
+.dk-pick {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  padding: 0;
+  border: 0;
+  border-radius: 20px;
+  background: transparent;
+  cursor: pointer;
+}
+
+.dk-pick:disabled { cursor: default; }
+.deck-v .dk-pick:focus-visible { outline: 3px solid var(--sp-paper); outline-offset: 4px; }
+
+/* ---------- Frente da carta (objeto físico: branca nos dois temas) ---------- */
+.dk-face {
+  --dk-band: var(--sp-yellow);
+  --dk-band-text: var(--sp-black);
+  --dk-window: #FFF6C2;
+  --dk-ink: #5C4A00;
+  position: absolute;
+  inset: 0;
+  padding: 8px;
+  border-radius: 20px;
+  background: #FFFFFF;
+  box-shadow: 0 2px 0 rgba(0, 0, 0, 0.2), 0 18px 30px rgba(0, 0, 0, 0.35);
+  color: var(--sp-black);
+}
+
+.dk-slot.is-front .dk-face { box-shadow: 0 2px 0 rgba(0, 0, 0, 0.2), 0 28px 44px rgba(0, 0, 0, 0.45); }
+.dk-face[data-tone='orange'] { --dk-band: var(--sp-orange); --dk-band-text: var(--sp-black); --dk-window: #FFE6D1; --dk-ink: #A63F00; }
+.dk-face[data-tone='red'] { --dk-band: var(--sp-red); --dk-band-text: #FFFFFF; --dk-window: #FFE1DC; --dk-ink: #B30E00; }
+.dk-face[data-tone='pink'] { --dk-band: var(--sp-pink); --dk-band-text: var(--sp-black); --dk-window: #FFE6F2; --dk-ink: #9E2F66; }
+.dk-face[data-tone='blue'] { --dk-band: var(--sp-blue); --dk-band-text: #FFFFFF; --dk-window: #E7EEFF; --dk-ink: var(--sp-blue-hover); }
+
+.dk-frame {
+  position: relative;
+  display: flex;
+  height: 100%;
+  flex-direction: column;
+  overflow: hidden;
+  border: 3px solid var(--dk-band);
+  border-radius: 14px;
+}
+
+.dk-band {
+  display: flex;
+  min-height: 62px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 8px 8px 12px;
+  background: var(--dk-band);
+  color: var(--dk-band-text);
+}
+
+.dk-band h3 { min-width: 0; font-size: 24px; line-height: 0.92; }
+
+.dk-gem {
+  display: grid;
+  width: 48px;
+  height: 48px;
+  flex: 0 0 auto;
+  place-items: center;
+  align-content: center;
+  border-radius: 50%;
+  background: var(--sp-yellow);
+  box-shadow: inset 0 0 0 2px #B89400, inset 0 0 0 5px var(--sp-yellow), inset 0 0 0 6px rgba(92, 74, 0, 0.3);
+  color: var(--sp-black);
+  font-size: 14px;
+  font-weight: 800;
+  line-height: 0.9;
+  text-align: center;
+}
+
+.dk-gem small { display: block; font-size: 9px; letter-spacing: 0.06em; }
+
+.dk-window {
+  position: relative;
+  display: grid;
+  height: 136px;
+  flex: 0 0 auto;
+  place-items: center;
+  background-color: var(--dk-window);
+  background-image: radial-gradient(rgba(0, 0, 0, 0.12) 1.3px, transparent 1.6px);
+  background-size: 16px 16px;
+}
+
+.dk-window img {
+  display: block;
+  width: 126px;
+  height: 126px;
+  object-fit: contain;
+  filter: drop-shadow(2px 0 0 #FFFFFF) drop-shadow(-2px 0 0 #FFFFFF) drop-shadow(0 2px 0 #FFFFFF) drop-shadow(0 -2px 0 #FFFFFF) drop-shadow(0 8px 6px rgba(0, 0, 0, 0.25));
+}
+
+.dk-window img.is-pixel { image-rendering: pixelated; }
+.dk-slot.is-front .dk-window img { animation: dk-bob 3s ease-in-out infinite; }
+@keyframes dk-bob { 0%, 100% { transform: translateY(2px) rotate(-3deg); } 50% { transform: translateY(-8px) rotate(3deg); } }
+
+.dk-art-fallback { padding: 12px; color: var(--dk-ink); font-size: 18px; font-weight: 800; text-align: center; }
+
+.dk-soon {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: rgba(0, 0, 0, 0.62);
+  color: #FFFFFF;
+  font-size: 16px;
+  font-weight: 800;
+}
+
+.dk-type {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 12px 0;
+  color: var(--dk-ink);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.dk-type span:last-child { flex: 0 0 auto; color: var(--sp-muted); }
+.dk-text { margin: 6px 12px 0; color: #39332C; font-size: 13px; font-weight: 600; line-height: 1.35; }
+.dk-foot { margin-top: auto; padding: 8px 10px 10px; }
+
+.dk-foot span {
+  display: inline-flex;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--dk-window);
+  color: var(--dk-ink);
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1.3;
+}
+
+/* Brilho holográfico: varre sozinho na carta da frente; com mouse fino, segue o ponteiro. */
+.dk-holo {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  border-radius: 20px;
+  background-image: linear-gradient(115deg, transparent 28%, rgba(255, 255, 255, 0.75) 42%, rgba(254, 213, 1, 0.4) 48%, rgba(141, 174, 255, 0.45) 54%, transparent 68%);
+  background-size: 260% 260%;
+  mix-blend-mode: soft-light;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.4s;
+}
+
+.dk-slot.is-front .dk-holo { opacity: 1; animation: dk-sheen 4.5s ease-in-out infinite; }
+.dk-hand[data-live] .dk-slot.is-front .dk-holo { background-position: var(--dk-hx, 50%) var(--dk-hy, 50%); animation: none; }
+@keyframes dk-sheen { 0%, 100% { background-position: 0% 0%; } 50% { background-position: 100% 100%; } }
+
+/* Ficha caindo sobre a carta antes de abrir o jogo (650 ms). */
+.dk-coin {
+  position: absolute;
+  top: 56px;
+  left: 50%;
+  z-index: 200;
+  width: 44px;
+  height: 44px;
+  margin-left: -22px;
+  border-radius: 50%;
+  background: var(--sp-yellow);
+  box-shadow: inset 0 0 0 3px #B89400, inset 0 0 0 9px var(--sp-yellow), inset 0 0 0 10px rgba(92, 74, 0, 0.35), 0 8px 14px rgba(0, 0, 0, 0.3);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.dk-hand.is-pile .dk-coin { top: 40px; }
+.dk-coin.is-dropping { animation: dk-coin 0.65s cubic-bezier(0.5, 0, 0.6, 1) forwards; }
+@keyframes dk-coin {
+  0% { transform: translateY(-80px) rotateY(0); opacity: 0; }
+  15% { opacity: 1; }
+  70% { transform: translateY(200px) rotateY(720deg); opacity: 1; }
+  100% { transform: translateY(220px) rotateY(900deg) scale(0.2); opacity: 0; }
+}
+
+/* ---------- Controles ---------- */
+.dk-ctrl { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 12px; }
+.dk-spacer { display: none; }
+
+.dk-icbtn {
+  display: grid;
+  width: 52px;
+  height: 52px;
+  flex: 0 0 52px;
+  place-items: center;
+  padding: 0;
+  border: var(--app-line-width) solid var(--sp-black);
+  border-radius: 50%;
+  background: #FFFFFF;
+  box-shadow: 0 4px 0 var(--sp-black);
+  color: var(--sp-black);
+  cursor: pointer;
+  transition: transform 120ms ease, box-shadow 120ms ease;
+}
+
+.dk-icbtn:hover:not(:disabled) { background: var(--sp-paper); }
+.dk-icbtn:active:not(:disabled) { transform: translateY(3px); box-shadow: 0 1px 0 var(--sp-black); }
+.dk-icbtn:disabled { opacity: 0.55; cursor: not-allowed; box-shadow: none; }
+
+.dk-play small { font-size: 13px; font-weight: 700; }
+.deck-v .app-button.dk-play:disabled { opacity: 1; background: #F2E7A0; color: #4A4030; }
+
+.dk-dots { display: flex; flex-wrap: wrap; justify-content: center; gap: 2px; margin-top: 12px; }
+
+.dk-dots button {
+  display: grid;
+  width: 26px;
+  height: 26px;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  cursor: pointer;
+}
+
+.dk-dots button::before {
+  width: 10px;
+  height: 10px;
+  border: 2px solid var(--dk-on-table);
+  border-radius: 50%;
+  content: '';
+}
+
+.dk-dots button[aria-current='true']::before { width: 22px; border-radius: 999px; background: var(--dk-on-table); }
+.dk-count { margin-top: 14px; font-size: 14px; font-weight: 700; text-align: center; }
+
+/* ---------- Estados ---------- */
+.dk-skeleton { position: relative; height: 480px; margin-top: 6px; }
+
+.dk-skeleton span {
+  position: absolute;
+  bottom: 40px;
+  left: 50%;
+  width: 230px;
+  height: 330px;
+  margin-left: -115px;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.22);
+  box-shadow: inset 0 0 0 3px rgba(255, 255, 255, 0.28);
+  transform-origin: 50% 100%;
+  animation: dk-pulse 1.4s ease-in-out infinite;
+}
+
+.dk-skeleton span:nth-child(1) { transform: translateX(-150px) rotate(-8deg); }
+.dk-skeleton span:nth-child(2) { z-index: 1; transform: translateY(-30px); animation-delay: 0.15s; }
+.dk-skeleton span:nth-child(3) { transform: translateX(150px) rotate(8deg); animation-delay: 0.3s; }
+@keyframes dk-pulse { 50% { opacity: 0.55; } }
+
+.dk-message {
+  display: flex;
+  min-height: 320px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 24px 8px;
+  text-align: center;
+}
+
+.dk-message strong { font-size: 36px; }
+.dk-message p { max-width: 420px; font-size: 15px; font-weight: 600; }
+
+/* ---------- Responsivo ---------- */
+@container deck-v (max-width: 900px) {
+  .dk-head h1 { font-size: 56px; }
+}
+
+@container deck-v (max-width: 560px) {
+  .dk-head h1 { font-size: 48px; }
+  .dk-lead { font-size: 15px; }
+  .dk-tokens { width: 100%; }
+  .dk-table { padding: 20px 14px 22px; border-radius: 24px; }
+  .dk-top h2 { font-size: 34px; }
+  .dk-top p { font-size: 14px; }
+  .dk-ctrl { gap: 10px; }
+  .dk-ctrl .dk-play { flex: 1 1 100%; order: 2; }
+  .dk-ctrl .dk-icbtn { order: 1; }
+  .dk-ctrl .dk-spacer { display: block; flex: 1 1 auto; order: 1; }
+  .dk-skeleton span:nth-child(1), .dk-skeleton span:nth-child(3) { display: none; }
+  .dk-message strong { font-size: 28px; }
+}
+
+@container deck-v (max-width: 360px) {
+  .dk-head h1 { font-size: 44px; }
+  .dk-top h2 { font-size: 32px; }
+}
+
+@container dk-hand (max-width: 300px) {
+  .dk-hand.is-pile .dk-slot { width: 204px; height: 304px; margin-left: -102px; }
+  .dk-band { min-height: 54px; }
+  .dk-band h3 { font-size: 19px; }
+  .dk-gem { width: 42px; height: 42px; font-size: 13px; }
+  .dk-window { height: 104px; }
+  .dk-window img { width: 92px; height: 92px; }
+  .dk-text { font-size: 12px; }
+}
+
+@container dk-hand (min-width: 300px) and (max-width: 560px) {
+  .dk-band h3 { font-size: 21px; }
+  .dk-window { height: 118px; }
+  .dk-window img { width: 108px; height: 108px; }
+}
+
+/* ---------- Desktop: cabe na área útil sem rolar a página ----------
+ * A partir de 1100 × 700 px a tela ocupa --sp-fit-h (altura útil do <main>):
+ * cabeçalho e mesa compactos, a mão absorve o espaço que sobra e as cartas
+ * diminuem por degraus de altura (`scale` compõe com o `transform` da pose,
+ * então o leque inteiro encolhe junto). Abaixo disso, fluxo natural.
+ */
+@media (min-width: 1100px) and (min-height: 700px) {
+  .deck-v {
+    --dk-card-scale: 1;
+    display: flex;
+    height: var(--sp-fit-h);
+    min-height: 0;
+    flex-direction: column;
+    /* Espaço da sombra dura da mesa (8 px). */
+    padding: 0 0 22px;
+  }
+
+  .dk-head { flex: 0 0 auto; gap: 10px 24px; margin-bottom: 14px; }
+  .dk-head h1 { font-size: clamp(40px, 5.4vh, 56px); }
+  .dk-lead { margin-top: 6px; font-size: 15px; }
+  .dk-tokens { min-height: 46px; padding: 4px 16px 4px 12px; }
+
+  .dk-table {
+    display: flex;
+    min-height: 0;
+    flex: 1 1 0;
+    flex-direction: column;
+    padding: 14px 22px 16px;
+    border-radius: 26px;
+  }
+
+  .dk-top { flex: 0 0 auto; }
+  .dk-top h2 { font-size: clamp(28px, 3.8vh, 40px); }
+  .dk-top p { margin-top: 4px; font-size: 14px; }
+
+  .dk-hand, .dk-hand.is-single { height: auto; min-height: 0; flex: 1 1 0; margin-top: 0; }
+  /* Cartas centradas na altura da mesa (antes coladas embaixo). A origem do leque é a base da carta, então a escala entra na conta. */
+  .dk-slot { top: 50%; bottom: auto; margin-top: calc(-360px + 180px * var(--dk-card-scale) - 14px); }
+  .dk-hand.is-pile .dk-slot { margin-top: -167px; }
+  .dk-slot { scale: var(--dk-card-scale); }
+  .dk-coin { top: 24px; }
+  .dk-ctrl { flex: 0 0 auto; }
+  .dk-count { flex: 0 0 auto; margin-top: 8px; font-size: 13px; }
+
+  .dk-skeleton { height: auto; min-height: 0; flex: 1 1 0; }
+  .dk-skeleton span { scale: var(--dk-card-scale); }
+  .dk-message { min-height: 0; flex: 1 1 0; }
+}
+
+/* Janelas mais baixas: cartas menores (leque com a carta da frente erguida ≈ 24 + 460 px × escala). */
+@media (min-width: 1100px) and (min-height: 700px) and (max-height: 860px) {
+  .deck-v { --dk-card-scale: 0.88; }
+}
+
+@media (min-width: 1100px) and (min-height: 700px) and (max-height: 780px) {
+  .deck-v { --dk-card-scale: 0.78; }
+  .dk-head { margin-bottom: 10px; }
+  .dk-lead { margin-top: 4px; font-size: 14px; }
+  .dk-icbtn { width: 46px; height: 46px; flex-basis: 46px; }
+}
+
+@media (min-width: 1100px) and (min-height: 700px) and (max-height: 730px) {
+  .deck-v { --dk-card-scale: 0.72; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .deck-v *, .deck-v *::before, .deck-v *::after { animation: none !important; transition: none !important; }
+  .dk-slot.is-front .dk-tilt { transform: none; }
+}
