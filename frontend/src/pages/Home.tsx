@@ -2,9 +2,8 @@ import { PageTransition } from '@/components/shared/PageTransition';
 import { PageLoading } from '@/components/shared/PageLoading';
 import { usePageLoading } from '@/contexts/PageLoadingContext';
 import { NicknameWelcomeDialog } from '@/components/shared/NicknameWelcomeDialog';
-import { Header } from "@/components/shared/layout/header/index";
-import { MobileNavigation, Sidebar, SidebarItem } from '@/components/shared/Sidebar';
-import { TrophyIcon, LayoutDashboard, Gamepad2, AwardIcon, BookOpenIcon, ArrowLeft, ShieldIcon } from "lucide-react";
+import { AppRail, COLLECTIBLES_PATH } from '@/components/shared/AppRail';
+import { ArrowLeft } from "lucide-react";
 import { Dashboard, Awards, Challenges, Ranking, Conteudos, Perfil } from '@/components/sections/HomePage/index';
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
@@ -15,14 +14,13 @@ import { useEmpresaTema } from '@/hooks/useEmpresaTema';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { useVisualPreload } from '@/hooks/useVisualPreload';
 import '@/styles/app-ui.css';
-import '@/styles/profile-ui.css';
 import '@/styles/dashboard-ui.css';
-import '@/styles/academy-dashboard.css';
 import '@/styles/notebook-ui.css';
 import '@/styles/home-sections.css';
 import { AppButton } from '@/components/ui/buttons/AppButton';
 import { useCompanyFeatures } from '@/hooks/useCompanyFeatures';
 import { companyIdentityKey } from '@/config/features';
+import type { CurrentUser } from '@/services/me';
 const Admin = lazy(() => import('@/pages/Admin'));
 export type Section = 'dashboard' | 'desafios' | 'ranking' | 'conquistas' | 'conteudos' | 'perfil' | 'admin';
 const validSections: Section[] = ['dashboard', 'desafios', 'ranking', 'conquistas', 'conteudos', 'perfil', 'admin'];
@@ -115,6 +113,11 @@ function HomeContent() {
         }
         go(section, null);
     }, [canOpenSection, go, navigate]);
+    // "Você" no trilho: Conquistas já aberto na aba Colecionáveis.
+    const openCollectibles = useCallback(() => {
+        enteredContentFrom.current = null;
+        if (canOpenSection('conquistas')) navigate(COLLECTIBLES_PATH);
+    }, [canOpenSection, navigate]);
     const navigateToSection = useCallback((section: Section) => {
         enteredContentFrom.current = activeSection === 'conteudos' ? enteredContentFrom.current : activeSection;
         go(section, null);
@@ -149,6 +152,13 @@ function HomeContent() {
         go(DEFAULT_SECTION, null, { replace: true });
     }, [userLoading, canOpenSection, activeSection, go]);
 
+    // Cada seção, módulo ou aula abre no topo: o <main> rola sozinho e guardava a
+    // posição da tela anterior (Jogos abria no fim da página).
+    const mainRef = useRef<HTMLElement>(null);
+    useEffect(() => {
+        mainRef.current?.scrollTo({ top: 0, left: 0 });
+    }, [activeSection, moduloId, aulaId]);
+
     const sectionValue = useMemo(
         () => ({ activeSection, setActiveSection, navigateToSection, navigateToContent, contentTarget, setContentTarget, previousSection, goBack, setLoading, registerBootstrap }),
         [activeSection, setActiveSection, navigateToSection, navigateToContent, contentTarget, setContentTarget, previousSection, goBack, setLoading, registerBootstrap],
@@ -158,32 +168,34 @@ function HomeContent() {
         <SectionContext.Provider value={sectionValue}>
         <Toaster position="top-right" richColors/>
 
-        <div className="secure-home flex h-dvh overflow-hidden">
+        <div className="secure-home sp-shell">
+          <AppRail
+            activeSection={activeSection}
+            onSelect={setActiveSection}
+            onOpenCollectibles={openCollectibles}
+            showRanking={canOpenSection('ranking')}
+            showAchievements={canOpenSection('conquistas')}
+            showAdmin={canOpenSection('admin')}
+          />
 
-          <Sidebar logoUrl={user?.empresa_logo}>
-            <SidebarItem id="dashboard" icon={<LayoutDashboard />} text="Início" active={activeSection === 'dashboard'} onSelect={setActiveSection}/>
-            <SidebarItem id="conteudos" icon={<BookOpenIcon />} text="Aprender" active={activeSection === 'conteudos'} onSelect={setActiveSection}/>
-            <SidebarItem id="desafios" icon={<Gamepad2 />} text="Jogos" active={activeSection === 'desafios'} onSelect={setActiveSection}/>
-            {features.ranking && <SidebarItem id="ranking" icon={<TrophyIcon />} text="Ranking" active={activeSection === 'ranking'} onSelect={setActiveSection}/>}
-            {features.achievements && <SidebarItem id="conquistas" icon={<AwardIcon />} text="Conquistas" active={activeSection === 'conquistas'} onSelect={setActiveSection}/>}
-            {canOpenSection('admin') && <SidebarItem id="admin" icon={<ShieldIcon />} text="Administrador" active={activeSection === 'admin'} onSelect={setActiveSection}/>}
-          </Sidebar>
+          <main ref={mainRef} className={`secure-home-main sp-shell-main relative min-h-0 overflow-y-auto`}>
+            <ContentTop user={user} showBack={false} onBack={goBack} />
+            {canOpenSection(activeSection) ? sections[activeSection] : null}
+          </main>
 
-          <div className="flex flex-col flex-1 min-w-0 min-h-0">
-            <Header />
-            <main className={`secure-home-main relative flex-1 min-h-0 overflow-y-auto p-6 bg-[var(--background)] ${activeSection === 'conteudos' && contentTarget?.aulaId ? 'is-classroom-view' : ''}`}>
-              {user?.trial_ends_at && <div role="status" className="mb-4 rounded-xl border border-[var(--border)] bg-[var(--surface)] p-3 text-sm">Teste gratuito de aluno até {new Date(user.trial_ends_at).toLocaleDateString('pt-BR')}. Para continuar depois, <a className="underline" href="mailto:contato@secureplay.com?subject=Planos%20SecurePlay">fale com a SecurePlay</a>.</div>}
-              {previousSection && (<AppButton onClick={goBack} variant="ghost" size="sm" icon={<ArrowLeft size={16}/>} className="mb-4">
-                  Voltar
-                </AppButton>)}
-              {canOpenSection(activeSection) ? sections[activeSection] : null}
-            </main>
-          </div>
-
-          <MobileNavigation activeSection={activeSection} onSelect={setActiveSection} showAdmin={canOpenSection('admin')} showAchievements={features.achievements} showRanking={features.ranking} />
           {bootstrapReady && <NicknameWelcomeDialog key={user?.userId} />}
         </div>
         </SectionContext.Provider>
+    </>);
+}
+/** Topo da área de conteúdo: faixa do teste gratuito e o Voltar do conteúdo. */
+function ContentTop({ user, showBack, onBack }: { user: CurrentUser | null; showBack: boolean; onBack: () => void }) {
+    const trialEndsAt = user?.trial_ends_at;
+    return (<>
+        {trialEndsAt && <div role="status" className="sp-trial-banner">Teste gratuito de aluno até {new Date(trialEndsAt).toLocaleDateString('pt-BR')}. Para continuar depois, <a href="mailto:contato@secureplay.com?subject=Planos%20SecurePlay">fale com a SecurePlay</a>.</div>}
+        {showBack && (<AppButton onClick={onBack} variant="ghost" size="sm" icon={<ArrowLeft size={16}/>} className="sp-content-back">
+            Voltar
+          </AppButton>)}
     </>);
 }
 export default function Home() {

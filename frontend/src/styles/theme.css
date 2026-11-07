@@ -32,6 +32,26 @@ body,
 
 
 :root {
+  /* Paleta fixa da marca (mood board). Não sofre o override de cor da empresa. */
+  --sp-blue: #2662E7;
+  --sp-blue-hover: #1D50C2;
+  --sp-blue-shadow: #1A47AD;
+  --sp-yellow: #FED501;
+  --sp-yellow-hover: #FFE14D;
+  --sp-yellow-shadow: #8A7300;
+  --sp-orange: #FF7101;
+  --sp-cream: #F9EEDC;
+  --sp-paper: #FFFCF7;
+  --sp-pink: #FE96C7;
+  --sp-red: #F51300;
+  --sp-black: #000000;
+  --sp-muted: #5A534A;
+  --sp-sand: #E4D6BD;
+  --sp-ink-900: #0E0E11;
+  --sp-ink-800: #1C1C21;
+  --sp-ink-700: #24242A;
+  --sp-ink-600: #2D2D34;
+  --font-family-brand: 'Bricolage Grotesque', system-ui, sans-serif;
 
 
   --primary: #2662E7;
@@ -42,34 +62,44 @@ body,
   --primary-hover: #1D50C2;
 
 
-  --secondary: #00C2CB;
-  --secondary-rgb: 0, 194, 203;
-
-  --secondary-dark: #009ba3;
+  /* Secundária padrão: laranja da marca (OranG). Substitui o turquesa, que não
+     pertence à paleta. É cor de preenchimento: texto sobre ela deve ser preto
+     (7,6:1); como texto sobre fundos claros use --secondary-dark (5,3:1 no
+     branco). A escola pode sobrescrever as três via useEmpresaTema. */
+  --secondary: #FF7101;
+  --secondary-rgb: 255, 113, 1;
+  --secondary-dark: #B34D00;
 
 
   --accent: #FED501;
   --accent-rgb: 254, 213, 1;
 
   --accent-dark: #cc9f24;
-  --accent-text: #b8930a;
+  /* Amarelo legível como texto sobre superfícies escuras (13:1 em #1C1C21). */
+  --accent-text: #FFE45C;
 
+  /* Superfícies e texto base (tema escuro: grafite da marca). */
   --background-primary: #FFFFFF;
-  --background: #1E293B;
+  --background: var(--sp-ink-900);
 
-  --surface: #273449;
-  --surface-alt: #314054;
+  --surface: var(--sp-ink-800);
+  --surface-alt: var(--sp-ink-700);
 
-  --text-primary: #ECECEC;
-  --text-secondary: #94a3b8;
+  --text-primary: var(--sp-cream);
+  --text-secondary: #B4AC9F;
 
 
-  --border-primary: #d8d8dc;
-  --border: #334155;
-  --border-light: #475569;
+  --border-primary: #45454E;
+  --border: #45454E;
+  --border-light: #5E5E68;
 
-  --danger: #d4183d;
-  --success: #00C2CB;
+  /* Semânticas: texto AA sobre --background/--surface do tema. */
+  --danger: #FF7A6B;
+  --danger-soft: #3A1A17;
+  --success: #5FD68A;
+  --success-soft: #15301F;
+  --warning: #FFE45C;
+  --warning-soft: #3A3110;
 
   --overlay-light: rgba(255,255,255,0.1);
 
@@ -86,9 +116,10 @@ body,
 
 
 
-  --font-family-base: 'Plus Jakarta Sans', 'Inter', sans-serif;
-  --font-family-inter: 'Plus Jakarta Sans', 'Inter', sans-serif;
-  --font-family-ui: 'Plus Jakarta Sans', 'Inter', sans-serif;
+  /* Bricolage Grotesque também no texto corrido (decisão D1 do redesign). */
+  --font-family-base: var(--font-family-brand);
+  --font-family-inter: var(--font-family-brand);
+  --font-family-ui: var(--font-family-brand);
   --font-family-mono: 'JetBrains Mono', monospace;
 
   --font-xs: 13px;
@@ -111,37 +142,32 @@ body,
 }
 
 [data-theme='light'] {
+  /* Claro: creme, papel e areia do canvas; texto preto. A cor da marca/escola
+     (--primary, --secondary, --accent e derivados) não muda com o tema. */
   --background-primary: #ffffff;
-  --background: #ffffff;
+  --background: var(--sp-cream);
 
   --surface: #ffffff;
-  --surface-alt: #f8fafc;
+  --surface-alt: var(--sp-paper);
 
-  --text-primary: #1E293B;
-  --text-secondary: #475569;
+  --text-primary: var(--sp-black);
+  --text-secondary: var(--sp-muted);
 
-  --border-primary: #cbd5e1;
-  --border: #e2e8f0;
-  --border-light: #cbd5e1;
+  --border-primary: #D8C9AF;
+  --border: #D8C9AF;
+  --border-light: #BFAE8E;
 
-  --overlay-light: rgba(30, 41, 59, 0.06);
+  --overlay-light: rgba(0, 0, 0, 0.06);
 
-  --primary: #2662E7;
-  --primary-rgb: 38, 98, 231;
-  --primary-light: #739BF0;
-  --primary-dark: #143D91;
-  --primary-hover: #1D50C2;
+  /* Amarelo escuro legível como texto (6,2:1 no branco, 5,4:1 no creme). */
+  --accent-text: #7A5C00;
 
-  --secondary: #00C2CB;
-  --secondary-rgb: 0, 194, 203;
-  --secondary-dark: #009ba3;
-
-  --accent: #FED501;
-  --accent-rgb: 254, 213, 1;
-  --accent-dark: #cc9f24;
-  --accent-text: #9a7400;
-
-  --success: #00C2CB;
+  --danger: #C21000;
+  --danger-soft: #FDE7E4;
+  --success: #1E7A3E;
+  --success-soft: #E3F3E8;
+  --warning: #6B4E00;
+  --warning-soft: #FFF6C2;
 }
 
 body {

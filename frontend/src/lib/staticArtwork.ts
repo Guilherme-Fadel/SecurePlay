@@ -17,11 +17,11 @@ const missionRoomFiles = import.meta.glob<string>(
   { eager: true, query: '?url', import: 'default' },
 );
 const achievementFiles = import.meta.glob<string>(
-  '../assets/static/achievements/*.png',
+  '../assets/static/achievements/*.webp',
   { eager: true, query: '?url', import: 'default' },
 );
 const gameFiles = import.meta.glob<string>(
-  '../assets/static/games/*.png',
+  '../assets/static/games/*.webp',
   { eager: true, query: '?url', import: 'default' },
 );
 
