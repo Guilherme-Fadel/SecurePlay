@@ -1,17 +1,18 @@
-import { InfoCard } from '@/components/ui/visuals/InfoCard';
+import { AppButton } from '@/components/ui/buttons/AppButton';
 import { useDailyChallenge } from '@/hooks/useDashboard';
 import { Modal } from '@/components/ui/modal';
 import { QuizContent } from '@/components/sections/Quiz/QuizContent';
-import { motion } from 'motion/react';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { getChallengeStatus, getChallengeQuestions, QuestionResponse } from '@/services/challenge';
 import { getCached, setCache } from '@/lib/queryCache';
 import { getChallengeArtwork } from '@/lib/challengeArtwork';
-import { CircleCheck, Sparkles } from 'lucide-react';
+import { CircleCheck } from 'lucide-react';
 
 export function DailyChallenge() {
   const { challenge, loading } = useDailyChallenge();
   const [open, setOpen] = useState(false);
+  // Ao concluir, o botão que abriu vira o aviso "Feita hoje": o foco volta ao título do bloco.
+  const titleRef = useRef<HTMLHeadingElement>(null);
 
   const cacheKey = challenge ? `challenge-status:${challenge.id}` : null;
   const cachedCompleted = cacheKey ? getCached<boolean>(cacheKey) : null;
@@ -88,74 +89,66 @@ export function DailyChallenge() {
   };
 
   if (loading) {
-    return (
-      <InfoCard variant="primary" raised className="flex flex-col animate-pulse">
-        <div className="p-4 h-40" />
-      </InfoCard>
-    );
+    return <section className="hv-card hv-daily is-loading" aria-busy="true" aria-label="Carregando a missão do dia"><span className="hv-skeleton is-title" /><span className="hv-skeleton" /></section>;
   }
 
   if (!challenge) {
     return (
-      <InfoCard variant="primary" raised className="flex flex-col">
-        <InfoCard.Section>
-          <p className="text-[var(--text-secondary)]">Nenhum desafio disponível hoje.</p>
-        </InfoCard.Section>
-      </InfoCard>
+      <section className="hv-card hv-daily" aria-labelledby="hv-daily-title">
+        <div><p className="hv-eyebrow">Vale o check-in de hoje</p><h2 id="hv-daily-title" className="hv-display">Missão do dia</h2></div>
+        <p className="hv-muted">Nenhuma missão disponível hoje. Volte amanhã!</p>
+      </section>
     );
   }
 
   const totalObjectives = questions.length;
   const doneObjectives = completed ? totalObjectives : Math.min(answeredCount, totalObjectives);
-  const progressPercent = totalObjectives > 0 ? Math.round((doneObjectives / totalObjectives) * 100) : (completed ? 100 : 0);
+  const details = [
+    totalObjectives > 0 ? `${totalObjectives} ${totalObjectives === 1 ? 'pergunta' : 'perguntas'}` : null,
+    challenge.duration > 0 ? `cerca de ${challenge.duration} min` : null,
+  ].filter(Boolean).join(' · ');
 
   return (
     <>
-      <div className={`hall-daily-hitarea${canStart ? ' is-clickable' : ''}`}>
-        <InfoCard variant="primary" raised className="dashboard-daily-card flex flex-col h-full min-h-0">
-          <div className="dashboard-daily-body flex-1 min-h-0 flex flex-col gap-2 p-2.5 overflow-hidden">
-            <span className="academy-daily-sparkles" aria-hidden="true"><Sparkles /><i /><i /></span>
-            <img className="academy-daily-illustration" src={getChallengeArtwork(challenge.image, 'caca-phishing')} alt="" aria-hidden="true" onError={(event) => {
+      <section className="hv-card hv-daily" aria-labelledby="hv-daily-title">
+        <div><p className="hv-eyebrow">Vale o check-in de hoje</p><h2 id="hv-daily-title" ref={titleRef} tabIndex={-1} className="hv-display">Missão do dia</h2></div>
+        <div className="hv-daily-row">
+          <span className="hv-daily-art" aria-hidden="true">
+            <img src={getChallengeArtwork(challenge.image, 'caca-phishing')} alt="" width={56} height={56} onError={(event) => {
               const fallback = getChallengeArtwork(null, 'caca-phishing');
               if (event.currentTarget.getAttribute('src') !== fallback) event.currentTarget.src = fallback;
             }} />
-            <div className="dashboard-daily-summary shrink-0">
-              <h3>{challenge.title}</h3>
-              {!completed ? (
-                <p>{totalObjectives > 0 && doneObjectives === totalObjectives
-                  ? 'Refaça o quiz para concluir o envio.'
-                  : 'Complete hoje e mantenha sua aventura em movimento.'}</p>
-              ) : (
-                <span className="hall-daily-complete" role="status">
-                  <CircleCheck size={12} aria-hidden="true" /> Concluída hoje
-                </span>
-              )}
-            </div>
-            {doneObjectives > 0 && totalObjectives > 0 && (
-              <div className="academy-mission-completion">
-                <small>{doneObjectives} de {totalObjectives} {completed ? 'etapas concluídas' : 'respostas corretas'}</small>
-                <div className="academy-mission-completion-track" role="progressbar" aria-label={completed ? 'Etapas concluídas da missão' : 'Respostas corretas da missão'} aria-valuemin={0} aria-valuemax={totalObjectives} aria-valuenow={doneObjectives}>
-                  <motion.div
-                    className="academy-mission-completion-fill"
-                    initial={{ width: 0 }}
-                    animate={{ width: `${progressPercent}%` }}
-                    transition={{ duration: 0.7, ease: 'easeOut' }}
-                  />
-                </div>
-              </div>
-            )}
+          </span>
+          <div>
+            <strong>{challenge.title}</strong>
+            {details && <small>{details}</small>}
           </div>
-        </InfoCard>
-        {canStart && <button
-          type="button"
-          className="hall-daily-overlay"
-          aria-label={`${doneObjectives > 0 ? 'Refazer' : 'Iniciar'} missão do dia: ${challenge.title}`}
-          onClick={() => setOpen(true)}
-        />}
-      </div>
+        </div>
+        {completed ? (
+          <span className="hv-done" role="status"><CircleCheck size={18} aria-hidden="true" /> Feita hoje · check-in feito</span>
+        ) : (
+          <>
+            {doneObjectives > 0 && totalObjectives > 0 && (
+              <p className="hv-muted">{doneObjectives === totalObjectives ? 'Refaça o quiz para concluir o envio.' : `${doneObjectives} de ${totalObjectives} respostas corretas.`}</p>
+            )}
+            <AppButton
+              variant="chunky"
+              tone="yellow"
+              size="md"
+              className="hv-daily-cta"
+              disabled={!canStart}
+              aria-label={`${doneObjectives > 0 ? 'Refazer' : 'Fazer'} missão do dia: ${challenge.title}`}
+              onClick={() => setOpen(true)}
+            >
+              {doneObjectives > 0 ? 'Refazer a missão' : 'Fazer a missão'}
+            </AppButton>
+          </>
+        )}
+      </section>
       <Modal
         open={open}
         onClose={handleCloseModal}
+        returnFocusRef={titleRef}
         title={challenge.title}
       >
         <QuizContent

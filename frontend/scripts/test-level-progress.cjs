@@ -2,13 +2,10 @@ const assert = require('node:assert/strict');
 const { test } = require('node:test');
 const { load } = require('./helpers/react-hooks.cjs');
 const progression = load('src/lib/levelProgress.ts', {});
-const { AdventureHero } = load('src/components/sections/HomePage/Dashboard/AdventureHero.tsx', {
-  'lucide-react': { BookOpen: 'svg', Check: 'svg', Play: 'svg', Star: 'svg' },
-  '@/components/ui/buttons/AppButton': { AppButton: 'button' },
+const { HomeLevelWeek } = load('src/components/sections/HomePage/Dashboard/HomeLevelWeek.tsx', {
+  'lucide-react': { Check: 'svg' },
+  '@/components/shared/BrandCharacter': { BrandCharacter: 'svg' },
   '@/lib/levelProgress': progression,
-  '@/lib/staticArtwork': { missionRoomAssets: {} },
-  '@/assets/dashboard/streak-calendar-pixel-v1.png': {},
-  '@/assets/dashboard/mission-page-tab-pixel-v1.png': {},
 });
 function nodes(node) {
   if (!node || typeof node !== 'object') return [];
@@ -22,16 +19,18 @@ for (const [totalPoints, level, xpToNextLevel, expected] of [
 ]) {
   test(`${totalPoints} total XP: level ${level} bar shows ${expected}% without changing accumulated XP`, () => {
     const stats = Object.freeze({ totalPoints, level, xpToNextLevel });
-    const tree = nodes(AdventureHero({ stats, streak: null }));
+    const tree = nodes(HomeLevelWeek({ stats, streak: null }));
     const bar = tree.find(node => node.props['aria-label'] === 'Progresso de experiência');
     assert.equal(bar.props['aria-valuenow'], expected);
-    assert.equal(bar.props.children.props.style.width, `${expected}%`);
+    const fill = [bar.props.children].flat().find(child => child?.props?.className === 'hv-track-fill');
+    assert.equal(fill.props.style.width, `${expected}%`);
     assert.ok(tree.some(node => node.type === 'strong' && node.props.children === totalPoints.toLocaleString('pt-BR')));
     assert.ok(bar.props['aria-valuetext'].includes(`Faltam ${xpToNextLevel.toLocaleString('pt-BR')} XP`));
-    assert.ok(tree.some(node => node.type === 'span' && node.props.children === 'XP totais'));
+    assert.ok(tree.some(node => node.type === 'p' && [node.props.children].flat().includes(' XP no total')));
+    assert.ok(tree.some(node => node.type === 'b' && node.props.children === level));
   });
 }
 test('missing stats leaves the experience bar empty', () => {
-  const tree = nodes(AdventureHero({ stats: null, streak: null }));
+  const tree = nodes(HomeLevelWeek({ stats: null, streak: null }));
   assert.equal(tree.find(node => node.props['aria-label'] === 'Progresso de experiência').props['aria-valuenow'], 0);
 });
