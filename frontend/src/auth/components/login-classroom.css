@@ -1,0 +1,207 @@
+@import '../../styles/public-brand.css';
+
+/* Login "Sala da turma" (canvas "SecurePlay · Login · Propostas", opção C).
+   Segue o tema global: escuro por padrão, claro com :root[data-theme='light'].
+   Bordas de campo escurecidas em relação ao canvas para atingir 3:1 (WCAG 1.4.11). */
+.login-page.lgc {
+  --lgc-bg: var(--sp-ink-900);
+  --lgc-surface: var(--sp-ink-800);
+  --lgc-surface-2: #16161A;
+  --lgc-text: var(--sp-cream);
+  --lgc-muted: #B4AC9F;
+  --lgc-border: #66666F;
+  --lgc-rule: var(--sp-ink-600);
+  --lgc-accent: #8DAEFF;
+  --lgc-link: #9DB8FF;
+  --lgc-highlight: var(--sp-yellow);
+  --lgc-info-soft: #1E3466;
+  --lgc-success-soft: rgba(254, 213, 1, .14);
+  --lgc-error-soft: rgba(245, 19, 0, .18);
+  --lgc-error-ink: #FF8A75;
+  --lgc-field: var(--sp-ink-900);
+  --lgc-ring: var(--sp-yellow);
+  --lgc-shadow: 0 2px 4px rgba(0, 0, 0, .2), 0 12px 28px rgba(0, 0, 0, .35);
+  color-scheme: dark;
+}
+
+:root[data-theme='light'] .login-page.lgc {
+  --lgc-bg: var(--sp-cream);
+  --lgc-surface: #FFFFFF;
+  --lgc-surface-2: var(--sp-paper);
+  --lgc-text: var(--sp-black);
+  --lgc-muted: var(--sp-muted);
+  --lgc-border: #9A8C76;
+  --lgc-rule: var(--sp-sand);
+  --lgc-accent: var(--sp-blue);
+  --lgc-link: var(--sp-blue-hover);
+  --lgc-highlight: var(--sp-blue);
+  --lgc-info-soft: #E7EEFF;
+  --lgc-success-soft: #FFF6C2;
+  --lgc-error-soft: #FFE1DC;
+  --lgc-error-ink: #B30E00;
+  --lgc-field: #FFFFFF;
+  --lgc-ring: var(--sp-blue);
+  --lgc-shadow: 0 2px 4px rgba(0, 0, 0, .04), 0 12px 26px rgba(0, 0, 0, .08);
+  color-scheme: light;
+}
+
+.lgc {
+  position: relative;
+  isolation: isolate;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-height: 100vh;
+  min-height: 100dvh;
+  overflow-x: clip;
+  padding: 28px clamp(16px, 4vw, 48px) 64px;
+  background: var(--lgc-bg);
+  color: var(--lgc-text);
+  font-family: var(--font-family-brand);
+  font-size: 15px;
+  line-height: 1.45;
+  letter-spacing: normal;
+}
+
+/* O theme.css global fixa fonte, tamanho e espaçamento em p, span, button e small.
+   Aqui eles herdam do bloco; os títulos usam .sp-display e as classes do login. */
+.lgc :where(p, span, small, strong, em, a, button, label, input) {
+  font-family: inherit;
+  font-size: inherit;
+  line-height: inherit;
+  letter-spacing: inherit;
+}
+
+.lgc *, .lgc *::before, .lgc *::after { box-sizing: border-box; }
+.lgc :where(h1, h2, p) { margin: 0; }
+.lgc :where(button) { font: inherit; color: inherit; cursor: pointer; }
+.lgc.login-page :is(a, button):focus-visible { outline: 3px solid var(--lgc-ring); outline-offset: 3px; }
+
+/* Fundo */
+.lgc-wave { position: absolute; z-index: 0; height: auto; pointer-events: none; }
+.lgc-wave--top { top: 0; right: 0; width: min(46%, 640px); }
+.lgc-wave--left { bottom: 0; left: 0; width: min(44%, 620px); }
+.lgc-wave--right { bottom: 0; right: 0; width: min(30%, 430px); }
+
+/* Cabeçalho e palco */
+.lgc-top { position: relative; z-index: 2; display: flex; align-items: center; align-self: stretch; }
+.lgc-brand { display: inline-flex; border-radius: 8px; }
+.lgc-brand .brand-mark { width: 210px; }
+.lgc-stage { position: relative; z-index: 2; display: flex; flex: 1 1 auto; align-items: center; justify-content: center; width: 100%; padding-top: 28px; }
+.lgc-panel { display: flex; width: 100%; max-width: 920px; overflow: hidden; border-radius: 28px; background: var(--lgc-surface); box-shadow: var(--lgc-shadow), 0 0 0 1.5px var(--lgc-rule); }
+
+/* Coluna do formulário */
+.lgc-form-col { position: relative; display: flex; flex: 1 1 420px; flex-direction: column; gap: 18px; min-width: 0; padding: 42px 38px 30px; }
+.lgc-heading { display: flex; flex-direction: column; gap: 10px; }
+.lgc-title { color: var(--lgc-text); font-size: 50px; }
+.lgc-title em { color: var(--lgc-highlight); font-style: normal; }
+.lgc-lead { color: var(--lgc-muted); font-size: 15px; font-weight: 600; }
+
+.lgc-form { display: flex; flex-direction: column; gap: 16px; }
+.lgc-field { display: flex; flex-direction: column; gap: 6px; }
+.lgc-label { color: var(--lgc-muted); font-size: 12px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; }
+.lgc-box { display: flex; align-items: center; gap: 10px; min-height: 56px; padding: 0 6px 0 16px; border-radius: 16px; background: var(--lgc-field); box-shadow: inset 0 0 0 2px var(--lgc-border); color: var(--lgc-muted); transition: box-shadow .15s, color .15s; }
+.lgc-box svg { flex: 0 0 auto; }
+.lgc-box:focus-within, .lgc-box.is-focused { box-shadow: inset 0 0 0 3px var(--lgc-accent); color: var(--lgc-accent); }
+.lgc-box.is-invalid { box-shadow: inset 0 0 0 3px var(--sp-red); color: var(--lgc-error-ink); }
+.lgc-box.is-invalid:focus-within { box-shadow: inset 0 0 0 3px var(--sp-red), 0 0 0 2px var(--lgc-surface), 0 0 0 5px var(--lgc-ring); }
+.lgc-input { flex: 1 1 auto; min-width: 0; height: 52px; padding: 0; border: 0; background: transparent; color: var(--lgc-text); font: inherit; font-size: 16px; font-weight: 600; outline: none; }
+.lgc-input::placeholder { color: var(--lgc-muted); opacity: .85; }
+.lgc-input::-ms-reveal, .lgc-input::-ms-clear { display: none; }
+.lgc-input:-webkit-autofill { -webkit-text-fill-color: var(--lgc-text); caret-color: var(--lgc-text); box-shadow: inset 0 0 0 1000px var(--lgc-field); transition: background-color 9999s; }
+.lgc-eye { display: grid; flex: 0 0 auto; place-items: center; width: 44px; height: 44px; padding: 0; border: 0; border-radius: 12px; background: transparent; color: var(--lgc-muted); }
+.lgc-eye:hover { background: var(--lgc-surface-2); color: var(--lgc-text); }
+.lgc-hint { color: var(--lgc-muted); font-size: 13px; font-weight: 600; line-height: 1.35; }
+.lgc-field-error { color: var(--lgc-error-ink); font-size: 13px; font-weight: 800; line-height: 1.35; }
+
+.lgc-row { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 4px 12px; }
+.lgc-link { display: inline-flex; align-items: center; min-height: 44px; padding: 0 2px; border: 0; border-radius: 6px; background: transparent; color: var(--lgc-link); font-size: 14px; font-weight: 800; text-decoration: underline; text-underline-offset: 3px; }
+.lgc-link:hover { color: var(--lgc-accent); }
+
+.lgc-submit { display: inline-flex; align-items: center; justify-content: center; gap: 10px; width: 100%; min-height: 60px; padding: 0 24px; border: 3px solid var(--sp-blue); border-radius: 18px; background: var(--sp-blue); box-shadow: 0 5px 0 var(--sp-blue-shadow); color: #FFFFFF; font-size: 17px; font-weight: 800; transition: transform .12s, box-shadow .12s, background-color .2s; }
+.lgc-submit:hover { background: var(--sp-blue-hover); }
+.lgc-submit:active { transform: translateY(4px); box-shadow: 0 2px 0 var(--sp-blue-shadow); }
+.lgc-submit:disabled { cursor: progress; transform: translateY(2px); box-shadow: 0 2px 0 var(--sp-blue-shadow); background: var(--sp-blue); }
+.lgc-spinner { width: 20px; height: 20px; border: 3px solid rgba(255, 255, 255, .35); border-top-color: #FFFFFF; border-radius: 50%; animation: lgc-spin .8s linear infinite; }
+@keyframes lgc-spin { to { transform: rotate(360deg); } }
+
+/* Avisos: erro, e-mail a confirmar, senha a definir, sucesso e ajuda */
+.lgc-live:empty { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.lgc-msg { display: flex; align-items: flex-start; gap: 12px; padding: 14px 16px; border-radius: 16px; color: var(--lgc-text); font-size: 14px; font-weight: 600; line-height: 1.4; }
+.lgc-msg[hidden] { display: none; }
+.lgc-msg-body { display: flex; flex-direction: column; align-items: flex-start; min-width: 0; overflow-wrap: anywhere; }
+.lgc-msg strong { margin-bottom: 2px; font-size: 15px; font-weight: 800; }
+.lgc-msg-icon { display: grid; flex: 0 0 auto; place-items: center; width: 34px; height: 34px; border-radius: 11px; }
+.lgc-msg--error { background: var(--lgc-error-soft); box-shadow: inset 0 0 0 2px var(--sp-red); }
+.lgc-msg--error .lgc-msg-icon { background: var(--sp-red); color: #FFFFFF; }
+.lgc-msg--info { background: var(--lgc-info-soft); box-shadow: inset 0 0 0 2px var(--sp-blue); }
+.lgc-msg--info .lgc-msg-icon { background: var(--sp-blue); color: #FFFFFF; }
+.lgc-msg--success { background: var(--lgc-success-soft); box-shadow: inset 0 0 0 2px var(--sp-yellow); }
+.lgc-msg--success .lgc-msg-icon { background: var(--sp-yellow); color: var(--sp-black); }
+.lgc-msg--help { background: var(--lgc-surface-2); box-shadow: inset 0 0 0 2px var(--lgc-rule); }
+.lgc-msg--help .lgc-msg-icon { background: var(--sp-pink); color: var(--sp-black); }
+.lgc-msg-action { display: inline-flex; align-items: center; gap: 6px; min-height: 40px; margin-top: 8px; padding: 0 14px; border-radius: 999px; background: var(--sp-blue); color: #FFFFFF; font-size: 13px; font-weight: 800; text-decoration: none; }
+.lgc-msg-action:hover { background: var(--sp-blue-hover); color: #FFFFFF; }
+
+.lgc-invite { display: flex; flex-direction: column; gap: 2px; padding-top: 16px; border-top: 1.5px solid var(--lgc-rule); color: var(--lgc-muted); font-size: 14px; line-height: 1.4; }
+.lgc-invite strong { color: var(--lgc-text); font-weight: 800; }
+
+/* Coluna da turma */
+.lgc-side { display: flex; flex: 1 1 340px; flex-direction: column; align-items: center; justify-content: center; gap: 16px; min-width: 0; padding: 40px 28px; border-left: 1.5px solid var(--lgc-rule); background: var(--lgc-surface-2); text-align: center; }
+.lgc-crew { position: relative; flex: 0 0 auto; width: 300px; height: 232px; }
+.lgc-mate { position: absolute; }
+.lgc-mate--a { top: 18px; left: 0; width: 100px; transform: rotate(-8deg); }
+.lgc-mate--b { top: 0; left: 196px; width: 96px; transform: rotate(8deg); }
+.lgc-mate--c { top: 128px; left: 14px; width: 92px; transform: rotate(6deg); }
+.lgc-mate--d { top: 124px; left: 204px; width: 90px; transform: rotate(-6deg); }
+.lgc-mate--e { top: 158px; left: 116px; width: 70px; }
+.lgc-mate--main { z-index: 2; top: 30px; left: 74px; width: 150px; }
+.lgc-bubble { position: relative; display: flex; align-items: center; justify-content: center; max-width: 270px; min-height: calc(2.6em + 24px); padding: 12px 16px; border-radius: 16px; background: var(--sp-yellow); color: var(--sp-black); font-size: 15px; font-weight: 800; line-height: 1.3; }
+.lgc-bubble::before { position: absolute; top: -7px; left: 50%; width: 14px; height: 14px; margin-left: -7px; background: var(--sp-yellow); content: ''; transform: rotate(45deg); }
+.lgc-side-title { color: var(--lgc-text); font-size: 32px; }
+.lgc-side-copy { max-width: 290px; color: var(--lgc-muted); font-size: 14px; font-weight: 600; line-height: 1.45; }
+
+/* Tablet: as duas colunas continuam lado a lado, mais compactas. */
+@media (min-width: 761px) and (max-width: 900px) {
+  .lgc-form-col { padding: 36px 28px 26px; }
+  .lgc-title { font-size: 44px; }
+  .lgc-side { padding: 32px 16px; }
+  .lgc-crew { margin-bottom: -32px; transform: scale(.86); transform-origin: top center; }
+}
+
+/* Desktop baixo (1440×720, 1024×768): aperta espaços para o botão caber sem rolar. */
+@media (min-width: 761px) and (max-height: 820px) {
+  .lgc { padding-top: 18px; padding-bottom: 24px; }
+  .lgc-stage { padding-top: 16px; }
+  .lgc-form-col { gap: 14px; padding: 28px 34px 22px; }
+  .lgc-title { font-size: 42px; }
+  .lgc-form { gap: 12px; }
+  .lgc-box { min-height: 50px; }
+  .lgc-input { height: 46px; }
+  .lgc-submit { min-height: 54px; }
+  .lgc-invite { padding-top: 12px; }
+  .lgc-side { gap: 12px; padding-block: 28px; }
+}
+
+/* Celular: a turma sobe e encolhe; o parágrafo de apoio some. */
+@media (max-width: 760px) {
+  .lgc { padding: 18px 14px 36px; }
+  .lgc-brand .brand-mark { width: 150px; }
+  .lgc-wave--top { width: 62%; }
+  .lgc-wave--left { width: 70%; }
+  .lgc-wave--right { display: none; }
+  .lgc-stage { align-items: flex-start; padding-top: 18px; }
+  .lgc-panel { flex-wrap: wrap; }
+  .lgc-side { flex-basis: 100%; order: -1; gap: 10px; padding: 20px 16px 18px; border-bottom: 1.5px solid var(--lgc-rule); border-left: 0; }
+  .lgc-crew { margin-bottom: -64px; transform: scale(.72); transform-origin: top center; }
+  .lgc-side-title { font-size: 24px; }
+  .lgc-side-copy { display: none; }
+  .lgc-bubble { font-size: 14px; }
+  .lgc-form-col { flex-basis: 100%; padding: 24px 16px 22px; }
+  .lgc-title { font-size: 38px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lgc *, .lgc *::before, .lgc *::after { animation: none !important; transition: none !important; }
+  .lgc-submit:active { transform: none; }
+}

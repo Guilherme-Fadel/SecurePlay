@@ -1,130 +1,160 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { PageTransition } from '@/components/shared/PageTransition';
-import { confirmEmail, resendEmail, setPassword as setRegistrationPassword } from '@/services/registration';
-import { passwordValidationMessage } from '@/lib/password-policy';
-import './invite-register.css';
+import { PublicAccountShell, type AccountCharacter } from '@/components/shared/PublicAccountShell';
+import { AccountInput, AccountLoading, AccountMessage, AccountPasswordInput, AccountSubmit, type AccountFeedback } from '@/components/shared/PublicAccountUi';
+import { resendEmail } from '@/services/registration';
+import { confirmEmailView, useConfirmEmail, type ConfirmEmailState, type ConfirmEmailView } from './useConfirmEmail';
 
 export function CheckEmail() {
   const [params] = useSearchParams();
   const passwordSetup = params.get('mode') === 'password';
   const [email, setEmail] = useState(params.get('email') ?? '');
-  const [message, setMessage] = useState('');
+  const [sending, setSending] = useState(false);
+  const [feedback, setFeedback] = useState<AccountFeedback | null>(null);
   const resend = async () => {
+    setSending(true);
     try {
-      setMessage(await resendEmail(email));
+      setFeedback({ tone: 'info', message: await resendEmail(email) });
     } catch {
-      setMessage('Não foi possível reenviar agora. Tente novamente mais tarde.');
+      setFeedback({ tone: 'error', message: 'Não foi possível reenviar agora. Tente novamente mais tarde.' });
+    } finally {
+      setSending(false);
     }
   };
-  return <PageTransition><div className="invite-page"><main className="invite-card">
-    <div className="invite-brand">secure<em>play</em></div>
-    <h1>{passwordSetup ? 'Instruções de acesso' : 'Confira seu e-mail'}</h1>
-    <p className="invite-intro">{passwordSetup
-      ? 'Se seu acesso ainda precisa de confirmação ou da senha inicial, solicite novas instruções por e-mail. Se a conta já está ativa, entre normalmente.'
-      : 'Se este endereço puder continuar o cadastro, você receberá instruções por e-mail. Confira também a pasta de spam. Se já possui acesso, entre na sua conta.'}</p>
-    <div className="invite-form"><label>E-mail<input type="email" value={email} onChange={(event) => setEmail(event.target.value)} required /></label>
-      <button type="button" onClick={resend} disabled={!email}>{passwordSetup ? 'Enviar instruções de acesso' : 'Reenviar confirmação'}</button></div>
-    {message && <p role="status" className="invite-legal-note">{message}</p>}
-    <p className="invite-legal-note"><Link to="/login">Já tenho acesso: entrar</Link></p>
-    <p className="invite-legal-note">Digitou o endereço errado? <Link to="/teste-gratuito">Refaça o cadastro do teste</Link> ou use novamente seu convite.</p>
-  </main></div></PageTransition>;
+  return (
+    <PublicAccountShell
+      titleId="check-email-title"
+      title={passwordSetup ? <>Instruções de <em>acesso</em></> : <>Confira seu <em>e-mail</em></>}
+      lead={passwordSetup
+        ? 'Se seu acesso ainda precisa de confirmação ou da senha inicial, solicite novas instruções por e-mail. Se a conta já está ativa, entre normalmente.'
+        : 'Se este endereço puder continuar o cadastro, você receberá instruções por e-mail. Confira também a pasta de spam. Se já possui acesso, entre na sua conta.'}
+      character={{ expression: 'curious', speech: 'Dá uma espiada na sua caixa de entrada.' }}
+      feedback={feedback}
+    >
+      <div className="pas-form">
+        <AccountInput label="E-mail" type="email" value={email} onChange={(event) => setEmail(event.target.value)} required autoComplete="email" />
+        <AccountSubmit type="button" busy={sending} busyLabel="Enviando..." disabled={!email} onClick={() => void resend()}>
+          {passwordSetup ? 'Enviar instruções de acesso' : 'Reenviar confirmação'}
+        </AccountSubmit>
+      </div>
+      <div className="pas-foot">
+        <Link className="pas-link" to="/login">Já tenho acesso: entrar</Link>
+        <p>Digitou o endereço errado? <Link to="/teste-gratuito">Refaça o cadastro do teste</Link> ou use novamente seu convite.</p>
+      </div>
+    </PublicAccountShell>
+  );
 }
 
-export function ConfirmEmail() {
-  const [token] = useState(() => window.location.hash.slice(1));
-  const confirmationStarted = useRef(false);
+const CHARACTER: Record<ConfirmEmailView, AccountCharacter> = {
+  success: { expression: 'happy', speech: 'Acesso liberado! Bora para a trilha.' },
+  'no-link': { expression: 'sleepy', speech: 'Sem o link do e-mail não dá para seguir.' },
+  confirming: { expression: 'curious', speech: 'Conferindo seu link…' },
+  conflict: { expression: 'startled', speech: 'Opa! Esse usuário já tem dono.' },
+  unavailable: { expression: 'sleepy', speech: 'Esse link já não funciona.' },
+  password: { expression: 'happy', speech: 'E-mail confirmado! Falta só a senha.' },
+};
+
+const TITLE: Record<ConfirmEmailView, ReactNode> = {
+  success: <>Acesso <em>ativado</em></>,
+  'no-link': <>Link <em>indisponível</em></>,
+  confirming: 'Validando e-mail',
+  conflict: <>Escolha outro <em>usuário</em></>,
+  unavailable: <>Link <em>indisponível</em></>,
+  password: <>E-mail <em>confirmado</em></>,
+};
+
+const LEAD: Record<ConfirmEmailView, string | undefined> = {
+  success: 'E-mail confirmado e senha definida.',
+  'no-link': 'Abra o link recebido por e-mail para continuar.',
+  confirming: 'Estamos validando seu link seguro.',
+  conflict: undefined,
+  unavailable: 'Peça um novo link de confirmação para continuar.',
+  password: 'Defina uma senha para liberar o acesso à SecurePlay.',
+};
+
+function UsernameConflictForm({ state }: { state: ConfirmEmailState }) {
+  return (
+    <form className="pas-form" onSubmit={event => void state.retryConfirmation(event)}>
+      <AccountInput
+        label="Usuário de acesso"
+        autoFocus
+        value={state.alternativeUsername}
+        onChange={event => state.setAlternativeUsername(event.target.value)}
+        autoComplete="username"
+        autoCapitalize="none"
+        minLength={3}
+        maxLength={24}
+        required
+        pattern="(?![sS][pP]-)[A-Za-z0-9][A-Za-z0-9._\-]{2,23}"
+      />
+      <AccountSubmit busy={state.submitting} busyLabel="Confirmando…">Confirmar cadastro</AccountSubmit>
+    </form>
+  );
+}
+
+function ViewContent({ view, state }: { view: ConfirmEmailView; state: ConfirmEmailState }) {
+  if (view === 'success') return <Link className="pas-cta" to="/login">Entrar na SecurePlay</Link>;
+  if (view === 'no-link' || view === 'unavailable') return <Link className="pas-cta" to="/verifique-email">Pedir outro link</Link>;
+  if (view === 'confirming') return <AccountLoading />;
+  if (view === 'conflict') return <UsernameConflictForm state={state} />;
+  return <PasswordDialog state={state} />;
+}
+
+/** Modal obrigatório: o e-mail já foi confirmado e a conta só ativa com a senha definida. */
+function PasswordDialog({ state }: { state: ConfirmEmailState }) {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const passwordInputRef = useRef<HTMLInputElement>(null);
-  const successHeadingRef = useRef<HTMLHeadingElement>(null);
-  const [hasConfirmationLink] = useState(Boolean(token));
-  const [password, setPassword] = useState('');
-  const [repeatPassword, setRepeatPassword] = useState('');
-  const [submitting, setSubmitting] = useState(false);
-  const [confirming, setConfirming] = useState(Boolean(token));
-  const [passwordSetupToken, setPasswordSetupToken] = useState<string | null>(null);
-  const [success, setSuccess] = useState(false);
-  const [error, setError] = useState('');
-  const [usernameConflict, setUsernameConflict] = useState(false);
-  const [alternativeUsername, setAlternativeUsername] = useState('');
   useEffect(() => {
-    if (!token || confirmationStarted.current) return;
-    confirmationStarted.current = true;
-    void confirmEmail(token).then((nextToken) => {
-      window.history.replaceState(null, '', '/confirmar-email');
-      setPasswordSetupToken(nextToken);
-    }).catch((failure: unknown) => {
-      const conflict = (failure as { response?: { data?: { code?: string } } }).response?.data?.code === 'USERNAME_TAKEN';
-      setUsernameConflict(conflict);
-      setError(conflict ? 'O usuário escolhido foi ocupado. Escolha outro para concluir seu cadastro.' : 'O link expirou, já foi usado ou não está disponível. Peça outro link.');
-    }).finally(() => setConfirming(false));
-  }, [token]);
-  const retryConfirmation = async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    setSubmitting(true);
-    try {
-      const nextToken = await confirmEmail(token, alternativeUsername.trim());
-      window.history.replaceState(null, '', '/confirmar-email');
-      setUsernameConflict(false); setError(''); setPasswordSetupToken(nextToken);
-    } catch (failure: unknown) {
-      const message = (failure as { response?: { data?: { message?: unknown } } }).response?.data?.message;
-      setError(typeof message === 'string' ? message : 'Não foi possível confirmar. Tente novamente.');
-    } finally { setSubmitting(false); }
-  };
-  useEffect(() => {
-    if (!passwordSetupToken || success) return;
     const dialog = dialogRef.current;
     if (!dialog) return;
     if (!dialog.open) dialog.showModal();
     passwordInputRef.current?.focus();
     return () => { if (dialog.open) dialog.close(); };
-  }, [passwordSetupToken, success]);
-  useEffect(() => {
-    if (success) successHeadingRef.current?.focus();
-  }, [success]);
-  const submit = async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    const validation = passwordValidationMessage(password);
-    if (validation) return setError(validation);
-    if (password !== repeatPassword) return setError('As senhas não coincidem.');
-    setSubmitting(true);
-    setError('');
-    try {
-      if (!passwordSetupToken) return;
-      await setRegistrationPassword(passwordSetupToken, password);
-      setSuccess(true);
-    } catch {
-      setError('O link expirou, já foi usado ou não está disponível. Peça outro link.');
-    } finally {
-      setSubmitting(false);
-    }
-  };
-  return <PageTransition><div className="invite-page"><main className="invite-card">
-    <div className="invite-brand">secure<em>play</em></div>
-    {success ? <><h1 ref={successHeadingRef} tabIndex={-1}>Acesso ativado</h1><p className="invite-intro">E-mail confirmado e senha definida.</p><Link className="invite-primary-link" to="/login">Entrar na SecurePlay</Link></> :
-      !hasConfirmationLink ? <><h1>Link indisponível</h1><p className="invite-intro">Abra o link recebido por e-mail para continuar.</p><Link className="invite-primary-link" to="/verifique-email">Pedir outro link</Link></> :
-      confirming ? <><h1>Validando e-mail</h1><p className="invite-intro">Estamos validando seu link seguro.</p></> :
-      usernameConflict ? <><h1>Escolha outro usuário</h1><p className="invite-intro" role="alert">{error}</p><form className="invite-form" onSubmit={event => void retryConfirmation(event)}><label>Usuário de acesso<input autoFocus value={alternativeUsername} onChange={event => setAlternativeUsername(event.target.value)} autoComplete="username" autoCapitalize="none" minLength={3} maxLength={24} required pattern="(?![sS][pP]-)[A-Za-z0-9][A-Za-z0-9._\-]{2,23}" /></label><button type="submit" disabled={submitting}>{submitting ? 'Confirmando…' : 'Confirmar cadastro'}</button></form></> :
-      !passwordSetupToken ? <><h1>Link indisponível</h1><p className="invite-intro">Peça um novo link de confirmação para continuar.</p><Link className="invite-primary-link" to="/verifique-email">Pedir outro link</Link></> :
-      <><h1>E-mail confirmado</h1><p className="invite-intro">Defina uma senha para liberar o acesso à SecurePlay.</p></>}
-  </main>
-    {passwordSetupToken && !success && <dialog
+  }, []);
+  const fieldError = (field: 'password' | 'repeat') => (state.fieldError?.field === field ? state.fieldError.message : null);
+  return (
+    <dialog
       ref={dialogRef}
-      className="invite-password-dialog"
+      className="pas-dialog"
       aria-modal="true"
-      aria-labelledby="invite-password-title"
-      aria-describedby="invite-password-description"
+      aria-labelledby="confirm-password-title"
+      aria-describedby="confirm-password-description"
       onCancel={(event) => event.preventDefault()}
     >
-      <div className="invite-brand">secure<em>play</em></div>
-      <h2 id="invite-password-title">Defina sua senha</h2>
-      <p id="invite-password-description" className="invite-intro">Seu e-mail foi confirmado. Crie uma senha para ativar a conta antes de entrar.</p>
-      <form className="invite-form" onSubmit={submit}>
-        <label>Crie uma senha<input ref={passwordInputRef} type="password" value={password} onChange={(event) => setPassword(event.target.value)} minLength={6} maxLength={72} required autoComplete="new-password" /></label>
-        <label>Repita a senha<input type="password" value={repeatPassword} onChange={(event) => setRepeatPassword(event.target.value)} minLength={6} maxLength={72} required autoComplete="new-password" /></label>
-        <button type="submit" disabled={submitting}>{submitting ? 'Ativando conta...' : 'Confirmar e ativar conta'}</button>
-      </form>
-      {error && <p role="alert" className="invite-legal-note">{error} <Link to="/verifique-email">Pedir outro link</Link></p>}
-    </dialog>}
-  </div></PageTransition>;
+      <div className="pas-dialog-body">
+        <h2 id="confirm-password-title" className="sp-display pas-dialog-title">Defina sua senha</h2>
+        <p id="confirm-password-description" className="pas-lead">Seu e-mail foi confirmado. Crie uma senha para ativar a conta antes de entrar.</p>
+        <div className="pas-live" role="alert">
+          {state.error && <AccountMessage tone="error" message={<>{state.error} <Link to="/verifique-email">Pedir outro link</Link></>} />}
+        </div>
+        <form className="pas-form" onSubmit={(event) => void state.submit(event)}>
+          <AccountPasswordInput label="Crie uma senha" inputRef={passwordInputRef} value={state.password} onChange={(event) => state.setPassword(event.target.value)} minLength={6} maxLength={72} required autoComplete="new-password" error={fieldError('password')} />
+          <AccountPasswordInput label="Repita a senha" value={state.repeatPassword} onChange={(event) => state.setRepeatPassword(event.target.value)} minLength={6} maxLength={72} required autoComplete="new-password" error={fieldError('repeat')} />
+          <AccountSubmit busy={state.submitting} busyLabel="Ativando conta...">Confirmar e ativar conta</AccountSubmit>
+        </form>
+      </div>
+    </dialog>
+  );
+}
+
+export function ConfirmEmail() {
+  const state = useConfirmEmail();
+  const view = confirmEmailView(state);
+  const successHeadingRef = useRef<HTMLHeadingElement>(null);
+  useEffect(() => {
+    if (state.success) successHeadingRef.current?.focus();
+  }, [state.success]);
+  return (
+    <PublicAccountShell
+      titleId="confirm-email-title"
+      title={TITLE[view]}
+      lead={LEAD[view]}
+      titleRef={successHeadingRef}
+      character={CHARACTER[view]}
+      feedback={view === 'conflict' && state.error ? { tone: 'error', message: state.error } : null}
+      busy={view === 'confirming'}
+    >
+      <ViewContent view={view} state={state} />
+    </PublicAccountShell>
+  );
 }
