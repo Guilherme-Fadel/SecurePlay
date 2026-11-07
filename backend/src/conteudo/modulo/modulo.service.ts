@@ -113,6 +113,18 @@ export class ModuloService {
         hasStarted: moduloProgress.length > 0,
         lastAccessedAt,
         nextAulaId: nextAula?.id ?? null,
+        // B1: detalhe da proxima aula para o "Continue de onde parou" sem request extra.
+        nextAula: nextAula
+          ? {
+              id: nextAula.id,
+              title: nextAula.title,
+              type: nextAula.type,
+              xp: nextAula.xp,
+              duration: nextAula.duration,
+              section_name: nextAula.section_name ?? null,
+              position: moduloAulas.indexOf(nextAula) + 1,
+            }
+          : null,
         locked,
       };
     });

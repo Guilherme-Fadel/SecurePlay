@@ -1,6 +1,6 @@
 import { ContentLoading } from '@/components/shared/ContentLoading';
-import { useEffect, useRef, useState } from 'react';
-import { BookOpen, CheckCircle2, ChevronLeft, ChevronRight, Sparkles } from 'lucide-react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { ArrowRight } from 'lucide-react';
 import { AppButton } from '@/components/ui/buttons/AppButton';
 import { useAula } from '@/hooks/useAula';
 import { useAulaProgress } from '@/hooks/useAulaProgress';
@@ -8,7 +8,14 @@ import { useModulo } from '@/hooks/useModulo';
 import { usePageNavigation } from '@/hooks/usePageNavigation';
 import { AulaQuiz } from './AulaQuiz';
 import { LearningShell } from './LearningShell';
+import { LessonCheckpoint } from './LessonCheckpoint';
 import { LessonNavigator } from './LessonNavigator';
+import { LessonState } from './LessonState';
+import { LessonStepper } from './LessonStepper';
+import { LessonTextStep } from './LessonTextStep';
+import { useLessonStepFocus } from './lessonFocus';
+import { buildLessonSteps } from './lessonSteps';
+import { NEXT_LABEL, lessonNextAction, pagedStepItems, readerPercent } from './lessonStepItems';
 import { ProgressSaveStatus } from './ProgressSaveStatus';
 
 interface AulaTextoProps {
@@ -19,25 +26,35 @@ interface AulaTextoProps {
 }
 
 export function AulaTexto({ aulaId, moduloId, onBack, onSelectAula }: AulaTextoProps) {
-  const { aula, setAula, loading, error: aulaError, refetch } = useAula(aulaId);
-  const { modulo } = useModulo(moduloId);
+  const { aula, setAula, loading, error: aulaError, errorKind, refetch } = useAula(aulaId);
+  const { modulo, refetch: refetchModulo } = useModulo(moduloId);
   const { concluir, salvarProgresso, retryProgress, saveStatus, loading: concluding, error: progressError } = useAulaProgress();
   const [showQuiz, setShowQuiz] = useState(false);
   const [xpGanho, setXpGanho] = useState<number | null>(null);
+  const [furthest, setFurthest] = useState(0);
   const restored = useRef(false);
   const pages = aula?.pages ?? [];
+  const lesson = useMemo(() => buildLessonSteps(aula?.pages), [aula?.pages]);
   const hasQuiz = (aula?.quiz?.length ?? 0) > 0;
+  const openQuiz = useCallback(() => setShowQuiz(true), []);
   const { currentPage, isLastPage, goNext, goPrev, goTo } = usePageNavigation({
     totalPages: pages.length,
     enabled: !showQuiz,
-    onLastPage: hasQuiz && !aula?.completed ? () => setShowQuiz(true) : undefined,
+    onLastPage: hasQuiz && !aula?.completed ? openQuiz : undefined,
   });
+  const { headingRef, arm } = useLessonStepFocus(showQuiz ? 'quiz' : currentPage);
 
   useEffect(() => {
     if (!aula || restored.current) return;
     restored.current = true;
-    goTo(Math.min(aula.progress.lastPage, Math.max(0, pages.length - 1)));
+    const target = Math.min(aula.progress.lastPage, Math.max(0, pages.length - 1));
+    arm(target === currentPage ? null : target);
+    goTo(target);
   }, [aula?.id, pages.length, goTo]);
+
+  useEffect(() => {
+    setFurthest((value) => Math.max(value, currentPage));
+  }, [currentPage]);
 
   useEffect(() => {
     if (!aula || !restored.current || showQuiz || aula.completed || !pages.length) return;
@@ -48,67 +65,88 @@ export function AulaTexto({ aulaId, moduloId, onBack, onSelectAula }: AulaTextoP
     return () => window.clearTimeout(timer);
   }, [aula?.id, aula?.completed, currentPage, pages.length, salvarProgresso, showQuiz]);
 
+  const markCompleted = () => {
+    setAula((previous) => previous ? { ...previous, completed: true, progress: { ...previous.progress, percent: 100 } } : previous);
+    void refetchModulo();
+  };
+
   const handleComplete = async () => {
     const result = await concluir(aulaId);
     if (!result) return;
     setXpGanho(result.xp_ganho);
-    setAula((previous) => previous ? { ...previous, completed: true, progress: { ...previous.progress, percent: 100 } } : previous);
+    markCompleted();
   };
 
   if (loading || !aula) {
     if (!aulaError) return <ContentLoading variant="reader" />;
-    return <div className="learning-content-loading"><div role="alert"><p>{aulaError}</p><AppButton onClick={() => void refetch()}>Tentar novamente</AppButton><AppButton variant="ghost" onClick={onBack}>Voltar ao módulo</AppButton></div></div>;
+    return <LessonState message={aulaError} kind={errorKind} onRetry={refetch} onBack={onBack} />;
   }
 
-  const readerProgress = aula.completed ? 100 : pages.length ? Math.round(((currentPage + 1) / pages.length) * 100) : 0;
-  const canCompleteWithoutQuiz = isLastPage && !hasQuiz && !aula.completed && xpGanho === null;
+  const readerProgress = readerPercent(aula.completed, currentPage, pages.length);
+  const quizReachable = hasQuiz && !aula.completed && furthest >= pages.length - 1;
+  const goToStep = (index: number) => { setShowQuiz(false); goTo(index); };
+  const steps = pagedStepItems({
+    labels: lesson.steps.map((item) => item.label),
+    currentPage, showQuiz, completed: aula.completed, hasQuiz, quizReachable, onPage: goToStep, onQuiz: openQuiz,
+  });
+
+  const step = lesson.steps[currentPage];
+  const stepCount = `${lesson.steps.length} ${lesson.structured ? 'etapas' : lesson.steps.length === 1 ? 'página' : 'páginas'}`;
+  const action = lessonNextAction(isLastPage, hasQuiz, aula.completed);
+  const nextLabel = concluding ? 'Registrando...' : NEXT_LABEL[action];
+  const handleNext = action === 'leave' ? onBack : action === 'complete' ? () => void handleComplete() : goNext;
 
   return (
     <LearningShell
-      eyebrow={modulo?.title ?? 'Leitura guiada'}
-      title={showQuiz ? `Avaliação · ${aula.title}` : aula.title}
-      description={showQuiz ? 'Responda às perguntas para concluir esta fase.' : aula.description}
+      aulaId={aulaId}
+      title={aula.title}
+      type="texto"
+      xp={aula.xp}
+      duration={aula.duration}
+      sizeLabel={pages.length ? `${stepCount}${hasQuiz ? ' + quiz' : ''}` : null}
+      modulo={modulo}
       onBack={onBack}
       progress={showQuiz ? 100 : readerProgress}
-      progressLabel={showQuiz ? 'Leitura concluída · avaliação em andamento' : `Página ${pages.length ? currentPage + 1 : 0} de ${pages.length}`}
-      hideReaderProgressLabel={!showQuiz}
-      meta={[
-        { label: 'Páginas', value: pages.length },
-        { label: 'Recompensa', value: `${aula.xp} XP` },
-        { label: 'Formato', value: showQuiz ? 'Quiz' : 'Leitura' },
-      ]}
-      aside={showQuiz ? undefined : <LessonNavigator modulo={modulo} activeAulaId={aulaId} onSelectAula={onSelectAula} />}
+      progressLabel={showQuiz ? 'Leitura concluída · quiz em andamento' : pages.length ? `Etapa ${currentPage + 1} de ${pages.length}` : 'Sem páginas publicadas'}
+      steps={<LessonStepper steps={steps} />}
+      aside={<LessonNavigator modulo={modulo} activeAulaId={aulaId} onSelectAula={onSelectAula} />}
       footer={!showQuiz ? <>
-        <div className="learning-lesson-footer-status">
-          <BookOpen size={17} /><div><span>Progresso de leitura</span><strong>{readerProgress}%</strong></div>
-        </div>
-        {(aula.completed || xpGanho !== null) && <div className="learning-reader-complete"><CheckCircle2 size={15} /> Leitura concluída</div>}
-        {progressError && <p role="alert">{progressError}</p>}
+        {progressError && <p className="lesson-error" role="alert">{progressError}</p>}
         <ProgressSaveStatus status={saveStatus} onRetry={retryProgress} />
       </> : undefined}
     >
-      {showQuiz ? <AulaQuiz aula={aula} onBack={() => setShowQuiz(false)} onComplete={onBack} /> : (
-        <div className="text-learning-stage">
-          {pages.length ? <article key={`${aulaId}-${currentPage}`} className="text-learning-page" aria-label={`Página ${currentPage + 1} de ${pages.length}`}>
-            {pages[currentPage]?.trim()
-              ? <p>{pages[currentPage].trim()}</p>
-              : <p className="text-learning-empty-page">Esta página não possui texto.</p>}
-          </article> : <div className="text-learning-empty" role="status"><BookOpen size={34} /><strong>Conteúdo de leitura indisponível</strong><span>Esta aula ainda não possui páginas publicadas.</span></div>}
+      <section className="lesson-pane" aria-label={showQuiz ? 'Quiz da aula' : step ? `Etapa ${currentPage + 1} de ${pages.length}` : 'Leitura'}>
+        {showQuiz ? (
+          <AulaQuiz
+            aula={aula}
+            onBack={() => goToStep(pages.length - 1)}
+            onComplete={onBack}
+            onReread={() => goToStep(0)}
+            onResult={markCompleted}
+          />
+        ) : <>
+          {step
+            ? <LessonTextStep key={`${aulaId}-${currentPage}`} step={step} index={currentPage} headingRef={headingRef} />
+            : <div className="lesson-page"><p className="lesson-empty" role="status"><strong>Conteúdo de leitura indisponível.</strong> Esta aula ainda não possui páginas publicadas.</p></div>}
 
-          {pages.length > 0 && <nav className="comic-reader-navigation" aria-label="Navegação da leitura">
-            <button type="button" className="classroom-page-button" onClick={goPrev} disabled={currentPage === 0}>
-              <ChevronLeft size={18} /><span>Página anterior</span>
-            </button>
-            <span className="classroom-page-counter" aria-live="polite">Página {currentPage + 1} de {pages.length}</span>
-            <button type="button" className="classroom-page-button is-primary" onClick={canCompleteWithoutQuiz ? () => void handleComplete() : goNext}
-              disabled={concluding || (isLastPage && (aula.completed || (!hasQuiz && !canCompleteWithoutQuiz)))}>
-              <span>{concluding ? 'Registrando...' : isLastPage && hasQuiz && !aula.completed ? 'Iniciar avaliação' : canCompleteWithoutQuiz ? 'Concluir leitura' : 'Próxima página'}</span><ChevronRight size={18} />
-            </button>
-          </nav>}
+          {xpGanho !== null && (
+            <LessonCheckpoint variant="compact" title="Checkpoint! Leitura concluída" xp={xpGanho}
+              actions={<AppButton variant="chunky" tone="blue" icon={<ArrowRight size={18} aria-hidden="true" />} onClick={onBack}>Seguir na trilha</AppButton>} />
+          )}
 
-          {xpGanho !== null && <div className="learning-xp-reveal"><Sparkles size={18} /><div><span>Leitura concluída</span><strong>+{xpGanho} XP adicionados</strong></div></div>}
-        </div>
-      )}
+          {(pages.length > 0 || hasQuiz) && (
+            <nav className="lesson-nav" aria-label="Navegação da aula">
+              <AppButton variant="chunky" tone="ghost" size="sm" onClick={goPrev} disabled={currentPage === 0}>Voltar</AppButton>
+              <span aria-live="polite">{pages.length ? `Etapa ${currentPage + 1} de ${pages.length}` : 'Sem páginas'}</span>
+              {xpGanho === null && (
+                <AppButton variant="chunky" tone="blue" onClick={handleNext} disabled={concluding}>
+                  {nextLabel}
+                </AppButton>
+              )}
+            </nav>
+          )}
+        </>}
+      </section>
     </LearningShell>
   );
 }

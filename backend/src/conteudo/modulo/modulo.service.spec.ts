@@ -230,6 +230,43 @@ describe('ModuloService findAll calcula locked', () => {
     expect(result.find((m) => m.id === 2)?.locked).toBe(false);
   });
 
+  it('detalha a proxima aula na ordem de capitulos (B1)', async () => {
+    const service = buildService(
+      [{ id: 1, order: 1, thumbnail: null, difficulty: 'iniciante' }],
+      [
+        { id: 10, modulo_id: 1, order: 1, section_name: 'Cap 1', title: 'A', type: 'texto', xp: 10, duration: 0 },
+        { id: 20, modulo_id: 1, order: 1, section_name: 'Cap 2', title: 'C', type: 'video', xp: 30, duration: 120 },
+        { id: 11, modulo_id: 1, order: 2, section_name: 'Cap 1', title: 'B', type: 'quadrinho', xp: 20, duration: 0 },
+      ],
+      [{ aula_id: 10, completed: true, last_accessed_at: null }],
+    );
+
+    const [modulo] = await service.findAll(7);
+
+    expect(modulo.nextAulaId).toBe(11);
+    expect(modulo.nextAula).toEqual({
+      id: 11,
+      title: 'B',
+      type: 'quadrinho',
+      xp: 20,
+      duration: 0,
+      section_name: 'Cap 1',
+      position: 2,
+    });
+  });
+
+  it('devolve nextAula nulo quando todas as aulas estao concluidas', async () => {
+    const service = buildService(
+      [{ id: 1, order: 1, thumbnail: null }],
+      [{ id: 10, modulo_id: 1, order: 1, title: 'A', type: 'texto', xp: 10, duration: 0 }],
+      [{ aula_id: 10, completed: true, last_accessed_at: null }],
+    );
+
+    const [modulo] = await service.findAll(7);
+
+    expect(modulo.nextAula).toBeNull();
+  });
+
   it('libera a trilha do piloto sem alterar o bloqueio da trilha principal', async () => {
     const service = buildService(
       [

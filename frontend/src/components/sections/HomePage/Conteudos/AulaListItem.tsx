@@ -1,51 +1,62 @@
-import { AulaResumo } from '@/services/conteudo';
-import { ArrowRight, BookOpen, Check, Clock3, Lock, Play, Video } from 'lucide-react';
-import { ProgressiveImage } from '@/components/ui/visuals/ProgressiveImage';
+import type { ReactNode } from 'react';
+import { BookOpenText, Check, Lock, PanelsTopLeft, SquarePlay } from 'lucide-react';
+import type { AulaResumo } from '@/services/conteudo';
+import { LESSON_TYPE_LABEL, formatModuleNumber } from './ModulePageModel';
 
 interface AulaListItemProps {
   aula: AulaResumo;
-  onClick: () => void;
-  index?: number;
-  active?: boolean;
-  artSrc?: string;
+  /** Posição 1-based na sequência do módulo. */
+  number: number;
+  /** Próxima aula liberada pelo backend ("Você está aqui"). */
+  isNext: boolean;
+  /** Ainda sem progresso no módulo: o marcador vira "Comece aqui". */
+  fresh: boolean;
+  onSelect: (aulaId: number) => void;
 }
 
-const statusConfig = {
-  completed: { Icon: Check, color: 'text-[var(--accent)]', bg: 'bg-[var(--accent)]/20', border: 'border-[var(--accent)]/30' },
-  unlocked: { Icon: Play, color: 'text-[var(--primary)]', bg: 'bg-[var(--primary)]/20', border: 'border-[var(--primary)]/30' },
-  locked: { Icon: Lock, color: 'text-[var(--text-secondary)]', bg: 'bg-[var(--surface-alt)]', border: 'border-[var(--border)]' },
+const TYPE_ICON: Record<AulaResumo['type'], ReactNode> = {
+  video: <SquarePlay size={14} strokeWidth={2.4} aria-hidden="true" />,
+  quadrinho: <PanelsTopLeft size={14} strokeWidth={2.4} aria-hidden="true" />,
+  texto: <BookOpenText size={14} strokeWidth={2.4} aria-hidden="true" />,
 };
 
-export function AulaListItem({ aula, onClick, index = 0, active = false, artSrc }: AulaListItemProps) {
-  const config = statusConfig[aula.status];
-  const isLocked = aula.status === 'locked';
-  const TypeIcon = aula.type === 'video' ? Video : BookOpen;
-  const typeLabel = aula.type === 'video' ? 'Vídeo' : aula.type === 'texto' ? 'Leitura' : 'Quadrinho';
+const STATUS_LABEL: Record<AulaResumo['status'], string> = {
+  completed: 'Concluída',
+  unlocked: 'Disponível',
+  locked: 'Bloqueada',
+};
 
+/** Linha de aula do módulo. Status e bloqueio vêm do backend; aula bloqueada não é interativa. */
+export function AulaListItem({ aula, number, isNext, fresh, onSelect }: AulaListItemProps) {
+  const locked = aula.status === 'locked';
+  const kind = aula.status === 'completed' ? 'is-done' : isNext ? 'is-current' : locked ? 'is-locked' : 'is-open';
+  const content = (
+    <>
+      <span className="mv-dot" aria-hidden="true">
+        {aula.status === 'completed' ? <Check size={22} strokeWidth={3} /> : locked ? <Lock size={18} strokeWidth={2.4} /> : number}
+      </span>
+      <span className="mv-row-copy">
+        <span className="mv-row-meta">
+          <span>Aula {number}</span>
+          <span className="mv-type">{TYPE_ICON[aula.type]}{LESSON_TYPE_LABEL[aula.type]}</span>
+          {aula.duration > 0 && <span>{formatModuleNumber(aula.duration)} min</span>}
+        </span>
+        <strong className="mv-row-title">{aula.title}</strong>
+        {aula.description && <small className="mv-row-desc">{aula.description}</small>}
+        {locked && <small className="mv-row-lock">Conclua as aulas anteriores para liberar esta aula.</small>}
+      </span>
+      <span className="mv-row-side">
+        {isNext && <span className="mv-here">{fresh ? 'Comece aqui' : 'Você está aqui'}</span>}
+        <span className="mv-xp">{formatModuleNumber(aula.xp)} XP</span>
+        <span className="mv-sr">{STATUS_LABEL[aula.status]}</span>
+      </span>
+    </>
+  );
+
+  if (locked) return <div className={`mv-row ${kind}`}>{content}</div>;
   return (
-    <button
-      onClick={isLocked ? undefined : onClick}
-      disabled={isLocked}
-      className={`learning-lesson-row ${config.border} ${isLocked ? 'is-locked' : ''} ${active ? 'is-active' : ''}`}
-    >
-      <div className="learning-lesson-index">{String(index + 1).padStart(2, '0')}</div>
-      <div className={`learning-lesson-status ${config.bg}`}>
-        {artSrc ? <ProgressiveImage src={artSrc} alt="" /> : <config.Icon size={16} className={config.color} />}
-      </div>
-
-      <div className="learning-lesson-copy">
-        <div><TypeIcon size={12} /><span>{typeLabel}</span></div>
-        <h3>{aula.title}</h3>
-        {aula.description && (
-          <p>{aula.description}</p>
-        )}
-      </div>
-
-      <div className="learning-lesson-meta">
-        {aula.type === 'video' && <span><Clock3 size={11} /> {aula.duration} min</span>}
-        <strong>{aula.xp} XP</strong>
-        {!isLocked && <ArrowRight size={15} />}
-      </div>
+    <button type="button" className={`mv-row ${kind}`} onClick={() => onSelect(aula.id)}>
+      {content}
     </button>
   );
 }

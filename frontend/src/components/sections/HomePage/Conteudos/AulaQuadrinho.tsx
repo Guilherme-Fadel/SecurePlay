@@ -1,7 +1,6 @@
 import { ContentLoading } from '@/components/shared/ContentLoading';
-import { useEffect, useRef, useState } from 'react';
-import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
-import { BookOpen, CheckCircle2, ChevronLeft, ChevronRight, Info, Sparkles } from 'lucide-react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { ArrowRight, BookOpen } from 'lucide-react';
 import { AppButton } from '@/components/ui/buttons/AppButton';
 import { useAula } from '@/hooks/useAula';
 import { useAulaProgress } from '@/hooks/useAulaProgress';
@@ -9,7 +8,12 @@ import { useModulo } from '@/hooks/useModulo';
 import { usePageNavigation } from '@/hooks/usePageNavigation';
 import { AulaQuiz } from './AulaQuiz';
 import { LearningShell } from './LearningShell';
+import { LessonCheckpoint } from './LessonCheckpoint';
 import { LessonNavigator } from './LessonNavigator';
+import { LessonState } from './LessonState';
+import { LessonStepper } from './LessonStepper';
+import { NEXT_LABEL, lessonNextAction, pagedStepItems, readerPercent } from './lessonStepItems';
+import { useLessonStepFocus } from './lessonFocus';
 import { ProgressSaveStatus } from './ProgressSaveStatus';
 
 interface AulaQuadrinhoProps {
@@ -19,53 +23,39 @@ interface AulaQuadrinhoProps {
   onSelectAula: (aulaId: number) => void;
 }
 
-const COMIC_PLACEHOLDER_PAGES = [
-  '/content/comic-placeholders/phishing-awareness-01.png',
-  '/content/comic-placeholders/phishing-awareness-02.png',
-  '/content/comic-placeholders/phishing-awareness-03.png',
-];
-
-const pageVariants = {
-  enter: (direction: number) => ({
-    opacity: 0.35,
-    rotateY: direction > 0 ? -72 : 72,
-    x: direction > 0 ? 34 : -34,
-  }),
-  center: { opacity: 1, rotateY: 0, x: 0 },
-  exit: (direction: number) => ({
-    opacity: 0.25,
-    rotateY: direction > 0 ? 72 : -72,
-    x: direction > 0 ? -28 : 28,
-  }),
-};
-
 export function AulaQuadrinho({ aulaId, moduloId, onBack, onSelectAula }: AulaQuadrinhoProps) {
-  const { aula, setAula, loading, error: aulaError } = useAula(aulaId);
+  const { aula, setAula, loading, error: aulaError, errorKind, refetch } = useAula(aulaId);
   const { modulo, refetch: refetchModulo } = useModulo(moduloId);
   const { concluir, salvarProgresso, retryProgress, saveStatus, loading: concluding, error: progressError } = useAulaProgress();
   const [showQuiz, setShowQuiz] = useState(false);
-  const [showBriefing, setShowBriefing] = useState(false);
   const [xpGanho, setXpGanho] = useState<number | null>(null);
-  const reduceMotion = useReducedMotion();
+  const [furthest, setFurthest] = useState(0);
+  const [brokenPages, setBrokenPages] = useState<number[]>([]);
   const restored = useRef(false);
 
-  const aulaPages = aula?.pages?.filter(Boolean) ?? [];
-  const usingPlaceholders = aulaPages.length === 0;
-  const pages = usingPlaceholders ? COMIC_PLACEHOLDER_PAGES : aulaPages;
+  const pages = aula?.pages?.filter((page) => typeof page === 'string' && page.trim() !== '') ?? [];
   const hasQuiz = (aula?.quiz?.length ?? 0) > 0;
-  const quizAlreadyAnswered = aula?.completed ?? false;
-  const { currentPage, direction, isLastPage, goNext, goPrev, goTo, handleTouchStart, handleTouchEnd } =
+  const completed = aula?.completed ?? false;
+  const openQuiz = useCallback(() => setShowQuiz(true), []);
+  const { currentPage, isLastPage, goNext, goPrev, goTo, handleTouchStart, handleTouchEnd } =
     usePageNavigation({
       totalPages: pages.length,
       enabled: !showQuiz,
-      onLastPage: hasQuiz && !quizAlreadyAnswered ? () => setShowQuiz(true) : undefined,
+      onLastPage: hasQuiz && !completed ? openQuiz : undefined,
     });
+  const { headingRef, arm } = useLessonStepFocus(showQuiz ? 'quiz' : currentPage);
 
   useEffect(() => {
     if (!aula || restored.current) return;
     restored.current = true;
-    goTo(Math.min(aula.progress.lastPage, Math.max(0, pages.length - 1)));
+    const target = Math.min(aula.progress.lastPage, Math.max(0, pages.length - 1));
+    arm(target === currentPage ? null : target);
+    goTo(target);
   }, [aula?.id, pages.length, goTo]);
+
+  useEffect(() => {
+    setFurthest((value) => Math.max(value, currentPage));
+  }, [currentPage]);
 
   useEffect(() => {
     if (!aula || !restored.current || showQuiz || aula.completed) return;
@@ -76,103 +66,95 @@ export function AulaQuadrinho({ aulaId, moduloId, onBack, onSelectAula }: AulaQu
     return () => window.clearTimeout(timer);
   }, [aula?.id, aula?.completed, currentPage, pages.length, salvarProgresso, showQuiz]);
 
+  const markCompleted = () => {
+    setAula((previous) => previous ? { ...previous, completed: true, progress: { ...previous.progress, percent: 100 } } : previous);
+    void refetchModulo();
+  };
+
   const handleCompleteWithoutQuiz = async () => {
     const result = await concluir(aulaId);
-    if (result) {
-      setXpGanho(result.xp_ganho);
-      setAula((previous) => previous ? { ...previous, completed: true } : previous);
-      void refetchModulo();
-    }
+    if (!result) return;
+    setXpGanho(result.xp_ganho);
+    markCompleted();
   };
 
   if (loading || !aula) {
     if (!aulaError) return <ContentLoading variant="reader" />;
-    return <div className="learning-content-loading"><div role="alert"><p>{aulaError}</p><AppButton onClick={onBack}>Voltar ao módulo</AppButton></div></div>;
+    return <LessonState message={aulaError} kind={errorKind} onRetry={refetch} onBack={onBack} />;
   }
 
-  const readerProgress = aula.completed ? 100 : pages.length ? Math.round(((currentPage + 1) / pages.length) * 100) : 0;
-  const canCompleteWithoutQuiz = isLastPage && !hasQuiz && !aula.completed && xpGanho === null;
+  const readerProgress = readerPercent(aula.completed, currentPage, pages.length);
+  const quizReachable = hasQuiz && !aula.completed && furthest >= pages.length - 1;
+  const goToPage = (index: number) => { setShowQuiz(false); goTo(index); };
+  const steps = pagedStepItems({
+    labels: pages.map((_, index) => `Página ${index + 1}`),
+    currentPage, showQuiz, completed: aula.completed, hasQuiz, quizReachable, onPage: goToPage, onQuiz: openQuiz, withDone: true,
+  });
+
+  const action = lessonNextAction(!pages.length || Boolean(isLastPage), hasQuiz, aula.completed);
+  const nextLabel = concluding ? 'Registrando...' : action === 'next' ? 'Próxima página' : NEXT_LABEL[action];
+  const handleNext = action === 'leave' ? onBack : action === 'complete' ? () => void handleCompleteWithoutQuiz() : goNext;
+  const page = pages[currentPage];
+  const pageBroken = brokenPages.includes(currentPage);
 
   return (
     <LearningShell
-      eyebrow={modulo?.title ?? 'Leitura guiada'}
-      title={showQuiz ? `Avaliação · ${aula.title}` : aula.title}
-      description={showQuiz ? 'Responda às perguntas para concluir esta fase.' : aula.description}
+      aulaId={aulaId}
+      title={aula.title}
+      type="quadrinho"
+      xp={aula.xp}
+      duration={aula.duration}
+      sizeLabel={pages.length ? `${pages.length} ${pages.length === 1 ? 'página' : 'páginas'}${hasQuiz ? ' + quiz' : ''}` : null}
+      modulo={modulo}
       onBack={onBack}
       progress={showQuiz ? 100 : readerProgress}
-      progressLabel={showQuiz ? 'Leitura concluída · avaliação em andamento' : `Página ${Math.min(currentPage + 1, pages.length || 1)} de ${pages.length}`}
-      hideReaderProgressLabel={!showQuiz}
-      meta={[
-        { label: 'Páginas', value: pages.length },
-        { label: 'Recompensa', value: `${aula.xp} XP` },
-        { label: 'Formato', value: showQuiz ? 'Quiz' : 'Quadrinho' },
-      ]}
-      aside={showQuiz ? undefined : <LessonNavigator modulo={modulo} activeAulaId={aulaId} onSelectAula={onSelectAula} />}
-      readerTools={!showQuiz ? <div className="classroom-lesson-tools">
-        {aula.description && <button aria-expanded={showBriefing} onClick={() => setShowBriefing((visible) => !visible)}><Info size={14} /> Sobre a aula</button>}
-      </div> : undefined}
-      footer={!showQuiz ? (
-        <>
-          <div className="learning-lesson-footer-status">
-            <BookOpen size={17} /><div><span>Progresso de leitura</span><strong>{readerProgress}%</strong></div>
-          </div>
-          {(aula.completed || xpGanho !== null) && <div className="learning-reader-complete"><CheckCircle2 size={15} /> Leitura concluída</div>}
-          {progressError && <p role="alert">{progressError}</p>}
-          <ProgressSaveStatus status={saveStatus} onRetry={retryProgress} />
-        </>
-      ) : undefined}
+      progressLabel={showQuiz ? 'Leitura concluída · quiz em andamento' : pages.length ? `Página ${currentPage + 1} de ${pages.length}` : 'Sem páginas publicadas'}
+      steps={<LessonStepper steps={steps} />}
+      aside={<LessonNavigator modulo={modulo} activeAulaId={aulaId} onSelectAula={onSelectAula} />}
+      footer={!showQuiz ? <>
+        {progressError && <p className="lesson-error" role="alert">{progressError}</p>}
+        <ProgressSaveStatus status={saveStatus} onRetry={retryProgress} />
+      </> : undefined}
     >
-      {showQuiz ? (
-        <AulaQuiz aula={aula} onBack={() => setShowQuiz(false)} onComplete={onBack} />
-      ) : (
-        <div className="comic-learning-stage">
-          {showBriefing && aula.description && (
-            <div className="comic-reader-briefing"><strong>Contexto da missão</strong><p>{aula.description}</p></div>
+      <section className="lesson-pane" aria-label={showQuiz ? 'Quiz da aula' : pages.length ? `Quadrinho, página ${currentPage + 1} de ${pages.length}` : 'Quadrinho'}>
+        {showQuiz ? (
+          <AulaQuiz aula={aula} onBack={() => goToPage(pages.length - 1)} onComplete={onBack} onReread={() => goToPage(0)} onResult={markCompleted} />
+        ) : <>
+          <h2 ref={headingRef} tabIndex={-1} className="lesson-sr">{pages.length ? `Página ${currentPage + 1} de ${pages.length}` : 'Quadrinho'}</h2>
+          <div className="lesson-comic" onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
+            {page && !pageBroken ? (
+              <img
+                key={`${aulaId}-${currentPage}`}
+                className="lesson-enter"
+                src={page}
+                alt={`Página ${currentPage + 1} do quadrinho ${aula.title}`}
+                draggable={false}
+                onError={() => setBrokenPages((list) => list.includes(currentPage) ? list : [...list, currentPage])}
+              />
+            ) : (
+              <div className="lesson-comic-empty" role="status">
+                <BookOpen size={38} aria-hidden="true" />
+                <strong>{page ? 'Página indisponível' : 'Quadrinho indisponível'}</strong>
+                <span>{page ? 'Não foi possível carregar esta imagem.' : 'Esta aula ainda não possui páginas publicadas.'}</span>
+              </div>
+            )}
+          </div>
+
+          {xpGanho !== null && (
+            <LessonCheckpoint variant="compact" title="Checkpoint! Leitura concluída" xp={xpGanho}
+              actions={<AppButton variant="chunky" tone="blue" icon={<ArrowRight size={18} aria-hidden="true" />} onClick={onBack}>Seguir na trilha</AppButton>} />
           )}
 
-          <div className="comic-book" onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
-            <div className="comic-book-spine" />
-            <AnimatePresence initial={false} custom={direction}>
-              <motion.div
-                key={currentPage}
-                className={`comic-page-sheet ${direction > 0 ? 'turn-forward' : 'turn-backward'}`}
-                custom={direction}
-                variants={pageVariants}
-                initial={reduceMotion ? false : 'enter'}
-                animate="center"
-                exit={reduceMotion ? undefined : 'exit'}
-                transition={{ duration: reduceMotion ? 0 : 0.32, ease: [0.22, 0.72, 0.2, 1] }}
-              >
-                {pages[currentPage]
-                  ? <img
-                      src={pages[currentPage]}
-                      alt={`Página ${currentPage + 1}`}
-                      draggable={false}
-                      onError={(event) => {
-                        const fallback = COMIC_PLACEHOLDER_PAGES[currentPage % COMIC_PLACEHOLDER_PAGES.length];
-                        if (!event.currentTarget.src.endsWith(fallback)) {
-                          event.currentTarget.src = fallback;
-                        }
-                      }}
-                    />
-                  : <div className="comic-page-empty"><BookOpen size={38} /><strong>Página indisponível</strong></div>}
-              </motion.div>
-            </AnimatePresence>
-
-          </div>
-
-          <div className="comic-reader-navigation">
-            <button className="classroom-page-button" onClick={goPrev} disabled={currentPage === 0}><ChevronLeft size={18} /><span>Página anterior</span></button>
-            <span className="classroom-page-counter" aria-live="polite">{currentPage + 1} / {pages.length}</span>
-            <button className="classroom-page-button is-primary" onClick={canCompleteWithoutQuiz ? () => void handleCompleteWithoutQuiz() : goNext}
-              disabled={concluding || (isLastPage && (quizAlreadyAnswered || (!hasQuiz && !canCompleteWithoutQuiz)))}>
-              <span>{concluding ? 'Registrando...' : isLastPage && hasQuiz && !quizAlreadyAnswered ? 'Iniciar avaliação' : canCompleteWithoutQuiz ? 'Concluir leitura' : 'Próxima página'}</span><ChevronRight size={18} />
-            </button>
-          </div>
-
-          {xpGanho !== null && <div className="learning-xp-reveal"><Sparkles size={18} /><div><span>Leitura concluída</span><strong>+{xpGanho} XP adicionados</strong></div></div>}
-        </div>
-      )}
+          <nav className="lesson-nav" aria-label="Navegação do quadrinho">
+            <AppButton variant="chunky" tone="ghost" size="sm" onClick={goPrev} disabled={currentPage === 0}>Página anterior</AppButton>
+            <span aria-live="polite">{pages.length ? `Página ${currentPage + 1} de ${pages.length}` : 'Sem páginas'}</span>
+            {xpGanho === null && (
+              <AppButton variant="chunky" tone="blue" onClick={handleNext} disabled={concluding}>{nextLabel}</AppButton>
+            )}
+          </nav>
+          {aula.description && <div className="lesson-brief"><strong>Contexto da aula</strong>{aula.description}</div>}
+        </>}
+      </section>
     </LearningShell>
   );
 }

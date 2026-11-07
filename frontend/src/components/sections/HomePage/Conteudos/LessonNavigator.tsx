@@ -1,11 +1,7 @@
 import { ContentLoading } from '@/components/shared/ContentLoading';
-import { BookOpen, Check, CheckCircle2, Lock, Video } from 'lucide-react';
-import type { ModuloDetalhes } from '@/services/conteudo';
-import { getModuleArtwork, missionRoomAssets } from '@/lib/staticArtwork';
-import { sortAulasByModuleSequence } from '@/lib/lessonOrder';
-import { useEffect, useState } from 'react';
-import { useNotebookLayout } from '@/hooks/useNotebookLayout';
-import { PageControls } from '@/components/ui/navigation/PageControls';
+import { Check, Lock, Play } from 'lucide-react';
+import type { AulaResumo, ModuloDetalhes } from '@/services/conteudo';
+import { formatXp, lessonPosition } from './lessonContext';
 
 interface LessonNavigatorProps {
   modulo: ModuloDetalhes | null;
@@ -13,55 +9,57 @@ interface LessonNavigatorProps {
   onSelectAula: (aulaId: number) => void;
 }
 
-const lessonTypeLabels: Record<string, string> = { video: 'Vídeo', texto: 'Leitura', quadrinho: 'Quadrinho' };
+type Slot = 'previous' | 'current' | 'next';
 
+const SLOT_LABEL: Record<Slot, string> = { previous: 'Anterior', current: 'Nesta aula', next: 'Próxima' };
+
+function LessonRow({ aula, number, slot, onSelect }: { aula: AulaResumo; number: number; slot: Slot; onSelect: (id: number) => void }) {
+  const done = aula.status === 'completed';
+  const locked = aula.status === 'locked';
+  const state = slot === 'current' ? 'is-current' : done ? 'is-done' : locked ? 'is-locked' : 'is-open';
+  const detail = slot === 'current' ? `Aula ${number} · agora` : `Aula ${number} · ${done ? 'concluída' : locked ? 'bloqueada' : `${formatXp(aula.xp)} XP`}`;
+  const icon = slot === 'current' ? <Play size={14} fill="currentColor" />
+    : done ? <Check size={18} strokeWidth={3.4} />
+      : locked ? <Lock size={14} strokeWidth={2.8} /> : number;
+  const body = (
+    <>
+      <i aria-hidden="true">{icon}</i>
+      <span><small className="lesson-sr">{SLOT_LABEL[slot]}: </small><strong>{aula.title}</strong><small>{detail}</small></span>
+    </>
+  );
+  return (
+    <li className={`lesson-mini ${state}`}>
+      {slot === 'current' || locked
+        ? <div className="lesson-mini-row" aria-current={slot === 'current' ? 'step' : undefined}>{body}</div>
+        : <button type="button" className="lesson-mini-row" onClick={() => onSelect(aula.id)}>{body}</button>}
+    </li>
+  );
+}
+
+/** Aside "Aulas do módulo": anterior, atual e próxima na sequência do módulo. */
 export function LessonNavigator({ modulo, activeAulaId, onSelectAula }: LessonNavigatorProps) {
-  const compact = useNotebookLayout();
-  const [page, setPage] = useState(0);
-  useEffect(() => {
-    const index = sortAulasByModuleSequence(modulo?.aulas ?? []).findIndex(aula => aula.id === activeAulaId);
-    setPage(Math.floor(Math.max(0, index) / 2));
-  }, [modulo?.id, activeAulaId]);
-  if (!modulo) {
-    return <ContentLoading variant="trail" />;
-  }
-
-  const orderedAulas = sortAulasByModuleSequence(modulo.aulas);
-  const safePage = Math.min(page, Math.max(0, Math.ceil(orderedAulas.length / 2) - 1));
-  const firstIndex = compact ? safePage * 2 : 0;
-  const visibleAulas = compact ? orderedAulas.slice(firstIndex, firstIndex + 2) : orderedAulas;
+  if (!modulo) return <ContentLoading variant="trail" />;
+  const position = lessonPosition(modulo, activeAulaId);
+  const number = position.number ?? 0;
+  const rows: Array<{ aula: AulaResumo | null; slot: Slot; number: number }> = [
+    { aula: position.previous, slot: 'previous', number: number - 1 },
+    { aula: position.current, slot: 'current', number },
+    { aula: position.next, slot: 'next', number: number + 1 },
+  ];
+  const chapter = position.current?.section_name?.trim();
 
   return (
-    <div className="lesson-navigator">
-      <header>
-        <div><section><span>SUA JORNADA</span><h2>Aulas do módulo</h2></section></div>
-      </header>
-      <progress className="classroom-module-progress" aria-label="Aulas concluídas no módulo" value={modulo.completedAulas} max={Math.max(1, modulo.totalAulas)} />
-      <p className="classroom-module-count">{modulo.completedAulas} de {modulo.totalAulas} concluídas</p>
-      <ol className="classroom-lesson-trail">
-        {visibleAulas.map((aula, index) => (
-          <li key={aula.id} className={aula.id === activeAulaId ? 'is-active' : ''}>
-            <span className="classroom-lesson-number" aria-hidden="true">{aula.status === 'completed' ? <Check size={14} /> : index + 1 + firstIndex}</span>
-            <button type="button" disabled={aula.status === 'locked'} aria-current={aula.id === activeAulaId ? 'step' : undefined}
-              onClick={() => aula.id !== activeAulaId && onSelectAula(aula.id)}>
-              <img className="classroom-lesson-art" src={aula.artworkKey && missionRoomAssets[aula.artworkKey] || getModuleArtwork(modulo)} alt="" />
-              <span className="classroom-lesson-label"><strong>{aula.title}</strong><small>
-                {aula.type === 'video' ? <Video size={12} /> : <BookOpen size={12} />}
-                {lessonTypeLabels[aula.type] ?? 'Quadrinho'}
-                {aula.status === 'completed' && ' · Concluída'}
-                {aula.id === activeAulaId && aula.status !== 'completed' && ' · Nesta aula'}
-              </small></span>
-              <span className="classroom-lesson-reward"><strong>{aula.xp} XP</strong>
-                {aula.status === 'locked' ? <Lock size={14} aria-label="Aula bloqueada" /> : <img src={missionRoomAssets['icon-star']} alt="" />}
-              </span>
-            </button>
-          </li>
-        ))}
+    <section className="lesson-box">
+      <h2 className="lesson-display">Aulas do módulo</h2>
+      <p>{chapter ? `${modulo.title} · ${chapter}` : modulo.title}</p>
+      <ol className="lesson-mini-list">
+        {rows.map(({ aula, slot, number: rowNumber }) => aula
+          ? <LessonRow key={aula.id} aula={aula} number={rowNumber} slot={slot} onSelect={onSelectAula} />
+          : null)}
       </ol>
-      {compact && <PageControls page={safePage} total={Math.ceil(orderedAulas.length / 2)} onChange={setPage} label="Roteiro de aulas" />}
-      {modulo.progress === 100 && (
-        <div className="lesson-navigator-complete"><CheckCircle2 size={15} /> Módulo concluído</div>
-      )}
-    </div>
+      <p className="lesson-box-count">
+        {modulo.progress === 100 ? 'Módulo concluído' : `${modulo.completedAulas} de ${modulo.totalAulas} aulas concluídas`}
+      </p>
+    </section>
   );
 }
