@@ -1,0 +1,208 @@
+/*
+ * Mapa da jornada (canvas Home-tela V4). Usa só a paleta fixa --sp-*: o mapa
+ * é igual nos dois temas e não segue a cor da escola. O próprio .jm é o
+ * contêiner: abaixo de 840 px de mapa (≈ 900 px de conteúdo) vira vertical.
+ */
+.jm {
+  container-type: inline-size;
+  width: 100%;
+  min-width: 0;
+}
+
+.jm :where(p, span, small, strong, b, button, li, ol) {
+  font-family: inherit;
+  font-size: inherit;
+  line-height: inherit;
+  letter-spacing: inherit;
+}
+
+.jm .jm-scroll { width: 100%; }
+.jm .jm-scroll.is-horizontal { overflow-x: auto; overscroll-behavior-x: contain; border-radius: 26px; }
+.jm .jm-scroll.is-vertical { display: none; }
+
+@container (max-width: 840px) {
+  .jm .jm-scroll.is-horizontal { display: none; }
+  .jm .jm-scroll.is-vertical { display: block; }
+}
+
+/* orientation="vertical": só o mapa vertical, em qualquer largura. */
+.jm.is-vertical-only .jm-scroll.is-vertical { display: block; }
+
+/* scrollable: a altura vem de quem usa o mapa; a trilha rola por dentro sem arrastar a página. */
+.jm.is-scroll-y { height: 100%; min-height: 0; }
+.jm.is-scroll-y .jm-scroll.is-vertical {
+  height: 100%;
+  max-width: 440px;
+  margin: 0 auto;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  border-radius: 26px;
+  scrollbar-width: thin;
+}
+
+.jm .jm-board {
+  position: relative;
+  box-sizing: border-box;
+  width: 100%;
+  overflow: hidden;
+  border: 3px solid var(--sp-black);
+  border-radius: 26px;
+}
+
+.jm .jm-board.is-vertical { max-width: 420px; margin: 0 auto; }
+
+.jm .jm-board > svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.jm .jm-nodes { margin: 0; padding: 0; list-style: none; }
+.jm .jm-nodes > li { position: absolute; z-index: 2; width: var(--jm-node); transform: translate(-50%, -50%); }
+
+.jm .jm-node {
+  position: relative;
+  display: block;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--sp-black);
+  cursor: pointer;
+  transition: transform 150ms ease;
+}
+
+.jm .jm-node:hover { transform: scale(1.06); }
+.jm .jm-node:focus-visible { outline: 3px solid var(--sp-black); outline-offset: 6px; border-radius: 18px; }
+.jm .jm-node .jm-pebble { display: block; width: 100%; }
+/* interaction="open": parada bloqueada sem ação. */
+.jm .jm-node.is-static { cursor: default; }
+.jm .jm-node.is-static:hover { transform: none; }
+
+/* activeStage: territórios fora de destaque esmaecidos (véu creme e paradas a 50%). */
+.jm .jm-veil { fill: var(--sp-cream); opacity: 0.5; }
+/* Só a pedra esmaece: o rótulo do botão segue opaco para manter o contraste AA. */
+.jm .jm-nodes > li.is-dim .jm-pebble { opacity: 0.5; transition: opacity 200ms ease; }
+
+.jm .jm-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+.jm .jm-label {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 50%;
+  width: max-content;
+  max-width: 160px;
+  padding: 4px 10px;
+  border-radius: 10px;
+  background: var(--sp-paper);
+  box-shadow: 0 3px 0 rgba(0, 0, 0, 0.18);
+  color: var(--sp-black);
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1.2;
+  text-align: center;
+  transform: translateX(-50%);
+}
+
+.jm .jm-board.is-vertical .jm-label { max-width: 118px; font-size: 11px; }
+.jm .jm-label small { display: block; color: var(--sp-muted); font-size: 11px; font-weight: 600; }
+.jm .jm-node.is-selected .jm-label { background: var(--sp-black); box-shadow: none; color: var(--sp-cream); }
+.jm .jm-node.is-selected .jm-label small { color: var(--sp-sand); }
+
+.jm .jm-stage {
+  position: absolute;
+  z-index: 1;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: var(--sp-black);
+  color: var(--sp-cream);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  line-height: 1.2;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.jm .jm-board.is-vertical .jm-stage {
+  max-width: 88%;
+  text-align: center;
+  white-space: normal;
+  transform: translate(-50%, -50%);
+}
+
+.jm .jm-stage.is-locked { background: var(--sp-cream); box-shadow: inset 0 0 0 2px var(--sp-black); color: var(--sp-black); }
+
+.jm .jm-flag {
+  position: absolute;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  transform: translate(-50%, -28px);
+}
+
+.jm .jm-flag i {
+  display: grid;
+  width: 52px;
+  height: 52px;
+  place-items: center;
+  border: 3px solid var(--sp-black);
+  border-radius: 16px;
+  background: var(--sp-cream);
+  box-shadow: 0 4px 0 var(--sp-black);
+  color: var(--sp-black);
+}
+
+.jm .jm-flag span {
+  padding: 4px 10px;
+  border-radius: 10px;
+  background: var(--sp-black);
+  color: var(--sp-cream);
+  font-size: 11px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.jm .jm-here {
+  position: absolute;
+  z-index: 3;
+  display: flex;
+  width: calc(var(--jm-node) * 0.94);
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  pointer-events: none;
+  transform: translate(-50%, -100%);
+}
+
+.jm .jm-here > span {
+  padding: 3px 9px;
+  border: 2px solid var(--sp-black);
+  border-radius: 999px;
+  background: var(--sp-blue);
+  color: #FFFFFF;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  line-height: 1.2;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.jm .jm-here > svg { width: 100%; height: auto; filter: drop-shadow(0 5px 0 rgba(0, 0, 0, 0.25)); }
+
+@media (prefers-reduced-motion: reduce) {
+  .jm .jm-node { transition: none; }
+  .jm .jm-node:hover { transform: none; }
+  .jm .jm-nodes > li.is-dim .jm-pebble { transition: none; }
+}

@@ -1,4 +1,4 @@
-import digitalKeyPixel from '@/assets/dashboard/digital-key-pixel-v5.png';
+import digitalKeyPixel from '@/assets/dashboard/digital-key-pixel-v5.webp';
 
 type DigitalKeyIconProps = {
   size?: number;

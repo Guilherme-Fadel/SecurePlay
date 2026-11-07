@@ -1,0 +1,30 @@
+.brand-character {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+
+.brand-character__blink {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: brand-character-blink 4.6s infinite;
+}
+
+.brand-character--float {
+  animation: brand-character-float 3.4s ease-in-out infinite;
+}
+
+@keyframes brand-character-blink {
+  0%, 91%, 100% { transform: scaleY(1); }
+  94% { transform: scaleY(.08); }
+}
+
+@keyframes brand-character-float {
+  50% { translate: 0 -10px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .brand-character__blink,
+  .brand-character--float { animation: none; }
+}

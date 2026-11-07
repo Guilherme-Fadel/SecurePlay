@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { preloadImagesInBackground } from "@/lib/imageCache";
 import { fetchCached } from "@/lib/queryCache";
-import { loadMissionRoomAssets } from "@/hooks/useMissionRoomAssets";
+import { companyCacheKey, companyFeaturesForUser } from "@/config/features";
 import {
   getAchievementTrail,
   getRecentAchievements,
@@ -15,8 +15,17 @@ import {
 } from "@/services/dashboard";
 import type { CurrentUser } from "@/services/me";
 
+// Imagens do bundle, menos as que nenhuma tela usa desde o redesign: a marca
+// (só favicon/manifest), a arte antiga do Ranking e rascunhos locais da chave e
+// do panorama da jornada (o DigitalKeyIcon usa a v5).
 const bundledImages = import.meta.glob<string>(
-  ["../assets/**/*.{png,jpg,jpeg,webp,svg}", "!../assets/static/brand/**"],
+  [
+    "../assets/**/*.{png,jpg,jpeg,webp,svg}",
+    "!../assets/static/brand/**",
+    "!../assets/static/ranking/**",
+    "!../assets/dashboard/digital-key-pixel-v[1-4].png",
+    "!../assets/dashboard/journey-landscape-*",
+  ],
   { eager: true, query: "?url", import: "default" },
 );
 const bundledImageUrls = Object.values(bundledImages);
@@ -42,23 +51,37 @@ function collectImageUrls(
   );
 }
 
-async function warmVisualCache(user: CurrentUser | null) {
-  // Usa as mesmas chaves das telas: além das imagens, os dados já ficam
-  // disponíveis quando o usuário abre cada seção.
-  const requests = [
-    fetchCached("conteudoModulos", getModulos),
-    loadMissionRoomAssets(),
-    fetchCached("arcade-games", getArcadeGames),
-    fetchCached("achievementTrail", getAchievementTrail),
-    fetchCached("achievementRecent", getRecentAchievements),
-    fetchCached("dashboardDaily", getDashboardDailyChallenge),
-    fetchCached("dashboardJourney", getDashboardJourney),
-    fetchCached("dashboardRanking:global", () => getDashboardRanking("global")),
-    fetchCached("dashboardRanking:company", () =>
-      getDashboardRanking("company"),
-    ),
+/**
+ * Mesmas chaves das telas: `useCachedQuery` guarda cada consulta sob
+ * `companyCacheKey(chave, usuário)`, então o pré-carregamento precisa usar a
+ * mesma composição para os dados chegarem prontos. Só consulta o que a escola
+ * liga (ranking, Global, conquistas), como as telas.
+ */
+function warmRequests(user: CurrentUser) {
+  const features = companyFeaturesForUser(user);
+  const key = (base: string) => companyCacheKey(base, user);
+  // O Início sempre pede "Minha instituição"; sem instituição (e fora do
+  // platform_admin, que troca de empresa no Ranking) o Ranking abre no Global.
+  const rankingScope = user.empresa_id || user.role === "platform_admin" || !features.globalRanking ? "company" : "global";
+  const requests: Array<Promise<unknown>> = [
+    fetchCached(key("conteudoModulos"), getModulos),
+    fetchCached(key("dashboardJourney"), getDashboardJourney),
   ];
-  const results = await Promise.allSettled(requests);
+  requests.push(fetchCached(key("dashboardDaily"), getDashboardDailyChallenge));
+  if (features.games.length > 0) requests.push(fetchCached(key("arcade-games"), getArcadeGames));
+  if (features.achievements) {
+    requests.push(fetchCached(key("achievementTrail"), getAchievementTrail));
+    requests.push(fetchCached(key("achievementRecent"), getRecentAchievements));
+  }
+  if (features.ranking) {
+    // Igual a useDashboardRanking(escopo, sem empresa, 'current', sem temporada).
+    requests.push(fetchCached(key(`dashboardRanking:${rankingScope}:self:current:none`), () => getDashboardRanking(rankingScope)));
+  }
+  return requests;
+}
+
+async function warmVisualCache(user: CurrentUser) {
+  const results = await Promise.allSettled(warmRequests(user));
   const imageUrls = new Set<string>(bundledImageUrls);
   collectImageUrls(user, imageUrls);
   results.forEach((result) => {

@@ -6,7 +6,6 @@ import { initialAuthenticatedPath } from '@/components/admin/console/consoleNavi
 import { PrivateRoute, PublicRoute } from '@/routes/PrivateRoute';
 import { PageLoading } from '@/components/shared/PageLoading';
 const Landing = lazy(() => import('@/pages/Landing'));
-const Start = lazy(() => import('@/pages/Start'));
 const Login = lazy(() => import('@/pages/Login'));
 const Home = lazy(() => import('@/pages/Home'));
 const AdminConsole = lazy(() => import('@/pages/AdminConsole'));
@@ -28,7 +27,8 @@ export default function App() {
     return (<AnimatePresence mode="wait">
       <Routes location={location} key={animationKey}>
         <Route path="/" element={<Suspense fallback={<PageLoading />}><Landing /></Suspense>}/>
-        <Route path="/start" element={<Suspense fallback={<PageLoading />}><Start /></Suspense>}/>
+        {/* /start foi aposentada (D20); links antigos caem na landing. */}
+        <Route path="/start" element={<Navigate to="/" replace />}/>
         <Route path="/login" element={<PublicRoute><Suspense fallback={<PageLoading />}><Login /></Suspense></PublicRoute>}/>
         <Route path="/home/admin" element={<PrivateRoute><LegacyAdminRedirect /></PrivateRoute>}/>
         <Route path="/home/admin/*" element={<PrivateRoute><LegacyAdminRedirect /></PrivateRoute>}/>

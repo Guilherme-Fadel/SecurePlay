@@ -1,6 +1,9 @@
 import { Bell, BellRing, CheckCheck, Info, ShieldAlert, Sparkles } from 'lucide-react';
 import { useNotification } from '@/hooks/useNotification';
 import { timeAgo } from '@/services/notification';
+import { RailPopover } from './RailPopover';
+
+const PANEL_ID = 'sp-rail-notifications';
 
 interface NotificationsMenuProps {
   open: boolean;
@@ -41,82 +44,82 @@ export function NotificationsMenu({ open, onToggle, onClose }: NotificationsMenu
   };
 
   return (
-    <div className="notifications-menu">
+    <>
       <button
+        type="button"
         onClick={onToggle}
-        className="notification-trigger"
-        aria-label="Abrir notificações"
+        className="sp-rail-account-button"
+        aria-label={hasUnread ? `Abrir notificações, ${unreadCount} não lidas` : 'Abrir notificações'}
+        aria-haspopup="dialog"
         aria-expanded={open}
+        aria-controls={open ? PANEL_ID : undefined}
+        title="Notificações"
       >
-        <Bell size={20} />
+        <Bell size={20} aria-hidden="true" />
         {hasUnread && (
-          <span className="notification-unread-badge" aria-label={`${unreadCount} notificações não lidas`}>
+          <span className="sp-rail-badge" aria-hidden="true">
             {unreadCount > 9 ? '9+' : unreadCount}
           </span>
         )}
       </button>
 
       {open && (
-        <>
-          <div className="fixed inset-0 z-40" onClick={onClose} />
-
-          <section className="notification-popover" aria-label="Notificações">
-            <div className="notification-popover-header">
-              <div className="notification-popover-title">
-                <span className="notification-heading-icon"><BellRing size={17} /></span>
-                <div>
-                  <h3>Notificações</h3>
-                  <p>{hasUnread ? `${unreadCount} não lida${unreadCount > 1 ? 's' : ''}` : 'Tudo em dia'}</p>
-                </div>
+        <RailPopover id={PANEL_ID} label="Notificações" className="notification-popover" onClose={onClose}>
+          <div className="notification-popover-header">
+            <div className="notification-popover-title">
+              <span className="notification-heading-icon"><BellRing size={17} /></span>
+              <div>
+                <h3>Notificações</h3>
+                <p>{hasUnread ? `${unreadCount} não lida${unreadCount > 1 ? 's' : ''}` : 'Tudo em dia'}</p>
               </div>
+            </div>
+            <button
+              type="button"
+              className="notification-read-all"
+              onClick={handleMarkAllAsRead}
+              disabled={!hasUnread}
+            >
+              <CheckCheck size={15} />
+              Ler todas
+            </button>
+          </div>
+
+          <div className="notification-list" aria-live="polite">
+            {loading && (
+              <div className="notification-loading">Atualizando notificações...</div>
+            )}
+            {!loading && notification.length === 0 && (
+              <div className="notification-empty">
+                <span><Bell size={20} /></span>
+                <strong>Nenhuma notificação por aqui</strong>
+                <p>Quando houver novidades, elas aparecerão neste espaço.</p>
+              </div>
+            )}
+            {!loading && notification.map((item) => {
+              const Icon = getNotificationIcon(item.type);
+
+              return (
               <button
                 type="button"
-                className="notification-read-all"
-                onClick={handleMarkAllAsRead}
-                disabled={!hasUnread}
+                key={item.id}
+                onClick={() => { if (!item.readed) void markAsRead(item.id); }}
+                className={`notification-item ${!item.readed ? 'is-unread' : ''}`}
               >
-                <CheckCheck size={15} />
-                Ler todas
-              </button>
-            </div>
-
-            <div className="notification-list" aria-live="polite">
-              {loading && (
-                <div className="notification-loading">Atualizando notificações...</div>
-              )}
-              {!loading && notification.length === 0 && (
-                <div className="notification-empty">
-                  <span><Bell size={20} /></span>
-                  <strong>Nenhuma notificação por aqui</strong>
-                  <p>Quando houver novidades, elas aparecerão neste espaço.</p>
-                </div>
-              )}
-              {!loading && notification.map((item) => {
-                const Icon = getNotificationIcon(item.type);
-
-                return (
-                <button
-                  type="button"
-                  key={item.id}
-                  onClick={() => { if (!item.readed) void markAsRead(item.id); }}
-                  className={`notification-item ${!item.readed ? 'is-unread' : ''}`}
-                >
-                  <span className="notification-item-icon"><Icon size={16} /></span>
-                  <span className="notification-item-content">
-                    <span className="notification-item-title-row">
-                      <strong>{item.title}</strong>
-                      {!item.readed && <span className="notification-item-status">Nova</span>}
-                    </span>
-                    <span className="notification-item-message">{item.message}</span>
-                    <span className="notification-item-time">{timeAgo(item.created_at)}</span>
+                <span className="notification-item-icon"><Icon size={16} /></span>
+                <span className="notification-item-content">
+                  <span className="notification-item-title-row">
+                    <strong>{item.title}</strong>
+                    {!item.readed && <span className="notification-item-status">Nova</span>}
                   </span>
-                </button>
-                );
-              })}
-            </div>
-          </section>
-        </>
+                  <span className="notification-item-message">{item.message}</span>
+                  <span className="notification-item-time">{timeAgo(item.created_at)}</span>
+                </span>
+              </button>
+              );
+            })}
+          </div>
+        </RailPopover>
       )}
-    </div>
+    </>
   );
 }
