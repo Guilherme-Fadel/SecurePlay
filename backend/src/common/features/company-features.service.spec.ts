@@ -7,6 +7,24 @@ import {
   resolveCompanyParameters,
 } from '../../config/features';
 
+/** O serviço usa query builder (1 consulta); os testes continuam simulando o resultado via `findOne`. */
+function asBuilder(repository: { findOne: (options: never) => unknown }) {
+  return {
+    createQueryBuilder: () => {
+      let id = 0;
+      const builder = {
+        leftJoinAndSelect: () => builder,
+        where: (_condition: string, params: { userId: number }) => {
+          id = params.userId;
+          return builder;
+        },
+        getOne: () => repository.findOne({ where: { id } } as never),
+      };
+      return builder;
+    },
+  };
+}
+
 describe('CompanyFeaturesService — isolamento institucional', () => {
   it.each([null, { parametros_funcionalidades: noCompanyParameters() }])(
     'libera todos os recursos para platform_admin com empresa %p',
@@ -17,7 +35,7 @@ describe('CompanyFeaturesService — isolamento institucional', () => {
           .mockResolvedValue({ role: Role.PLATFORM_ADMIN, empresa }),
       };
       const service = new CompanyFeaturesService({
-        getRepository: () => repository,
+        getRepository: () => asBuilder(repository),
       } as never);
       expect(await service.forUser(99)).toEqual(platformAdminParameters());
       await expect(
@@ -44,7 +62,7 @@ describe('CompanyFeaturesService — isolamento institucional', () => {
           }),
       };
       const service = new CompanyFeaturesService({
-        getRepository: () => repository,
+        getRepository: () => asBuilder(repository),
       } as never);
       await expect(service.requireFeature(1, 'achievements')).rejects.toThrow(
         NotFoundException,
@@ -69,7 +87,7 @@ describe('CompanyFeaturesService — isolamento institucional', () => {
       }),
     };
     const service = new CompanyFeaturesService({
-      getRepository: () => repository,
+      getRepository: () => asBuilder(repository),
     } as never);
 
     await expect(service.requireFeature(1, 'ranking')).resolves.toMatchObject({
@@ -108,7 +126,7 @@ describe('CompanyFeaturesService — isolamento institucional', () => {
       })),
     };
     const service = new CompanyFeaturesService({
-      getRepository: () => repository,
+      getRepository: () => asBuilder(repository),
     } as never);
     return { service, companies, repository };
   }

@@ -66,11 +66,15 @@ export class AchievementsService {
     type: PrestigeTransactionType,
     source_key: string,
     description: string,
+    knownKeys?: Set<string>,
   ): Promise<boolean> {
     const transactionRepository = manager.getRepository(PrestigeTransaction);
-    const existing = await transactionRepository.findOne({
-      where: { usuario_id: wallet.usuario_id, source_key },
-    });
+    // Com `knownKeys` (carregadas numa consulta só) evita um SELECT por lançamento.
+    const existing = knownKeys
+      ? knownKeys.has(source_key)
+      : await transactionRepository.findOne({
+          where: { usuario_id: wallet.usuario_id, source_key },
+        });
     if (existing) return false;
     if (!Number.isSafeInteger(amount) || amount < 0)
       throw new Error('Recompensa de Prestígio inválida');
@@ -85,6 +89,7 @@ export class AchievementsService {
     wallet.balance += amount;
     if (amount > 0) wallet.total_earned += amount;
     await manager.getRepository(PrestigeWallet).save(wallet);
+    knownKeys?.add(source_key);
     return true;
   }
 
@@ -114,6 +119,7 @@ export class AchievementsService {
     manager: EntityManager,
     wallet: PrestigeWallet,
     level: number,
+    knownKeys?: Set<string>,
   ): Promise<void> {
     for (let currentLevel = 1; currentLevel <= level; currentLevel += 1) {
       await this.addTransaction(
@@ -124,11 +130,83 @@ export class AchievementsService {
         // Preserva a chave histórica do mesmo marco de XP, evitando regrants.
         `level:${currentLevel + 1}`,
         `Chaves Digitais recebidas ao alcançar o nível ${currentLevel}`,
+        knownKeys,
       );
     }
   }
 
+  /**
+   * Caminho de leitura: quando nada precisa ser gravado (caso comum depois da
+   * primeira abertura), responde sem transação nem lock — são só consultas em
+   * paralelo, sem BEGIN/lock/COMMIT nem um save por conquista. Devolve null se
+   * houver qualquer gravação pendente; aí vale o caminho transacional.
+   */
+  private async getTrailReadOnly(
+    usuario_id: number,
+  ): Promise<AchievementTrailResponse | null> {
+    const manager = this.dataSource.manager;
+    const [wallet, definitions, metrics, records, ledger] = await Promise.all([
+      manager.getRepository(PrestigeWallet).findOne({ where: { usuario_id } }),
+      manager.getRepository(Achievement).find({
+        where: { active: true },
+        order: { order_index: 'ASC', tier: 'ASC' },
+      }),
+      this.getMetrics(usuario_id, manager),
+      manager.getRepository(UsuarioAchievement).find({ where: { usuario_id } }),
+      manager.getRepository(PrestigeTransaction).find({
+        where: { usuario_id },
+        select: { source_key: true },
+      }),
+    ]);
+    if (!wallet) return null;
+    const knownKeys = new Set((ledger ?? []).map((entry) => entry.source_key));
+    for (let level = 1; level <= metrics.level; level += 1) {
+      if (!knownKeys.has(`level:${level + 1}`)) return null;
+    }
+    const recordsByAchievement = new Map(
+      records.map((record) => [record.achievement_id, record]),
+    );
+    const unlockedSlugs = new Set<string>();
+    const nodes: AchievementTrailNode[] = [];
+    for (const definition of definitions) {
+      const record = recordsByAchievement.get(definition.id);
+      if (!record) return null;
+      const prerequisiteMet =
+        !definition.prerequisite_slug ||
+        unlockedSlugs.has(definition.prerequisite_slug);
+      const metric = metricValue(metrics, definition.requirement_type);
+      const progress = record.unlocked
+        ? definition.requirement_value
+        : Math.min(metric, definition.requirement_value);
+      const shouldUnlock =
+        prerequisiteMet && metric >= definition.requirement_value;
+      if (record.progress !== progress) return null;
+      if (shouldUnlock && !record.unlocked) return null;
+      if (record.unlocked) {
+        if (!knownKeys.has(`achievement:${definition.slug}`)) return null;
+        unlockedSlugs.add(definition.slug);
+      }
+      const concealed = definition.secret && !record.unlocked;
+      nodes.push(
+        buildTrailNode({
+          definition,
+          record,
+          prerequisiteMet,
+          concealed,
+          artworkUrl: concealed ? null : this.resolveArtwork(definition),
+        }),
+      );
+    }
+    return {
+      summary: buildTrailSummary({ nodes, wallet, level: metrics.level }),
+      metrics,
+      nodes,
+    };
+  }
+
   async getTrail(usuario_id: number): Promise<AchievementTrailResponse> {
+    const fast = await this.getTrailReadOnly(usuario_id);
+    if (fast) return fast;
     return this.dataSource.transaction(async (manager) => {
       const wallet = await lockPrestigeWallet(manager, usuario_id);
       const userAchievements = manager.getRepository(UsuarioAchievement);
@@ -139,10 +217,16 @@ export class AchievementsService {
         }),
         this.getMetrics(usuario_id, manager),
       ]);
-      await this.grantLevelPrestige(manager, wallet, metrics.level);
-      const records = await userAchievements.find({
-        where: { usuario_id },
-      });
+      const [records, ledger] = await Promise.all([
+        userAchievements.find({ where: { usuario_id } }),
+        manager.getRepository(PrestigeTransaction).find({
+          where: { usuario_id },
+          select: { source_key: true },
+        }),
+      ]);
+      // Uma consulta traz todas as chaves já lançadas; sem isso eram ~1 SELECT por conquista e por nível.
+      const knownKeys = new Set((ledger ?? []).map((entry) => entry.source_key));
+      await this.grantLevelPrestige(manager, wallet, metrics.level, knownKeys);
       const recordsByAchievement = new Map(
         records.map((record) => [record.achievement_id, record]),
       );
@@ -159,7 +243,9 @@ export class AchievementsService {
           : Math.min(metric, definition.requirement_value);
         const shouldUnlock =
           prerequisiteMet && metric >= definition.requirement_value;
+        let changed = false;
         if (!record) {
+          changed = true;
           record = userAchievements.create({
             usuario_id,
             achievement_id: definition.id,
@@ -168,13 +254,18 @@ export class AchievementsService {
             unlocked_at: shouldUnlock ? new Date() : null,
           });
         } else {
-          record.progress = progress;
+          if (record.progress !== progress) {
+            record.progress = progress;
+            changed = true;
+          }
           if (shouldUnlock && !record.unlocked) {
             record.unlocked = true;
             record.unlocked_at = new Date();
+            changed = true;
           }
         }
-        await userAchievements.save(record);
+        // Só grava o que mudou: a leitura da trilha não deve reescrever 20 linhas a cada abertura.
+        if (changed) await userAchievements.save(record);
         if (record.unlocked) unlockedSlugs.add(definition.slug);
         // Um unlock legado sem lançamento também pode completar sua recompensa.
         if (record.unlocked) {
@@ -185,6 +276,7 @@ export class AchievementsService {
             PrestigeTransactionType.ACHIEVEMENT,
             `achievement:${definition.slug}`,
             `Conquista desbloqueada: ${definition.name}`,
+            knownKeys,
           );
         }
         const concealed = definition.secret && !record.unlocked;

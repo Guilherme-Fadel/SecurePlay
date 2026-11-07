@@ -99,12 +99,16 @@ export async function rankingHistoryContext(
   selectedSeason: string | null,
 ) {
   const now = getLocalDateKey().slice(0, 7);
-  await ensureRankingTracking(dataSource);
-  const tracking = await dataSource.query<
-    Array<{ start_local_at: string | null }>
-  >(
-    "SELECT DATE_FORMAT(start_local_at, '%Y-%m-%d %H:%i:%s.%f') AS start_local_at FROM ranking_tracking WHERE id = 1",
-  );
+  const readTracking = () =>
+    dataSource.query<Array<{ start_local_at: string | null }>>(
+      "SELECT DATE_FORMAT(start_local_at, '%Y-%m-%d %H:%i:%s.%f') AS start_local_at FROM ranking_tracking WHERE id = 1",
+    );
+  // Depois de iniciado o acompanhamento, uma leitura basta; só inicializa (3 consultas extras) quando falta.
+  let tracking = await readTracking();
+  if (!tracking[0]?.start_local_at) {
+    await ensureRankingTracking(dataSource);
+    tracking = await readTracking();
+  }
   const startedAt = tracking[0]?.start_local_at;
   const availableSeasons = seasonIds(now).map((id) => {
     const status = id === now ? ('active' as const) : ('closed' as const);

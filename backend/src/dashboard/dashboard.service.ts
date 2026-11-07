@@ -10,7 +10,7 @@ import { ttlUntilEndOfDay } from '../common/utils/date.utils';
 import { EventEmitter2, OnEvent } from '@nestjs/event-emitter';
 import { S3Service } from '../conteudo/s3/s3.service';
 import { ModuloService } from '../conteudo/modulo/modulo.service';
-import { isFeatureEnabled } from '../config/features';
+import { isFeatureEnabled, type CompanyParameters } from '../config/features';
 import { CompanyFeaturesService } from '../common/features/company-features.service';
 import { Role } from '../auth/roles.enum';
 import { loadRankingWeek, unavailableRankingWeek } from './ranking-weekly';
@@ -105,27 +105,29 @@ export class DashboardService implements OnModuleInit, OnModuleDestroy {
     usuario_id: number,
     requestedScope: 'global' | 'company' = 'global',
     includeWeekly = true,
-    options: { includeImages?: boolean; includeEntries?: boolean; companyId?: number; mode?: RankingMode; selectedSeason?: string | null } = {},
+    options: { includeImages?: boolean; includeEntries?: boolean; companyId?: number; mode?: RankingMode; selectedSeason?: string | null; parameters?: CompanyParameters } = {},
   ) {
     const mode = options.mode ?? 'current';
     const selectedSeason = options.selectedSeason ?? (mode === 'current' ? getRankingSeason().startsAt.slice(0, 7) : null);
     const includeImages = options.includeImages ?? true;
     const includeEntries = options.includeEntries ?? true;
-    const parameters = await this.companyFeatures.requireFeature(
-      usuario_id,
-      'ranking',
-    );
-    const currentEntry = await this.statsRepository
-      .createQueryBuilder('s')
-      .leftJoinAndSelect('s.usuario', 'u')
-      .leftJoinAndSelect('u.empresa', 'e')
-      .where('s.usuario_id = :uid', { uid: usuario_id })
-      .getOne();
+    // Etapa 1 em paralelo: cada ida ao banco custa a latência de rede.
+    const [parameters, currentEntry] = await Promise.all([
+      // Quem já resolveu as funcionalidades da empresa (ex.: getStats) as repassa e poupa a consulta.
+      options.parameters
+        ? this.requireRankingParameters(options.parameters)
+        : this.companyFeatures.requireFeature(usuario_id, 'ranking'),
+      this.statsRepository
+        .createQueryBuilder('s')
+        .leftJoinAndSelect('s.usuario', 'u')
+        .leftJoinAndSelect('u.empresa', 'e')
+        .where('s.usuario_id = :uid', { uid: usuario_id })
+        .getOne(),
+    ]);
     const currentUserRecord = currentEntry?.usuario ?? await this.dataSource.getRepository(Usuario).findOne({ where: { id: usuario_id }, relations: ['empresa'] });
     const isManagementUser =
       currentUserRecord?.role === Role.ADMIN ||
       currentUserRecord?.role === Role.PLATFORM_ADMIN;
-    const currentStats = isManagementUser ? null : await this.getOrCreateStats(usuario_id);
     const company = isManagementUser && currentUserRecord?.role === Role.PLATFORM_ADMIN && options.companyId
       ? await this.dataSource.getRepository(Empresa).findOne({ where: { id: options.companyId } })
       : currentUserRecord?.empresa ?? null;
@@ -158,7 +160,19 @@ export class DashboardService implements OnModuleInit, OnModuleDestroy {
       return query;
     };
     if (mode === 'season' && selectedSeason) await closeRankingSeason(this.dataSource, selectedSeason);
-    const history = await rankingHistoryContext(this.dataSource, mode, selectedSeason);
+    // Etapa 2 em paralelo: estatísticas do usuário, contexto histórico e, fora do modo temporada, a lista da classificação.
+    const [currentStats, history, scopedStats] = await Promise.all([
+      isManagementUser ? Promise.resolve(null) : this.getOrCreateStats(usuario_id),
+      rankingHistoryContext(this.dataSource, mode, selectedSeason),
+      mode === 'season'
+        ? Promise.resolve(null)
+        : applyScope(
+            this.statsRepository
+              .createQueryBuilder('s')
+              .leftJoinAndSelect('s.usuario', 'u')
+              .leftJoinAndSelect('u.empresa', 'e'),
+          ).getMany(),
+    ]);
     let allStats: UsuarioStats[];
     let seasonPoints: Map<number, number>;
     const historicalCompanies = new Map<number, string | null>();
@@ -177,12 +191,7 @@ export class DashboardService implements OnModuleInit, OnModuleDestroy {
       rows.forEach((row) => historicalCompanies.set(Number(row.usuario_id), row.empresa_nome));
       seasonPoints = new Map(rows.map((row) => [Number(row.usuario_id), Number(row.points)]));
     } else {
-      allStats = await applyScope(
-        this.statsRepository
-          .createQueryBuilder('s')
-          .leftJoinAndSelect('s.usuario', 'u')
-          .leftJoinAndSelect('u.empresa', 'e'),
-      ).getMany();
+      allStats = scopedStats ?? [];
       seasonPoints = mode === 'total'
         ? new Map(allStats.map((entry) => [entry.usuario_id, entry.total_points]))
         : history.dataCompleteness === 'complete'
@@ -322,31 +331,44 @@ export class DashboardService implements OnModuleInit, OnModuleDestroy {
     };
   }
 
+  private requireRankingParameters(parameters: CompanyParameters) {
+    if (!isFeatureEnabled(parameters, 'ranking')) {
+      throw new NotFoundException(
+        'Funcionalidade não disponível para sua empresa',
+      );
+    }
+    return Promise.resolve(parameters);
+  }
+
   async getJourney(usuario_id: number) {
     return this.moduloService.getJourneySummary(usuario_id);
   }
   async getStats(usuario_id: number) {
-    const stats = await this.getOrCreateStats(usuario_id);
-    const completedChallenges =
-      await this.challengeService.countCompleted(usuario_id);
-    const totalActiveChallenges =
-      await this.challengeService.countTotalActive();
+    // Consultas independentes em paralelo: cada ida ao banco tem custo de rede.
     const parameters = await this.companyFeatures.forUser(usuario_id);
     const globalRankingEnabled = isFeatureEnabled(parameters, 'globalRanking');
-    let ranking: Awaited<ReturnType<typeof this.getRanking>> | null = null;
-    if (globalRankingEnabled) {
-      try {
-        ranking = await this.getRanking(usuario_id, 'global', false, {
+    const rankingPromise: Promise<Awaited<
+      ReturnType<typeof this.getRanking>
+    > | null> = globalRankingEnabled
+      ? this.getRanking(usuario_id, 'global', false, {
           includeImages: false,
           includeEntries: false,
-        });
-      } catch (error) {
-        if (!(error instanceof NotFoundException)) throw error;
-      }
-    }
+          parameters,
+        }).catch((error: unknown) => {
+          if (error instanceof NotFoundException) return null;
+          throw error;
+        })
+      : Promise.resolve(null);
+    const [stats, completedChallenges, totalActiveChallenges, xpToday, ranking] =
+      await Promise.all([
+        this.getOrCreateStats(usuario_id),
+        this.challengeService.countCompleted(usuario_id),
+        this.challengeService.countTotalActive(),
+        this.getRedisXpToday(usuario_id),
+        rankingPromise,
+      ]);
     const totalUsers = ranking?.totalParticipants ?? null;
     const globalRanking = ranking?.currentUser?.position ?? null;
-    const xpToday = await this.getRedisXpToday(usuario_id);
     return {
       totalPoints: stats.total_points,
       completedChallenges,

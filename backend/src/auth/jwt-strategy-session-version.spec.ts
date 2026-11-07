@@ -70,4 +70,38 @@ describe('JwtStrategy session version', () => {
       strategy.validate({ sub: 4, exp: Math.floor(Date.now() / 1000) + 60 }),
     ).resolves.toMatchObject({ userId: 4, sessionVersion: 0 });
   });
+
+  it('reaproveita a conta validada por pouco tempo e relê quando a versão muda', async () => {
+    const getUsuarioById = jest
+      .fn()
+      .mockResolvedValueOnce({
+        id: 4,
+        active: true,
+        session_version: 5,
+        password_change_required: false,
+        role: Role.USER,
+      })
+      .mockResolvedValueOnce({
+        id: 4,
+        active: true,
+        session_version: 6,
+        password_change_required: false,
+        role: Role.USER,
+      });
+    const strategy = new JwtStrategy({ getUsuarioById } as never);
+    const exp = Math.floor(Date.now() / 1000) + 60;
+
+    await strategy.validate({ sub: 4, sessionVersion: 5, exp });
+    await strategy.validate({ sub: 4, sessionVersion: 5, exp });
+    expect(getUsuarioById).toHaveBeenCalledTimes(1);
+
+    // Token de outra versão não passa pelo cache: relê a conta e rejeita o antigo.
+    await expect(
+      strategy.validate({ sub: 4, sessionVersion: 5, exp: exp + 1 }),
+    ).resolves.toBeDefined();
+    await expect(
+      strategy.validate({ sub: 4, sessionVersion: 6, exp }),
+    ).resolves.toBeDefined();
+    expect(getUsuarioById).toHaveBeenCalledTimes(2);
+  });
 });

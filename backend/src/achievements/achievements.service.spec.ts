@@ -37,6 +37,10 @@ describe('AchievementsService', () => {
         total_earned: hasLegacyGrant ? 1 : 0,
       };
       const transactions = repository();
+      // getTrail carrega as chaves do ledger numa consulta só.
+      transactions.find.mockResolvedValue(
+        hasLegacyGrant ? [{ source_key: 'level:2' }] : [],
+      );
       transactions.findOne.mockImplementation(
         ({ where }: { where: { source_key: string } }) =>
           Promise.resolve(
@@ -79,6 +83,8 @@ describe('AchievementsService', () => {
         {} as never,
         {} as never,
         {
+          // O caminho de leitura usa `manager`; sem carteira ele cai no transacional.
+          manager,
           transaction: (callback: (value: typeof manager) => unknown) =>
             callback(manager),
         } as never,
@@ -152,34 +158,34 @@ describe('AchievementsService', () => {
     userAchievements.find.mockResolvedValue([]);
     wallets.findOneOrFail.mockImplementation(() => Promise.resolve(wallet));
     transactions.findOne.mockResolvedValue(null);
+    transactions.find.mockResolvedValue([]);
     stats.findOne.mockResolvedValue({ total_points: 2000, current_streak: 1 });
     challenges.count.mockResolvedValue(0);
     lessons.count.mockResolvedValue(0);
     arcade.find.mockResolvedValue([]);
+    const trailManager = {
+      query: jest.fn().mockResolvedValue([]),
+      getRepository: (entity: unknown) =>
+        new Map<unknown, unknown>([
+          [Usuario, { findOneOrFail: jest.fn().mockResolvedValue({ id: 7 }) }],
+          [Achievement, achievements],
+          [UsuarioAchievement, userAchievements],
+          [PrestigeWallet, wallets],
+          [PrestigeTransaction, transactions],
+          [UsuarioStats, stats],
+          [UsuarioChallenge, challenges],
+          [UsuarioAula, lessons],
+          [UsuarioArcadeStats, arcade],
+        ]).get(entity),
+    };
 
     const service = new AchievementsService(
       cosmetics as never,
       userCosmetics as never,
       {
+        manager: trailManager,
         transaction: (callback: (manager: unknown) => unknown) =>
-          callback({
-            query: jest.fn().mockResolvedValue([]),
-            getRepository: (entity: unknown) =>
-              new Map<unknown, unknown>([
-                [
-                  Usuario,
-                  { findOneOrFail: jest.fn().mockResolvedValue({ id: 7 }) },
-                ],
-                [Achievement, achievements],
-                [UsuarioAchievement, userAchievements],
-                [PrestigeWallet, wallets],
-                [PrestigeTransaction, transactions],
-                [UsuarioStats, stats],
-                [UsuarioChallenge, challenges],
-                [UsuarioAula, lessons],
-                [UsuarioArcadeStats, arcade],
-              ]).get(entity),
-          }),
+          callback(trailManager),
       } as never,
     );
 
@@ -202,6 +208,10 @@ describe('AchievementsService', () => {
       },
     ]);
     transactions.findOne.mockResolvedValue({ source_key: 'already-granted' });
+    transactions.find.mockResolvedValue([
+      { source_key: 'level:2' },
+      { source_key: 'achievement:elite-nivel-dois' },
+    ]);
     const legacy = await service.getTrail(7);
     expect(legacy.summary.level).toBe(1);
     expect(legacy.nodes[0]).toMatchObject({
@@ -289,5 +299,68 @@ describe('AchievementsService', () => {
     expect(transactionCosmetics.save).toHaveBeenCalledWith(
       expect.objectContaining({ equipped: true }),
     );
+  });
+
+  it('lê a trilha sem transação nem gravação quando tudo já está em dia', async () => {
+    const repo = () => ({ find: jest.fn(), findOne: jest.fn() });
+    const wallets = repo();
+    const definitions = repo();
+    const records = repo();
+    const ledger = repo();
+    const stats = repo();
+    const counts = { count: jest.fn().mockResolvedValue(0) };
+    const arcade = repo();
+    wallets.findOne.mockResolvedValue({ usuario_id: 7, balance: 2, total_earned: 2 });
+    definitions.find.mockResolvedValue([
+      {
+        id: 1,
+        slug: 'elite-nivel-dois',
+        name: 'Nova patente',
+        description: 'Alcance o nível 2.',
+        category: 'elite',
+        rarity: 'common',
+        requirement_type: AchievementRequirement.LEVEL,
+        requirement_value: 2,
+        tier: 1,
+        icon: 'chevrons-up',
+        reward_prestige: 1,
+        prerequisite_slug: null,
+        position_x: 0,
+        position_y: 0,
+        secret: false,
+      },
+    ]);
+    records.find.mockResolvedValue([
+      { achievement_id: 1, progress: 2, unlocked: true, unlocked_at: new Date('2026-01-01') },
+    ]);
+    ledger.find.mockResolvedValue([
+      { source_key: 'level:2' },
+      { source_key: 'achievement:elite-nivel-dois' },
+    ]);
+    stats.findOne.mockResolvedValue({ total_points: 1000, current_streak: 1 });
+    arcade.find.mockResolvedValue([]);
+    const manager = {
+      getRepository: (entity: unknown) =>
+        new Map<unknown, unknown>([
+          [PrestigeWallet, wallets],
+          [Achievement, definitions],
+          [UsuarioAchievement, records],
+          [PrestigeTransaction, ledger],
+          [UsuarioStats, stats],
+          [UsuarioChallenge, counts],
+          [UsuarioAula, counts],
+          [UsuarioArcadeStats, arcade],
+        ]).get(entity),
+    };
+    const transaction = jest.fn();
+    const service = new AchievementsService(
+      {} as never,
+      {} as never,
+      { manager, transaction } as never,
+    );
+    const trail = await service.getTrail(7);
+    expect(transaction).not.toHaveBeenCalled();
+    expect(trail.nodes[0]).toMatchObject({ status: 'unlocked', progress: 2 });
+    expect(trail.summary.prestigeBalance).toBe(2);
   });
 });
