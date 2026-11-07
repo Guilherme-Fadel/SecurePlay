@@ -1,42 +1,18 @@
-import { useState, useMemo, useEffect } from 'react';
-import { Gamepad2, RefreshCcw } from 'lucide-react';
-import '@/styles/challenges-ui.css';
+import { useState, useMemo, useEffect, useCallback } from 'react';
 import '@/styles/challenge-games-ui.css';
-import { type GameCardData } from './games';
-import { GameCarousel } from './GameCarousel';
+import '@/styles/game-deck.css';
+import { CHILD_GAME_COPY, type GameCardData } from './games';
+import { GameDeck } from './GameDeck';
+import { GameDeckMessage, GameDeckSkeleton } from './GameDeckStates';
+import { TokenCoins } from './TokenCoins';
 import { TermoTech } from './games/TermoTech';
 import { QuizBlitz } from './games/QuizBlitz';
 import { PhishingHunt } from './games/PhishingHunt';
 import { DataClassify } from './games/DataClassify';
-import { TokenBar } from './TokenBar';
 import { useArcadeGames, useTokens } from '@/hooks/useArcade';
-import { AppButton } from '@/components/ui/buttons/AppButton';
 import { getChallengeArtwork } from '@/lib/challengeArtwork';
 import { useCompanyFeatures } from '@/hooks/useCompanyFeatures';
 import { useCurrentUserContext } from '@/contexts/CurrentUserContext';
-
-const CHILD_GAME_COPY: Record<string, { title: string; description: string; tag: string }> = {
-  'quiz-relampago': {
-    title: 'Quiz Relâmpago',
-    description: 'Responda perguntas rápidas antes que o tempo acabe.',
-    tag: 'Desafio',
-  },
-  'caca-phishing': {
-    title: 'Detetives de Mensagens',
-    description: 'Encontre pistas e descubra se um recado é confiável.',
-    tag: 'Investigação',
-  },
-  'classificacao-dados': {
-    title: 'Escudos dos Segredos',
-    description: 'Escolha o escudo certo para proteger cada informação.',
-    tag: 'Proteção',
-  },
-  termotech: {
-    title: 'Palavra Secreta',
-    description: 'Use as pistas para descobrir a palavra de cinco letras.',
-    tag: 'Palavras',
-  },
-};
 
 export function Challenges() {
     const features = useCompanyFeatures();
@@ -58,13 +34,19 @@ export function Challenges() {
             xp: g.xp,
             status: g.status,
             tag: CHILD_GAME_COPY[g.slug]?.tag ?? g.tag,
-            color: g.color,
-            colorDark: g.colorDark,
             gameType: g.gameType,
           }));
     }, [apiGames, features.games]);
-    const handlePlay = (game: GameCardData) => setActive(game.id);
-    const exit = () => setActive(null);
+    // Estável: o GameDeck é memo e não re-renderiza a cada segundo do relógio de fichas.
+    const handlePlay = useCallback((game: GameCardData) => {
+        setFocusedSlug(game.id);
+        setActive(game.id);
+    }, []);
+    const [returning, setReturning] = useState(false);
+    const exit = () => {
+        setReturning(true);
+        setActive(null);
+    };
     const activeGame = features.games.some((slug) => slug === active) ? active : null;
     if (activeGame === 'termotech') {
         return <TermoTechSession onExit={exit}/>;
@@ -96,32 +78,19 @@ export function Challenges() {
                     setFromServer(t);
             }}/>);
     }
-    return (<div className="app-page home-section challenges-page">
-      <h1 className="sr-only">Jogos</h1>
-      <header className="home-section-toolbar">
-        <span className="home-section-summary">{catalogGames.length} jogos para explorar</span>
-        <TokenBar tokens={tokens} secondsLeft={secondsLeft}/>
+    return (<div className="deck-v">
+      <header className="dk-head">
+        <div>
+          <h1 className="dk-display">Jogos</h1>
+          <p className="dk-lead">Entre no castelo, descubra pistas e proteja seus amigos brincando.</p>
+        </div>
+        <TokenCoins tokens={tokens} secondsLeft={secondsLeft}/>
       </header>
 
-      <section className="challenge-arena-section" aria-label="Catálogo de jogos">
-        <div className="challenge-arena-body">
-          {gamesLoading && catalogGames.length === 0 ? (<div className="challenge-carousel-loading" role="status" aria-label="Carregando jogos">
-              <div /><div /><div />
-            </div>) : gamesError && catalogGames.length === 0 ? (<div className="challenge-catalog-state" role="alert">
-              <Gamepad2 size={28}/>
-              <strong>Não foi possível carregar os jogos</strong>
-              <p>Confira sua conexão e tente novamente.</p>
-              <AppButton variant="soft" size="sm" icon={<RefreshCcw size={14}/>} onClick={refetch}>
-                Tentar novamente
-              </AppButton>
-            </div>) : catalogGames.length === 0 ? (<div className="challenge-catalog-state" role="status">
-              <Gamepad2 size={28}/>
-              <strong>Nenhum jogo disponível</strong>
-              <p>Novas atividades aparecerão aqui assim que forem publicadas.</p>
-            </div>) : (<GameCarousel games={catalogGames} onPlay={handlePlay} initialSlug={focusedSlug} onFocusChange={setFocusedSlug}/>)}
-        </div>
-      </section>
-
+      {gamesLoading && catalogGames.length === 0 ? (<GameDeckSkeleton />)
+        : gamesError && catalogGames.length === 0 ? (<GameDeckMessage kind="error" onRetry={refetch}/>)
+        : catalogGames.length === 0 ? (<GameDeckMessage kind="empty"/>)
+        : (<GameDeck games={catalogGames} tokens={tokens} onPlay={handlePlay} initialSlug={focusedSlug} onFocusChange={setFocusedSlug} focusOnMount={returning}/>)}
     </div>);
 }
 
