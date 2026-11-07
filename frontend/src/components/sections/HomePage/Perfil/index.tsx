@@ -1,489 +1,94 @@
-import { useEffect, useRef, useState } from 'react';
-import { levelProgress } from '@/lib/levelProgress';
-import {
-  BadgeCheck,
-  Building2,
-  Camera,
-  Check,
-  Copy,
-  Eye,
-  EyeOff,
-  KeyRound,
-  Mail,
-  Medal,
-  ShieldCheck,
-  Sparkles,
-  Target,
-  Trophy,
-  UserRound,
-  Zap,
-} from 'lucide-react';
-import { toast } from 'sonner';
+import { RotateCcw } from 'lucide-react';
 import { PageTransition } from '@/components/shared/PageTransition';
 import { AppButton } from '@/components/ui/buttons/AppButton';
-import { InfoCard } from '@/components/ui/visuals/InfoCard';
-import { Modal } from '@/components/ui/modal';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { useDashboardStats } from '@/hooks/useDashboard';
+import { useAchievementShop } from '@/hooks/useAchievements';
 import { useSectionContext } from '@/contexts/SectionContext';
-import { changePassword, presignProfileImage, requestNickname, saveProfileImage } from '@/services/profile';
-import { passwordValidationMessage } from '@/lib/password-policy';
-import { preloadImages } from '@/lib/imageCache';
-import { optimizeImageUpload } from '@/lib/optimizeImageUpload';
 import { useCompanyFeatures } from '@/hooks/useCompanyFeatures';
+import { ProfileIdentity } from './ProfileIdentity';
+import { ProfileAccount } from './ProfileAccount';
+import { ProfileSecurity } from './ProfileSecurity';
+import { ProfileNextStep, ProfileProgress } from './ProfileProgress';
+import { isManagementRole, profileDisplayName } from './profileModel';
+import '@/styles/cosmetics.css';
+import '@/styles/profile-ui.css';
 
-function initials(name?: string) {
-  const parts = name?.trim().split(/\s+/).filter(Boolean) ?? [];
-  return parts.slice(0, 2).map((part) => part.charAt(0).toUpperCase()).join('') || 'SP';
-}
-
-function roleLabel(role?: string) {
-  if (role === 'platform_admin') return 'Administrador da plataforma';
-  if (role === 'admin') return 'Administrador';
-  return 'Participante';
-}
-
-function formatNumber(value: number) {
-  return value.toLocaleString('pt-BR');
+/** Moldura equipada, no mesmo modelo do avatar do trilho (UserMenu) e do provador. */
+function useEquippedFrame(enabled: boolean) {
+  const { data: cosmeticShop } = useAchievementShop(enabled);
+  return cosmeticShop?.equipped.find((item) => item.type === 'frame')?.visualValue ?? '';
 }
 
 export function Perfil() {
   const features = useCompanyFeatures();
-  const { user, loading: userLoading, refreshSession } = useCurrentUser();
-  const { stats, loading: statsLoading } = useDashboardStats();
+  const { user, loading: userLoading, status, error: userError, refreshSession } = useCurrentUser();
+  const { stats, loading: statsLoading, error: statsError } = useDashboardStats();
   const { navigateToSection } = useSectionContext();
-  const [emailCopied, setEmailCopied] = useState(false);
-  const [loginCodeCopied, setLoginCodeCopied] = useState(false);
-  const [passwordModalOpen, setPasswordModalOpen] = useState(false);
-  const [passwords, setPasswords] = useState({ currentPassword: '', newPassword: '', confirmPassword: '' });
-  const [showPasswords, setShowPasswords] = useState({ current: false, next: false, confirmation: false });
-  const [passwordError, setPasswordError] = useState<string | null>(null);
-  const [passwordSaving, setPasswordSaving] = useState(false);
-  const [nicknameDraft, setNicknameDraft] = useState('');
-  const [nicknameSaving, setNicknameSaving] = useState(false);
-  const [photoUploading, setPhotoUploading] = useState(false);
-  const [photoPreviewUrl, setPhotoPreviewUrl] = useState<string | null>(null);
-  const photoInputRef = useRef<HTMLInputElement>(null);
-  const photoPreviewObjectUrlRef = useRef<string | null>(null);
+  const frame = useEquippedFrame(features.achievements);
 
-  const points = stats?.totalPoints ?? 0;
-  const xpToNextLevel = stats?.xpToNextLevel ?? 0;
-  const xpProgress = levelProgress(stats).percent;
-  const isManagementUser = user?.role === 'admin' || user?.role === 'platform_admin';
-  const displayName = (isManagementUser ? user?.name : user?.nickname || user?.name) || (userLoading ? 'Carregando perfil...' : 'Participante SecurePlay');
-  const companyName = user?.empresa_nome || 'Comunidade SecurePlay';
-  const displayLevel = stats?.level ?? user?.level;
-
-  useEffect(() => {
-    setNicknameDraft(user?.nickname ?? '');
-  }, [user?.nickname]);
-
-  useEffect(() => () => {
-    if (photoPreviewObjectUrlRef.current) {
-      URL.revokeObjectURL(photoPreviewObjectUrlRef.current);
-    }
-  }, []);
-
-  const handleNicknameRequest = async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    const requestedNickname = nicknameDraft.trim();
-    if (!requestedNickname) {
-      toast.error('Escolha um apelido de aventura para enviar.');
-      return;
-    }
-
-    setNicknameSaving(true);
-    try {
-      const result = await requestNickname(requestedNickname);
-      await refreshSession();
-      toast.success(result.message);
-    } catch (error: unknown) {
-      const response = error as { response?: { data?: { message?: string | string[] } } };
-      const message = response.response?.data?.message;
-      toast.error(Array.isArray(message) ? message[0] : message || 'Não foi possível enviar o apelido.');
-    } finally {
-      setNicknameSaving(false);
-    }
-  };
-
-  const handlePhotoUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-    const allowedTypes = ['image/png', 'image/jpeg', 'image/webp'];
-    if (!allowedTypes.includes(file.type)) {
-      toast.error('Escolha uma imagem PNG, JPEG ou WebP.');
-      return;
-    }
-    if (file.size > 2 * 1024 * 1024) {
-      toast.error('A imagem deve ter no máximo 2 MB.');
-      return;
-    }
-
-    setPhotoUploading(true);
-    let nextPreviewUrl: string | null = null;
-    try {
-      const uploadFile = await optimizeImageUpload(file, {
-        maxWidth: 512,
-        maxHeight: 512,
-      });
-      nextPreviewUrl = URL.createObjectURL(uploadFile);
-      const { uploadUrl, fields, key } = await presignProfileImage(uploadFile.type);
-      const formData = new FormData();
-      Object.entries(fields).forEach(([name, value]) => formData.append(name, value));
-      formData.append('file', uploadFile);
-      const uploadResponse = await fetch(uploadUrl, { method: 'POST', body: formData });
-      if (!uploadResponse.ok) throw new Error('Falha ao enviar a imagem');
-      const result = await saveProfileImage(key);
-      if (photoPreviewObjectUrlRef.current) URL.revokeObjectURL(photoPreviewObjectUrlRef.current);
-      photoPreviewObjectUrlRef.current = nextPreviewUrl;
-      setPhotoPreviewUrl(nextPreviewUrl);
-      nextPreviewUrl = null;
-      preloadImages([result.profile_image_url]);
-      await refreshSession();
-      toast.success(result.message);
-    } catch {
-      toast.error('Não foi possível atualizar sua foto agora.');
-    } finally {
-      if (nextPreviewUrl) URL.revokeObjectURL(nextPreviewUrl);
-      setPhotoUploading(false);
-      if (photoInputRef.current) photoInputRef.current.value = '';
-    }
-  };
-
-  const handleCopyEmail = async () => {
-    if (!user?.email) return;
-
-    try {
-      if (!navigator.clipboard) throw new Error('Clipboard indisponível');
-      await navigator.clipboard.writeText(user.email);
-      setEmailCopied(true);
-      toast.success('E-mail copiado para a área de transferência.');
-      window.setTimeout(() => setEmailCopied(false), 2200);
-    } catch {
-      toast.error('Não foi possível copiar o e-mail neste navegador.');
-    }
-  };
-
-  const handleCopyLoginCode = async () => {
-    if (!user?.login_code) return;
-    try {
-      if (!navigator.clipboard) throw new Error('Clipboard indisponível');
-      await navigator.clipboard.writeText(user.login_code);
-      setLoginCodeCopied(true);
-      toast.success('Código de acesso copiado.');
-      window.setTimeout(() => setLoginCodeCopied(false), 2200);
-    } catch {
-      toast.error('Não foi possível copiar o código neste navegador.');
-    }
-  };
-
-  // force so e true no sucesso da troca de senha. Nunca ligar direto em onClick/
-  // onClose: o React passa o evento como argumento e, sendo truthy, ele anularia
-  // a protecao de passwordSaving abaixo.
-  const closePasswordModal = (force = false) => {
-    if (passwordSaving && !force) return;
-    setPasswordModalOpen(false);
-    setPasswords({ currentPassword: '', newPassword: '', confirmPassword: '' });
-    setPasswordError(null);
-  };
-
-  const handlePasswordChange = async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    setPasswordError(null);
-
-    if (!passwords.currentPassword || !passwords.newPassword || !passwords.confirmPassword) {
-      setPasswordError('Preencha todos os campos para continuar.');
-      return;
-    }
-    const newPasswordError = passwordValidationMessage(passwords.newPassword);
-    if (newPasswordError) {
-      setPasswordError(newPasswordError);
-      return;
-    }
-    if (passwords.newPassword !== passwords.confirmPassword) {
-      setPasswordError('A confirmação não corresponde à nova senha.');
-      return;
-    }
-    if (passwords.currentPassword === passwords.newPassword) {
-      setPasswordError('Escolha uma nova senha diferente da atual.');
-      return;
-    }
-
-    setPasswordSaving(true);
-    try {
-      await changePassword({
-        currentPassword: passwords.currentPassword,
-        newPassword: passwords.newPassword,
-      });
-      toast.success('Senha alterada com sucesso.');
-      closePasswordModal(true);
-    } catch (error: unknown) {
-      const response = error as { response?: { data?: { message?: string | string[] } } };
-      const message = response.response?.data?.message;
-      setPasswordError(Array.isArray(message) ? message[0] : message || 'Não foi possível alterar a senha. Tente novamente.');
-    } finally {
-      setPasswordSaving(false);
-    }
-  };
+  const isManagementUser = isManagementRole(user?.role);
+  const displayName = profileDisplayName(user, isManagementUser, userLoading);
 
   return (
     <PageTransition>
-      <div className="profile-page app-page">
-        <header className="profile-page-heading">
-          <div>
-            <span className="profile-eyebrow"><UserRound size={13} /> Conta</span>
-            <h1>Meu Perfil</h1>
-            <p>Veja sua identidade, progresso e informações de acesso na plataforma.</p>
-          </div>
+      <div className="profile-v app-page">
+        <header className="pv-page-head">
+          <p className="pv-eyebrow">Conta</p>
+          <h1 className="pv-display pv-page-title">Meu perfil</h1>
+          <p className="pv-page-lead">Veja sua identidade, progresso e informações de acesso na plataforma.</p>
         </header>
 
-        <InfoCard raised className="profile-hero">
-          <div className="profile-hero-accent" aria-hidden="true" />
-          <div className="profile-hero-main">
-            <label
-              className={`profile-avatar profile-avatar-upload ${photoUploading ? 'is-uploading' : ''}`}
-              aria-label={photoUploading ? 'Enviando nova foto de perfil' : 'Alterar foto de perfil'}
-              title={photoUploading ? 'Enviando nova foto...' : 'Clique para alterar sua foto'}
-            >
-              {photoPreviewUrl || user?.profile_image_url ? <img src={photoPreviewUrl || user?.profile_image_url || ''} alt="" /> : initials(displayName)}
-              <span className="profile-avatar-upload-action" aria-hidden="true">
-                <Camera size={18} />
-              </span>
-              <input
-                ref={photoInputRef}
-                type="file"
-                accept="image/png,image/jpeg,image/webp"
-                onChange={handlePhotoUpload}
-                disabled={photoUploading}
+        {!user && userLoading ? (
+          <ProfileLoading />
+        ) : !user && status === 'unavailable' ? (
+          <ProfileError message={userError} onRetry={() => { void refreshSession(); }} />
+        ) : (
+          // As colunas só agrupam no desktop que cabe na janela (rolam por dentro); fora dele usam display: contents.
+          <div className="pv-grid is-columns">
+            <div className="pv-col">
+              <ProfileIdentity user={user} displayName={displayName} isManagementUser={isManagementUser} frame={frame} />
+              <ProfileProgress
+                stats={stats}
+                statsLoading={statsLoading}
+                statsError={Boolean(statsError)}
+                fallbackLevel={user?.level}
+                showGlobalRanking={features.globalRanking}
+                showAchievements={features.achievements}
+                onOpenAchievements={() => navigateToSection('conquistas')}
               />
-            </label>
-            <div className="profile-identity">
-              <div className="profile-identity-heading">
-                <h2>{displayName}</h2>
-                <span className="profile-role-chip"><ShieldCheck size={13} /> {roleLabel(user?.role)}</span>
-              </div>
-              <div className="profile-identity-meta">
-                <span><Building2 size={14} /> {companyName}</span>
-                <span><BadgeCheck size={14} /> {user?.active === false ? 'Conta inativa' : 'Conta ativa'}</span>
-              </div>
-              <div className="profile-email-line">
-                {user?.email ? <Mail size={14} /> : user?.login_code ? <KeyRound size={14} /> : <Mail size={14} />}
-                <span>{user?.email ?? (user?.login_code ? `Código escolar: ${user.login_code}` : userLoading ? 'Sincronizando e-mail...' : 'E-mail não informado')}</span>
-                {user?.email && (
-                  <button
-                    type="button"
-                    className="profile-copy-email"
-                    onClick={handleCopyEmail}
-                    aria-label={emailCopied ? 'E-mail copiado' : 'Copiar e-mail'}
-                    title={emailCopied ? 'E-mail copiado' : 'Copiar e-mail'}
-                  >
-                    {emailCopied ? <Check size={14} /> : <Copy size={14} />}
-                  </button>
-                )}
-                {!user?.email && user?.login_code && <button
-                  type="button"
-                  className="profile-copy-email"
-                  onClick={handleCopyLoginCode}
-                  aria-label={loginCodeCopied ? 'Código de acesso copiado' : 'Copiar código de acesso'}
-                  title={loginCodeCopied ? 'Código copiado' : 'Copiar código de acesso'}
-                >{loginCodeCopied ? <Check size={14} /> : <Copy size={14} />}</button>}
-              </div>
+            </div>
+            <div className="pv-col">
+              <ProfileAccount user={user} userLoading={userLoading} />
+              <ProfileSecurity />
+              <ProfileNextStep onOpenLearn={() => navigateToSection('conteudos')} />
             </div>
           </div>
-
-          {!isManagementUser && <div className="profile-hero-action">
-            <form className="profile-nickname-form profile-hero-nickname-form" onSubmit={handleNicknameRequest}>
-              <div className="profile-nickname-heading">
-                <label htmlFor="profile-nickname">Apelido no ranking</label>
-                {user?.nickname && user.nickname_request_status !== 'pending' && <span>Atual: {user.nickname}</span>}
-              </div>
-              <div>
-                <input id="profile-nickname" value={nicknameDraft} onChange={(event) => setNicknameDraft(event.target.value)} minLength={3} maxLength={24} pattern="[A-Za-zÀ-ÿ0-9 _-]+" disabled={nicknameSaving || user?.nickname_request_status === 'pending'} placeholder="Ex.: Guardião Solar" />
-                <AppButton type="submit" size="sm" disabled={nicknameSaving || user?.nickname_request_status === 'pending'}>{nicknameSaving ? 'Enviando...' : 'Pedir aprovação'}</AppButton>
-              </div>
-              {user?.nickname_request_status === 'pending' && <p className="profile-nickname-status is-pending">Pedido para “{user.nickname_pending}” aguardando aprovação.</p>}
-              {user?.nickname_request_status === 'rejected' && <p className="profile-nickname-status is-rejected">O último pedido não foi aprovado. Tente outro apelido.</p>}
-            </form>
-          </div>}
-
-          <div className="profile-level-summary">
-            <span>Seu nível</span>
-            <strong>{displayLevel ?? '—'}</strong>
-          </div>
-        </InfoCard>
-
-        <div className="profile-layout">
-          <div className="profile-main-column">
-            <InfoCard raised className="profile-progress-card">
-              <InfoCard.Header
-                title="Sua evolução"
-                subtitle="Seu avanço é atualizado conforme você participa da plataforma."
-                icon={Zap}
-                variant="primary"
-              />
-              <InfoCard.Section>
-                <div className="profile-progress-headline">
-                  <div>
-                    <span>Progresso para o próximo nível</span>
-                    <strong>{stats ? `${formatNumber(xpToNextLevel)} XP para avançar` : 'Aguardando dados de evolução'}</strong>
-                  </div>
-                  <b>{stats ? `${xpProgress}%` : '—'}</b>
-                </div>
-                <div className="profile-xp-track" aria-label={stats ? `${xpProgress}% do nível atual` : 'Progresso de nível indisponível'}>
-                  <i style={{ width: `${xpProgress}%` }} />
-                </div>
-                {!stats && <p className="profile-progress-footnote">Complete atividades para começar sua evolução.</p>}
-              </InfoCard.Section>
-              {features.achievements && <InfoCard.Footer>
-                <span className="profile-card-footnote">Conquistas e itens cosméticos acompanham seu perfil.</span>
-                <AppButton size="sm" variant="soft" icon={<Sparkles size={14} />} onClick={() => navigateToSection('conquistas')}>
-                  Ver conquistas
-                </AppButton>
-              </InfoCard.Footer>}
-            </InfoCard>
-
-            <InfoCard raised className="profile-account-card">
-              <InfoCard.Header
-                title="Segurança da conta"
-                subtitle="Gerencie a senha usada no seu acesso."
-                icon={ShieldCheck}
-                variant="secondary"
-              />
-              {user?.nickname && user.name && user.nickname !== user.name && <InfoCard.Section className="profile-account-list">
-                <ProfileDetail icon={UserRound} label="Nome do cadastro" value={user.name} />
-              </InfoCard.Section>}
-              <InfoCard.Footer>
-                <span className="profile-card-footnote">Mantenha sua senha única e não a compartilhe com outras pessoas.</span>
-                <AppButton size="sm" variant="soft" icon={<KeyRound size={14} />} onClick={() => setPasswordModalOpen(true)}>
-                  Alterar senha
-                </AppButton>
-              </InfoCard.Footer>
-            </InfoCard>
-
-          </div>
-
-          <aside className="profile-side-column">
-            <InfoCard raised className="profile-stats-card">
-              <div className="profile-stats-heading">
-                <div><Trophy size={16} /><span>Resumo da jornada</span></div>
-                <small>{statsLoading ? 'Sincronizando' : 'Atualizado agora'}</small>
-              </div>
-              <div className={`profile-stats-grid${features.globalRanking ? '' : ' has-no-global-ranking'}`}>
-                <ProfileStat icon={Zap} label="XP total" value={stats ? formatNumber(points) : '—'} variant="primary" />
-                {features.globalRanking && <ProfileStat icon={Trophy} label="Ranking global" value={stats?.globalRanking != null ? `#${stats.globalRanking}` : '—'} variant="accent" />}
-                <ProfileStat icon={Medal} label="Desafios" value={stats ? `${stats.completedChallenges}/${stats.totalActiveChallenges}` : '—'} variant="secondary" />
-              </div>
-            </InfoCard>
-
-            <InfoCard raised className="profile-next-card">
-              <div className="profile-next-icon"><Target size={19} /></div>
-              <div>
-                <span>Próximo passo</span>
-                <h3>Escolha sua próxima missão</h3>
-                <p>Complete conteúdos e desafios para fortalecer sua jornada de segurança.</p>
-              </div>
-              <AppButton size="sm" icon={<Zap size={14} />} onClick={() => navigateToSection('conteudos')}>
-                Ver conteúdos
-              </AppButton>
-            </InfoCard>
-
-            <div className="profile-protection-note">
-              <ShieldCheck size={16} />
-              <span>Seu perfil está protegido pela sessão segura do Security Play.</span>
-            </div>
-          </aside>
-        </div>
-
-        <Modal open={passwordModalOpen} onClose={() => closePasswordModal()} title="Alterar senha" maxWidth="max-w-md">
-          <form className="profile-password-form" onSubmit={handlePasswordChange}>
-            <p className="profile-password-intro">Para sua proteção, confirme a senha atual antes de escolher uma nova.</p>
-            <PasswordField
-              id="current-password"
-              label="Senha atual"
-              value={passwords.currentPassword}
-              visible={showPasswords.current}
-              autoComplete="current-password"
-              onVisibilityToggle={() => setShowPasswords((current) => ({ ...current, current: !current.current }))}
-              onChange={(value) => setPasswords((current) => ({ ...current, currentPassword: value }))}
-            />
-            <PasswordField
-              id="new-password"
-              label="Nova senha"
-              hint="Use ao menos 6 caracteres e no máximo 72 bytes."
-              value={passwords.newPassword}
-              visible={showPasswords.next}
-              autoComplete="new-password"
-              onVisibilityToggle={() => setShowPasswords((current) => ({ ...current, next: !current.next }))}
-              onChange={(value) => setPasswords((current) => ({ ...current, newPassword: value }))}
-            />
-            <PasswordField
-              id="confirm-password"
-              label="Confirmar nova senha"
-              value={passwords.confirmPassword}
-              visible={showPasswords.confirmation}
-              autoComplete="new-password"
-              onVisibilityToggle={() => setShowPasswords((current) => ({ ...current, confirmation: !current.confirmation }))}
-              onChange={(value) => setPasswords((current) => ({ ...current, confirmPassword: value }))}
-            />
-            {passwordError && <p className="profile-password-error" role="alert">{passwordError}</p>}
-            <div className="profile-password-actions">
-              <AppButton type="button" variant="ghost" onClick={() => closePasswordModal()} disabled={passwordSaving}>Cancelar</AppButton>
-              <AppButton type="submit" icon={<KeyRound size={15} />} disabled={passwordSaving}>{passwordSaving ? 'Alterando...' : 'Salvar nova senha'}</AppButton>
-            </div>
-          </form>
-        </Modal>
+        )}
       </div>
     </PageTransition>
   );
 }
 
-function PasswordField({
-  id, label, hint, value, visible, autoComplete, onChange, onVisibilityToggle,
-}: {
-  id: string;
-  label: string;
-  hint?: string;
-  value: string;
-  visible: boolean;
-  autoComplete: string;
-  onChange: (value: string) => void;
-  onVisibilityToggle: () => void;
-}) {
-  return <label className="profile-password-field" htmlFor={id}>
-    <span>{label}</span>
-    <div>
-      <input id={id} type={visible ? 'text' : 'password'} value={value} autoComplete={autoComplete} onChange={(event) => onChange(event.target.value)} />
-      <button type="button" onClick={onVisibilityToggle} aria-label={visible ? `Ocultar ${label.toLowerCase()}` : `Mostrar ${label.toLowerCase()}`}>{visible ? <EyeOff size={16} /> : <Eye size={16} />}</button>
-    </div>
-    {hint && <small>{hint}</small>}
-  </label>;
-}
-
-function ProfileDetail({ icon: Icon, label, value }: {
-  icon: typeof Mail;
-  label: string;
-  value: string;
-}) {
+function ProfileLoading() {
   return (
-    <div className="profile-account-row">
-      <span className="profile-account-icon"><Icon size={16} /></span>
-      <span>{label}</span>
-      <strong title={value}>{value}</strong>
+    <div className="pv-grid" role="status" aria-busy="true">
+      <span className="pv-sr">Carregando seu perfil</span>
+      <div className="pv-card pv-identity is-loading"><span className="pv-skeleton is-avatar" /><span className="pv-skeleton is-title" /><span className="pv-skeleton" /></div>
+      <div className="pv-card pv-account is-loading"><span className="pv-skeleton is-title" /><span className="pv-skeleton" /></div>
+      <div className="pv-card pv-security is-loading"><span className="pv-skeleton is-title" /><span className="pv-skeleton" /></div>
     </div>
   );
 }
 
-function ProfileStat({ icon: Icon, label, value, variant }: {
-  icon: typeof Zap;
-  label: string;
-  value: string;
-  variant: 'primary' | 'secondary' | 'accent';
-}) {
+function ProfileError({ message, onRetry }: { message: string | null; onRetry: () => void }) {
   return (
-    <div className={`profile-stat profile-stat-${variant}`}>
-      <Icon size={16} />
-      <span>{label}</span>
-      <strong>{value}</strong>
-    </div>
+    <section className="pv-card pv-error" aria-labelledby="pv-error-title">
+      <h2 id="pv-error-title" className="pv-display pv-card-title">Seu perfil não carregou</h2>
+      <p role="alert">{message || 'Não foi possível carregar seu perfil agora.'}</p>
+      <AppButton variant="chunky" tone="yellow" size="md" icon={<RotateCcw size={18} aria-hidden="true" />} onClick={onRetry}>
+        Tentar novamente
+      </AppButton>
+    </section>
   );
 }
