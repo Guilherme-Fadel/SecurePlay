@@ -19,12 +19,14 @@ export class CompanyFeaturesService {
     userId: number,
     manager?: EntityManager,
   ): Promise<CompanyParameters> {
+    // Query builder: uma consulta só. `findOne` com relations vira 2 consultas
+    // (ids distintos + dados), e cada uma custa a latência de rede até o banco.
     const usuario = await (manager ?? this.dataSource)
       .getRepository(Usuario)
-      .findOne({
-        where: { id: userId },
-        relations: ['empresa'],
-      });
+      .createQueryBuilder('u')
+      .leftJoinAndSelect('u.empresa', 'empresa')
+      .where('u.id = :userId', { userId })
+      .getOne();
     if (usuario?.role === Role.PLATFORM_ADMIN) return platformAdminParameters();
     const parameters = usuario?.empresa
       ? resolveCompanyParameters(usuario.empresa.parametros_funcionalidades)
