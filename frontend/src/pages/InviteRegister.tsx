@@ -1,128 +1,110 @@
-import { useEffect, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { CheckCircle2, Copy, LockKeyhole, ShieldCheck, UserRound } from 'lucide-react';
-import { Toaster, toast } from 'sonner';
-import { consultarConvite, concluirCadastroConvite, type ConvitePublico } from '@/services/convites';
-import { PageTransition } from '@/components/shared/PageTransition';
+import { Link } from 'react-router-dom';
 import { BirthDateField } from '@/components/shared/BirthDateField';
+import { PublicAccountShell, type AccountCharacter } from '@/components/shared/PublicAccountShell';
+import { AccountCode, AccountInput, AccountLoading, AccountPasswordInput, AccountSubmit } from '@/components/shared/PublicAccountUi';
 import { RegistrationContactFields } from '@/components/shared/RegistrationContactFields';
 import { RegistrationLegalNotice } from '@/components/shared/RegistrationLegalNotice';
-import './invite-register.css';
+import type { ConvitePublico } from '@/services/convites';
+import { useInviteRegister, type InviteRegisterState } from './useInviteRegister';
+
+const TITLE_ID = 'invite-register-title';
+
+function inviteCharacter(state: InviteRegisterState): AccountCharacter {
+  if (state.loading) return { expression: 'curious', speech: 'Conferindo seu convite…' };
+  if (!state.convite) return { expression: 'sleepy', speech: 'Esse convite já não funciona.' };
+  if (state.createdUsername) return { expression: 'happy', speech: 'Conta criada! Bora para a trilha.' };
+  if (state.feedback?.tone === 'error') return { expression: 'startled', speech: 'Opa! Confira o aviso para continuar.' };
+  return { expression: 'open', speech: 'Que bom ter você na turma!' };
+}
+
+function SchoolStudentFields({ state }: { state: InviteRegisterState }) {
+  const { form, setField, submitting, schoolWithoutEmail, mismatch } = state;
+  return <>
+    <AccountInput
+      label="E-mail"
+      optional
+      type="email"
+      value={form.email}
+      onChange={(event) => setField('email')(event.target.value)}
+      maxLength={100}
+      autoComplete="email"
+      hint="Sem e-mail, escolha um usuário e uma senha. Com e-mail, confirme o endereço para criar sua senha."
+    />
+    <RegistrationContactFields username={form.username} phone={form.phone} setUsername={setField('username')} setPhone={setField('phone')} usernameRequired={schoolWithoutEmail} disabled={submitting} />
+    {schoolWithoutEmail && <>
+      <AccountPasswordInput label="Crie uma senha" value={form.password} onChange={(event) => setField('password')(event.target.value)} minLength={6} maxLength={72} autoComplete="new-password" required />
+      <AccountPasswordInput
+        label="Confirme a senha"
+        value={form.confirmPassword}
+        onChange={(event) => setField('confirmPassword')(event.target.value)}
+        minLength={6}
+        maxLength={72}
+        autoComplete="new-password"
+        required
+        error={mismatch ? 'As senhas não conferem.' : null}
+      />
+    </>}
+  </>;
+}
+
+function LegacyEmailFields({ state, convite }: { state: InviteRegisterState; convite: ConvitePublico }) {
+  const { form, setField, submitting } = state;
+  return <>
+    <AccountInput label="E-mail da escola" type="email" value={form.email} onChange={(event) => setField('email')(event.target.value)} disabled={Boolean(convite.email)} required />
+    <RegistrationContactFields username={form.username} phone={form.phone} setUsername={setField('username')} setPhone={setField('phone')} disabled={submitting} />
+    <BirthDateField value={form.birthDate} onChange={setField('birthDate')} />
+  </>;
+}
+
+function InviteForm({ state, convite }: { state: InviteRegisterState; convite: ConvitePublico }) {
+  const { form, setField, schoolWithoutEmail } = state;
+  return <>
+    <form onSubmit={(event) => void state.handleSubmit(event)} className="pas-form pas-form--grid">
+      <AccountInput label="Nome para identificar você na turma" value={form.name} onChange={(event) => setField('name')(event.target.value)} minLength={3} maxLength={100} autoComplete="name" required />
+      {convite.registration_mode === 'school_student' ? <SchoolStudentFields state={state} /> : <LegacyEmailFields state={state} convite={convite} />}
+      <AccountSubmit busy={state.submitting || state.redirecting} busyLabel="Criando acesso...">
+        {schoolWithoutEmail ? 'Criar minha conta' : 'Confirmar meu e-mail'}
+      </AccountSubmit>
+    </form>
+    <p className="pas-note">{schoolWithoutEmail ? 'Entre com o usuário escolhido e sua senha.' : 'Confirme seu e-mail para ativar o acesso.'}</p>
+    <RegistrationLegalNotice />
+  </>;
+}
 
 export default function InviteRegister() {
-  const [token] = useState(() => window.location.hash.startsWith('#') ? window.location.hash.slice(1) : '');
-  const navigate = useNavigate();
-  const [convite, setConvite] = useState<ConvitePublico | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [submitting, setSubmitting] = useState(false);
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [username, setUsername] = useState('');
-  const [phone, setPhone] = useState('');
-  const [birthDate, setBirthDate] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [createdUsername, setCreatedUsername] = useState<string | null>(null);
-  const schoolWithoutEmail = convite?.registration_mode === 'school_student' && !email.trim();
+  const state = useInviteRegister();
+  const common = { titleId: TITLE_ID, character: inviteCharacter(state), feedback: state.feedback };
 
-  useEffect(() => {
-    if (!token) {
-      setConvite(null);
-      setLoading(false);
-      return;
-    }
-    consultarConvite(token)
-      .then((data) => {
-        setConvite(data);
-        setEmail(data.email ?? '');
-      })
-      .catch(() => setConvite(null))
-      .finally(() => setLoading(false));
-  }, [token]);
-
-  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    const isSchoolStudent = convite?.registration_mode === 'school_student';
-    if (schoolWithoutEmail && password !== confirmPassword) {
-      toast.error('As senhas não conferem.');
-      return;
-    }
-    setSubmitting(true);
-    try {
-      const result = await concluirCadastroConvite(token, {
-        name,
-        username: username.trim() || undefined,
-        phone: phone.trim() || undefined,
-        ...(schoolWithoutEmail ? { password } : isSchoolStudent ? { email: email.trim() } : { email, birth_date: birthDate }),
-      });
-      toast.success(result.mensagem);
-      window.history.replaceState(null, '', window.location.pathname);
-      if (schoolWithoutEmail && result.username) setCreatedUsername(result.username);
-      else if (schoolWithoutEmail) throw new Error('Usuário de acesso não recebido. Procure a administração da escola.');
-      else setTimeout(() => navigate('/verifique-email?email=' + encodeURIComponent(email), { replace: true }), 800);
-    } catch (error: any) {
-      toast.error(error.response?.data?.message ?? 'Não foi possível concluir o cadastro.');
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
+  if (state.loading) {
+    return (
+      <PublicAccountShell {...common} title="Validando seu convite..." busy>
+        <AccountLoading />
+      </PublicAccountShell>
+    );
+  }
+  if (!state.convite) {
+    return (
+      <PublicAccountShell {...common} title={<>Convite <em>indisponível</em></>} lead="Este link expirou, foi revogado ou já foi utilizado.">
+        <Link className="pas-cta" to="/login">Ir para o login</Link>
+      </PublicAccountShell>
+    );
+  }
+  if (state.createdUsername) {
+    return (
+      <PublicAccountShell {...common} title={<>Conta <em>criada</em></>} lead="Use seu usuário e a senha que você criou para entrar.">
+        <AccountCode value={state.createdUsername} copyLabel="Copiar usuário" onCopy={state.copyUsername} />
+        <Link className="pas-cta" to="/login">Ir para o login</Link>
+      </PublicAccountShell>
+    );
+  }
   return (
-    <PageTransition>
-      <div className="invite-page">
-        <div className="invite-orb invite-orb--primary" />
-        <div className="invite-orb invite-orb--secondary" />
-        <main className={`invite-card${convite && !createdUsername ? ' invite-card--registration' : ''}`}>
-          <div className="invite-brand"><span><ShieldCheck size={22} /></span> secure<em>play</em></div>
-
-          {loading ? (
-            <div className="invite-state"><div className="invite-spinner" /> Validando seu convite...</div>
-          ) : !convite ? (
-            <div className="invite-state invite-state--error">
-              <LockKeyhole size={30} />
-              <h1>Convite indisponível</h1>
-              <p>Este link expirou, foi revogado ou já foi utilizado.</p>
-              <Link to="/login">Ir para o login</Link>
-            </div>
-          ) : createdUsername ? (
-            <div className="invite-state invite-state--success">
-              <CheckCircle2 size={32} />
-              <h1>Conta criada</h1>
-              <p>Use seu usuário e a senha que você criou para entrar.</p>
-              <strong className="invite-login-code">{createdUsername}</strong>
-              <button type="button" onClick={() => void navigator.clipboard.writeText(createdUsername).then(() => toast.success('Usuário copiado.'))}><Copy size={16} /> Copiar usuário</button>
-              <Link to="/login">Ir para o login</Link>
-            </div>
-          ) : (
-            <>
-              <div className="invite-icon"><UserRound size={23} /></div>
-              <h1>Crie seu passe de aventura</h1>
-              <p className="invite-intro">Você vai entrar na turma de <strong>{convite.empresa_nome}</strong>.</p>
-
-              <form onSubmit={handleSubmit} className="invite-form invite-form--registration">
-                <label>Nome para identificar você na turma<input value={name} onChange={(event) => setName(event.target.value)} minLength={3} maxLength={100} autoComplete="name" required /></label>
-                {convite.registration_mode === 'school_student' ? <>
-                  <label><span>E-mail <small>opcional</small></span><input type="email" value={email} onChange={event => setEmail(event.target.value)} maxLength={100} autoComplete="email" /><small>Sem e-mail, escolha um usuário e uma senha. Com e-mail, confirme o endereço para criar sua senha.</small></label>
-                  <RegistrationContactFields username={username} phone={phone} setUsername={setUsername} setPhone={setPhone} usernameRequired={schoolWithoutEmail} disabled={submitting} />
-                  {schoolWithoutEmail && <>
-                  <label>Crie uma senha<input type="password" value={password} onChange={(event) => setPassword(event.target.value)} minLength={6} maxLength={72} autoComplete="new-password" required /></label>
-                  <label>Confirme a senha<input type="password" value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} minLength={6} maxLength={72} autoComplete="new-password" required /></label>
-                  </>}
-                </> : <>
-                  <label>E-mail da escola<input type="email" value={email} onChange={(event) => setEmail(event.target.value)} disabled={Boolean(convite.email)} required /></label>
-                  <RegistrationContactFields username={username} phone={phone} setUsername={setUsername} setPhone={setPhone} disabled={submitting} />
-                  <BirthDateField value={birthDate} onChange={setBirthDate} />
-                </>}
-                <button type="submit" disabled={submitting}>{submitting ? 'Criando acesso...' : schoolWithoutEmail ? 'Criar minha conta' : 'Confirmar meu e-mail'}</button>
-              </form>
-
-              <p className="invite-security"><CheckCircle2 size={14} /> {schoolWithoutEmail ? 'Entre com o usuário escolhido e sua senha.' : 'Confirme seu e-mail para ativar o acesso.'}</p>
-              <RegistrationLegalNotice />
-            </>
-          )}
-        </main>
-        <Toaster position="top-right" richColors />
-      </div>
-    </PageTransition>
+    <PublicAccountShell
+      {...common}
+      title={<>Crie seu passe de <em>aventura</em></>}
+      lead={<>Você vai entrar na turma de <strong>{state.convite.empresa_nome}</strong>.</>}
+      wide
+    >
+      <InviteForm state={state} convite={state.convite} />
+    </PublicAccountShell>
   );
 }

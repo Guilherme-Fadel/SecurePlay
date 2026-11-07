@@ -1,0 +1,219 @@
+/* Telas públicas de conta (cadastro, teste, recuperação, confirmação de e-mail e teste encerrado).
+   Mesmo padrão visual do login "Sala da turma": escuro por padrão, claro com :root[data-theme='light'].
+   Bordas de campo com 3:1 sobre a superfície (WCAG 1.4.11); textos com AA nos dois temas. */
+.pas {
+  --pas-bg: var(--sp-ink-900);
+  --pas-surface: var(--sp-ink-800);
+  --pas-surface-2: #16161A;
+  --pas-text: var(--sp-cream);
+  --pas-muted: #B4AC9F;
+  --pas-border: #66666F;
+  --pas-rule: var(--sp-ink-600);
+  --pas-accent: #8DAEFF;
+  --pas-link: #9DB8FF;
+  --pas-highlight: var(--sp-yellow);
+  --pas-info-soft: #1E3466;
+  --pas-success-soft: rgba(254, 213, 1, .14);
+  --pas-error-soft: rgba(245, 19, 0, .18);
+  --pas-error-ink: #FF8A75;
+  --pas-field: var(--sp-ink-900);
+  --pas-field-disabled: #16161A;
+  --pas-ring: var(--sp-yellow);
+  --pas-shadow: 0 2px 4px rgba(0, 0, 0, .2), 0 12px 28px rgba(0, 0, 0, .35);
+  color-scheme: dark;
+}
+
+:root[data-theme='light'] .pas {
+  --pas-bg: var(--sp-cream);
+  --pas-surface: #FFFFFF;
+  --pas-surface-2: var(--sp-paper);
+  --pas-text: var(--sp-black);
+  --pas-muted: var(--sp-muted);
+  --pas-border: #9A8C76;
+  --pas-rule: var(--sp-sand);
+  --pas-accent: var(--sp-blue);
+  --pas-link: var(--sp-blue-hover);
+  --pas-highlight: var(--sp-blue);
+  --pas-info-soft: #E7EEFF;
+  --pas-success-soft: #FFF6C2;
+  --pas-error-soft: #FFE1DC;
+  --pas-error-ink: #B30E00;
+  --pas-field: #FFFFFF;
+  --pas-field-disabled: #F3EDE2;
+  --pas-ring: var(--sp-blue);
+  --pas-shadow: 0 2px 4px rgba(0, 0, 0, .04), 0 12px 26px rgba(0, 0, 0, .08);
+  color-scheme: light;
+}
+
+.pas {
+  position: relative;
+  isolation: isolate;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-height: 100vh;
+  min-height: 100dvh;
+  overflow-x: clip;
+  padding: 28px clamp(16px, 4vw, 48px) 64px;
+  background: var(--pas-bg);
+  color: var(--pas-text);
+  font-family: var(--font-family-brand);
+  font-size: 15px;
+  line-height: 1.45;
+  letter-spacing: normal;
+}
+
+/* O theme.css global fixa fonte, tamanho e espaçamento em p, span, button, small e h1–h4.
+   Aqui eles herdam do bloco; os títulos usam .sp-display e as classes abaixo. */
+.pas :where(p, span, small, strong, em, a, button, label, input, h2) {
+  font-family: inherit;
+  font-size: inherit;
+  line-height: inherit;
+  letter-spacing: inherit;
+}
+
+.pas *, .pas *::before, .pas *::after { box-sizing: border-box; }
+.pas :where(h1, h2, p) { margin: 0; }
+.pas :where(button) { font: inherit; color: inherit; cursor: pointer; }
+.pas :is(a, button, input):focus-visible { outline: 3px solid var(--pas-ring); outline-offset: 3px; }
+.pas .pas-input:focus-visible { outline: none; }
+
+/* Fundo */
+.pas-wave { position: absolute; z-index: 0; height: auto; pointer-events: none; }
+.pas-wave--top { top: 0; right: 0; width: min(46%, 640px); }
+.pas-wave--left { bottom: 0; left: 0; width: min(44%, 620px); }
+.pas-wave--right { bottom: 0; right: 0; width: min(30%, 430px); }
+
+/* Cabeçalho e palco */
+.pas-top { position: relative; z-index: 2; display: flex; align-items: center; align-self: stretch; }
+.pas-brand { display: inline-flex; border-radius: 8px; }
+.pas-brand .brand-mark { width: 210px; }
+.pas-stage { position: relative; z-index: 2; display: flex; flex: 1 1 auto; align-items: center; justify-content: center; width: 100%; padding-top: 28px; }
+.pas-panel { display: flex; width: 100%; max-width: 860px; overflow: hidden; border-radius: 28px; background: var(--pas-surface); box-shadow: var(--pas-shadow), 0 0 0 1.5px var(--pas-rule); }
+.pas-panel--wide { max-width: 1040px; }
+
+/* Coluna principal */
+.pas-main { display: flex; flex: 1 1 440px; flex-direction: column; gap: 18px; min-width: 0; padding: 42px 38px 32px; }
+.pas-heading { display: flex; flex-direction: column; gap: 10px; }
+.pas-title { color: var(--pas-text); font-size: 46px; overflow-wrap: break-word; }
+.pas-title em { color: var(--pas-highlight); font-style: normal; }
+.pas-title:focus:not(:focus-visible) { outline: none; }
+.pas-lead { color: var(--pas-muted); font-size: 15px; font-weight: 600; }
+.pas-lead strong { color: var(--pas-text); font-weight: 800; }
+
+/* Coluna do personagem: decorativa, o conteúdo da tela não depende dela. */
+.pas-side { display: flex; flex: 0 1 300px; flex-direction: column; align-items: center; justify-content: center; gap: 18px; min-width: 0; padding: 40px 28px; border-left: 1.5px solid var(--pas-rule); background: var(--pas-surface-2); text-align: center; }
+.pas-character { width: 150px; }
+.pas-bubble { position: relative; display: flex; align-items: center; justify-content: center; max-width: 240px; padding: 12px 16px; border-radius: 16px; background: var(--sp-yellow); color: var(--sp-black); font-size: 15px; font-weight: 800; line-height: 1.3; }
+.pas-bubble::before { position: absolute; top: -7px; left: 50%; width: 14px; height: 14px; margin-left: -7px; background: var(--sp-yellow); content: ''; transform: rotate(45deg); }
+
+/* Formulário */
+.pas-form { display: flex; flex-direction: column; gap: 16px; }
+.pas-form--grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; gap: 16px 20px; }
+.pas-form--grid > .pas-submit { grid-column: 1 / -1; }
+.pas-field { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.pas-label { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 8px; color: var(--pas-muted); font-size: 12px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; }
+.pas-optional { color: var(--pas-muted); font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: lowercase; }
+.pas-box { display: flex; align-items: center; gap: 6px; min-height: 54px; padding: 0 6px 0 16px; border-radius: 16px; background: var(--pas-field); box-shadow: inset 0 0 0 2px var(--pas-border); transition: box-shadow .15s; }
+.pas-box:focus-within { box-shadow: inset 0 0 0 3px var(--pas-accent); }
+.pas-box:has(.pas-input:user-invalid) { box-shadow: inset 0 0 0 3px var(--sp-red); }
+.pas-box.is-invalid { box-shadow: inset 0 0 0 3px var(--sp-red); }
+.pas-box.is-invalid:focus-within, .pas-box:has(.pas-input:user-invalid):focus-within { box-shadow: inset 0 0 0 3px var(--sp-red), 0 0 0 2px var(--pas-surface), 0 0 0 5px var(--pas-ring); }
+.pas-box:has(.pas-input:disabled) { background: var(--pas-field-disabled); }
+.pas-input { flex: 1 1 auto; width: 100%; min-width: 0; height: 50px; padding: 0; border: 0; background: transparent; color: var(--pas-text); font: inherit; font-size: 16px; font-weight: 600; outline: none; }
+.pas-input::placeholder { color: var(--pas-muted); opacity: .85; }
+.pas-input:disabled { color: var(--pas-muted); cursor: not-allowed; }
+.pas-input::-ms-reveal, .pas-input::-ms-clear { display: none; }
+.pas-input:-webkit-autofill { -webkit-text-fill-color: var(--pas-text); caret-color: var(--pas-text); box-shadow: inset 0 0 0 1000px var(--pas-field); transition: background-color 9999s; }
+.pas-eye { display: grid; flex: 0 0 auto; place-items: center; width: 44px; height: 44px; padding: 0; border: 0; border-radius: 12px; background: transparent; color: var(--pas-muted); }
+.pas-eye:hover { background: var(--pas-surface-2); color: var(--pas-text); }
+.pas-hint { color: var(--pas-muted); font-size: 13px; font-weight: 600; line-height: 1.35; }
+.pas-field-error { color: var(--pas-error-ink); font-size: 13px; font-weight: 800; line-height: 1.35; }
+
+/* Botões e links */
+.pas-submit, .pas-cta { display: inline-flex; align-items: center; justify-content: center; gap: 10px; width: 100%; min-height: 58px; padding: 0 24px; border: 3px solid var(--sp-blue); border-radius: 18px; background: var(--sp-blue); box-shadow: 0 5px 0 var(--sp-blue-shadow); color: #FFFFFF; font-size: 17px; font-weight: 800; text-align: center; text-decoration: none; transition: transform .12s, box-shadow .12s, background-color .2s; }
+.pas-submit:hover, .pas-cta:hover { background: var(--sp-blue-hover); color: #FFFFFF; }
+.pas-submit:active, .pas-cta:active { transform: translateY(4px); box-shadow: 0 2px 0 var(--sp-blue-shadow); }
+.pas-submit:disabled { cursor: not-allowed; transform: translateY(2px); box-shadow: 0 2px 0 var(--sp-blue-shadow); background: var(--sp-blue); opacity: .8; }
+.pas-submit[aria-busy='true'] { cursor: progress; opacity: 1; }
+.pas-secondary { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 48px; padding: 0 18px; border: 0; border-radius: 14px; background: var(--pas-surface-2); box-shadow: inset 0 0 0 2px var(--pas-border); color: var(--pas-text); font-size: 15px; font-weight: 800; }
+.pas-secondary:hover { box-shadow: inset 0 0 0 2px var(--pas-accent); }
+.pas-link { display: inline-flex; align-items: center; min-height: 44px; padding: 0 2px; border: 0; border-radius: 6px; background: transparent; color: var(--pas-link); font-size: 14px; font-weight: 800; text-decoration: underline; text-underline-offset: 3px; }
+.pas-link:hover { color: var(--pas-accent); }
+.pas-spinner { flex: 0 0 auto; width: 20px; height: 20px; border: 3px solid rgba(255, 255, 255, .35); border-top-color: #FFFFFF; border-radius: 50%; animation: pas-spin .8s linear infinite; }
+.pas-loading { display: flex; align-items: center; gap: 12px; color: var(--pas-muted); font-weight: 700; }
+.pas-loading .pas-spinner { width: 28px; height: 28px; border-color: var(--pas-rule); border-top-color: var(--pas-accent); }
+@keyframes pas-spin { to { transform: rotate(360deg); } }
+
+/* Identificador gerado (usuário ou código) */
+.pas-code { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+.pas-code-value { flex: 1 1 200px; min-width: 0; padding: 14px 18px; border-radius: 16px; background: var(--pas-surface-2); box-shadow: inset 0 0 0 2px var(--pas-border); color: var(--pas-text); font: 800 20px/1.2 ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing: .06em; overflow-wrap: anywhere; }
+
+/* Avisos */
+.pas-live:empty { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.pas-msg { display: flex; align-items: flex-start; gap: 12px; padding: 14px 16px; border-radius: 16px; color: var(--pas-text); font-size: 14px; font-weight: 600; line-height: 1.4; }
+.pas-msg-body { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; min-width: 0; overflow-wrap: anywhere; }
+.pas-msg strong { font-size: 15px; font-weight: 800; }
+.pas-msg a { color: inherit; font-weight: 800; text-decoration: underline; text-underline-offset: 3px; }
+.pas-msg-icon { display: grid; flex: 0 0 auto; place-items: center; width: 34px; height: 34px; border-radius: 11px; }
+.pas-msg--error { background: var(--pas-error-soft); box-shadow: inset 0 0 0 2px var(--sp-red); }
+.pas-msg--error .pas-msg-icon { background: var(--sp-red); color: #FFFFFF; }
+.pas-msg--info { background: var(--pas-info-soft); box-shadow: inset 0 0 0 2px var(--sp-blue); }
+.pas-msg--info .pas-msg-icon { background: var(--sp-blue); color: #FFFFFF; }
+.pas-msg--success { background: var(--pas-success-soft); box-shadow: inset 0 0 0 2px var(--sp-yellow); }
+.pas-msg--success .pas-msg-icon { background: var(--sp-yellow); color: var(--sp-black); }
+
+/* Notas, aviso legal e rodapé */
+.pas-note { color: var(--pas-muted); font-size: 14px; font-weight: 600; }
+.pas-legal { color: var(--pas-muted); font-size: 13px; font-weight: 600; line-height: 1.5; }
+.pas-legal > button { padding: 0; border: 0; border-radius: 4px; background: transparent; color: var(--pas-link); font-weight: 800; text-decoration: underline; text-underline-offset: 3px; }
+.pas-legal > button:hover { color: var(--pas-accent); }
+.pas-foot { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; padding-top: 14px; border-top: 1.5px solid var(--pas-rule); color: var(--pas-muted); font-size: 14px; font-weight: 600; line-height: 1.4; }
+.pas-foot a:not(.pas-link) { color: var(--pas-link); font-weight: 800; text-decoration: underline; text-underline-offset: 3px; }
+.pas-foot p { padding-block: 4px; }
+.pas-actions { display: flex; flex-direction: column; gap: 14px; }
+
+/* Diálogo de senha da confirmação de e-mail */
+.pas-dialog { width: min(calc(100% - 32px), 480px); max-height: calc(100dvh - 32px); margin: auto; overflow-y: auto; padding: 0; border: 0; border-radius: 28px; background: var(--pas-surface); box-shadow: var(--pas-shadow), 0 0 0 1.5px var(--pas-rule); color: var(--pas-text); }
+.pas-dialog::backdrop { background: rgba(14, 14, 17, .72); }
+.pas-dialog-body { display: flex; flex-direction: column; gap: 18px; padding: 34px 30px 30px; }
+.pas-dialog-title { color: var(--pas-text); font-size: 38px; }
+
+@media (min-width: 861px) and (max-height: 820px) {
+  .pas { padding-top: 18px; padding-bottom: 28px; }
+  .pas-stage { padding-top: 16px; }
+  .pas-main { gap: 14px; padding: 30px 34px 24px; }
+  .pas-title { font-size: 40px; }
+}
+
+/* Tablet e celular: o personagem sobe e fica ao lado do balão. */
+@media (max-width: 860px) {
+  .pas-panel { flex-direction: column; }
+  .pas-side { flex: 0 0 auto; flex-direction: row; order: -1; gap: 14px; padding: 16px 20px; border-bottom: 1.5px solid var(--pas-rule); border-left: 0; text-align: left; }
+  .pas-character { flex: 0 0 auto; width: 76px; }
+  .pas-bubble { font-size: 14px; }
+  .pas-bubble::before { top: 50%; left: -7px; margin: -7px 0 0; }
+  .pas-main { flex: 1 1 auto; }
+}
+
+@media (max-width: 640px) {
+  .pas { padding: 18px 14px 36px; }
+  .pas-brand .brand-mark { width: 150px; }
+  .pas-wave--top { width: 62%; }
+  .pas-wave--left { width: 70%; }
+  .pas-wave--right { display: none; }
+  .pas-stage { align-items: flex-start; padding-top: 18px; }
+  .pas-panel { border-radius: 22px; }
+  .pas-main { padding: 24px 16px 22px; }
+  .pas-title { font-size: 36px; }
+  .pas-form--grid { grid-template-columns: minmax(0, 1fr); }
+  .pas-side { padding: 14px 16px; }
+  .pas-character { width: 60px; }
+  .pas-dialog-body { padding: 26px 18px 22px; }
+  .pas-dialog-title { font-size: 32px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pas *, .pas *::before, .pas *::after { animation: none !important; transition: none !important; }
+  .pas-submit:active, .pas-cta:active { transform: none; }
+}
