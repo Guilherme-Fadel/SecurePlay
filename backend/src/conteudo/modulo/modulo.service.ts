@@ -15,23 +15,16 @@ import {
   JornadaDaTurma,
   JornadaTurmaService,
 } from '../../turma/jornada-turma.service';
-import {
-  EstadoAula,
-  LockReason,
-  ModuloRef,
-  resolverEstadoJornada,
-} from '../../turma/jornada-regras';
 import { mensagemDeBloqueio } from '../../turma/jornada-mensagens';
+import {
+  CargaJornada,
+  listarModulos,
+  resolverThumbnail,
+  resumoDaJornada,
+} from './modulo-jornada';
 
 const MODULO_BLOQUEADO =
   'Módulo bloqueado. Conclua o módulo anterior para liberá-lo.';
-
-interface Carga {
-  modulos: Modulo[];
-  aulasByModulo: Map<number, Aula[]>;
-  progressByAula: Map<number, UsuarioAula>;
-  jornada: JornadaDaTurma | null;
-}
 
 @Injectable()
 export class ModuloService {
@@ -48,18 +41,11 @@ export class ModuloService {
     private jornadaTurma: JornadaTurmaService,
   ) {}
 
-  /** Assets padronizados são resolvidos no frontend pelo título/chave do módulo. */
-  private resolveThumbnail(source: string | null): string | null {
-    const normalized = source?.trim();
-    if (!normalized || normalized.startsWith('s3://')) return null;
-    return normalized;
-  }
-
   private async carregar(
     usuario_id: number,
     manager?: EntityManager,
     jornadaPronta?: JornadaDaTurma | null,
-  ): Promise<Carga> {
+  ): Promise<CargaJornada> {
     const moduloRepository =
       manager?.getRepository(Modulo) ?? this.moduloRepository;
     const aulaRepository = manager?.getRepository(Aula) ?? this.aulaRepository;
@@ -103,163 +89,8 @@ export class ModuloService {
     };
   }
 
-  private resumir(
-    modulo: Modulo,
-    carga: Carga,
-    locked: boolean,
-    outsideJourney: boolean,
-    estados: Map<number, EstadoAula> | null,
-  ) {
-    const moduloAulas = carga.aulasByModulo.get(modulo.id) ?? [];
-    const moduloProgress = moduloAulas
-      .map((aula) => carga.progressByAula.get(aula.id))
-      .filter((row): row is UsuarioAula => Boolean(row));
-    const completedAulas = moduloAulas.filter(
-      (aula) => carga.progressByAula.get(aula.id)?.completed,
-    ).length;
-    const lastAccessedAt = moduloProgress.reduce<Date | null>(
-      (latest, row) => {
-        if (!row.last_accessed_at) return latest;
-        return !latest || row.last_accessed_at > latest
-          ? row.last_accessed_at
-          : latest;
-      },
-      null,
-    );
-    const totalAulas = moduloAulas.length;
-    const progress =
-      totalAulas > 0 ? Math.round((completedAulas / totalAulas) * 100) : 0;
-    const nextAula = moduloAulas.find(
-      (aula) => !carga.progressByAula.get(aula.id)?.completed,
-    );
-    const thumbnail = this.resolveThumbnail(modulo.thumbnail);
-    const estadoNext = nextAula ? estados?.get(nextAula.id) : undefined;
-    const nextLockReason: LockReason | null = estados
-      ? (estadoNext?.lockReason ?? null)
-      : locked
-        ? 'sequence'
-        : null;
-
-    return {
-      ...modulo,
-      thumbnail,
-      artworkUrl: thumbnail,
-      totalAulas,
-      completedAulas,
-      progress,
-      hasStarted: moduloProgress.length > 0,
-      lastAccessedAt,
-      nextAulaId: nextAula?.id ?? null,
-      // B1: detalhe da proxima aula para o "Continue de onde parou" sem request extra.
-      nextAula: nextAula
-        ? {
-            id: nextAula.id,
-            title: nextAula.title,
-            type: nextAula.type,
-            xp: nextAula.xp,
-            duration: nextAula.duration,
-            section_name: nextAula.section_name ?? null,
-            position: moduloAulas.indexOf(nextAula) + 1,
-            lock_reason: nextLockReason,
-            opens_at: estadoNext?.opensAt?.toISOString() ?? null,
-          }
-        : null,
-      locked,
-      outside_journey: outsideJourney,
-      lastCompletedAulaId: this.ultimaConcluida(moduloAulas, carga),
-    };
-  }
-
-  /** Aula concluída mais recente do módulo, para "Revisar a última aula". */
-  private ultimaConcluida(moduloAulas: Aula[], carga: Carga): number | null {
-    let escolhida: { id: number; quando: number } | null = null;
-    moduloAulas.forEach((aula, index) => {
-      const row = carga.progressByAula.get(aula.id);
-      if (!row?.completed) return;
-      // Sem data, vale a posição na sequência (concluídas antigas sem completed_at).
-      const quando = row.completed_at
-        ? new Date(row.completed_at).getTime()
-        : index - moduloAulas.length;
-      if (!escolhida || quando >= escolhida.quando)
-        escolhida = { id: aula.id, quando };
-    });
-    return (escolhida as { id: number } | null)?.id ?? null;
-  }
-
-  private listar(carga: Carga) {
-    if (!carga.jornada) {
-      // Cada trilha progride separadamente; a trilha principal preserva a ordem legada.
-      const completedByPath = new Map<string, boolean>();
-      const modulos = carga.modulos.map((modulo) => {
-        const moduloAulas = carga.aulasByModulo.get(modulo.id) ?? [];
-        const hasStarted = moduloAulas.some((aula) =>
-          carga.progressByAula.has(aula.id),
-        );
-        const completedAulas = moduloAulas.filter(
-          (aula) => carga.progressByAula.get(aula.id)?.completed,
-        ).length;
-        const path = modulo.learning_path || 'principal';
-        const previousModuloCompleted = completedByPath.get(path) ?? true;
-        // O que o aluno já começou nunca volta a bloquear (ex.: saiu de uma turma).
-        const locked = !previousModuloCompleted && !hasStarted;
-        // um modulo sem aulas ativas nao trava a cadeia
-        const isModuloCompleted =
-          moduloAulas.length === 0 || completedAulas === moduloAulas.length;
-        completedByPath.set(path, previousModuloCompleted && isModuloCompleted);
-        return this.resumir(modulo, carga, locked, false, null);
-      });
-      return { modulos, estados: null };
-    }
-
-    const ativos = new Map(carga.modulos.map((modulo) => [modulo.id, modulo]));
-    const naJornada = carga.jornada.moduloIds.filter((id) => ativos.has(id));
-    const idsNaJornada = new Set(naJornada);
-    const ref = (modulo: Modulo): ModuloRef => ({
-      id: modulo.id,
-      aulas: (carga.aulasByModulo.get(modulo.id) ?? []).map((aula) => ({
-        id: aula.id,
-        modulo_id: aula.modulo_id,
-        titulo: aula.title,
-      })),
-    });
-    const foraDaJornada = carga.modulos.filter(
-      (modulo) =>
-        !idsNaJornada.has(modulo.id) &&
-        (carga.aulasByModulo.get(modulo.id) ?? []).some((aula) =>
-          carga.progressByAula.has(aula.id),
-        ),
-    );
-    const estadosModulos = resolverEstadoJornada({
-      modulos: naJornada.map((id) => ref(ativos.get(id)!)),
-      foraDaJornada: foraDaJornada.map(ref),
-      aberturas: carga.jornada.aberturas,
-      progresso: new Map(
-        [...carga.progressByAula].map(([aulaId, row]) => [
-          aulaId,
-          { completed: !!row.completed },
-        ]),
-      ),
-      agora: new Date(),
-    });
-    const estados = new Map(
-      estadosModulos.flatMap((modulo) =>
-        modulo.aulas.map((aula) => [aula.aulaId, aula] as const),
-      ),
-    );
-    const modulos = estadosModulos.map((estado) =>
-      this.resumir(
-        ativos.get(estado.moduloId)!,
-        carga,
-        estado.locked,
-        estado.outsideJourney,
-        estados,
-      ),
-    );
-    return { modulos, estados };
-  }
-
   async findAll(usuario_id: number, manager?: EntityManager) {
-    return this.listar(await this.carregar(usuario_id, manager)).modulos;
+    return listarModulos(await this.carregar(usuario_id, manager)).modulos;
   }
 
   /**
@@ -295,7 +126,7 @@ export class ModuloService {
   ): Promise<boolean> {
     const jornada = await this.jornadaTurma.jornadaDoAluno(usuario_id, manager);
     if (!jornada) return false;
-    const { modulos, estados } = this.listar(
+    const { modulos, estados } = listarModulos(
       await this.carregar(usuario_id, manager, jornada),
     );
     const modulo = modulos.find((item) => item.id === aula.modulo_id);
@@ -303,7 +134,9 @@ export class ModuloService {
     if (modulo.locked) throw new ForbiddenException(MODULO_BLOQUEADO);
     const estado = estados?.get(aula.id);
     if (!estado)
-      throw new BadRequestException(mensagemDeBloqueio('outside_journey', null));
+      throw new BadRequestException(
+        mensagemDeBloqueio('outside_journey', null),
+      );
     if (estado.status === 'locked')
       throw new BadRequestException(
         mensagemDeBloqueio(estado.lockReason ?? 'sequence', estado.opensAt),
@@ -312,104 +145,7 @@ export class ModuloService {
   }
 
   async getJourneySummary(usuario_id: number) {
-    const modules = await this.findAll(usuario_id);
-    const incomplete = modules.filter(
-      (modulo) => modulo.progress < 100 && !modulo.locked,
-    );
-    const current =
-      [...incomplete]
-        .filter((modulo) => modulo.hasStarted)
-        .sort((a, b) => {
-          const dateDifference =
-            (Date.parse(String(b.lastAccessedAt ?? '')) || 0) -
-            (Date.parse(String(a.lastAccessedAt ?? '')) || 0);
-          return dateDifference || a.order - b.order || a.id - b.id;
-        })[0] ??
-      incomplete[0] ??
-      modules.at(-1) ??
-      null;
-
-    const stageNames: Record<string, string> = {
-      iniciante: 'Bosque dos Fundamentos',
-      intermediario: 'Vale dos Guardiões',
-      avancado: 'Cidadela Digital',
-    };
-    const stageThemes: Record<string, string> = {
-      iniciante: 'meadow',
-      intermediario: 'valley',
-      avancado: 'citadel',
-    };
-    const stages = new Map<
-      string,
-      {
-        key: string;
-        title: string;
-        order: number;
-        theme: string;
-        artworkUrl: string | null;
-        nodes: Array<Record<string, unknown>>;
-      }
-    >();
-
-    modules.forEach((modulo, globalIndex) => {
-      const key = String(modulo.difficulty || 'jornada');
-      if (!stages.has(key)) {
-        stages.set(key, {
-          key,
-          title: stageNames[key] ?? modulo.category ?? 'Nova etapa',
-          order: stages.size,
-          theme: stageThemes[key] ?? 'default',
-          artworkUrl: null,
-          nodes: [],
-        });
-      }
-      stages.get(key)!.nodes.push({
-        id: modulo.id,
-        order: modulo.order,
-        globalPosition: globalIndex + 1,
-        title: modulo.title,
-        progress: modulo.progress,
-        totalAulas: modulo.totalAulas,
-        completedAulas: modulo.completedAulas,
-        hasStarted: modulo.hasStarted,
-        lastAccessedAt: modulo.lastAccessedAt,
-        artworkUrl: modulo.artworkUrl,
-        nextAulaId: modulo.nextAulaId,
-        xpTotal: modulo.xp_total,
-        xpBonus: modulo.xp_bonus,
-        locked: modulo.locked,
-        availability: modulo.locked ? 'locked' : 'available',
-        outsideJourney: modulo.outside_journey ?? false,
-        nextLessonLockReason: modulo.nextAula?.lock_reason ?? null,
-        nextLessonOpensAt: modulo.nextAula?.opens_at ?? null,
-        lastCompletedAulaId: modulo.lastCompletedAulaId ?? null,
-      });
-    });
-
-    const totalLessons = modules.reduce(
-      (sum, modulo) => sum + modulo.totalAulas,
-      0,
-    );
-    const completedLessons = modules.reduce(
-      (sum, modulo) => sum + modulo.completedAulas,
-      0,
-    );
-
-    return {
-      summary: {
-        totalModules: modules.length,
-        completedModules: modules.filter((modulo) => modulo.progress === 100)
-          .length,
-        totalLessons,
-        completedLessons,
-        progressPercent:
-          totalLessons > 0
-            ? Math.round((completedLessons / totalLessons) * 100)
-            : 0,
-      },
-      currentModuleId: current?.id ?? null,
-      stages: Array.from(stages.values()),
-    };
+    return resumoDaJornada(await this.findAll(usuario_id));
   }
 
   async findOne(id: number, usuario_id: number) {
@@ -449,10 +185,9 @@ export class ModuloService {
     const aulasWithStatus = aulas.map((aula, index) => {
       const isCompleted = completedAulaIds.includes(aula.id);
       const isUnlocked = index === firstIncompleteIndex;
-      const progress = progressByAula.get(aula.id);
 
       return {
-        ...this.aulaResumo(aula, progress),
+        ...this.aulaResumo(aula, progressByAula.get(aula.id)),
         status: isCompleted ? 'completed' : isUnlocked ? 'unlocked' : 'locked',
         lock_reason: isCompleted || isUnlocked ? null : ('sequence' as const),
         opens_at: null,
@@ -468,7 +203,7 @@ export class ModuloService {
     jornada: JornadaDaTurma,
   ) {
     const carga = await this.carregar(usuario_id, undefined, jornada);
-    const { modulos, estados } = this.listar(carga);
+    const { modulos, estados } = listarModulos(carga);
     const alvo = modulos.find((item) => item.id === modulo.id);
     if (!alvo) throw new NotFoundException('Módulo não encontrado');
     if (alvo.locked) throw new ForbiddenException(MODULO_BLOQUEADO);
@@ -508,7 +243,7 @@ export class ModuloService {
     const completedCount = aulas.filter((a) => a.status === 'completed').length;
     const progress =
       totalAulas > 0 ? Math.round((completedCount / totalAulas) * 100) : 0;
-    const thumbnail = this.resolveThumbnail(modulo.thumbnail);
+    const thumbnail = resolverThumbnail(modulo.thumbnail);
 
     return {
       ...modulo,

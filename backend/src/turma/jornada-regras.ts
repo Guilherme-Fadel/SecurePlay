@@ -74,7 +74,8 @@ function estadosDasAulas(
       const abreEm = e.aberturas.get(aula.id);
       if (!abreEm)
         estado = { ...base, status: 'locked', lockReason: 'awaiting_teacher' };
-      else if (aberta(abreEm, e.agora)) estado = { ...base, status: 'unlocked' };
+      else if (aberta(abreEm, e.agora))
+        estado = { ...base, status: 'unlocked' };
       else
         estado = {
           ...base,

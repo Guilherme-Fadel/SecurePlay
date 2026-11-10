@@ -91,7 +91,10 @@ const TABLES: Table[] = [
       },
     ],
     indices: [
-      new TableIndex({ name: 'ix_turma_aluno_turma', columnNames: ['turma_id'] }),
+      new TableIndex({
+        name: 'ix_turma_aluno_turma',
+        columnNames: ['turma_id'],
+      }),
     ],
     foreignKeys: [
       fk('fk_turma_aluno_usuario', 'usuario_id', 'usuario'),
@@ -132,7 +135,10 @@ const TABLES: Table[] = [
       { name: 'turma_id', type: 'int' },
     ],
     indices: [
-      new TableIndex({ name: 'ix_convite_turma_turma', columnNames: ['turma_id'] }),
+      new TableIndex({
+        name: 'ix_convite_turma_turma',
+        columnNames: ['turma_id'],
+      }),
     ],
     foreignKeys: [
       fk('fk_convite_turma_convite', 'convite_id', 'convite'),
