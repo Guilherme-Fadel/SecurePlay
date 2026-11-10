@@ -75,6 +75,7 @@ Crie um projeto Pages conectado ao mesmo repositório:
 - Build output directory: `dist`
 - Variável de build: `VITE_API_URL=/api`
 - Variável de runtime das Functions: `API_ORIGIN=https://<API>.onrender.com`
+- Segredo de runtime das Functions: `PROXY_SHARED_SECRET`, com o mesmo valor configurado no Render (gere com `openssl rand -hex 32`). Sem ele a API enxerga o IP da Cloudflare para todos os usuários e o limite de tentativas de login passa a ser compartilhado.
 
 A pasta `frontend/functions` deve ser publicada pela integração Git ou Wrangler.
 O proxy atende `/api/*`, incluindo Socket.IO, e evita cookies de terceiros na guia

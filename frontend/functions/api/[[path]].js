@@ -32,6 +32,15 @@ export async function onRequest({ request, env }) {
   upstream.search = incoming.search;
   const headers = new Headers(request.headers);
   headers.delete('Host');
+  // Without this the API sees the Worker's IP for everyone and the login limit is shared.
+  // Only the Worker may set these; the API trusts them only with the shared secret.
+  headers.delete('X-SecurePlay-Proxy');
+  headers.delete('X-SecurePlay-Client-IP');
+  const clientIp = request.headers.get('CF-Connecting-IP');
+  if (env.PROXY_SHARED_SECRET && clientIp) {
+    headers.set('X-SecurePlay-Proxy', env.PROXY_SHARED_SECRET);
+    headers.set('X-SecurePlay-Client-IP', clientIp);
+  }
   // Same-origin GET/polling may omit Origin; the backend's Socket.IO allowRequest
   // still checks it. Preserve supplied origins and reject cross-site requests above.
   if (!origin) headers.set('Origin', incoming.origin);

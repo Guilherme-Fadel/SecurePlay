@@ -41,6 +41,17 @@ test('proxy: cookies, writes, errors, redirects, origin and WebSocket handshake'
       const result = await onRequest({ env, request: request('/auth/me?check=1', { headers: { Cookie: 'token=test-only' } }) });
       assert.deepEqual(await result.json(), { userId: 1 });
     });
+    await t.test('forwards the real client IP only with the shared secret and drops spoofed values', async () => {
+      const spoofed = { 'X-SecurePlay-Proxy': 'forged', 'X-SecurePlay-Client-IP': '198.51.100.1', 'CF-Connecting-IP': '203.0.113.9' };
+      let seen;
+      globalThis.fetch = async (outgoing) => { seen = outgoing.headers; return Response.json({}); };
+      await onRequest({ env: { ...env, PROXY_SHARED_SECRET: 'test-secret' }, request: request('/auth/me', { headers: spoofed }) });
+      assert.equal(seen.get('X-SecurePlay-Proxy'), 'test-secret');
+      assert.equal(seen.get('X-SecurePlay-Client-IP'), '203.0.113.9');
+      await onRequest({ env, request: request('/auth/me', { headers: spoofed }) });
+      assert.equal(seen.get('X-SecurePlay-Proxy'), null);
+      assert.equal(seen.get('X-SecurePlay-Client-IP'), null);
+    });
     await t.test('401 and logout cookie deletion survive forwarding', async () => {
       globalThis.fetch = async () => new Response('unauthorized', { status: 401 });
       assert.equal((await onRequest({ env, request: request('/auth/me') })).status, 401);
