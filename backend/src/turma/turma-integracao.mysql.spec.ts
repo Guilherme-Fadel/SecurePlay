@@ -1,4 +1,8 @@
-import { ConflictException, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  NotFoundException,
+} from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { DataSource } from 'typeorm';
 import {
@@ -17,6 +21,7 @@ import { AdminAuditService } from '../admin/admin-audit.service';
 import { ModuloService } from '../conteudo/modulo/modulo.service';
 import { CreateTurmas1793577600000 } from '../database/migrations/1793577600000-create-turmas';
 import { TurmaAluno } from './entities/turma-aluno.entity';
+import { TurmaProfessor } from './entities/turma-professor.entity';
 import { TurmaAulaAbertura } from './entities/turma-aula-abertura.entity';
 import { TurmaAcessoService } from './turma-acesso.service';
 import { TurmaService } from './turma.service';
@@ -201,6 +206,93 @@ turmaIntegration('Turmas — integração em MySQL descartável', () => {
     ).toBe(0);
     expect(
       await source.getRepository(TurmaAluno).countBy({ turma_id: turma.id }),
+    ).toBe(0);
+  });
+
+  it('promoção concorrente a professor não deixa a conta matriculada como aluno', async () => {
+    const turma = await turmas.criar(massa.adminA.id, massa.escolaA.id, {
+      nome: 'Corrida de papel',
+      ano_letivo: 2026,
+    });
+    const aluno = await source.getRepository(Usuario).save({
+      name: 'Aluno Promovido',
+      role: Role.USER,
+      empresa_id: massa.escolaA.id,
+      password: 'x',
+      active: true,
+      email: `promovido${Date.now()}@fixture.test`,
+    });
+    const outro = source.createQueryRunner();
+    await outro.connect();
+    await outro.startTransaction();
+    try {
+      await outro.query('SELECT id FROM usuario WHERE id = ? FOR UPDATE', [
+        aluno.id,
+      ]);
+      const adicionar = turmas
+        .adicionarAlunos(massa.adminA.id, massa.escolaA.id, turma.id, [
+          aluno.id,
+        ])
+        .then(
+          () => 'adicionado',
+          (erro: unknown) => erro,
+        );
+      await new Promise((resolve) => setTimeout(resolve, 400));
+      await outro.query("UPDATE usuario SET role = 'teacher' WHERE id = ?", [
+        aluno.id,
+      ]);
+      await outro.commitTransaction();
+      const resultado = await adicionar;
+      expect(resultado).toBeInstanceOf(BadRequestException);
+    } finally {
+      if (outro.isTransactionActive) await outro.rollbackTransaction();
+      await outro.release();
+    }
+    expect(
+      await source.getRepository(TurmaAluno).countBy({ usuario_id: aluno.id }),
+    ).toBe(0);
+  });
+
+  it('rebaixamento concorrente de professor não deixa aluno vinculado como professor', async () => {
+    const turma = await turmas.criar(massa.adminA.id, massa.escolaA.id, {
+      nome: 'Corrida de professor',
+      ano_letivo: 2026,
+    });
+    const prof = await source.getRepository(Usuario).save({
+      name: 'Professor Rebaixado',
+      role: Role.TEACHER,
+      empresa_id: massa.escolaA.id,
+      password: 'x',
+      active: true,
+      email: `rebaixado${Date.now()}@fixture.test`,
+    });
+    const outro = source.createQueryRunner();
+    await outro.connect();
+    await outro.startTransaction();
+    try {
+      await outro.query('SELECT id FROM usuario WHERE id = ? FOR UPDATE', [
+        prof.id,
+      ]);
+      const vincular = turmas
+        .vincularProfessor(massa.adminA.id, massa.escolaA.id, turma.id, prof.id)
+        .then(
+          () => 'vinculado',
+          (erro: unknown) => erro,
+        );
+      await new Promise((resolve) => setTimeout(resolve, 400));
+      await outro.query("UPDATE usuario SET role = 'user' WHERE id = ?", [
+        prof.id,
+      ]);
+      await outro.commitTransaction();
+      expect(await vincular).toBeInstanceOf(BadRequestException);
+    } finally {
+      if (outro.isTransactionActive) await outro.rollbackTransaction();
+      await outro.release();
+    }
+    expect(
+      await source
+        .getRepository(TurmaProfessor)
+        .countBy({ usuario_id: prof.id }),
     ).toBe(0);
   });
 

@@ -135,16 +135,27 @@ export async function obterJornada(turmaId: number): Promise<JornadaEdicao> {
   return (await api.get(`/turmas/${turmaId}/jornada`)).data;
 }
 
-export async function salvarModulosJornada(turmaId: number, moduloIds: number[]): Promise<JornadaEdicao> {
-  return (await api.put(`/turmas/${turmaId}/jornada/modulos`, { modulo_ids: moduloIds })).data;
+/** Mudanças na jornada alteram a "próxima abertura" da lista de turmas e a auditoria do escopo. */
+function jornadaMudou(empresaId?: number) {
+  invalidateAdminResources(empresaId, 'classes', 'audit-events');
 }
 
-export async function definirAberturaAula(turmaId: number, aulaId: number, data: DefinirAbertura): Promise<JornadaEdicao & { abertasEmCascata: number[] }> {
-  return (await api.put(`/turmas/${turmaId}/jornada/aulas/${aulaId}/abertura`, data)).data;
+export async function salvarModulosJornada(turmaId: number, moduloIds: number[], empresaId?: number): Promise<JornadaEdicao> {
+  const result = await api.put(`/turmas/${turmaId}/jornada/modulos`, { modulo_ids: moduloIds });
+  jornadaMudou(empresaId);
+  return result.data;
 }
 
-export async function cancelarAberturaAula(turmaId: number, aulaId: number): Promise<JornadaEdicao> {
-  return (await api.delete(`/turmas/${turmaId}/jornada/aulas/${aulaId}/abertura`)).data;
+export async function definirAberturaAula(turmaId: number, aulaId: number, data: DefinirAbertura, empresaId?: number): Promise<JornadaEdicao & { abertasEmCascata: number[] }> {
+  const result = await api.put(`/turmas/${turmaId}/jornada/aulas/${aulaId}/abertura`, data);
+  jornadaMudou(empresaId);
+  return result.data;
+}
+
+export async function cancelarAberturaAula(turmaId: number, aulaId: number, empresaId?: number): Promise<JornadaEdicao> {
+  const result = await api.delete(`/turmas/${turmaId}/jornada/aulas/${aulaId}/abertura`);
+  jornadaMudou(empresaId);
+  return result.data;
 }
 
 export async function listarAlunosDaJornada(turmaId: number, filtros: { page?: number; pageSize?: number; busca?: string }): Promise<Paginado<AlunoDaTurma>> {

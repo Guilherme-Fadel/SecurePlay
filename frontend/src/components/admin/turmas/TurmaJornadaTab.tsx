@@ -12,6 +12,7 @@ import {
   type JornadaEdicao,
 } from '@/services/turmas';
 import { AberturaAulaDialog } from './AberturaAulaDialog';
+import { resultadoDoConflito } from './jornadaConflito';
 import { mensagemDeErro, statusDoErro } from './turmaUi';
 import { AdminFeedback } from '@/components/admin/console/AdminFeedback';
 
@@ -19,6 +20,8 @@ type Aula = JornadaEdicao['modulos'][number]['aulas'][number];
 
 interface TurmaJornadaTabProps {
   turmaId: number;
+  /** Escola escolhida pela plataforma; ausente para admin e professor (escola da sessão). */
+  empresaId?: number;
   jornada: JornadaEdicao;
   onAtualizada: (jornada: JornadaEdicao) => void;
 }
@@ -37,7 +40,7 @@ function anterioresFechadas(jornada: JornadaEdicao, aulaId: number): Aula[] {
 }
 
 /** Jornada da turma: ordem dos módulos e abertura de cada aula (agora ou agendada). */
-export function TurmaJornadaTab({ turmaId, jornada, onAtualizada }: TurmaJornadaTabProps) {
+export function TurmaJornadaTab({ turmaId, empresaId, jornada, onAtualizada }: TurmaJornadaTabProps) {
   const ativa = jornada.turma.ativa;
   const [ocupado, setOcupado] = useState(false);
   const [aviso, setAviso] = useState<string | null>(null);
@@ -64,7 +67,7 @@ export function TurmaJornadaTab({ turmaId, jornada, onAtualizada }: TurmaJornada
   };
 
   const salvarOrdem = (ids: number[], alvo: string, sucesso: string) =>
-    void executar(alvo, () => salvarModulosJornada(turmaId, ids), sucesso);
+    void executar(alvo, () => salvarModulosJornada(turmaId, ids, empresaId), sucesso);
   const ids = jornada.modulos.map((modulo) => modulo.modulo_id);
   const mover = (indice: number, passo: -1 | 1) => {
     const proximo = [...ids];
@@ -77,15 +80,25 @@ export function TurmaJornadaTab({ turmaId, jornada, onAtualizada }: TurmaJornada
     setOcupado(true);
     setErro(null);
     try {
-      const resultado = await definirAberturaAula(turmaId, aula.aula_id, { modo: 'agora' });
+      const resultado = await definirAberturaAula(turmaId, aula.aula_id, { modo: 'agora' }, empresaId);
       onAtualizada(resultado);
       setAviso(resultado.abertasEmCascata.length > 1 ? `${resultado.abertasEmCascata.length} aulas abertas para a turma.` : `${aula.titulo} aberta para a turma.`);
     } catch (error) {
-      // Clique duplo ou outro professor abriu antes: recarrega e mostra a aula aberta, sem erro.
-      if (statusDoErro(error) === 409) {
-        onAtualizada(await obterJornada(turmaId));
-        setAviso(`${aula.titulo} já estava aberta.`);
-      } else setErro({ alvo: `aula-${aula.aula_id}`, mensagem: mensagemDeErro(error, 'Não foi possível abrir a aula.') });
+      const alvo = `aula-${aula.aula_id}`;
+      const mensagem = mensagemDeErro(error, 'Não foi possível abrir a aula.');
+      if (statusDoErro(error) !== 409) setErro({ alvo, mensagem });
+      else {
+        // Clique duplo ou outro professor abriu antes: recarrega; só a aula aberta vira aviso.
+        try {
+          const atual = await obterJornada(turmaId);
+          onAtualizada(atual);
+          const resultado = resultadoDoConflito(atual, aula.aula_id, aula.titulo, mensagem);
+          if ('aviso' in resultado) setAviso(resultado.aviso);
+          else setErro({ alvo, mensagem: resultado.erro });
+        } catch {
+          setErro({ alvo, mensagem });
+        }
+      }
     } finally {
       setOcupado(false);
     }
@@ -96,7 +109,7 @@ export function TurmaJornadaTab({ turmaId, jornada, onAtualizada }: TurmaJornada
     setOcupado(true);
     setErroAgenda(null);
     try {
-      onAtualizada(await definirAberturaAula(turmaId, agendar.aula_id, { modo: 'agendar', abre_em: abreEm }));
+      onAtualizada(await definirAberturaAula(turmaId, agendar.aula_id, { modo: 'agendar', abre_em: abreEm }, empresaId));
       setAviso(`${agendar.titulo} agendada para ${formatarAbertura(abreEm)}.`);
       setAgendar(null);
     } catch (error) {
@@ -143,7 +156,7 @@ export function TurmaJornadaTab({ turmaId, jornada, onAtualizada }: TurmaJornada
                   {ativa && aula.estado !== 'aberta' && <div className="turma-aula-acoes">
                     <AppButton size="sm" disabled={ocupado} onClick={() => setAbrir(aula)}>Abrir agora</AppButton>
                     <AppButton variant="ghost" size="sm" disabled={ocupado} onClick={() => { setErroAgenda(null); setAgendar(aula); }}>{aula.estado === 'agendada' ? 'Alterar' : 'Agendar'}</AppButton>
-                    {aula.estado === 'agendada' && <AppButton variant="ghost" size="sm" disabled={ocupado} onClick={() => void executar(`aula-${aula.aula_id}`, () => cancelarAberturaAula(turmaId, aula.aula_id), `Agendamento de ${aula.titulo} cancelado.`)}>Cancelar</AppButton>}
+                    {aula.estado === 'agendada' && <AppButton variant="ghost" size="sm" disabled={ocupado} onClick={() => void executar(`aula-${aula.aula_id}`, () => cancelarAberturaAula(turmaId, aula.aula_id, empresaId), `Agendamento de ${aula.titulo} cancelado.`)}>Cancelar</AppButton>}
                   </div>}
                   {erroDe(`aula-${aula.aula_id}`)}
                 </li>

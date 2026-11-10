@@ -224,6 +224,28 @@ turmaIntegration('JornadaEdicaoService em MySQL descartável', () => {
     );
   });
 
+  it('salvar a ordem preserva módulo desativado temporariamente', async () => {
+    const turma = await turmaComProfessor('Módulo pausado');
+    await source.query('UPDATE modulo SET active = 0 WHERE id = ?', [
+      massa.m2.id,
+    ]);
+    try {
+      const salva = await edicao.salvarModulos(massa.profA.id, turma.id, [
+        massa.m1.id,
+      ]);
+      expect(salva.modulos.map((m) => m.modulo_id)).toEqual([massa.m1.id]);
+    } finally {
+      await source.query('UPDATE modulo SET active = 1 WHERE id = ?', [
+        massa.m2.id,
+      ]);
+    }
+    const reativada = await edicao.obter(massa.profA.id, turma.id);
+    expect(reativada.modulos.map((m) => m.modulo_id)).toEqual([
+      massa.m1.id,
+      massa.m2.id,
+    ]);
+  });
+
   it('salva módulos validando o catálogo e preserva aberturas de módulos retirados', async () => {
     const turma = await turmaComProfessor('Módulos');
     await falha(

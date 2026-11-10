@@ -157,6 +157,15 @@ export class ConvitesService {
           throw new BadRequestException(
             'Use um convite de administrador para contas com código escolar',
           );
+        // Professor é conta de adulto: aluno criado sem e-mail não vira professor numa edição.
+        if (
+          dto.role === Role.TEACHER &&
+          target.role !== Role.TEACHER &&
+          !target.email
+        )
+          throw new BadRequestException(
+            'Use um convite de professor para contas sem e-mail',
+          );
         if (email !== target.email && target.password_change_required)
           throw new BadRequestException(
             'Conclua a definição de senha antes de alterar o e-mail',
@@ -540,6 +549,14 @@ export class ConvitesService {
       turmaId === undefined
         ? await this.conviteRepository.save(convite)
         : await this.dataSource.transaction(async (manager) => {
+            const ativa = await manager.getRepository(Turma).findOne({
+              where: { id: turmaId, empresa_id: empresaId, ativa: true },
+              lock: { mode: 'pessimistic_read' },
+            });
+            if (!ativa)
+              throw new BadRequestException(
+                'Selecione uma turma ativa desta escola',
+              );
             const criado = await manager.getRepository(Convite).save(convite);
             await manager
               .getRepository(ConviteTurma)

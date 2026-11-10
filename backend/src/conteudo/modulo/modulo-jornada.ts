@@ -202,8 +202,12 @@ const STAGE_THEMES: Record<string, string> = {
 
 /** Território, nós e totais do mapa da jornada (Início e Aprender). */
 export function resumoDaJornada(modules: ModuloListado[]) {
+  // Módulo que saiu da jornada e não tem mais aula liberada não disputa o "Continuar".
   const incomplete = modules.filter(
-    (modulo) => modulo.progress < 100 && !modulo.locked,
+    (modulo) =>
+      modulo.progress < 100 &&
+      !modulo.locked &&
+      !(modulo.outside_journey && modulo.nextAula?.lock_reason),
   );
   const current =
     [...incomplete]

@@ -153,9 +153,9 @@ describe('Cadastro com confirmação por e-mail', () => {
       username: 'aluna.turma',
     });
 
-    expect(turmaRepository.findOne).toHaveBeenCalledWith({
-      where: { id: 4, empresa_id: 8, ativa: true },
-    });
+    expect(turmaRepository.findOne).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { id: 4, empresa_id: 8, ativa: true } }),
+    );
     expect(vinculos.insert).toHaveBeenCalledWith({
       usuario_id: 77,
       turma_id: 4,

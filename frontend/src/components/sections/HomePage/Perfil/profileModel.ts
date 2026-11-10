@@ -3,11 +3,12 @@
 export function roleLabel(role?: string) {
   if (role === 'platform_admin') return 'Administrador da plataforma';
   if (role === 'admin') return 'Administrador';
+  if (role === 'teacher') return 'Professor';
   return 'Participante';
 }
 
 export function isManagementRole(role?: string) {
-  return role === 'admin' || role === 'platform_admin';
+  return role === 'admin' || role === 'platform_admin' || role === 'teacher';
 }
 
 /** Gestão vê o nome do cadastro; aluno vê o apelido aprovado (mesma regra anterior). */

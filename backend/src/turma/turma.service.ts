@@ -235,6 +235,8 @@ export class TurmaService {
           role: Role.TEACHER,
           active: true,
         },
+        // Serializa com a troca de papel em atualizarUsuario.
+        lock: { mode: 'pessimistic_write' },
       });
       if (!professor)
         throw new BadRequestException(
@@ -293,10 +295,14 @@ export class TurmaService {
     const ids = [...new Set(usuarioIds)];
     return this.comTurma(empresaId, turmaId, async (manager, turma) => {
       this.exigirAtiva(turma);
-      const alunos = await manager.getRepository(Usuario).count({
+      // Trava as contas (em ordem de id) para serializar com a troca de papel em atualizarUsuario.
+      const alunos = await manager.getRepository(Usuario).find({
+        select: { id: true },
         where: { id: In(ids), empresa_id: empresaId, role: Role.USER },
+        order: { id: 'ASC' },
+        lock: { mode: 'pessimistic_write' },
       });
-      if (!ids.length || alunos !== ids.length)
+      if (!ids.length || alunos.length !== ids.length)
         throw new BadRequestException('Selecione apenas alunos desta escola');
       const { adicionados, movidos } = await vincularAlunosNaTurma(
         manager,

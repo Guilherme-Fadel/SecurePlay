@@ -37,6 +37,12 @@ turmaIntegration('TurmaService em MySQL descartável', () => {
     await source?.destroy();
   });
 
+  const turmas_criar = (nome: string) =>
+    service.criar(massa.adminA.id, massa.escolaA.id, {
+      nome,
+      ano_letivo: 2026,
+    });
+
   const acoes = async (turmaId: number) =>
     (
       await source.getRepository(AdminAuditEvent).find({
@@ -244,6 +250,46 @@ turmaIntegration('TurmaService em MySQL descartável', () => {
       NotFoundException,
       'Aluno não está nesta turma',
     );
+  });
+
+  it('arquivar não marca como revogados convites já usados ou expirados', async () => {
+    const turma = await turmas_criar('Convites antigos');
+    const repo = source.getRepository(Convite);
+    const base = {
+      empresa_id: massa.escolaA.id,
+      criado_por_id: massa.adminA.id,
+      role: Role.USER,
+      registration_mode: 'school_student' as const,
+    };
+    const usado = await repo.save({
+      ...base,
+      token_hash: `usado-${Date.now()}`,
+      expires_at: new Date(Date.now() + 86400000),
+      uses: 1,
+      max_uses: 1,
+    });
+    const expirado = await repo.save({
+      ...base,
+      token_hash: `expirado-${Date.now()}`,
+      expires_at: new Date(Date.now() - 86400000),
+    });
+    const pendente = await repo.save({
+      ...base,
+      token_hash: `pendente-${Date.now()}`,
+      expires_at: new Date(Date.now() + 86400000),
+    });
+    for (const c of [usado, expirado, pendente])
+      await source
+        .getRepository(ConviteTurma)
+        .save({ convite_id: c.id, turma_id: turma.id });
+    await service.arquivar(massa.adminA.id, massa.escolaA.id, turma.id);
+    const estado = async (id: number) =>
+      (await repo.findOneByOrFail({ id })).revoked;
+    expect([
+      await estado(usado.id),
+      await estado(expirado.id),
+      await estado(pendente.id),
+    ]).toEqual([false, false, true]);
   });
 
   it('arquivar revoga convites pendentes, congela escritas e permite tirar alunos', async () => {
