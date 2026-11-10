@@ -79,6 +79,7 @@ export function TurmaJornadaTab({ turmaId, empresaId, jornada, onAtualizada }: T
     setAbrir(null);
     setOcupado(true);
     setErro(null);
+    setAviso(null);
     try {
       const resultado = await definirAberturaAula(turmaId, aula.aula_id, { modo: 'agora' }, empresaId);
       onAtualizada(resultado);
@@ -108,6 +109,7 @@ export function TurmaJornadaTab({ turmaId, empresaId, jornada, onAtualizada }: T
     if (!agendar) return;
     setOcupado(true);
     setErroAgenda(null);
+    setAviso(null);
     try {
       onAtualizada(await definirAberturaAula(turmaId, agendar.aula_id, { modo: 'agendar', abre_em: abreEm }, empresaId));
       setAviso(`${agendar.titulo} agendada para ${formatarAbertura(abreEm)}.`);
