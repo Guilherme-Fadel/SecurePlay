@@ -21,6 +21,11 @@
     "test:company-parameters": "node scripts/test-company-parameters.cjs",
     "test:admin-console": "node scripts/test-admin-console.cjs",
     "test:turmas": "node --test scripts/test-turmas.cjs",
+    "test:album-model": "node --test scripts/test-album-model.cjs",
+    "test:collectibles-model": "node --test scripts/test-collectibles-model.cjs",
+    "test:level-progress": "node --test scripts/test-level-progress.cjs",
+    "test:page-loading": "node --test scripts/test-page-loading.cjs",
+    "test:ranking-model": "node --test scripts/test-ranking-model.cjs",
     "dev": "vite"
   },
   "dependencies": {
