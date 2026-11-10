@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { AlertCircle, UserMinus } from 'lucide-react';
+import { UserMinus } from 'lucide-react';
 import { AppButton } from '@/components/ui/buttons/AppButton';
 import { AppSelect } from '@/components/ui/forms/AppSelect';
 import { Modal } from '@/components/ui/modal';
@@ -10,6 +10,7 @@ import { adminQueryKey } from '@/lib/adminCache';
 import { listarUsuarios } from '@/services/convites';
 import { desvincularProfessorTurma, listarProfessoresTurma, vincularProfessorTurma, type ProfessorDaTurma } from '@/services/turmas';
 import { mensagemDeErro, type EscopoTurmas } from './turmaUi';
+import { AdminFeedback } from '@/components/admin/console/AdminFeedback';
 
 /** Professores vinculados (gestão): vincular contas `teacher` da escola e desvincular com confirmação. */
 export function TurmaProfessoresTab({ escopo, turmaId, ativa }: { escopo: EscopoTurmas; turmaId: number; ativa: boolean }) {
@@ -37,7 +38,7 @@ export function TurmaProfessoresTab({ escopo, turmaId, ativa }: { escopo: Escopo
 
   return (
     <section aria-label="Professores da turma">
-      {erro && <div className="admin-feedback is-error" role="alert"><AlertCircle size={17} aria-hidden="true" />{erro}</div>}
+      {erro && <AdminFeedback variant="error">{erro}</AdminFeedback>}
       <AdminDataGrid
         columns={[
           { key: 'nome', label: 'Professor', render: (professor) => professor.name },
@@ -50,7 +51,7 @@ export function TurmaProfessoresTab({ escopo, turmaId, ativa }: { escopo: Escopo
         error={vinculados.error ? 'Não foi possível carregar os professores.' : undefined}
         onRetry={vinculados.refetch}
         empty="Nenhum professor vinculado. Convide professores em Pessoas › Convites."
-        toolbar={ativa ? <AdminListToolbar>
+        toolbar={ativa ? <AdminListToolbar className="turma-professores-toolbar">
           <AppSelect aria-label="Professor para vincular" value={selecionado} disabled={ocupado || contas.loading} onChange={(event) => setSelecionado(event.target.value)}>
             <option value="">{disponiveis.length ? 'Escolha um professor' : 'Nenhum professor disponível'}</option>
             {disponiveis.map((conta) => <option key={conta.id} value={String(conta.id)}>{conta.name}</option>)}

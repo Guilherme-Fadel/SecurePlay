@@ -13,6 +13,7 @@ import {
 } from '@/services/turmas';
 import { AberturaAulaDialog } from './AberturaAulaDialog';
 import { mensagemDeErro, statusDoErro } from './turmaUi';
+import { AdminFeedback } from '@/components/admin/console/AdminFeedback';
 
 type Aula = JornadaEdicao['modulos'][number]['aulas'][number];
 
@@ -116,7 +117,7 @@ export function TurmaJornadaTab({ turmaId, jornada, onAtualizada }: TurmaJornada
         {jornada.resumo.aulasAbertas === 0 && <p className="turma-alerta">Nenhuma aula aberta — os alunos só podem jogar.</p>}
       </div>
       {!ativa && <p className="turma-alerta" role="status">Turma arquivada: a jornada está congelada.</p>}
-      {aviso && <div className="admin-feedback" role="status">{aviso}</div>}
+      {aviso && <AdminFeedback>{aviso}</AdminFeedback>}
       {erroDe('geral')}
       {!jornada.modulos.length && <p className="turma-vazio">A jornada está sem módulos. Adicione módulos do catálogo abaixo.</p>}
       <ol className="turma-modulos">

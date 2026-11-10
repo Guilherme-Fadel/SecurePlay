@@ -1,8 +1,8 @@
 import { useId, useState } from 'react';
-import { AlertCircle } from 'lucide-react';
 import { AppButton } from '@/components/ui/buttons/AppButton';
 import { Modal } from '@/components/ui/modal';
 import { brasiliaLocalToIso, isoToBrasiliaLocal } from '@/lib/brasiliaTime';
+import { AdminFeedback } from '@/components/admin/console/AdminFeedback';
 
 interface AberturaAulaDialogProps {
   titulo: string;
@@ -32,7 +32,7 @@ export function AberturaAulaDialog({ titulo, abreEm, salvando, erro, onConfirmar
     <Modal open onClose={onClose} title={abreEm ? 'Alterar abertura' : 'Agendar abertura'} maxWidth="440px">
       <form className="turma-schedule-form" onSubmit={(event) => { event.preventDefault(); if (valido) onConfirmar(brasiliaLocalToIso(valor)); }}>
         <p><strong>{titulo}</strong> abre para a turma no dia e horário escolhidos (horário de Brasília).</p>
-        {erro && <div className="admin-feedback is-error" role="alert"><AlertCircle size={17} aria-hidden="true" />{erro}</div>}
+        {erro && <AdminFeedback variant="error">{erro}</AdminFeedback>}
         <label className="admin-console-setting-field" htmlFor={campo}>
           <span>Data e hora</span>
           <input id={campo} className="app-text-input turma-datetime" type="datetime-local" required min={minimo} value={valor} onChange={(event) => setValor(event.target.value)} />
