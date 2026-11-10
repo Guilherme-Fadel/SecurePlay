@@ -1,4 +1,5 @@
 import type { CurrentUser } from '@/services/me';
+import { STUDENT_HOME_PATH } from '@/lib/appPaths';
 
 export type AdminConsoleRouteId = 'overview' | 'companies' | 'people' | 'settings' | 'operations' | 'classes';
 export type AdminConsoleScope =
@@ -17,7 +18,7 @@ export const adminConsoleRoutes: Record<AdminConsoleRouteId, { path: string; lab
 
 export function initialAuthenticatedPath(user: Pick<CurrentUser, 'role'> | null | undefined): string {
   if (user?.role === 'teacher') return '/admin/turmas';
-  return user?.role === 'admin' || user?.role === 'platform_admin' ? '/admin/inicio' : '/home';
+  return user?.role === 'admin' || user?.role === 'platform_admin' ? '/admin/inicio' : STUDENT_HOME_PATH;
 }
 
 export function hasAdminConsoleAccess(user: CurrentUser | null | undefined): boolean {

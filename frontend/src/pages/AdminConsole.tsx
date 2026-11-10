@@ -26,6 +26,7 @@ import { CompanyRegistryTab } from '@/components/admin/console/CompanyRegistryTa
 import { CompanyEditorTabs } from '@/components/admin/console/CompanyEditorTabs';
 import { AdminConsoleSidebar } from '@/components/admin/console/AdminConsoleSidebar';
 import { adminBreadcrumbs } from '@/components/admin/console/adminBreadcrumbs';
+import { paths } from '@/lib/appPaths';
 import { platformPageCompanyId, platformResources, platformSectionPath } from '@/components/admin/console/platformNavigation';
 import './admin-users.css';
 import '@/styles/app-ui.css';
@@ -36,9 +37,9 @@ export default function AdminConsole() {
   const { user, clearSession } = useCurrentUser();
   const location = useLocation();
 
-  if (!hasAdminConsoleAccess(user)) return <Navigate to="/home" replace state={{ from: location }} />;
+  if (!hasAdminConsoleAccess(user)) return <Navigate to={paths.inicio()} replace state={{ from: location }} />;
   const scope = user ? resolveAdminConsoleScope(user) : null;
-  if (!scope) return <Navigate to="/home" replace />;
+  if (!scope) return <Navigate to={paths.inicio()} replace />;
   if (location.pathname === '/admin' || location.pathname === '/admin/') {
     return <Navigate to={initialAuthenticatedPath(user)} replace />;
   }
@@ -247,7 +248,7 @@ function AdminConsoleAccount({ name, onSignOut }: { name: string; onSignOut: () 
   return (
     <div className="admin-console-account">
       <span className="admin-console-account-name">{name}</span>
-      <Link className="admin-console-learning-link" to="/home" aria-label="Abrir ambiente de aprendizagem" title="Abrir ambiente de aprendizagem"><GraduationCap size={17} aria-hidden="true" /><span>Home do aluno</span></Link>
+      <Link className="admin-console-learning-link" to={paths.inicio()} aria-label="Abrir ambiente de aprendizagem" title="Abrir ambiente de aprendizagem"><GraduationCap size={17} aria-hidden="true" /><span>Home do aluno</span></Link>
       <button type="button" className="admin-console-icon-button" onClick={toggleTheme} aria-label={theme === 'dark' ? 'Ativar tema claro' : 'Ativar tema escuro'} title={theme === 'dark' ? 'Ativar tema claro' : 'Ativar tema escuro'}>
         {theme === 'dark' ? <Sun size={17} aria-hidden="true" /> : <Moon size={17} aria-hidden="true" />}
       </button>

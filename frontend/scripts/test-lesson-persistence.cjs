@@ -181,6 +181,7 @@ function lessonDependencies(h, overrides) {
     './ProgressSaveStatus': { ProgressSaveStatus: 'save-status' }, './AulaQuiz': { AulaQuiz: 'quiz' },
     './LessonCheckpoint': { LessonCheckpoint: 'checkpoint' }, './LessonState': { LessonState: 'lesson-state' },
     './LessonStepper': { LessonStepper: 'stepper' },
+    './useCanonicalLearnPath': { useCanonicalLearnPath() {} },
     './lessonFocus': { useLessonStepFocus: () => ({ headingRef: { current: null }, arm() {} }) },
     './lessonContext': lessonContext,
     './lessonStepItems': load('src/components/sections/HomePage/Conteudos/lessonStepItems.ts', {}),

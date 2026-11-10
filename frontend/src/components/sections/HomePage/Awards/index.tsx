@@ -16,7 +16,7 @@ import '@/styles/album.css';
 type AwardsView = 'album' | 'collectibles';
 
 /**
- * A aba vem da URL (`/home/conquistas?aba=colecionaveis`), para o "Você" do
+ * A aba vem da URL (`/conquistas?aba=colecionaveis`), para o "Você" do
  * trilho abrir Colecionáveis direto. Sem o parâmetro, fica no Álbum.
  * A coleção aberta também fica na URL (`?colecao=<categoria>`).
  */

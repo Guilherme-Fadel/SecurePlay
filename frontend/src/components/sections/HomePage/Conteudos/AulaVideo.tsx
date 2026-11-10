@@ -12,6 +12,7 @@ import { LessonState } from './LessonState';
 import { LessonStepper } from './LessonStepper';
 import { formatClock } from './lessonContext';
 import { ProgressSaveStatus } from './ProgressSaveStatus';
+import { useCanonicalLearnPath } from './useCanonicalLearnPath';
 
 interface AulaVideoProps {
   aulaId: number;
@@ -24,6 +25,7 @@ interface AulaVideoProps {
 export function AulaVideo({ aulaId, moduloId, onBack, onSelectAula, onTypeResolved }: AulaVideoProps) {
   const { aula, setAula, loading, error: aulaError, errorKind, refetch } = useAula(aulaId);
   const { modulo, refetch: refetchModulo } = useModulo(moduloId);
+  useCanonicalLearnPath(modulo, aula && { id: aula.id, title: aula.title, moduloId: aula.modulo_id });
   const { concluir, salvarProgresso, retryProgress, saveStatus, loading: concluding, error: progressError } = useAulaProgress();
   const [xpGanho, setXpGanho] = useState<number | null>(null);
   const [videoProgress, setVideoProgress] = useState(0);

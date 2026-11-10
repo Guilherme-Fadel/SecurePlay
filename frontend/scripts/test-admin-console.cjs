@@ -17,6 +17,7 @@ function load(relative) {
     if (name === '@/services/api' || name === './api') return { api };
     if (name === '@/lib/adminCache') return load('src/lib/adminCache.ts');
     if (name === './queryCache') return load('src/lib/queryCache.ts');
+    if (name === '@/lib/appPaths') return load('src/lib/appPaths.ts');
     if (name === './consoleNavigation') return load('src/components/admin/console/consoleNavigation.ts');
     if (name === './api') return { api };
     throw new Error(`Import inesperado: ${name}`);
@@ -76,6 +77,7 @@ async function main() {
   const navegacao = load('src/components/admin/console/consoleNavigation.ts');
   assert.equal(navegacao.initialAuthenticatedPath({ role: 'teacher' }), '/admin/turmas');
   assert.equal(navegacao.initialAuthenticatedPath({ role: 'admin' }), '/admin/inicio');
+  assert.equal(navegacao.initialAuthenticatedPath({ role: 'user' }), '/inicio');
   assert.equal(resolveConsolePage('/admin/turmas').id, 'classes');
   assert.equal(resolveConsolePage('/admin/turmas/nova').id, 'new-class');
   assert.equal(resolveConsolePage('/admin/turmas/7').id, 'class-detail');

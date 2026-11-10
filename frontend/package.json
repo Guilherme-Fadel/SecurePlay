@@ -20,6 +20,7 @@
     "test:palavra-storage": "node scripts/test-palavra-storage.cjs",
     "test:company-parameters": "node scripts/test-company-parameters.cjs",
     "test:admin-console": "node scripts/test-admin-console.cjs",
+    "test:app-paths": "node --test scripts/test-app-paths.cjs",
     "test:turmas": "node --test scripts/test-turmas.cjs",
     "test:album-model": "node --test scripts/test-album-model.cjs",
     "test:collectibles-model": "node --test scripts/test-collectibles-model.cjs",

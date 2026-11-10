@@ -2,11 +2,11 @@ import { PageTransition } from '@/components/shared/PageTransition';
 import { PageLoading } from '@/components/shared/PageLoading';
 import { usePageLoading } from '@/contexts/PageLoadingContext';
 import { NicknameWelcomeDialog } from '@/components/shared/NicknameWelcomeDialog';
-import { AppRail, COLLECTIBLES_PATH } from '@/components/shared/AppRail';
+import { AppRail } from '@/components/shared/AppRail';
 import { ArrowLeft } from "lucide-react";
 import { Dashboard, Awards, Challenges, Ranking, Conteudos, Perfil } from '@/components/sections/HomePage/index';
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { Toaster } from 'sonner';
 import { SectionContext, type ContentTarget } from '@/contexts/SectionContext';
 import { useHomeLoading } from '@/hooks/useHomeLoading';
@@ -22,18 +22,10 @@ import { useCompanyFeatures } from '@/hooks/useCompanyFeatures';
 import { companyIdentityKey } from '@/config/features';
 import type { CurrentUser } from '@/services/me';
 import { initialAuthenticatedPath } from '@/components/admin/console/consoleNavigation';
+import { parseStudentPath, paths, studentSectionPath, type StudentLocation } from '@/lib/appPaths';
 const Admin = lazy(() => import('@/pages/Admin'));
 export type Section = 'dashboard' | 'desafios' | 'ranking' | 'conquistas' | 'conteudos' | 'perfil' | 'admin';
-const validSections: Section[] = ['dashboard', 'desafios', 'ranking', 'conquistas', 'conteudos', 'perfil', 'admin'];
 const DEFAULT_SECTION: Section = 'dashboard';
-
-/** Monta o pathname da Home. O conteudo carrega modulo/aula direto na URL. */
-function sectionPath(section: Section, target: ContentTarget | null): string {
-    if (section === 'conteudos' && target) {
-        return `/home/conteudos/${target.moduloId}${target.aulaId ? `/${target.aulaId}` : ''}`;
-    }
-    return `/home/${section}`;
-}
 
 /**
  * Secoes que exigem role. Isso e conveniencia de interface, nao seguranca: quem
@@ -44,7 +36,7 @@ const restrictedSections: Partial<Record<Section, string[]>> = { admin: ['platfo
 function HomeContent() {
     const features = useCompanyFeatures();
     const navigate = useNavigate();
-    const params = useParams();
+    const location = useLocation();
     const { user, loading: userLoading } = useCurrentUser();
     const canOpenSection = useCallback(
         (section: Section) => {
@@ -70,17 +62,24 @@ function HomeContent() {
     // A URL e a fonte de verdade da navegacao. O router cuida do historico, entao
     // nao ha pushState manual nem listener de popstate: o botao voltar do navegador
     // funciona sozinho.
-    const rawSection = params.section;
-    const activeSection: Section = validSections.find((section) => section === rawSection) ?? DEFAULT_SECTION;
-    const moduloId = Number(params.moduloId);
-    const aulaId = Number(params.aulaId);
+    const currentLoc = useMemo(() => parseStudentPath(location.pathname), [location.pathname]);
+    // Na animacao de saida (AnimatePresence mode="wait") rumo a /admin ou /login, o
+    // pathname ja nao e da area do aluno. Congela a ultima localizacao valida para
+    // a Home nao piscar o dashboard, e nao dispara redirects enquanto estiver assim.
+    const lastStudentLoc = useRef<StudentLocation | null>(null);
+    if (currentLoc) lastStudentLoc.current = currentLoc;
+    const inStudentArea = currentLoc !== null;
+    const loc = currentLoc ?? lastStudentLoc.current;
+    const activeSection: Section = loc?.section ?? DEFAULT_SECTION;
+    const moduloId = loc?.moduloId ?? null;
+    const aulaId = loc?.aulaId ?? null;
+    const moduloRaw = loc?.moduloRaw ?? null;
+    const aulaRaw = loc?.aulaRaw ?? null;
     // Memoizado por moduloId/aulaId: o Conteudos observa contentTarget num useEffect,
     // entao a identidade do objeto precisa ser estavel entre renders da mesma URL.
+    // Depende so dos numeros: trocar o slug da URL nao reinicia a tela nem o scroll.
     const contentTarget: ContentTarget | null = useMemo(
-        () =>
-            activeSection === 'conteudos' && Number.isInteger(moduloId) && moduloId > 0
-                ? { moduloId, ...(Number.isInteger(aulaId) && aulaId > 0 ? { aulaId } : {}) }
-                : null,
+        () => (activeSection === 'conteudos' && moduloId ? { moduloId, ...(aulaId ? { aulaId } : {}) } : null),
         [activeSection, moduloId, aulaId],
     );
 
@@ -92,7 +91,7 @@ function HomeContent() {
     usePageLoading(!bootstrapReady || isLoading);
 
     // Gate de bootstrap sempre presente, independente da secao inicial. Sem isto,
-    // recarregar fora do dashboard (ex.: /home/desafios) deixaria a LoadingScreen
+    // recarregar fora do dashboard (ex.: /jogos) deixaria a LoadingScreen
     // presa: so o Dashboard registrava/resolvia bootstrap, entao a tela nunca
     // recebia ready. A Home resolve o proprio gate assim que o usuario carrega;
     // secoes que tenham bootstrap proprio (Dashboard) somam ao gate normalmente.
@@ -103,21 +102,23 @@ function HomeContent() {
 
     const go = useCallback((section: Section, target: ContentTarget | null, options?: { replace?: boolean }) => {
         const allowed = canOpenSection(section) ? section : DEFAULT_SECTION;
-        navigate(sectionPath(allowed, target), { replace: options?.replace });
-    }, [canOpenSection, navigate]);
+        if (allowed === 'admin') {
+            navigate(initialAuthenticatedPath(user), { replace: options?.replace });
+            return;
+        }
+        // Mesmo modulo da URL atual: mantem o slug que ja esta la.
+        const sameModulo = target && target.moduloId === moduloId && moduloRaw ? { moduloSegment: moduloRaw } : {};
+        navigate(studentSectionPath(allowed, target && { ...target, ...sameModulo }), { replace: options?.replace });
+    }, [canOpenSection, navigate, user, moduloId, moduloRaw]);
 
     const setActiveSection = useCallback((section: Section) => {
         enteredContentFrom.current = null;
-        if (section === 'admin' && canOpenSection('admin')) {
-            navigate(initialAuthenticatedPath(user));
-            return;
-        }
         go(section, null);
-    }, [canOpenSection, go, navigate, user]);
+    }, [go]);
     // "Você" no trilho: Conquistas já aberto na aba Colecionáveis.
     const openCollectibles = useCallback(() => {
         enteredContentFrom.current = null;
-        if (canOpenSection('conquistas')) navigate(COLLECTIBLES_PATH);
+        if (canOpenSection('conquistas')) navigate(paths.colecionaveis());
     }, [canOpenSection, navigate]);
     const navigateToSection = useCallback((section: Section) => {
         enteredContentFrom.current = activeSection === 'conteudos' ? enteredContentFrom.current : activeSection;
@@ -139,19 +140,25 @@ function HomeContent() {
         }
     }, [go]);
 
-    // URLs sem secao ou com secao desconhecida voltam ao Inicio sem criar
-    // passo extra no historico.
+    // Modulo ou aula invalidos na URL (/aprender/abc, /aprender/8-x/abc) voltam ao
+    // nivel valido anterior sem criar passo extra no historico. Secoes
+    // desconhecidas nem chegam aqui: o router as trata.
     useEffect(() => {
-        if (rawSection !== activeSection) navigate(sectionPath(DEFAULT_SECTION, null), { replace: true });
-    }, [rawSection, activeSection, navigate]);
+        if (!inStudentArea || activeSection !== 'conteudos') return;
+        if (moduloRaw !== null && moduloId === null) {
+            navigate(studentSectionPath('conteudos'), { replace: true });
+        } else if (aulaRaw !== null && aulaId === null && moduloId !== null) {
+            navigate(studentSectionPath('conteudos', { moduloId, moduloSegment: moduloRaw ?? undefined }), { replace: true });
+        }
+    }, [inStudentArea, activeSection, moduloRaw, aulaRaw, moduloId, aulaId, navigate]);
 
     // A secao inicial vem da URL, antes de o usuario estar carregado. Quando ele
     // resolve sem a role, volta para o dashboard e corrige a URL com replace, para
     // nao deixar no historico uma entrada que reabre a secao negada.
     useEffect(() => {
-        if (userLoading || canOpenSection(activeSection)) return;
+        if (!inStudentArea || userLoading || canOpenSection(activeSection)) return;
         go(DEFAULT_SECTION, null, { replace: true });
-    }, [userLoading, canOpenSection, activeSection, go]);
+    }, [inStudentArea, userLoading, canOpenSection, activeSection, go]);
 
     // Cada seção, módulo ou aula abre no topo: o <main> rola sozinho e guardava a
     // posição da tela anterior (Jogos abria no fim da página).

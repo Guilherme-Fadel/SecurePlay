@@ -14,7 +14,7 @@
       <script>
 (function () {
     try {
-        if (window.location.pathname === '/home' &&
+        if (/^\/(inicio|aprender|jogos|ranking|conquistas|perfil|home)(\/|$)/.test(window.location.pathname) &&
             localStorage.getItem('secureplay-theme') === 'light') {
             document.documentElement.setAttribute('data-theme', 'light');
         }

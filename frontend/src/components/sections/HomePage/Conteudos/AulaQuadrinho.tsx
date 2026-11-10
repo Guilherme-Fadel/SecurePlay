@@ -15,6 +15,7 @@ import { LessonStepper } from './LessonStepper';
 import { NEXT_LABEL, lessonNextAction, pagedStepItems, readerPercent } from './lessonStepItems';
 import { useLessonStepFocus } from './lessonFocus';
 import { ProgressSaveStatus } from './ProgressSaveStatus';
+import { useCanonicalLearnPath } from './useCanonicalLearnPath';
 
 interface AulaQuadrinhoProps {
   aulaId: number;
@@ -26,6 +27,7 @@ interface AulaQuadrinhoProps {
 export function AulaQuadrinho({ aulaId, moduloId, onBack, onSelectAula }: AulaQuadrinhoProps) {
   const { aula, setAula, loading, error: aulaError, errorKind, refetch } = useAula(aulaId);
   const { modulo, refetch: refetchModulo } = useModulo(moduloId);
+  useCanonicalLearnPath(modulo, aula && { id: aula.id, title: aula.title, moduloId: aula.modulo_id });
   const { concluir, salvarProgresso, retryProgress, saveStatus, loading: concluding, error: progressError } = useAulaProgress();
   const [showQuiz, setShowQuiz] = useState(false);
   const [xpGanho, setXpGanho] = useState<number | null>(null);
