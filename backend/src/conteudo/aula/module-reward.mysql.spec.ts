@@ -59,6 +59,7 @@ isolated('C10 — claim de bônus por módulo e baseline legado', () => {
       f.source.getRepository(Modulo),
       f.source.getRepository(Aula),
       f.source.getRepository(UsuarioAula),
+      { jornadaDoAluno: () => Promise.resolve(null) } as never,
     );
     service = new AulaService(
       f.source.getRepository(Aula),

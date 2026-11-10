@@ -17,6 +17,7 @@ import { S3Service } from './s3/s3.service';
 import { UploadController } from './s3/upload.controller';
 import { UiAssetsController } from './s3/ui-assets.controller';
 import { GamificationModule } from '../common/gamification/gamification.module';
+import { TurmaModule } from '../turma/turma.module';
 
 @Module({
   imports: [
@@ -25,6 +26,7 @@ import { GamificationModule } from '../common/gamification/gamification.module';
     AuthModule,
     NotificationModule,
     GamificationModule,
+    TurmaModule,
   ],
   controllers: [
     ModuloController,
