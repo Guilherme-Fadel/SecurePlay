@@ -8,7 +8,7 @@ const OUTPUT_PATH = path.join(
   ROOT_DIR,
   'public',
   'dictionaries',
-  'termotech-valid-words-5.txt',
+  'palavra-valid-words-5.txt',
 );
 
 const BLOCKED_WORDS = new Set([
@@ -82,7 +82,7 @@ async function main() {
   fs.writeFileSync(OUTPUT_PATH, `${sortedWords.join('\n')}\n`);
 
   console.log(
-    `TermoTech dictionary generated with ${sortedWords.length} five-letter words.`,
+    `Palavra Secreta dictionary generated with ${sortedWords.length} five-letter words.`,
   );
 }
 

@@ -95,6 +95,7 @@ function presentItem(
 }
 @Injectable()
 export class DataClassifyHandler implements GameHandler {
+  readonly roundSize = ITEM_COUNT;
   constructor(
     @Inject('DATA_ITEM_REPOSITORY')
     private readonly itemRepository: Repository<DataItem>,
@@ -108,7 +109,7 @@ export class DataClassifyHandler implements GameHandler {
       .getMany();
   }
   async buildRun(): Promise<GameRun> {
-    const items = await this.pickItems(ITEM_COUNT);
+    const items = await this.pickItems(this.roundSize);
     const key: DataAnswerKey = { items: {}, order: [] };
     for (const it of items) {
       const presented = presentItem(it);

@@ -1,0 +1,157 @@
+/*
+ * Escudos dos Segredos (classificacao-dados): cena rosa com a parede de escudos.
+ * Parte própria do jogo; a base compartilhada (HUD, papel, botões, abertura, resultado) vem de game-worlds.css.
+ * Importado por games/DataClassify.tsx. Tudo sob `.gw`.
+ */
+
+/* ---------- Cenário ---------- */
+.gw.gw--esc.be {
+  background-color: #FE96C7;
+  background-image: linear-gradient(rgba(0, 0, 0, .09) 3px, transparent 3px), linear-gradient(90deg, rgba(0, 0, 0, .09) 3px, transparent 3px);
+  background-size: 96px 48px, 96px 96px;
+}
+.gw .be-floor { left: 0; right: 0; bottom: 0; height: 230px; background: #D9629C; box-shadow: 0 -4px 0 #000000; }
+.gw .be-ban { top: 0; width: 86px; height: 180px; background: #2662E7; clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 80%, 0 100%); }
+.gw .be-ban::after { content: ''; position: absolute; left: 50%; top: 58px; width: 40px; height: 40px; margin-left: -20px; border-radius: 50%; background: #FED501; }
+.gw .be-ban.l { left: 4%; }
+.gw .be-ban.r { right: 4%; }
+
+/* ---------- Parede de escudos ---------- */
+.gw .be-wall { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 18px; max-width: 1000px; margin: 0 auto; }
+.gw .be-col { display: flex; flex-direction: column; align-items: center; gap: 8px; min-width: 0; }
+.gw .be-sh {
+  position: relative; display: flex; flex-direction: column; align-items: center; gap: 10px;
+  min-height: 0; padding: 0; border: 0; border-radius: 0; background: transparent; box-shadow: none; color: #000000;
+}
+.gw .be-sh::before { content: ''; width: 14px; height: 14px; margin-bottom: -6px; border-radius: 50%; background: #2D2D34; box-shadow: 0 0 0 3px #000000; }
+.gw .be-sh svg { width: 116px; height: 131px; filter: drop-shadow(0 7px 0 rgba(0, 0, 0, .35)); transition: transform .2s; }
+.gw .be-sh:hover svg { transform: rotate(-5deg) translateY(-4px); }
+.gw .be-sh.go svg { animation: be-catch .5s ease-out; }
+@keyframes be-catch { 30% { transform: scale(1.14) rotate(4deg); } 60% { transform: scale(.96) rotate(-3deg); } }
+.gw .be-plate { display: flex; flex-direction: column; align-items: center; min-width: 132px; padding: 6px 12px 8px; border-radius: 12px; background: #000000; color: #F9EEDC; }
+.gw .be-plate strong { font-size: 16px; font-weight: 800; }
+.gw .be-plate small { font-size: 12px; font-weight: 700; color: #CFC6B8; }
+.gw .be-sh.on .be-plate { background: #FED501; color: #000000; box-shadow: 0 0 0 3px #000000; }
+.gw .be-sh.on .be-plate small { color: #5C4A00; }
+.gw .be-cnt {
+  position: absolute; top: 20px; right: calc(50% - 70px); display: grid; place-items: center; width: 34px; height: 34px;
+  border-radius: 50%; background: #FFFFFF; color: #000000; box-shadow: 0 0 0 3px #000000; font-size: 15px; font-weight: 800;
+}
+.gw .be-chips { display: flex; flex-direction: column; align-items: center; gap: 5px; min-height: 58px; }
+.gw .be-chip {
+  max-width: 180px; min-height: 0; padding: 4px 10px; border: 0; border-radius: 8px; background: #FFFCF7; color: #000000;
+  font-size: 12px; font-weight: 700; line-height: 1.25; box-shadow: 0 0 0 2px #000000;
+}
+.gw .be-chip:hover { background: #FFF6C2; }
+.gw .be-chip[aria-current='true'] { background: #FFF6C2; }
+
+/* ---------- Mesa: guia, pergaminho e entrega ---------- */
+.gw .be-table { display: grid; grid-template-columns: minmax(0, 260px) minmax(0, 1fr) minmax(0, 230px); gap: 24px; align-items: end; margin-top: 18px; }
+.gw .be-scroll {
+  position: relative; justify-self: center; width: min(540px, 100%); padding: 22px 42px 24px; border-radius: 6px;
+  background: #FFFCF7; color: #000000; text-align: center; box-shadow: 0 0 0 3px #000000, 0 8px 0 3px #000000;
+}
+.gw .be-scroll::before, .gw .be-scroll::after {
+  content: ''; position: absolute; top: -12px; bottom: -12px; width: 26px; border-radius: 13px; background: #F1E6D3; box-shadow: 0 0 0 3px #000000;
+}
+.gw .be-scroll::before { left: -16px; }
+.gw .be-scroll::after { right: -16px; }
+.gw .be-scroll h2 { margin: 6px 0; font-size: 32px; font-weight: 800; line-height: 1.1; }
+.gw .be-scroll p { font-size: 15px; font-weight: 700; color: #39332C; }
+.gw .be-scroll p.gw-k { font-size: 12px; font-weight: 800; color: var(--gk); }
+.gw .be-scroll.fly.f0 { animation: be-f0 .45s ease-in forwards; }
+.gw .be-scroll.fly.f1 { animation: be-f1 .45s ease-in forwards; }
+.gw .be-scroll.fly.f2 { animation: be-f2 .45s ease-in forwards; }
+.gw .be-scroll.fly.f3 { animation: be-f3 .45s ease-in forwards; }
+@keyframes be-f0 { to { transform: translate(-360px, -300px) scale(.2) rotate(-20deg); opacity: 0; } }
+@keyframes be-f1 { to { transform: translate(-120px, -300px) scale(.2) rotate(-8deg); opacity: 0; } }
+@keyframes be-f2 { to { transform: translate(120px, -300px) scale(.2) rotate(8deg); opacity: 0; } }
+@keyframes be-f3 { to { transform: translate(360px, -300px) scale(.2) rotate(20deg); opacity: 0; } }
+.gw .be-side { display: flex; flex-direction: column; gap: 12px; align-items: stretch; }
+.gw .be-side .gw-chip { justify-content: center; white-space: normal; text-align: center; }
+
+/* ---------- Responsivo (largura da própria cena; alturas em faixas) ---------- */
+/* Intermediário (tablet deitado): mesa sem o guia lateral. */
+@container (max-width: 1000px) {
+  .gw .be-wall { gap: 12px; }
+  .gw .be-plate { min-width: 0; padding: 6px 10px 8px; }
+  .gw .be-table { grid-template-columns: minmax(0, 1fr) minmax(0, 210px); gap: 18px; margin-top: 14px; }
+  .gw .be-table > .gw-guide { display: none; }
+  .gw .be-scroll { padding: 18px 40px 20px; }
+  .gw .be-ban { width: 60px; }
+}
+/* Tablet em pé: pergaminho e entrega em coluna. */
+@container (max-width: 700px) {
+  .gw .be-table { grid-template-columns: minmax(0, 1fr); gap: 14px; }
+  .gw .be-side { flex-direction: row; flex-wrap: wrap; justify-content: center; align-items: center; }
+  .gw .be-side .gw-chip { flex: 1 1 200px; }
+  .gw .be-side .gw-btn { flex: 1 1 200px; }
+}
+/* Celular: o pergaminho do item vem primeiro, depois os 4 escudos em 2×2 (escudo ao lado da placa) e a entrega. */
+@container (max-width: 560px) {
+  .gw--esc .gw-main { display: flex; flex-direction: column; gap: 12px; padding-inline: 12px; }
+  .gw .be-table { display: contents; }
+  .gw .be-table > .gw-guide { display: none; }
+  .gw .be-scroll { order: 1; width: calc(100% - 40px); padding: 14px 22px 16px; margin: 6px 0; }
+  .gw .be-scroll::before { left: -14px; width: 22px; }
+  .gw .be-scroll::after { right: -14px; width: 22px; }
+  .gw .be-scroll h2 { font-size: 24px; margin: 4px 0; }
+  .gw .be-scroll p { font-size: 14px; }
+  .gw .be-scroll p.gw-k { font-size: 13px; }
+  .gw .be-wall { order: 2; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px 8px; max-width: none; }
+  .gw .be-side { order: 3; flex-direction: row; flex-wrap: wrap; gap: 10px; }
+  .gw .be-side .gw-chip { flex: 1 1 100%; min-height: 40px; padding: 0 12px; font-size: 13px; }
+  .gw .be-side .gw-btn { flex: 1 1 100%; min-height: 50px; }
+  .gw .be-col { align-items: stretch; gap: 6px; }
+  .gw .be-sh { flex-direction: row; align-items: center; justify-content: flex-start; gap: 6px; min-width: 0; text-align: left; }
+  .gw .be-sh::before { display: none; }
+  .gw .be-sh svg { flex: 0 0 auto; width: clamp(42px, 13cqi, 54px); height: auto; filter: drop-shadow(0 4px 0 rgba(0, 0, 0, .35)); }
+  .gw .be-cnt { top: -2px; left: 34px; right: auto; width: 28px; height: 28px; font-size: 14px; }
+  .gw .be-plate { align-items: flex-start; flex: 1 1 auto; min-width: 0; padding: 5px 8px 6px; border-radius: 10px; }
+  .gw .be-plate strong { font-size: 14px; }
+  .gw .be-plate small { font-size: 13px; line-height: 1.2; }
+  .gw .be-chips { align-items: stretch; min-height: 0; gap: 4px; }
+  .gw .be-chip { position: relative; max-width: none; padding: 5px 9px; font-size: 13px; text-align: left; }
+  /* Área de toque de 44px sem aumentar o bilhete. */
+  .gw .be-chip::after { content: ''; position: absolute; inset: -7px -2px; }
+}
+@media (max-width: 699px) and (max-height: 700px) {
+  .gw--esc .gw-main { gap: 8px; padding-top: 8px; }
+  .gw .be-scroll { padding: 10px 22px 12px; }
+  .gw .be-scroll h2 { font-size: 21px; }
+  .gw .be-scroll p:not(.gw-k) { display: none; }
+  .gw .be-sh svg { width: clamp(40px, 12cqi, 46px); }
+  .gw .be-cnt { left: 26px; }
+}
+
+/* Janelas baixas (notebook, tablet deitado): parede de escudos e mesa ocupam a altura útil, centradas, com os escudos
+   e o pergaminho crescendo junto (--be-h: 0 aos 600 px, até 200 px aos 800 px) e o chão começando abaixo da parede. */
+@media (min-width: 700px) and (max-height: 860px) {
+  .gw.be { --be-h: clamp(0px, calc(100dvh - 600px), 200px); }
+  .gw.be .gw-main:has(> .be-wall) { display: flex; flex-direction: column; justify-content: center; }
+  .gw .be-floor { top: 64%; height: auto; }
+  .gw .be-wall { width: 100%; gap: 14px; }
+  .gw .be-sh { gap: 10px; }
+  .gw .be-sh svg { width: calc(112px + var(--be-h) * .12); height: calc(126px + var(--be-h) * .135); }
+  .gw .be-cnt { right: calc(50% - 72px - var(--be-h) * .06); top: 20px; }
+  .gw .be-plate strong { font-size: 17px; }
+  .gw .be-plate small { font-size: 13px; }
+  .gw .be-chip { font-size: 13px; }
+  .gw .be-chips { min-height: calc(54px + var(--be-h) * .1); }
+  .gw .be-table { margin-top: calc(14px + var(--be-h) * .1); }
+  .gw .be-scroll { padding-block: calc(18px + var(--be-h) * .04) calc(20px + var(--be-h) * .04); }
+  .gw .be-scroll h2 { margin: 8px 0; font-size: calc(30px + var(--be-h) * .03); }
+  .gw .be-scroll p { font-size: 16px; }
+  .gw .be-scroll p.gw-k { font-size: 13px; }
+  .gw .be-side .gw-chip { min-height: 48px; }
+  .gw .be-side .gw-btn { min-height: 56px; }
+}
+@media (min-width: 700px) and (max-height: 740px) {
+  .gw .be-cnt { width: 32px; height: 32px; }
+  .gw .be-plate { padding: 5px 12px 7px; }
+}
+
+/* Reduzir movimento: o pergaminho não voa (o jogo também aplica a escolha na hora). */
+@media (prefers-reduced-motion: reduce) {
+  .gw .be-scroll.fly { opacity: 1; transform: none; }
+}

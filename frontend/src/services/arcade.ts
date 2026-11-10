@@ -12,6 +12,8 @@ export interface ArcadeGameDto {
   colorDark: string;
   image: string | null;
   gameType: 'quiz' | 'phishing' | 'data_classify' | 'client_only';
+  /** Itens por rodada; ausente em jogos client_only. */
+  roundSize?: number;
 }
 
 export interface TokenState {

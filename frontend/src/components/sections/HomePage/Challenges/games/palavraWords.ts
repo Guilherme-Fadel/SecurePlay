@@ -49,10 +49,6 @@ export function getWordOfTheDayDetails(date = new Date()): WordOfTheDay {
   return ANSWERS[index];
 }
 
-export function getWordOfTheDay(date = new Date()): string {
-  return getWordOfTheDayDetails(date).word;
-}
-
 export function isValidWord(word: string): boolean {
   return VALID.has(word.toUpperCase());
 }

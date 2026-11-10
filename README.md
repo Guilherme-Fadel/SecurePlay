@@ -60,49 +60,53 @@ Capturas das telas atuais, com foco na jornada de aprendizado, nas recompensas e
 <details>
 <summary><strong>Resumo da aventura e mapa da jornada</strong></summary>
 
-<p><img src="./assets/readme/dashboard.jpg" width="1000" alt="Resumo da aventura, evolução de nível e mapa de missões" /></p>
+<p><img src="./assets/readme/dashboard.jpg" width="1000" alt="Início do aluno com a missão atual, nível, sequência da semana, missão do dia e mapa da jornada" /></p>
 </details>
 
 <details>
 <summary><strong>Jogos</strong></summary>
 
-<p><img src="./assets/readme/jogos.jpg" width="1000" alt="Seleção de jogos com destaque para o Quiz Relâmpago" /></p>
+<p><img src="./assets/readme/jogos.jpg" width="1000" alt="Mão de cartas dos jogos, com o Quiz Relâmpago em destaque e as fichas disponíveis" /></p>
+
+<p><img src="./assets/readme/jogo-quiz.jpg" width="1000" alt="Quiz Relâmpago em andamento: pergunta no telão do palco, quatro respostas, tempo e contador de respondidas" /></p>
+
+<p><em>Quiz Relâmpago em andamento: a pergunta aparece no telão do palco e a rodada termina quando as lâmpadas se apagam.</em></p>
 </details>
 
 <details>
-<summary><strong>Sala de Missões</strong></summary>
+<summary><strong>Aprender: mapa de módulos</strong></summary>
 
-<p><img src="./assets/readme/conteudos.jpg" width="1000" alt="Sala de Missões com níveis e módulos de aprendizado" /></p>
+<p><img src="./assets/readme/conteudos.jpg" width="1000" alt="Aprender, com atalho para continuar de onde parou, módulos do nível e mapa do território" /></p>
 </details>
 
 <details>
 <summary><strong>Livro de conteúdos</strong></summary>
 
-<p><img src="./assets/readme/livro-conteudo.jpg" width="1000" alt="Livro de conteúdos em pixel art com capítulos, aulas e progresso do módulo" /></p>
+<p><img src="./assets/readme/livro-conteudo.jpg" width="1000" alt="Página de um módulo com capítulos, aulas, tipo de conteúdo, XP e progresso" /></p>
 </details>
 
 <details>
 <summary><strong>Ambiente de aula</strong></summary>
 
-<p><img src="./assets/readme/aula.jpg" width="1000" alt="Ambiente de aula com briefing, recompensa e status de conclusão; vídeo ainda indisponível" /></p>
+<p><img src="./assets/readme/aula.jpg" width="1000" alt="Aula em leitura guiada com trilha de etapas, progresso salvo e lista de aulas do módulo" /></p>
 </details>
 
 <details>
-<summary><strong>Trilhas de conquistas</strong></summary>
+<summary><strong>Álbum de conquistas</strong></summary>
 
-<p><img src="./assets/readme/conquistas.jpg" width="1000" alt="Trilhas de conquistas com estados de desbloqueio e progresso" /></p>
+<p><img src="./assets/readme/conquistas.jpg" width="1000" alt="Álbum de conquistas com coleções por categoria, figurinhas coladas e as próximas a conquistar" /></p>
 </details>
 
 <details>
 <summary><strong>Colecionáveis e personalização do perfil</strong></summary>
 
-<p><img src="./assets/readme/colecionaveis.jpg" width="1000" alt="Catálogo de colecionáveis com bordas, planos de fundo, títulos e requisitos de desbloqueio" /></p>
+<p><img src="./assets/readme/colecionaveis.jpg" width="1000" alt="Colecionáveis com provador do perfil, abas de bordas, fundos, títulos, emblemas e efeitos, e custo em Chaves Digitais" /></p>
 </details>
 
 <details>
 <summary><strong>Personalização visual da instituição</strong></summary>
 
-<p><img src="./assets/readme/painel-layout.jpg" width="1000" alt="Painel de personalização da instituição com logotipo, paletas de cores e pré-visualização do dashboard" /></p>
+<p><img src="./assets/readme/painel-layout.jpg" width="1000" alt="Painel de aparência da instituição com logotipo, paletas de cores e pré-visualização do painel" /></p>
 </details>
 
 ## Arquitetura e tecnologias
@@ -162,7 +166,7 @@ npm --prefix frontend run build
 # Verificações de integração e regras do frontend
 npm --prefix frontend run test:api-proxy
 npm --prefix frontend run test:company-parameters
-npm --prefix frontend run test:termotech-dictionary
+npm --prefix frontend run test:palavra-dictionary
 
 # Backend: build e testes unitários
 npm --prefix backend run build

@@ -1,11 +1,10 @@
 import { useState, useMemo, useEffect, useCallback } from 'react';
-import '@/styles/challenge-games-ui.css';
 import '@/styles/game-deck.css';
 import { CHILD_GAME_COPY, type GameCardData } from './games';
 import { GameDeck } from './GameDeck';
 import { GameDeckMessage, GameDeckSkeleton } from './GameDeckStates';
 import { TokenCoins } from './TokenCoins';
-import { TermoTech } from './games/TermoTech';
+import { PalavraSecreta } from './games/PalavraSecreta';
 import { QuizBlitz } from './games/QuizBlitz';
 import { PhishingHunt } from './games/PhishingHunt';
 import { DataClassify } from './games/DataClassify';
@@ -35,6 +34,7 @@ export function Challenges() {
             status: g.status,
             tag: CHILD_GAME_COPY[g.slug]?.tag ?? g.tag,
             gameType: g.gameType,
+            roundSize: g.roundSize,
           }));
     }, [apiGames, features.games]);
     // Estável: o GameDeck é memo e não re-renderiza a cada segundo do relógio de fichas.
@@ -49,10 +49,10 @@ export function Challenges() {
     };
     const activeGame = features.games.some((slug) => slug === active) ? active : null;
     if (activeGame === 'termotech') {
-        return <TermoTechSession onExit={exit}/>;
+        return <PalavraSecretaSession onExit={exit} xp={xpOf(catalogGames, 'termotech')}/>;
     }
     if (activeGame === 'quiz-relampago') {
-        return (<QuizBlitz onExit={() => {
+        return (<QuizBlitz xp={xpOf(catalogGames, 'quiz-relampago')} roundSize={roundSizeOf(catalogGames, 'quiz-relampago')} onExit={() => {
                 reload();
                 exit();
             }} onFinished={(t) => {
@@ -61,7 +61,7 @@ export function Challenges() {
             }}/>);
     }
     if (activeGame === 'caca-phishing') {
-        return (<PhishingHunt onExit={() => {
+        return (<PhishingHunt xp={xpOf(catalogGames, 'caca-phishing')} roundSize={roundSizeOf(catalogGames, 'caca-phishing')} onExit={() => {
                 reload();
                 exit();
             }} onFinished={(t) => {
@@ -70,7 +70,7 @@ export function Challenges() {
             }}/>);
     }
     if (activeGame === 'classificacao-dados') {
-        return (<DataClassify onExit={() => {
+        return (<DataClassify xp={xpOf(catalogGames, 'classificacao-dados')} roundSize={roundSizeOf(catalogGames, 'classificacao-dados')} onExit={() => {
                 reload();
                 exit();
             }} onFinished={(t) => {
@@ -82,7 +82,7 @@ export function Challenges() {
       <header className="dk-head">
         <div>
           <h1 className="dk-display">Jogos</h1>
-          <p className="dk-lead">Entre no castelo, descubra pistas e proteja seus amigos brincando.</p>
+          <p className="dk-lead">Descubra pistas, proteja seus segredos e ajude seus amigos brincando.</p>
         </div>
         <TokenCoins tokens={tokens} secondsLeft={secondsLeft}/>
       </header>
@@ -94,8 +94,16 @@ export function Challenges() {
     </div>);
 }
 
-function TermoTechSession({ onExit }: { onExit: () => void }) {
+function PalavraSecretaSession({ onExit, xp }: { onExit: () => void; xp?: number }) {
     const { user } = useCurrentUserContext();
     const userId = user?.userId ?? null;
-    return <TermoTech key={userId ?? 'anonymous'} userId={userId} onExit={onExit}/>;
+    return <PalavraSecreta key={userId ?? 'anonymous'} userId={userId} xp={xp} onExit={onExit}/>;
+}
+
+function roundSizeOf(games: GameCardData[], slug: string): number | undefined {
+    return games.find((game) => game.id === slug)?.roundSize;
+}
+
+function xpOf(games: GameCardData[], slug: string): number | undefined {
+    return games.find((game) => game.id === slug)?.xp;
 }

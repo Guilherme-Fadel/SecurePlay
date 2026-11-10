@@ -1,18 +1,18 @@
-import { isValidWord } from './termoWords';
+import { isValidWord } from './palavraWords';
 
-const DICTIONARY_URL = '/dictionaries/termotech-valid-words-5.txt';
+const DICTIONARY_URL = '/dictionaries/palavra-valid-words-5.txt';
 
 let dictionary: Set<string> | null = null;
 let dictionaryPromise: Promise<Set<string>> | null = null;
 
-export function normalizeTermoWord(word: string): string {
+export function normalizePalavraWord(word: string): string {
   return word
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '')
     .toUpperCase();
 }
 
-export function preloadTermoDictionary(): Promise<Set<string>> {
+export function preloadPalavraDictionary(): Promise<Set<string>> {
   if (dictionary) return Promise.resolve(dictionary);
 
   dictionaryPromise ??= fetch(DICTIONARY_URL, {
@@ -21,7 +21,7 @@ export function preloadTermoDictionary(): Promise<Set<string>> {
   })
     .then((response) => {
       if (!response.ok) {
-        throw new Error(`Failed to load TermoTech dictionary: ${response.status}`);
+        throw new Error(`Failed to load Palavra Secreta dictionary: ${response.status}`);
       }
 
       return response.text();
@@ -40,11 +40,11 @@ export function preloadTermoDictionary(): Promise<Set<string>> {
   return dictionaryPromise;
 }
 
-export async function isValidTermoGuess(word: string): Promise<boolean> {
-  const normalizedWord = normalizeTermoWord(word);
+export async function isValidPalavraGuess(word: string): Promise<boolean> {
+  const normalizedWord = normalizePalavraWord(word);
 
   if (isValidWord(normalizedWord)) return true;
 
-  const validWords = await preloadTermoDictionary();
+  const validWords = await preloadPalavraDictionary();
   return validWords.has(normalizedWord);
 }

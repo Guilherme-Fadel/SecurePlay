@@ -179,6 +179,17 @@ export class ArcadeService implements OnModuleInit {
         throw new BadRequestException('Jogo ainda nao disponivel.');
     }
   }
+  /** Tamanho da rodada vindo do handler; sem handler (client_only ou tipo novo), fica sem número em vez de derrubar a lista. */
+  private roundSizeFor(type: ArcadeGameType): number | undefined {
+    switch (type) {
+      case ArcadeGameType.QUIZ:
+      case ArcadeGameType.PHISHING:
+      case ArcadeGameType.DATA_CLASSIFY:
+        return this.handlerFor(type).roundSize;
+      default:
+        return undefined;
+    }
+  }
   async listGames(usuario_id: number) {
     const parameters = await this.companyFeatures.forUser(usuario_id);
     const games = await this.gameRepository.find({ where: { active: true } });
@@ -197,6 +208,7 @@ export class ArcadeService implements OnModuleInit {
         colorDark: g.color_dark,
         image: g.image?.startsWith('s3://') ? null : g.image,
         gameType: g.game_type,
+        roundSize: this.roundSizeFor(g.game_type),
       }));
   }
   getTokens(usuario_id: number) {

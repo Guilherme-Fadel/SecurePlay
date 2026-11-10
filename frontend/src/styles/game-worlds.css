@@ -1,0 +1,468 @@
+/*
+ * Mundos dos jogos (Modelo B): cada jogo é um lugar ilustrado, com contorno preto de
+ * figurinha e o personagem amarelo da marca como guia. Este arquivo tem só a parte
+ * COMPARTILHADA; o cenário e a jogada de cada jogo ficam no CSS do próprio jogo.
+ * Importado por world/GameWorld.tsx. Tudo vive sob `.gw`, nada vaza para o resto do app.
+ * As cenas são ilustrações de cor fixa: nada aqui lê os tokens do tema claro/escuro.
+ *
+ * CLASSES PARA O CSS DOS JOGOS
+ *   Raiz ........ .gw  .gw--quiz | .gw--det | .gw--esc | .gw--pal   (+ a className que o jogo passar)
+ *                 Fundo da cena: defina em `.gw.gw--quiz { background: ... }` (a raiz é flex coluna, min-height da área útil).
+ *   Camadas ..... .gw-deco (decoração absoluta, atrás)   .gw-main (conteúdo, z-index 2, max-width 1220px)
+ *   Barra ....... .gw-hud  .gw-icbtn  .gw-sign  .gw-sp  .gw-chip  .gw-flags (li.done / li.now)
+ *   Texto ....... .gw-disp (título condensado em caixa alta)   .gw-k (legenda pequena na cor do jogo)   .sr (só leitor de tela)
+ *   Guia ........ .gw-guide (.col)  .gw-pet  .gw-say
+ *   Papel ....... .gw-paper   Selos .gw-fact  .gw-coin  .gw-gem (.lg)
+ *   Botões ...... .gw-btn  + .play | .ghost | .safe | .sus | .sm
+ *   Abertura .... .gw-open .gw-gate .gw-big .gw-art .gw-steps .gw-facts .gw-cta
+ *   Resultado ... .gw-res .gw-medal .gw-disc .gw-xp .gw-note .gw-rv (li.ok / li.no) .gw-pager
+ *   Animação .... .gw-swap.s0 / .gw-swap.s1 (alterne para tocar a troca de pergunta)  e os keyframes gw-pop, gw-hop
+ *
+ * VARIÁVEIS (em .gw--<mundo>)
+ *   --g mesa/realce  --gb faixa com texto  --gi texto sobre --gb  --gs tom claro  --gk texto escuro
+ *   --gl tom luminoso  --grgb o --g em "r,g,b"
+ *   Fixas em .gw: --bg #F9EEDC  --sf #FFF  --sf2 #FFFCF7  --tx #000  --mu #5A534A  --bd #D8C9AF  --rule #E6D9C2
+ *   Paleta da marca: Blue #2662E7 · Yellow #FED501 · Black · Orange #FF7101 · Creamy #F9EEDC · Pink #FE96C7 · Red #F51300
+ */
+
+/* ---------- Raiz e tokens ---------- */
+.gw {
+  --bg: #F9EEDC; --sf: #FFFFFF; --sf2: #FFFCF7; --tx: #000000; --mu: #5A534A; --bd: #D8C9AF; --rule: #E6D9C2;
+  --gw-focus: #2662E7;
+  position: relative;
+  container-type: inline-size;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  min-width: 0;
+  /* Mesma área útil que a Home dá às telas do aluno (app-rail.css); sem a variável, a janela toda. */
+  min-height: var(--sp-fit-h, 100dvh);
+  overflow: hidden;
+  border-radius: 24px;
+  background: var(--bg);
+  color: #000000;
+  box-shadow: 0 0 0 3px #000000;
+  font-family: 'Bricolage Grotesque', system-ui, sans-serif;
+  font-size: 15px;
+  line-height: 1.45;
+  text-align: left;
+}
+.gw--quiz { --g: #FF7101; --gb: #FF7101; --gi: #000000; --gs: #FFE6D1; --gk: #A63F00; --gl: #FF8A2E; --grgb: 255,113,1; --gw-focus: #FED501; }
+.gw--det  { --g: #F51300; --gb: #D01000; --gi: #FFFFFF; --gs: #FFE1DC; --gk: #B30E00; --gl: #FF6A5C; --grgb: 245,19,0; --gw-focus: #FFFFFF; }
+.gw--esc  { --g: #FE96C7; --gb: #FE96C7; --gi: #000000; --gs: #FFE6F2; --gk: #9E2F66; --gl: #FE96C7; --grgb: 254,150,199; }
+.gw--pal  { --g: #2662E7; --gb: #2662E7; --gi: #FFFFFF; --gs: #E7EEFF; --gk: #1D50C2; --gl: #8DAEFF; --grgb: 38,98,231; --gw-focus: #FFFFFF; }
+
+/* A cena ocupa a área principal da Home. */
+@media (min-width: 1101px) {
+  .secure-home-main:has(> .gw) { display: flex; flex-direction: column; }
+  .secure-home-main > .gw { flex: 1 0 auto; }
+}
+@media (max-width: 699px) {
+  /* Celular: o trilho vira uma barra de 60px no topo; a cena ganha o máximo da tela (menos respiro no <main>). */
+  .secure-home-main:has(> .gw) { padding: 10px 10px 14px !important; }
+  .gw { min-height: calc(100dvh - 60px - 24px); border-radius: 18px; }
+}
+@media (min-width: 700px) and (max-width: 760px) {
+  /* Entre o trilho lateral e os 760px, o <main> trocava o respiro e a cena passava da altura útil. */
+  .secure-home-main:has(> .gw) { padding: var(--sp-main-pad-y, 20px) var(--sp-main-pad-x, 28px) !important; }
+}
+
+/* ---------- Base (isola do tema e dos estilos globais de span/p/h*) ---------- */
+.gw *, .gw *::before, .gw *::after { box-sizing: border-box; }
+.gw :where(span, small, p, strong, b, i, li, div, button, h1, h2, h3) {
+  font-family: inherit;
+  font-size: inherit;
+  line-height: inherit;
+  letter-spacing: normal;
+}
+.gw :where(h1, h2, h3, p, ol, ul) { margin: 0; padding: 0; }
+.gw :where(ol, ul) { list-style: none; }
+.gw button { font: inherit; color: inherit; cursor: pointer; }
+.gw button:disabled { cursor: not-allowed; }
+.gw img { display: block; }
+.gw .gw-px { image-rendering: pixelated; }
+.gw :focus-visible { outline: 3px solid var(--gw-focus); outline-offset: 3px; }
+.gw .gw-paper :focus-visible, .gw .gw-state :focus-visible { outline-color: #2662E7; }
+.gw .sr { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+
+.gw .gw-disp {
+  font-family: 'Bricolage Grotesque', sans-serif;
+  font-weight: 800;
+  font-stretch: 75%;
+  font-variation-settings: 'wdth' 75;
+  text-transform: uppercase;
+  line-height: .9;
+  letter-spacing: -.005em;
+}
+.gw .gw-k { font-size: 12px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; color: var(--gk); }
+
+/* ---------- Botões da marca (contorno preto de figurinha) ---------- */
+.gw .gw-btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  min-height: 52px; padding: 0 24px; border: 0; border-radius: 999px;
+  background: #2662E7; color: #FFFFFF;
+  font-size: 16px; font-weight: 800; line-height: 1.1; text-decoration: none;
+  box-shadow: 0 0 0 3px #000000, 0 5px 0 3px #000000;
+  transition: transform .12s, box-shadow .12s, background-color .2s;
+}
+.gw .gw-btn:active:not(:disabled) { transform: translateY(3px); box-shadow: 0 0 0 3px #000000, 0 2px 0 3px #000000; }
+.gw .gw-btn:disabled { background: #A39A8C; color: #FFFFFF; }
+.gw .gw-btn.play { background: #FED501; color: #000000; }
+.gw .gw-btn.play:hover:not(:disabled) { background: #FFE14D; }
+.gw .gw-btn.play:disabled { background: #E9E0CF; color: #5A534A; }
+.gw .gw-btn.ghost { background: #FFFFFF; color: #000000; }
+.gw .gw-btn.ghost:disabled { background: #E9E0CF; color: #5A534A; }
+.gw .gw-btn.safe { background: #2662E7; color: #FFFFFF; }
+.gw .gw-btn.sus { background: #D01000; color: #FFFFFF; }
+.gw .gw-btn.sm { min-height: 44px; padding: 0 18px; font-size: 14px; }
+.gw .gw-btn small { font-size: 12px; font-weight: 700; }
+
+.gw .gw-icbtn {
+  display: grid; place-items: center; width: 48px; height: 48px; flex: 0 0 48px; padding: 0;
+  border: 0; border-radius: 50%; background: #FFFFFF; color: #000000;
+  box-shadow: 0 0 0 3px #000000, 0 5px 0 3px #000000;
+  transition: transform .12s, box-shadow .12s;
+}
+.gw .gw-icbtn:active { transform: translateY(2px); box-shadow: 0 0 0 3px #000000, 0 3px 0 3px #000000; }
+
+/* ---------- Gema de XP e ficha (as mesmas do deck) ---------- */
+.gw .gw-gem {
+  flex: 0 0 auto; display: grid; place-items: center; width: 52px; height: 52px; border-radius: 50%;
+  background: #FED501; color: #000000;
+  box-shadow: inset 0 0 0 2px #B89400, inset 0 0 0 5px #FED501, inset 0 0 0 6px rgba(92, 74, 0, .3);
+  font-size: 15px; font-weight: 800; line-height: .9; text-align: center;
+}
+.gw .gw-gem small { display: block; font-size: 9px; letter-spacing: .06em; }
+.gw .gw-gem.lg { width: 84px; height: 84px; font-size: 24px; box-shadow: inset 0 0 0 3px #B89400, inset 0 0 0 8px #FED501, inset 0 0 0 9px rgba(92, 74, 0, .3); }
+.gw .gw-gem.lg small { font-size: 12px; }
+.gw .gw-coin {
+  display: inline-block; flex: 0 0 auto; width: 18px; height: 18px; border-radius: 50%; background: #FED501;
+  box-shadow: inset 0 0 0 2px #B89400, inset 0 0 0 5px #FED501, inset 0 0 0 6px rgba(92, 74, 0, .35);
+}
+
+/* ---------- Cena: decoração e confete ---------- */
+.gw .gw-deco { position: absolute; inset: 0; z-index: 0; pointer-events: none; overflow: hidden; }
+.gw .gw-deco > span { position: absolute; display: block; }
+.gw .gw-conf { position: absolute; top: -30px; width: 12px; height: 18px; border: 2px solid #000000; animation: gw-fall 3.6s linear infinite; }
+@keyframes gw-fall { 0% { transform: translateY(0) rotate(0); } 100% { transform: translateY(120dvh) rotate(540deg); } }
+
+/* ---------- Barra de cima ---------- */
+.gw .gw-hud { position: relative; z-index: 5; display: flex; flex-wrap: wrap; align-items: center; gap: 12px 14px; padding: 18px clamp(16px, 3cqi, 28px) 0; }
+.gw .gw-sign {
+  display: inline-flex; align-items: center; gap: 12px; padding: 6px 18px 6px 6px; border-radius: 16px;
+  background: #FFFFFF; color: #000000; box-shadow: 0 0 0 3px #000000, 0 5px 0 3px #000000; transform: rotate(-1.5deg);
+}
+.gw .gw-sign img { width: 46px; height: 46px; border-radius: 12px; background: var(--gs); }
+.gw .gw-sign .gw-disp { font-size: 26px; }
+.gw .gw-sp { flex: 1 1 auto; }
+.gw .gw-chip {
+  display: inline-flex; align-items: center; gap: 10px; min-height: 48px; padding: 0 16px; border-radius: 999px;
+  background: #FFFFFF; color: #000000; box-shadow: 0 0 0 3px #000000, 0 5px 0 3px #000000;
+  font-size: 14px; font-weight: 800; white-space: nowrap; font-variant-numeric: tabular-nums;
+}
+.gw .gw-flags { display: flex; gap: 4px; }
+.gw .gw-flags li { width: 14px; height: 19px; background: #E6D9C2; clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 74%, 0 100%); transition: background-color .3s; }
+.gw .gw-flags li.done { background: var(--gb); }
+.gw .gw-flags li.now { background: #000000; }
+.gw .gw-main { position: relative; z-index: 2; flex: 1; width: 100%; max-width: 1220px; margin: 0 auto; padding: 22px clamp(16px, 3cqi, 28px) 26px; }
+
+/* ---------- Guia: o personagem amarelo + balão ---------- */
+.gw .gw-guide { display: flex; align-items: flex-end; gap: 12px; }
+.gw .gw-guide.col { flex-direction: column-reverse; align-items: flex-start; gap: 14px; }
+.gw .gw-pet {
+  display: block; flex: 0 0 auto; width: 96px; height: 87px;
+  filter: drop-shadow(3px 0 0 #000) drop-shadow(-3px 0 0 #000) drop-shadow(0 3px 0 #000) drop-shadow(0 -3px 0 #000);
+  animation: gw-hop 2.8s ease-in-out infinite;
+}
+@keyframes gw-hop { 0%, 100% { transform: translateY(0) rotate(-2deg); } 50% { transform: translateY(-8px) rotate(2deg); } }
+.gw .gw-say {
+  position: relative; max-width: 260px; margin-bottom: 48px; padding: 12px 16px; border-radius: 18px;
+  background: #FFFFFF; color: #000000; font-size: 15px; font-weight: 700; line-height: 1.3; box-shadow: 0 0 0 3px #000000;
+}
+.gw .gw-say::before { content: ''; position: absolute; left: -15px; bottom: 14px; border-style: solid; border-width: 9px 15px 9px 0; border-color: transparent #000000 transparent transparent; }
+.gw .gw-say::after { content: ''; position: absolute; left: -9px; bottom: 17px; border-style: solid; border-width: 6px 10px 6px 0; border-color: transparent #FFFFFF transparent transparent; }
+.gw .gw-guide.col .gw-say { margin: 0; }
+.gw .gw-guide.col .gw-say::before { left: 26px; bottom: -15px; border-width: 15px 9px 0 9px; border-color: #000000 transparent transparent transparent; }
+.gw .gw-guide.col .gw-say::after { left: 29px; bottom: -9px; border-width: 10px 6px 0 6px; border-color: #FFFFFF transparent transparent transparent; }
+
+/* ---------- Papel, passos, selos, botões da abertura ---------- */
+.gw .gw-paper {
+  position: relative; display: flex; flex-direction: column; gap: 16px; padding: 26px 28px; border-radius: 24px;
+  background: #FFFCF7; color: #000000; box-shadow: 0 0 0 3px #000000, 0 8px 0 3px #000000;
+}
+.gw .gw-steps { display: flex; flex-direction: column; gap: 10px; }
+.gw .gw-steps li { display: flex; align-items: center; gap: 14px; font-size: 17px; font-weight: 700; line-height: 1.3; }
+.gw .gw-steps b {
+  flex: 0 0 auto; display: grid; place-items: center; width: 40px; height: 40px; border-radius: 50%;
+  background: var(--gb); color: var(--gi); box-shadow: 0 0 0 3px #000000; font-size: 19px; font-weight: 800;
+}
+.gw .gw-facts { display: flex; flex-wrap: wrap; gap: 8px; }
+.gw .gw-fact {
+  display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 999px;
+  background: #FFFFFF; box-shadow: inset 0 0 0 2px #000000; font-size: 12px; font-weight: 800; line-height: 1.3;
+}
+.gw .gw-cta { display: flex; flex-wrap: wrap; gap: 14px; }
+
+/* ---------- Abertura: a placa balançando e o papel com as regras ---------- */
+.gw .gw-open { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 500px); gap: 30px; align-items: center; min-height: 600px; }
+.gw .gw-gate { display: flex; flex-direction: column; align-items: center; gap: 22px; padding-top: 56px; text-align: center; }
+.gw .gw-big {
+  position: relative; padding: 24px 34px 28px; border-radius: 24px; background: var(--gb); color: var(--gi);
+  box-shadow: 0 0 0 4px #000000, 0 10px 0 4px #000000; transform-origin: 50% -64px; animation: gw-swing 3.6s ease-in-out infinite;
+}
+.gw .gw-big::before, .gw .gw-big::after { content: ''; position: absolute; top: -62px; width: 5px; height: 62px; border-radius: 3px; background: #000000; }
+.gw .gw-big::before { left: 22%; }
+.gw .gw-big::after { right: 22%; }
+@keyframes gw-swing { 0%, 100% { transform: rotate(-2.5deg); } 50% { transform: rotate(2.5deg); } }
+.gw .gw-big .gw-disp { font-size: 70px; }
+.gw .gw-art {
+  width: 170px; height: 170px;
+  filter: drop-shadow(3px 0 0 #fff) drop-shadow(-3px 0 0 #fff) drop-shadow(0 3px 0 #fff) drop-shadow(0 -3px 0 #fff) drop-shadow(0 10px 0 rgba(0, 0, 0, .35));
+  animation: gw-hop 3.2s ease-in-out infinite;
+}
+.gw .gw-open .gw-paper { animation: gw-pop .5s .1s cubic-bezier(.3, 1.4, .5, 1) backwards; }
+@keyframes gw-pop { from { transform: scale(.8) rotate(-3deg); opacity: 0; } }
+.gw .gw-open .gw-disp.h { font-size: 48px; }
+
+/* ---------- Resultado: disco de pontos, XP e revisão ---------- */
+.gw .gw-res { display: grid; grid-template-columns: minmax(0, 400px) minmax(0, 1fr); gap: 30px; align-items: start; }
+.gw .gw-medal { display: flex; flex-direction: column; align-items: center; gap: 16px; text-align: center; }
+.gw .gw-medal .gw-cta { justify-content: center; }
+.gw .gw-disc {
+  position: relative; display: grid; place-items: center; width: 230px; height: 230px; border-radius: 50%;
+  background: var(--gb); color: var(--gi);
+  box-shadow: 0 0 0 4px #000000, 0 0 0 16px #FED501, 0 0 0 20px #000000, 0 12px 0 20px #000000;
+  animation: gw-pop .6s cubic-bezier(.3, 1.5, .5, 1) backwards;
+}
+.gw .gw-disc b { display: block; font-family: 'Bricolage Grotesque', sans-serif; font-size: 104px; font-weight: 800; font-stretch: 75%; font-variation-settings: 'wdth' 75; line-height: .8; }
+.gw .gw-disc small { display: block; font-size: 16px; font-weight: 800; text-transform: uppercase; letter-spacing: .1em; }
+.gw .gw-xp {
+  display: flex; align-items: center; gap: 12px; padding: 10px 16px 10px 10px; border-radius: 20px;
+  background: #FFFFFF; color: #000000; box-shadow: 0 0 0 3px #000000; font-size: 15px; font-weight: 800; text-align: left;
+}
+.gw .gw-xp:not(:has(.gw-gem)) { padding-left: 16px; }
+.gw .gw-note { max-width: 360px; padding: 8px 14px; border-radius: 14px; background: #FFF6C2; color: #5C4A00; box-shadow: 0 0 0 2px #000000; font-size: 13px; font-weight: 700; line-height: 1.35; }
+.gw .gw-res .gw-paper .gw-disp { font-size: 34px; }
+
+/* Revisão */
+.gw .gw-rv { display: flex; flex-direction: column; gap: 8px; }
+.gw .gw-rv li {
+  display: grid; grid-template-columns: 32px minmax(0, 1fr); gap: 12px; align-items: start; padding: 12px 14px; border-radius: 16px;
+  background: #FFFFFF; color: #000000; box-shadow: 0 0 0 2px #000000;
+}
+.gw .gw-rv-mk { display: grid; place-items: center; width: 32px; height: 32px; border-radius: 50%; background: #000000; color: #FFFFFF; }
+.gw .gw-rv li.ok .gw-rv-mk { background: #2662E7; }
+.gw .gw-rv strong { display: block; font-size: 14px; font-weight: 800; }
+.gw .gw-rv p { font-size: 13px; font-weight: 600; color: #5A534A; }
+.gw .gw-res .gw-rv { max-height: 500px; overflow: auto; padding: 3px 6px 3px 3px; }
+.gw .gw-pager { display: flex; align-items: center; justify-content: center; gap: 10px; }
+.gw .gw-pager > span { font-size: 12px; font-weight: 800; white-space: nowrap; }
+
+/* ---------- Carregando / erro / vazio ---------- */
+.gw .gw-state-wrap { display: grid; place-items: center; min-height: 420px; }
+.gw .gw-state { align-items: center; width: min(100%, 460px); text-align: center; }
+.gw .gw-state .gw-disp { font-size: 30px; }
+.gw .gw-state p { font-size: 15px; font-weight: 600; color: #39332C; }
+.gw .gw-state-ic { display: grid; place-items: center; width: 60px; height: 60px; border-radius: 50%; background: var(--gb); color: var(--gi); box-shadow: 0 0 0 3px #000000; }
+.gw .gw-state.is-loading .gw-state-ic svg { animation: gw-spin 1s linear infinite; }
+.gw .gw-state.is-error .gw-state-ic { background: #D01000; color: #FFFFFF; }
+@keyframes gw-spin { to { transform: rotate(360deg); } }
+
+/* ---------- Troca de pergunta: dois nomes de animação para ela tocar a cada troca ---------- */
+.gw .gw-swap.s0 { animation: gw-swap0 .35s ease-out; }
+.gw .gw-swap.s1 { animation: gw-swap1 .35s ease-out; }
+@keyframes gw-swap0 { from { transform: translateX(28px); opacity: 0; } }
+@keyframes gw-swap1 { from { transform: translateX(28px); opacity: 0; } }
+
+/* =====================================================================
+   RESPONSIVO
+   Largura: usa a da própria cena (container query), não a da janela.
+     cena > 1000px ........ desktop (3 colunas nos jogos)
+     700–1000px ........... intermediário (tablet deitado): 2 colunas, sem guia lateral
+     560–700px ............ tablet em pé: uma coluna compacta
+     < 560px .............. celular
+   Altura: janelas baixas (notebook, tablet deitado) compactam por faixas de altura.
+     <= 860px · <= 740px · <= 660px. Acima de 860px nada muda (monitores grandes).
+   ===================================================================== */
+@supports (overflow: clip) {
+  /* clip (e não hidden) para a barra de ações fixa dos celulares (position: sticky) enxergar o <main> que rola. */
+  .gw { overflow: clip; }
+}
+
+/* ---------- Intermediário: 700–1000px ---------- */
+@container (max-width: 1000px) {
+  .gw .gw-open { grid-template-columns: minmax(0, 1fr) minmax(0, 440px); gap: 24px; }
+  .gw .gw-big .gw-disp { font-size: 58px; }
+  .gw .gw-art { width: 140px; height: 140px; }
+  .gw .gw-res { grid-template-columns: minmax(0, 300px) minmax(0, 1fr); gap: 22px; }
+  .gw .gw-disc { width: 190px; height: 190px; }
+  .gw .gw-disc b { font-size: 86px; }
+  .gw .gw-res .gw-rv { max-height: clamp(160px, calc(var(--sp-fit-h, 100dvh) - 460px), 500px); }
+}
+
+/* ---------- Tablet em pé: 560–700px ---------- */
+@container (max-width: 700px) {
+  .gw .gw-open { grid-template-columns: minmax(0, 1fr); min-height: 0; gap: 18px; }
+  .gw .gw-gate { padding-top: 34px; gap: 12px; }
+  .gw .gw-big .gw-disp { font-size: 48px; }
+  .gw .gw-art { width: 100px; height: 100px; }
+  .gw .gw-res { grid-template-columns: minmax(0, 230px) minmax(0, 1fr); gap: 18px; }
+  .gw .gw-disc { width: 170px; height: 170px; }
+  .gw .gw-disc b { font-size: 78px; }
+  .gw .gw-open .gw-paper { padding: 20px 24px; gap: 10px; }
+  .gw .gw-steps { gap: 8px; }
+}
+
+/* ---------- Celular: < 560px ---------- */
+@container (max-width: 560px) {
+  .gw .gw-hud { gap: 8px; padding: 10px 10px 0; }
+  .gw .gw-icbtn { width: 44px; height: 44px; flex-basis: 44px; }
+  .gw .gw-sign { gap: 8px; padding: 4px 12px 4px 4px; border-radius: 14px; box-shadow: 0 0 0 3px #000000, 0 4px 0 3px #000000; }
+  .gw .gw-sign img { width: 34px; height: 34px; border-radius: 10px; }
+  .gw .gw-sign .gw-disp { font-size: 19px; }
+  .gw .gw-chip { min-height: 40px; padding: 0 12px; gap: 8px; font-size: 13px; box-shadow: 0 0 0 3px #000000, 0 4px 0 3px #000000; }
+  .gw .gw-flags { display: none; }
+  .gw .gw-k, .gw .gw-fact, .gw .gw-pager > span { font-size: 13px; }
+  .gw .gw-gem small { font-size: 11px; }
+  /* Com o contador na barra, a placa fica só com o desenho (o nome segue para leitores de tela): cabe tudo em uma linha. */
+  .gw .gw-hud:has(.gw-chip) .gw-sign { padding: 4px; }
+  .gw .gw-hud:has(.gw-chip) .gw-sign .gw-disp { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; }
+  .gw .gw-main { padding: 12px 10px 16px; }
+
+  .gw .gw-open { gap: 14px; }
+  .gw .gw-gate { padding-top: 34px; gap: 10px; }
+  .gw .gw-big { padding: 12px 22px 14px; border-radius: 18px; box-shadow: 0 0 0 3px #000000, 0 7px 0 3px #000000; transform-origin: 50% -34px; max-width: calc(100% - 16px); }
+  .gw .gw-big::before, .gw .gw-big::after { top: -32px; height: 32px; width: 4px; }
+  .gw .gw-big .gw-disp { font-size: 38px; }
+  .gw .gw-art { display: none; }
+  .gw .gw-open .gw-paper { padding: 16px 16px 0; gap: 10px; border-radius: 20px; }
+  .gw .gw-open .gw-disp.h { font-size: 30px; }
+  .gw .gw-steps { gap: 8px; }
+  .gw .gw-steps li { gap: 10px; font-size: 15px; }
+  .gw .gw-steps b { width: 32px; height: 32px; font-size: 16px; }
+  .gw .gw-open .gw-guide { display: none; }
+  /* Botão principal sempre à mão: a barra de ações da abertura gruda no pé da tela. */
+  .gw .gw-open .gw-cta {
+    position: sticky; bottom: 10px; z-index: 6; gap: 10px; margin: 0 -16px; padding: 10px 16px 16px;
+    border-radius: 0 0 20px 20px; background: #FFFCF7;
+  }
+  .gw .gw-open .gw-cta .gw-btn { min-height: 48px; font-size: 15px; padding: 0 16px; }
+  .gw .gw-open .gw-cta .gw-btn.play { flex: 2 1 190px; }
+  .gw .gw-open .gw-cta .gw-btn.ghost { flex: 1 1 120px; }
+
+  .gw .gw-res { grid-template-columns: minmax(0, 1fr); gap: 18px; }
+  .gw .gw-res .gw-rv { max-height: none; overflow: visible; padding: 0; }
+  .gw .gw-sign .gw-disp { font-size: 17px; }
+  .gw .gw-paper { padding: 18px 16px; }
+  .gw .gw-disc { width: 150px; height: 150px; box-shadow: 0 0 0 3px #000000, 0 0 0 12px #FED501, 0 0 0 15px #000000, 0 9px 0 15px #000000; }
+  .gw .gw-disc b { font-size: 68px; }
+  .gw .gw-res .gw-paper .gw-disp { font-size: 28px; }
+  .gw .gw-medal { gap: 22px; }
+  .gw .gw-cta .gw-btn { flex: 1 1 auto; }
+  .gw .gw-state-wrap { min-height: 300px; }
+}
+
+/* ---------- Janelas baixas (não celular): faixas de altura ---------- */
+@media (min-width: 700px) and (max-height: 860px) {
+  .gw .gw-hud { gap: 10px 12px; padding-top: 12px; }
+  .gw .gw-icbtn { width: 44px; height: 44px; flex-basis: 44px; }
+  .gw .gw-sign img { width: 40px; height: 40px; }
+  .gw .gw-sign .gw-disp { font-size: 22px; }
+  .gw .gw-chip { min-height: 44px; }
+  .gw .gw-main { padding-top: 14px; padding-bottom: 18px; }
+
+  /* A abertura sem altura mínima fica centralizada na área útil. */
+  .gw .gw-main:has(> .gw-open) { display: flex; flex-direction: column; justify-content: center; }
+  .gw .gw-open { min-height: 0; gap: 24px; }
+  .gw .gw-gate { padding-top: 44px; gap: 16px; }
+  .gw .gw-big { padding: 20px 30px 24px; }
+  .gw .gw-big .gw-disp { font-size: 58px; }
+  .gw .gw-art { width: 140px; height: 140px; }
+  .gw .gw-open .gw-paper { padding: 22px 26px; gap: 12px; }
+  .gw .gw-open .gw-disp.h { font-size: 40px; }
+  .gw .gw-steps { gap: 8px; }
+  .gw .gw-steps li { font-size: 16px; }
+  .gw .gw-steps b { width: 36px; height: 36px; font-size: 17px; }
+  .gw .gw-cta .gw-btn { min-height: 48px; }
+
+  /* Resultado: medalha e papel centrados na altura útil (a abertura já é centrada acima). */
+  .gw .gw-main:has(> .gw-res) { display: flex; flex-direction: column; justify-content: center; }
+  .gw .gw-res { align-items: center; gap: 24px; }
+  .gw .gw-rv li { padding: 16px 18px; }
+  .gw .gw-rv strong { font-size: 16px; }
+  .gw .gw-rv p { font-size: 15px; }
+  .gw .gw-disc { width: 190px; height: 190px; }
+  .gw .gw-disc b { font-size: 86px; }
+  .gw .gw-medal { gap: 14px; }
+  .gw .gw-res .gw-paper .gw-disp { font-size: 30px; }
+  .gw .gw-res .gw-rv { max-height: clamp(160px, calc(var(--sp-fit-h, 100dvh) - 340px), 500px); }
+  .gw .gw-state-wrap { min-height: 320px; }
+}
+@media (min-width: 700px) and (max-height: 740px) {
+  .gw .gw-hud { padding-top: 8px; }
+  .gw .gw-sign img { width: 36px; height: 36px; }
+  .gw .gw-sign .gw-disp { font-size: 20px; }
+  .gw .gw-chip { min-height: 40px; padding: 0 14px; }
+  .gw .gw-main { padding-top: 10px; padding-bottom: 14px; }
+
+  .gw .gw-gate { padding-top: 36px; gap: 12px; }
+  .gw .gw-big { padding: 18px 28px 22px; }
+  .gw .gw-big .gw-disp { font-size: 54px; }
+  .gw .gw-art { width: 124px; height: 124px; }
+  .gw .gw-open .gw-paper { padding: 24px 22px; gap: 12px; }
+  .gw .gw-open .gw-disp.h { font-size: 34px; }
+  .gw .gw-open .gw-cta { gap: 10px; }
+  .gw .gw-open .gw-cta .gw-btn { padding: 0 18px; }
+  .gw .gw-steps li { font-size: 15px; gap: 12px; }
+  .gw .gw-steps b { width: 34px; height: 34px; font-size: 17px; }
+  .gw .gw-open .gw-pet { width: 76px; height: 69px; }
+  .gw .gw-open .gw-say { margin-bottom: 38px; font-size: 14px; }
+
+  .gw .gw-disc { width: 164px; height: 164px; }
+  .gw .gw-disc b { font-size: 76px; }
+  .gw .gw-res .gw-paper { padding: 22px 26px; gap: 12px; }
+  .gw .gw-res .gw-paper .gw-disp { font-size: 30px; }
+  .gw .gw-res .gw-pet { width: 64px; height: 58px; }
+  .gw .gw-res .gw-say { margin-bottom: 30px; font-size: 14px; }
+}
+@media (min-width: 700px) and (max-height: 660px) {
+  .gw .gw-gate { padding-top: 32px; }
+  .gw .gw-big .gw-disp { font-size: 52px; }
+  .gw .gw-art { width: 116px; height: 116px; }
+  .gw .gw-state-wrap { min-height: 260px; }
+}
+
+/* ---------- Janelas baixas: abertura e resultado crescem com a altura ----------
+   --gw-h vai de 0 (600 px de altura) a 200 px (800 px). Aos 600 px os valores são os das faixas acima; com mais altura a
+   placa, o papel e a medalha ganham corpo, para a cena não ficar com uma faixa vazia embaixo. */
+@media (min-width: 700px) and (max-height: 860px) {
+  .gw { --gw-h: clamp(0px, calc(100dvh - 600px), 200px); }
+  .gw .gw-gate { gap: calc(12px + var(--gw-h) * .04); }
+  .gw .gw-big .gw-disp { font-size: calc(52px + var(--gw-h) * .05); }
+  .gw .gw-art { width: calc(116px + var(--gw-h) * .16); height: calc(116px + var(--gw-h) * .16); }
+  .gw .gw-open .gw-paper { padding: calc(24px + var(--gw-h) * .06) calc(22px + var(--gw-h) * .04); gap: calc(12px + var(--gw-h) * .04); }
+  .gw .gw-open .gw-disp.h { font-size: calc(34px + var(--gw-h) * .04); }
+  .gw .gw-steps { gap: calc(8px + var(--gw-h) * .03); }
+  .gw .gw-steps li { font-size: calc(15px + var(--gw-h) * .012); }
+  .gw .gw-steps b { width: calc(34px + var(--gw-h) * .03); height: calc(34px + var(--gw-h) * .03); }
+  .gw .gw-open .gw-cta .gw-btn { min-height: calc(48px + var(--gw-h) * .03); }
+
+  .gw .gw-medal { gap: calc(14px + var(--gw-h) * .06); }
+  .gw .gw-disc { width: calc(164px + var(--gw-h) * .25); height: calc(164px + var(--gw-h) * .25); }
+  .gw .gw-disc b { font-size: calc(76px + var(--gw-h) * .12); }
+  .gw .gw-res .gw-paper { padding: calc(22px + var(--gw-h) * .05) calc(26px + var(--gw-h) * .05); gap: calc(12px + var(--gw-h) * .03); }
+  .gw .gw-res .gw-paper .gw-disp { font-size: calc(30px + var(--gw-h) * .04); }
+  .gw .gw-rv li { padding: calc(16px + var(--gw-h) * .03) 18px; }
+  .gw .gw-rv strong { font-size: calc(16px + var(--gw-h) * .012); }
+  .gw .gw-rv p { font-size: calc(15px + var(--gw-h) * .012); }
+}
+/* Notebook: a revisão mostra um item por vez (WorldReviewList); a altura mínima evita o papel pular entre as páginas. */
+@media (min-width: 1101px) and (max-height: 860px) {
+  .gw .gw-rv li { min-height: calc(110px + var(--gw-h) * .35); }
+}
+
+/* ---------- Reduzir movimento ---------- */
+@media (prefers-reduced-motion: reduce) {
+  .gw *, .gw *::before, .gw *::after { animation: none !important; transition: none !important; }
+  .gw .gw-conf { display: none; }
+}

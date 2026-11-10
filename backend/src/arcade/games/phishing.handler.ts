@@ -17,6 +17,7 @@ interface PhishingAnswerKey {
 }
 @Injectable()
 export class PhishingHandler implements GameHandler {
+  readonly roundSize = SAMPLE_COUNT;
   constructor(
     @Inject('PHISHING_SAMPLE_REPOSITORY')
     private readonly sampleRepository: Repository<PhishingSample>,
@@ -30,7 +31,7 @@ export class PhishingHandler implements GameHandler {
       .getMany();
   }
   async buildRun(): Promise<GameRun> {
-    const samples = await this.pickSamples(SAMPLE_COUNT);
+    const samples = await this.pickSamples(this.roundSize);
     const key: PhishingAnswerKey = { samples: {}, order: [] };
     for (const s of samples) {
       key.samples[s.id] = {
@@ -55,12 +56,15 @@ export class PhishingHandler implements GameHandler {
     const byId = new Map(answers.map((a) => [a.sampleId, a]));
     const total = key.order.length;
     let points = 0;
-    const maxPoints = total * 2;
+    // Regra: somente a decisão (seguro/suspeita) pontua. Os sinais marcados
+    // nunca tornam uma mensagem errada nem afetam a pontuação.
+    const maxPoints = total;
     const items = key.order.map((sid) => {
       const gab = key.samples[sid];
       const ans = byId.get(sid);
       const decisionRight = !!ans && ans.report === gab.isPhishing;
       if (decisionRight) points += 1;
+      // Informativo apenas (revisão pedagógica): não influencia pontos/score.
       let signalsRight = false;
       if (gab.isPhishing && gab.signals.length > 0) {
         const marked = new Set(ans?.signals ?? []);
@@ -71,7 +75,6 @@ export class PhishingHandler implements GameHandler {
       } else {
         signalsRight = (ans?.signals?.length ?? 0) === 0;
       }
-      if (signalsRight) points += 1;
       return {
         sampleId: sid,
         isPhishing: gab.isPhishing,

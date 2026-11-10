@@ -45,6 +45,8 @@ services:
         value: lax
       - key: TRUST_PROXY
         value: "1"
+      - key: PROXY_SHARED_SECRET
+        sync: false
       - key: S3_BUCKET_NAME
         sync: false
       - key: AWS_REGION
