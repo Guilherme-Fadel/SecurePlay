@@ -7,10 +7,16 @@ import { TurmaAcessoService } from './turma-acesso.service';
 import { TurmaService } from './turma.service';
 import { TurmaAdminController } from './turma-admin.controller';
 import { TurmaPlatformController } from './turma-platform.controller';
+import { JornadaController } from './jornada.controller';
+import { JornadaEdicaoService } from './jornada-edicao.service';
 
 @Module({
   imports: [DatabaseModule],
-  controllers: [TurmaAdminController, TurmaPlatformController],
+  controllers: [
+    TurmaAdminController,
+    TurmaPlatformController,
+    JornadaController,
+  ],
   providers: [
     ...turmaProviders,
     // Serviço sem estado sobre DATA_SOURCE: instância local evita import circular com AdminModule.
@@ -18,6 +24,7 @@ import { TurmaPlatformController } from './turma-platform.controller';
     JornadaTurmaService,
     TurmaAcessoService,
     TurmaService,
+    JornadaEdicaoService,
   ],
   exports: [...turmaProviders, JornadaTurmaService, TurmaAcessoService],
 })
