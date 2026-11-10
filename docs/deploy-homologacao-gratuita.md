@@ -97,6 +97,33 @@ depois de publicar o proxy e o frontend com `VITE_API_URL=/api`.
 
 Se houver domínio próprio, inclua todas as origens permitidas separadas por vírgula. Não use `*` porque a aplicação envia cookie de autenticação com credenciais.
 
+### 6. Domínio próprio (recomendado)
+
+Pelo proxy da Pages, o Render recebe todas as chamadas a partir dos IPs de saída da Cloudflare e pode responder `429` com `x-render-routing: hibernate-rate-limited` antes de a API ser executada. O login falha na primeira tentativa mesmo com a senha certa. Com subdomínios do mesmo domínio, o navegador fala direto com a API e o cookie `SameSite=Lax` continua válido (mesmo site).
+
+Use `app.<DOMINIO>` para o site e `api.<DOMINIO>` para a API. O e-mail do domínio não é afetado: só se adicionam dois registros `CNAME`; não altere `MX`, `TXT`/SPF, DKIM nem os servidores de nome.
+
+1. Pages → projeto → **Custom domains** → adicionar `app.<DOMINIO>`.
+2. Render → serviço da API → **Settings → Custom Domains** → adicionar `api.<DOMINIO>`.
+3. No DNS do domínio (por exemplo, Squarespace → Domínios → DNS → registros personalizados):
+   - `CNAME` host `app` → `<PROJETO>.pages.dev`
+   - `CNAME` host `api` → `<API>.onrender.com`
+   Se o DNS estiver na Cloudflare, deixe o `api` como **DNS only** (nuvem cinza).
+4. Aguarde o certificado HTTPS dos dois painéis ficar ativo.
+5. No Render:
+
+   ```env
+   CORS_ORIGIN=https://app.<DOMINIO>,https://<PROJETO>.pages.dev
+   COOKIE_SAME_SITE=lax
+   PUBLIC_SITE_URL=https://app.<DOMINIO>
+   ```
+
+   Mantenha `COOKIE_DOMAIN` vazio (cookie só do host da API).
+6. Na Pages, troque a variável de build para `VITE_API_URL=https://api.<DOMINIO>` e faça um novo deploy. O socket usa a mesma origem automaticamente.
+7. Valide: `https://api.<DOMINIO>/health` responde 200; o login em `https://app.<DOMINIO>` cria o cookie; recarregar mantém a sessão; o socket conecta.
+
+Depois que tudo funcionar pelo domínio, `<PROJETO>.pages.dev` pode sair de `CORS_ORIGIN`.
+
 ## Validação pós-deploy
 
 1. `GET https://<API>.onrender.com/health` responde com status 200.
