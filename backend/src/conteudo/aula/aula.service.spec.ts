@@ -17,7 +17,10 @@ describe('AulaService (progresso parcial)', () => {
   };
   let aulaQuizRepository: { find: jest.Mock; count: jest.Mock };
   let s3Service: { generatePresignedGetUrl: jest.Mock };
-  let moduloService: { assertModuloDesbloqueado: jest.Mock };
+  let moduloService: {
+    assertModuloDesbloqueado: jest.Mock;
+    assertAulaDaTurma: jest.Mock;
+  };
 
   beforeEach(() => {
     aulaRepository = { findOne: jest.fn(), find: jest.fn() };
@@ -35,6 +38,7 @@ describe('AulaService (progresso parcial)', () => {
     // por padrao o modulo esta liberado; os testes de aula validam o bloqueio sequencial de aula
     moduloService = {
       assertModuloDesbloqueado: jest.fn().mockResolvedValue(undefined),
+      assertAulaDaTurma: jest.fn().mockResolvedValue(false),
     };
 
     service = new AulaService(
@@ -53,6 +57,33 @@ describe('AulaService (progresso parcial)', () => {
             } as unknown as EntityManager),
         ),
       } as never,
+    );
+  });
+
+  it('com turma, a regra da turma decide e a sequência legada não é consultada', async () => {
+    aulaRepository.findOne.mockResolvedValueOnce({ id: 8, modulo_id: 2, order: 2, active: true });
+    moduloService.assertAulaDaTurma.mockResolvedValueOnce(true);
+    usuarioAulaRepository.findOne.mockResolvedValue(null);
+
+    await service.findOne(8, 1);
+
+    expect(moduloService.assertAulaDaTurma).toHaveBeenCalledWith(
+      expect.objectContaining({ id: 8 }),
+      1,
+      undefined,
+    );
+    expect(moduloService.assertModuloDesbloqueado).not.toHaveBeenCalled();
+    expect(aulaRepository.find).not.toHaveBeenCalled();
+  });
+
+  it('com turma, propaga o bloqueio da turma', async () => {
+    aulaRepository.findOne.mockResolvedValueOnce({ id: 8, modulo_id: 2, order: 2, active: true });
+    moduloService.assertAulaDaTurma.mockRejectedValueOnce(
+      new BadRequestException('Esta aula ainda não foi aberta pelo professor.'),
+    );
+
+    await expect(service.findOne(8, 1)).rejects.toThrow(
+      'Esta aula ainda não foi aberta pelo professor.',
     );
   });
 

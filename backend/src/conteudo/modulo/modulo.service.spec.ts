@@ -1,10 +1,13 @@
+import { BadRequestException, ForbiddenException, NotFoundException } from '@nestjs/common';
 import { ModuloService } from './modulo.service';
+
+const semTurma = { jornadaDoAluno: jest.fn().mockResolvedValue(null) };
 
 describe('ModuloService journey summary', () => {
   let service: ModuloService;
 
   beforeEach(() => {
-    service = new ModuloService({} as never, {} as never, {} as never);
+    service = new ModuloService({} as never, {} as never, {} as never, semTurma as never);
   });
 
   const moduleAt = (id: number, overrides: Record<string, unknown> = {}) => ({
@@ -113,7 +116,7 @@ describe('ModuloService bloqueio sequencial de modulo', () => {
   let service: ModuloService;
 
   beforeEach(() => {
-    service = new ModuloService({} as never, {} as never, {} as never);
+    service = new ModuloService({} as never, {} as never, {} as never, semTurma as never);
   });
 
   const moduloResumo = (
@@ -193,6 +196,7 @@ describe('ModuloService findAll calcula locked', () => {
           getMany: jest.fn().mockResolvedValue(progresso),
         })),
       } as never,
+      semTurma as never,
     );
 
   it('marca o segundo modulo como locked quando o primeiro nao esta completo', async () => {
@@ -252,6 +256,8 @@ describe('ModuloService findAll calcula locked', () => {
       duration: 0,
       section_name: 'Cap 1',
       position: 2,
+      lock_reason: null,
+      opens_at: null,
     });
   });
 
@@ -316,6 +322,7 @@ describe('ModuloService thumbnail resolution', () => {
           getMany: jest.fn().mockResolvedValue([]),
         })),
       } as never,
+      semTurma as never,
     );
 
   it('omits an S3 thumbnail so the frontend can use its bundled asset', async () => {
@@ -388,6 +395,7 @@ describe('ModuloService sequencia de aulas por capitulo', () => {
       } as never,
       aulaRepository as never,
       usuarioAulaRepository as never,
+      semTurma as never,
     );
     jest
       .spyOn(service, 'assertModuloDesbloqueado')
@@ -402,5 +410,165 @@ describe('ModuloService sequencia de aulas por capitulo', () => {
       'completed',
       'locked',
     ]);
+  });
+});
+
+describe('ModuloService jornada da turma', () => {
+  const passado = new Date('2026-11-01T08:00:00-03:00');
+  const futuro = new Date('2099-11-18T08:00:00-03:00');
+  const modulos = [
+    { id: 1, order: 1, thumbnail: null, difficulty: 'iniciante', title: 'M1', active: true },
+    { id: 2, order: 2, thumbnail: null, difficulty: 'iniciante', title: 'M2', active: true },
+    { id: 3, order: 3, thumbnail: null, difficulty: 'iniciante', title: 'M3', active: true },
+  ];
+  const aulas = [
+    { id: 10, modulo_id: 1, order: 1, title: 'A10', type: 'texto', xp: 10, duration: 0, active: true },
+    { id: 11, modulo_id: 1, order: 2, title: 'A11', type: 'texto', xp: 10, duration: 0, active: true },
+    { id: 20, modulo_id: 2, order: 1, title: 'A20', type: 'texto', xp: 10, duration: 0, active: true },
+    { id: 30, modulo_id: 3, order: 1, title: 'A30', type: 'texto', xp: 10, duration: 0, active: true },
+  ];
+  type Jornada = { turmaId: number; moduloIds: number[]; aberturas: Map<number, Date> };
+  const build = (progresso: Array<Record<string, unknown>>, jornada: Jornada | null) =>
+    new ModuloService(
+      {
+        find: jest.fn().mockResolvedValue(modulos),
+        findOne: jest.fn(({ where }: { where: { id: number } }) =>
+          Promise.resolve(modulos.find((m) => m.id === where.id) ?? null),
+        ),
+      } as never,
+      {
+        find: jest.fn(({ where }: { where: { modulo_id?: number } }) =>
+          Promise.resolve(
+            where?.modulo_id ? aulas.filter((a) => a.modulo_id === where.modulo_id) : aulas,
+          ),
+        ),
+      } as never,
+      {
+        find: jest.fn().mockResolvedValue(progresso),
+        createQueryBuilder: jest.fn(() => ({
+          innerJoinAndSelect: jest.fn().mockReturnThis(),
+          where: jest.fn().mockReturnThis(),
+          getMany: jest.fn().mockResolvedValue(progresso),
+        })),
+      } as never,
+      { jornadaDoAluno: jest.fn().mockResolvedValue(jornada) } as never,
+    );
+  const turma = (moduloIds: number[], aberturas: Array<[number, Date]> = []): Jornada => ({
+    turmaId: 4,
+    moduloIds,
+    aberturas: new Map(aberturas),
+  });
+
+  it('sem turma, módulo já começado não fica bloqueado', async () => {
+    const service = build([{ aula_id: 20, completed: false, last_accessed_at: null }], null);
+    const result = await service.findAll(7);
+    expect(result.map((m) => [m.id, m.locked])).toEqual([[1, false], [2, false], [3, true]]);
+    expect(result.every((m) => m.outside_journey === false)).toBe(true);
+  });
+
+  it('com turma, segue a ordem da turma e bloqueia pela sequência da turma', async () => {
+    const result = await build([], turma([2, 1])).findAll(7);
+    expect(result.map((m) => [m.id, m.locked])).toEqual([[2, false], [1, true]]);
+  });
+
+  it('módulo fora da jornada aparece no fim só quando o aluno tem progresso nele', async () => {
+    const result = await build(
+      [{ aula_id: 30, completed: true, completed_at: passado, last_accessed_at: null }],
+      turma([1]),
+    ).findAll(7);
+    expect(result.map((m) => [m.id, m.outside_journey])).toEqual([[1, false], [3, true]]);
+  });
+
+  it('turma sem módulos devolve jornada vazia sem erro', async () => {
+    const service = build([], turma([]));
+    await expect(service.findAll(7)).resolves.toEqual([]);
+    await expect(service.getJourneySummary(7)).resolves.toMatchObject({
+      currentModuleId: null,
+      stages: [],
+    });
+  });
+
+  it('informa o motivo da próxima aula fechada', async () => {
+    const [m1] = await build([], turma([1], [[10, futuro]])).findAll(7);
+    expect(m1.nextAula).toMatchObject({ id: 10, lock_reason: 'scheduled', opens_at: futuro.toISOString() });
+  });
+
+  it('módulo detalhado traz motivo e data de cada aula', async () => {
+    const concluida = await build(
+      [{ aula_id: 10, completed: true, completed_at: passado, progress_percent: 100 }],
+      turma([1], [[10, passado], [11, futuro]]),
+    ).findOne(1, 7);
+    expect(concluida.aulas.map((a) => [a.id, a.status, a.lock_reason, a.opens_at])).toEqual([
+      [10, 'completed', null, null],
+      [11, 'locked', 'scheduled', futuro.toISOString()],
+    ]);
+    const inicio = await build([], turma([1], [[10, passado], [11, futuro]])).findOne(1, 7);
+    expect(inicio.aulas.map((a) => [a.id, a.status, a.lock_reason])).toEqual([
+      [10, 'unlocked', null],
+      [11, 'locked', 'sequence'],
+    ]);
+  });
+
+  it('aluno movido mantém acesso à aula começada que a nova turma ainda não abriu', async () => {
+    const service = build([{ aula_id: 10, completed: false, last_accessed_at: passado }], turma([1]));
+    const detalhe = await service.findOne(1, 7);
+    expect(detalhe.aulas.find((a) => a.id === 10)?.status).toBe('unlocked');
+    await expect(service.assertAulaDaTurma(aulas[0] as never, 7)).resolves.toBe(true);
+  });
+
+  it('nó da jornada expõe motivo, data, fora da jornada e a última aula concluída', async () => {
+    const resumo = await build(
+      [{ aula_id: 10, completed: true, completed_at: passado, last_accessed_at: passado }],
+      turma([1], [[10, passado], [11, futuro]]),
+    ).getJourneySummary(7);
+    expect(resumo.stages[0].nodes[0]).toMatchObject({
+      outsideJourney: false,
+      nextLessonLockReason: 'scheduled',
+      nextLessonOpensAt: futuro.toISOString(),
+      lastCompletedAulaId: 10,
+    });
+  });
+
+  describe('assertAulaDaTurma', () => {
+    it('sem turma devolve false para a regra legada decidir', async () => {
+      await expect(build([], null).assertAulaDaTurma(aulas[0] as never, 7)).resolves.toBe(false);
+    });
+
+    it('aula sem abertura aguarda o professor', async () => {
+      await expect(build([], turma([1])).assertAulaDaTurma(aulas[0] as never, 7)).rejects.toThrow(
+        new BadRequestException('Esta aula ainda não foi aberta pelo professor.'),
+      );
+    });
+
+    it('aula agendada informa dia e hora de Brasília', async () => {
+      const quando = new Date('2099-11-18T08:00:00-03:00');
+      await expect(
+        build([], turma([1], [[10, quando]])).assertAulaDaTurma(aulas[0] as never, 7),
+      ).rejects.toThrow('Esta aula abre em 18/11 às 08:00.');
+    });
+
+    it('aula seguinte com a anterior incompleta pede a anterior', async () => {
+      await expect(
+        build([], turma([1], [[10, passado], [11, passado]])).assertAulaDaTurma(aulas[1] as never, 7),
+      ).rejects.toThrow('Conclua a aula anterior primeiro.');
+    });
+
+    it('módulo bloqueado responde como hoje', async () => {
+      await expect(
+        build([], turma([1, 2], [[20, passado]])).assertAulaDaTurma(aulas[2] as never, 7),
+      ).rejects.toThrow(new ForbiddenException('Módulo bloqueado. Conclua o módulo anterior para liberá-lo.'));
+    });
+
+    it('módulo fora da jornada sem progresso não é encontrado', async () => {
+      await expect(build([], turma([1])).assertAulaDaTurma(aulas[3] as never, 7)).rejects.toThrow(
+        NotFoundException,
+      );
+    });
+
+    it('aula aberta e na sequência passa', async () => {
+      await expect(
+        build([], turma([1], [[10, passado]])).assertAulaDaTurma(aulas[0] as never, 7),
+      ).resolves.toBe(true);
+    });
   });
 });

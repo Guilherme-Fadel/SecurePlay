@@ -105,6 +105,7 @@ isolated('C01/C02/C03 — MySQL e Redis descartáveis', () => {
       source.getRepository(Modulo),
       source.getRepository(Aula),
       source.getRepository(UsuarioAula),
+      { jornadaDoAluno: () => Promise.resolve(null) } as never,
     );
     lessons = new AulaService(
       source.getRepository(Aula),
