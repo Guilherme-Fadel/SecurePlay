@@ -120,6 +120,32 @@ turmaIntegration('Convites de professor e de aluno com turma', () => {
     );
   });
 
+  it('recusa cadastro por convite ligado a turma arquivada', async () => {
+    const turma = await turmas.criar(massa.adminA.id, massa.escolaA.id, {
+      nome: 'Arquivada no cadastro',
+      ano_letivo: 2026,
+    });
+    const { convite } = await convites.criar(massa.adminA.id, {
+      registration_mode: 'school_student',
+      turma_id: turma.id,
+    });
+    await source.query('UPDATE turma SET ativa = 0 WHERE id = ?', [turma.id]);
+    const aluno = await source.getRepository(Usuario).save({
+      name: 'Aluno Tardio',
+      role: Role.USER,
+      empresa_id: massa.escolaA.id,
+      password: 'x',
+      active: true,
+    });
+    await falha(
+      source.transaction((manager) =>
+        vincularAlunoPorConvite(manager, convite.id, aluno),
+      ),
+      ForbiddenException,
+      'Este convite não está mais disponível',
+    );
+  });
+
   it('vincula o aluno cadastrado pelo convite à turma, e só alunos', async () => {
     const turma = await turmas.criar(massa.adminA.id, massa.escolaA.id, {
       nome: 'Cadastro',

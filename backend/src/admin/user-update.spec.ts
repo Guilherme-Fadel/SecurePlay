@@ -128,6 +128,21 @@ describe('Administrative user editing', () => {
     ).resolves.toMatchObject({ role: 'teacher' });
     expect(manager.delete).toHaveBeenCalledWith(TurmaAluno, { usuario_id: 2 });
   });
+  it('não transforma aluno sem e-mail em professor nem informando e-mail na mesma edição', async () => {
+    const { service, manager } = setup(Role.PLATFORM_ADMIN, {
+      email: null,
+      username: 'aluno.escola',
+    });
+    await expect(
+      service.atualizarUsuario(
+        1,
+        2,
+        { role: 'teacher', email: 'adulto@example.com' } as never,
+        10,
+      ),
+    ).rejects.toThrow('Use um convite de professor para contas sem e-mail');
+    expect(manager.save).not.toHaveBeenCalled();
+  });
   it('exige e-mail para conta de professor', async () => {
     const { service, manager } = setup(Role.PLATFORM_ADMIN, {
       email: null,

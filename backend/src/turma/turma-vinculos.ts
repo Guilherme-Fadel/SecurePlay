@@ -1,3 +1,4 @@
+import { ForbiddenException } from '@nestjs/common';
 import { EntityManager, In } from 'typeorm';
 import { Role } from '../auth/roles.enum';
 import { Usuario } from '../usuario/usuario.entity';
@@ -41,8 +42,11 @@ export async function vincularAlunoPorConvite(
       empresa_id: usuario.empresa_id,
       ativa: true,
     },
+    lock: { mode: 'pessimistic_read' },
   });
-  if (!turma) return;
+  // Turma arquivada depois do convite: recusa em vez de cadastrar fora da turma.
+  if (!turma)
+    throw new ForbiddenException('Este convite não está mais disponível');
   await manager.getRepository(TurmaAluno).insert({
     usuario_id: usuario.id,
     turma_id: turma.id,
@@ -50,7 +54,7 @@ export async function vincularAlunoPorConvite(
   });
 }
 
-/** Ao arquivar a turma, convites ainda não revogados que levariam alunos a ela deixam de valer. */
+/** Ao arquivar a turma, convites pendentes (válidos e não usados) que levariam alunos a ela deixam de valer. */
 export async function revogarConvitesDaTurma(
   manager: EntityManager,
   turmaId: number,
@@ -60,11 +64,14 @@ export async function revogarConvitesDaTurma(
     .find({ where: { turma_id: turmaId } });
   if (!ligados.length) return 0;
   const result = await manager
-    .getRepository(Convite)
-    .update(
-      { id: In(ligados.map((row) => row.convite_id)), revoked: false },
-      { revoked: true },
-    );
+    .createQueryBuilder()
+    .update(Convite)
+    .set({ revoked: true })
+    .where('id IN (:...ids)', { ids: ligados.map((row) => row.convite_id) })
+    .andWhere('revoked = :revogado', { revogado: false })
+    .andWhere('uses < max_uses')
+    .andWhere('expires_at > :agora', { agora: new Date() })
+    .execute();
   return result.affected ?? 0;
 }
 

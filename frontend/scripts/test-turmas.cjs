@@ -119,3 +119,41 @@ test('módulo aberto recarrega quando a jornada da turma muda', () => {
   janela.dispatchEvent({ type: 'secureplay:jornada-atualizada' });
   assert.equal(recargas, 1);
 });
+
+function carregarServicoTurmas() {
+  const invalidacoes = [];
+  const source = fs.readFileSync(path.join(__dirname, '..', 'src/services/turmas.ts'), 'utf8');
+  const compiled = ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } });
+  const module = { exports: {} };
+  const resposta = async () => ({ data: { modulos: [], abertasEmCascata: [] } });
+  vm.runInNewContext(compiled.outputText, { module, exports: module.exports, require: (name) => {
+    if (name === '@/lib/adminCache') return { invalidateAdminResources: (empresaId, ...recursos) => invalidacoes.push([empresaId, ...recursos]) };
+    if (name === './api') return { api: { get: resposta, put: resposta, post: resposta, delete: resposta } };
+    throw new Error(`Import inesperado: ${name}`);
+  } });
+  return { servico: module.exports, invalidacoes };
+}
+
+test('mudar a jornada invalida a lista de turmas do escopo (próxima abertura)', async () => {
+  const { servico, invalidacoes } = carregarServicoTurmas();
+  await servico.salvarModulosJornada(3, [1, 2], 9);
+  await servico.definirAberturaAula(3, 5, { modo: 'agora' }, 9);
+  await servico.cancelarAberturaAula(3, 5);
+  assert.equal(invalidacoes.length, 3);
+  assert.deepEqual(invalidacoes.map((chamada) => [chamada[0], chamada.includes('classes')]), [[9, true], [9, true], [undefined, true]]);
+});
+
+test('409 em "Abrir agora": aula já aberta vira aviso; outra recusa mostra a mensagem do backend', () => {
+  const { resultadoDoConflito } = load('src/components/admin/turmas/jornadaConflito.ts');
+  const jornada = (estado) => ({ modulos: [{ aulas: [{ aula_id: 5, titulo: 'Senhas', estado }] }] });
+  assert.deepEqual({ ...resultadoDoConflito(jornada('aberta'), 5, 'Senhas', 'Esta aula já está aberta') }, { aviso: 'Senhas já estava aberta.' });
+  assert.deepEqual({ ...resultadoDoConflito(jornada('fechada'), 5, 'Senhas', 'Turma arquivada') }, { erro: 'Turma arquivada' });
+  assert.deepEqual({ ...resultadoDoConflito({ modulos: [] }, 5, 'Senhas', 'Turma arquivada') }, { erro: 'Turma arquivada' });
+});
+
+test('professor é gestão no Perfil: nome do cadastro e rótulo próprio, sem apelido de aluno', () => {
+  const { isManagementRole, roleLabel } = load('src/components/sections/HomePage/Perfil/profileModel.ts');
+  assert.equal(isManagementRole('teacher'), true);
+  assert.equal(roleLabel('teacher'), 'Professor');
+  assert.equal(isManagementRole('user'), false);
+});

@@ -9,7 +9,7 @@ import type { RankingData, RankingEntry, RankingMode, RankingSeasonOption } from
 export type RankingScope = 'global' | 'company';
 
 const DAY = 86_400_000;
-const MANAGEMENT_ROLES = new Set(['admin', 'platform_admin']);
+const MANAGEMENT_ROLES = new Set(['admin', 'platform_admin', 'teacher']);
 
 export const formatNumber = (value: number) => value.toLocaleString('pt-BR');
 export const formatXp = (value: number) => `${formatNumber(value)} XP`;

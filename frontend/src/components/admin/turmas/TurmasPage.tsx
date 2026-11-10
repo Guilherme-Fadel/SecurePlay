@@ -52,7 +52,7 @@ function TurmaDetalhe({ escopo, turmaId, aba }: { escopo: EscopoTurmas; turmaId:
       <nav className="turma-abas" aria-label="Seções da turma">
         {abas.map((item) => <Link key={item.id} to={rotaTurma(escopo, turmaId, item.id)} aria-current={item.id === aba ? 'page' : undefined} className={item.id === aba ? 'is-active' : undefined}>{item.label}</Link>)}
       </nav>
-      {aba === 'jornada' && <TurmaJornadaTab turmaId={turmaId} jornada={jornada} onAtualizada={setLocal} />}
+      {aba === 'jornada' && <TurmaJornadaTab turmaId={turmaId} empresaId={escopo.empresaId} jornada={jornada} onAtualizada={setLocal} />}
       {aba === 'alunos' && <TurmaAlunosTab escopo={escopo} turmaId={turmaId} ativa={turma.ativa} />}
       {aba === 'professores' && <TurmaProfessoresTab escopo={escopo} turmaId={turmaId} ativa={turma.ativa} />}
       {aba === 'dados' && <TurmaFormPage key={`${turma.id}:${turma.nome}:${turma.ano_letivo}:${turma.ativa}`} escopo={escopo} turma={turma} onSalvo={query.refetch} />}

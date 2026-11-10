@@ -98,6 +98,7 @@ test('gestão vê sem participar: sem corrida, sem linha "Você" e só falas de 
   assert.ok(model.podiumSlots(data).every((slot) => !slot.me));
   assert.equal(model.isManagementRole('admin'), true);
   assert.equal(model.isManagementRole('platform_admin'), true);
+  assert.equal(model.isManagementRole('teacher'), true);
   assert.equal(model.isManagementRole('user'), false);
   const speech = model.hostSpeech({ band: model.seasonBand(null, 'current', new Date(2026, 10, 4)), race: null, management: true, participants: 4, highlight: null });
   assert.equal(speech.idle, 'Quem está mandando bem?');

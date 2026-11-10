@@ -111,10 +111,20 @@ export class JornadaEdicaoService {
       if (ativos !== moduloIds.length)
         throw new BadRequestException('Selecione módulos ativos do catálogo');
       const vinculos = manager.getRepository(TurmaModulo);
+      // Módulo desativado no catálogo some da jornada efetiva, mas mantém a linha da turma.
+      const pausados = await vinculos
+        .createQueryBuilder('tm')
+        .innerJoin(Modulo, 'm', 'm.id = tm.modulo_id AND m.active = :ativo', {
+          ativo: false,
+        })
+        .where('tm.turma_id = :turmaId', { turmaId: turma.id })
+        .orderBy('tm.posicao', 'ASC')
+        .getMany();
+      const ordem = [...moduloIds, ...pausados.map((row) => row.modulo_id)];
       await vinculos.delete({ turma_id: turma.id });
-      if (moduloIds.length)
+      if (ordem.length)
         await vinculos.insert(
-          moduloIds.map((moduloId, index) => ({
+          ordem.map((moduloId, index) => ({
             turma_id: turma.id,
             modulo_id: moduloId,
             posicao: index + 1,

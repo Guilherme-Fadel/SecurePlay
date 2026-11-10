@@ -516,6 +516,21 @@ describe('ModuloService jornada da turma', () => {
     await expect(service.assertAulaDaTurma(aulas[0] as never, 7)).resolves.toBe(true);
   });
 
+  it('módulo atual é o da jornada com aula disponível, não o começado que saiu da jornada', async () => {
+    const resumo = await build(
+      [
+        {
+          aula_id: 10,
+          completed: true,
+          completed_at: passado,
+          last_accessed_at: new Date(),
+        },
+      ],
+      turma([2], [[20, passado]]),
+    ).getJourneySummary(7);
+    expect(resumo.currentModuleId).toBe(2);
+  });
+
   it('nó da jornada expõe motivo, data, fora da jornada e a última aula concluída', async () => {
     const resumo = await build(
       [{ aula_id: 10, completed: true, completed_at: passado, last_accessed_at: passado }],
