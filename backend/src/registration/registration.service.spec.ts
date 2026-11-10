@@ -440,6 +440,7 @@ describe('Cadastro com confirmação por e-mail', () => {
     { role: Role.USER, nickname: null, expectedWelcome: true },
     { role: Role.USER, nickname: 'Guardião Antigo', expectedWelcome: false },
     { role: Role.ADMIN, nickname: null, expectedWelcome: false },
+    { role: 'teacher' as Role, nickname: null, expectedWelcome: false },
   ])(
     'confirma cadastro com boas-vindas=$expectedWelcome para $role e apelido $nickname',
     async ({ role, nickname, expectedWelcome }) => {

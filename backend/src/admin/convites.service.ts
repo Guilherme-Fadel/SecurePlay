@@ -18,6 +18,7 @@ import { Convite } from './entities/convite.entity';
 import { RegistrationService } from '../registration/registration.service';
 import { AdminAuditService } from './admin-audit.service';
 import { EventEmitter2 } from '@nestjs/event-emitter';
+import { removerVinculosAoMudarPapel } from '../turma/turma-vinculos';
 import { ensurePendingRankingSeasonsClosed } from '../dashboard/ranking-history';
 import { AdminAuditEvent } from './entities/admin-audit-event.entity';
 import { UpdateAdminUserDto } from './dto/update-admin-user.dto';
@@ -142,7 +143,10 @@ export class ConvitesService {
           throw new BadRequestException(
             'Contas administrativas precisam de e-mail',
           );
-        if (dto.role === Role.ADMIN && target.login_code)
+        if (
+          (dto.role === Role.ADMIN || dto.role === Role.TEACHER) &&
+          target.login_code
+        )
           throw new BadRequestException(
             'Use um convite de administrador para contas com código escolar',
           );
@@ -151,7 +155,8 @@ export class ConvitesService {
             'Conclua a definição de senha antes de alterar o e-mail',
           );
         if (
-          dto.role === Role.USER &&
+          dto.role !== undefined &&
+          dto.role !== Role.ADMIN &&
           target.role === Role.ADMIN &&
           target.active &&
           (await manager.count(Usuario, {
@@ -197,6 +202,12 @@ export class ConvitesService {
           fields.push('level');
         }
         if (dto.role && (dto.role as Role) !== target.role) {
+          await removerVinculosAoMudarPapel(
+            manager,
+            target.id,
+            target.role,
+            dto.role as Role,
+          );
           target.role = dto.role as Role;
           fields.push('role');
         }

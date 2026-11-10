@@ -127,6 +127,7 @@ export class DashboardService implements OnModuleInit, OnModuleDestroy {
     const currentUserRecord = currentEntry?.usuario ?? await this.dataSource.getRepository(Usuario).findOne({ where: { id: usuario_id }, relations: ['empresa'] });
     const isManagementUser =
       currentUserRecord?.role === Role.ADMIN ||
+      currentUserRecord?.role === Role.TEACHER ||
       currentUserRecord?.role === Role.PLATFORM_ADMIN;
     const company = isManagementUser && currentUserRecord?.role === Role.PLATFORM_ADMIN && options.companyId
       ? await this.dataSource.getRepository(Empresa).findOne({ where: { id: options.companyId } })
