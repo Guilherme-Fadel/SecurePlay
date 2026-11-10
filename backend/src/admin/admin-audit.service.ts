@@ -1,5 +1,5 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
-import { DataSource } from 'typeorm';
+import { DataSource, EntityManager } from 'typeorm';
 import { AdminAuditEvent } from './entities/admin-audit-event.entity';
 
 @Injectable()
@@ -15,16 +15,22 @@ export class AdminAuditService {
     alvoTipo: string;
     alvoId?: number | null;
     detalhes?: Record<string, unknown> | null;
-  }) {
+  }, manager?: EntityManager) {
+    const registro = {
+      empresa_id: evento.empresaId,
+      ator_id: evento.atorId,
+      acao: evento.acao,
+      alvo_tipo: evento.alvoTipo,
+      alvo_id: evento.alvoId ?? null,
+      detalhes: evento.detalhes ?? null,
+    };
+    // Dentro de uma transação o evento faz parte da escrita: falhar desfaz tudo.
+    if (manager) {
+      await manager.getRepository(AdminAuditEvent).save(registro);
+      return;
+    }
     try {
-      await this.dataSource.getRepository(AdminAuditEvent).save({
-        empresa_id: evento.empresaId,
-        ator_id: evento.atorId,
-        acao: evento.acao,
-        alvo_tipo: evento.alvoTipo,
-        alvo_id: evento.alvoId ?? null,
-        detalhes: evento.detalhes ?? null,
-      });
+      await this.dataSource.getRepository(AdminAuditEvent).save(registro);
     } catch (error) {
       this.logger.error('Falha ao registrar evento administrativo', error);
     }

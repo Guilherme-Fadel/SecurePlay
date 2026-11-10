@@ -399,7 +399,10 @@ export class RegistrationService {
             );
           }
           companyId = invite.empresa_id;
-          role = invite.role === Role.ADMIN ? Role.ADMIN : Role.USER;
+          role =
+            invite.role === Role.ADMIN || invite.role === Role.TEACHER
+              ? invite.role
+              : Role.USER;
           invite.uses += 1;
           await manager.getRepository(Convite).save(invite);
         } else {

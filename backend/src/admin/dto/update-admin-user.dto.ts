@@ -35,6 +35,6 @@ export class UpdateAdminUserDto {
   level?: number;
 
   @ValidateIf((_object, value) => value !== undefined)
-  @IsIn(['user', 'admin'])
-  role?: 'user' | 'admin';
+  @IsIn(['user', 'admin', 'teacher'])
+  role?: 'user' | 'admin' | 'teacher';
 }
