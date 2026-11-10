@@ -2,6 +2,7 @@ import { ArrowRight } from 'lucide-react';
 import { Pebble } from '@/components/ui/visuals/Pebble';
 import { getModuleArtwork } from '@/lib/staticArtwork';
 import { formatNumber, moduleCta, typeLabel, type LearnModule } from './learnMapModel';
+import { bloqueioDaTurma, textoDeBloqueio } from './lockCopy';
 
 interface ModuloCardProps {
   item: LearnModule;
@@ -12,7 +13,9 @@ function progressLine(item: LearnModule): string {
   const { completedAulas, totalAulas } = item.modulo;
   const lessons = `${totalAulas} ${totalAulas === 1 ? 'aula' : 'aulas'}`;
   if (item.state === 'locked') return `${lessons} · conclua o módulo anterior para liberar`;
-  return `${completedAulas} de ${lessons} concluídas`;
+  const next = item.modulo.nextAula;
+  const aviso = next && bloqueioDaTurma(next.lock_reason) ? ` · próxima: ${textoDeBloqueio(next.lock_reason, next.opens_at).toLowerCase()}` : '';
+  return `${completedAulas} de ${lessons} concluídas${aviso}`;
 }
 
 /** Linha de módulo no painel do território: arte, tipo, XP, progresso e ação. */

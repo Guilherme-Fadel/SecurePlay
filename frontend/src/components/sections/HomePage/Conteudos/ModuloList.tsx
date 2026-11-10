@@ -88,7 +88,7 @@ function LearnMessage({ status, onRetry }: { status: Exclude<LoadStatus, 'ready'
     <div className="lv-state">
       <BrandCharacter className="lv-state-art" expression="sleepy" />
       <h2 className="lv-display">Nenhum módulo por aqui ainda</h2>
-      <p>Quando sua escola publicar módulos, eles aparecem neste mapa.</p>
+      <p>Quando sua escola ou turma liberar módulos, eles aparecem neste mapa.</p>
     </div>
   );
 }

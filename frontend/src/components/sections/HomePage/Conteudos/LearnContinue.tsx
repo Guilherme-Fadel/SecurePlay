@@ -4,6 +4,7 @@ import { Pebble } from '@/components/ui/visuals/Pebble';
 import { BrandCharacter } from '@/components/shared/BrandCharacter';
 import { getModuleArtwork } from '@/lib/staticArtwork';
 import { formatNumber, percentOf, typeLabel, type LearnJourney, type LearnModule } from './learnMapModel';
+import { bloqueioDaTurma, textoDeBloqueio } from './lockCopy';
 
 interface LearnContinueProps {
   journey: LearnJourney;
@@ -48,9 +49,17 @@ export function LearnContinue({ journey, onOpenAula, onOpenModulo }: LearnContin
   const aula = modulo.nextAula ?? null;
   const firstStep = !journey.anyStarted;
   const eyebrow = firstStep ? `Comece pelo módulo ${number}` : 'Continue de onde parou';
-  const action = actionOf(current, firstStep);
+  // Próxima aula fechada pela turma: em casa, o caminho é revisar o que já foi feito.
+  const fechada = !!aula && bloqueioDaTurma(aula.lock_reason);
+  const revisar = modulo.lastCompletedAulaId ?? null;
+  const action = fechada
+    ? revisar ? { text: 'Revisar a última aula', label: 'Revisar a última aula concluída' } : { text: 'Ver o módulo', label: `Ver o módulo: ${modulo.title}` }
+    : actionOf(current, firstStep);
   const percent = percentOf(modulo.completedAulas, modulo.totalAulas);
-  const open = () => (aula ? onOpenAula(modulo.id, aula.id) : onOpenModulo(modulo.id));
+  const open = () => {
+    if (fechada) return revisar ? onOpenAula(modulo.id, revisar) : onOpenModulo(modulo.id);
+    return aula ? onOpenAula(modulo.id, aula.id) : onOpenModulo(modulo.id);
+  };
 
   return (
     <section className="lv-next" aria-labelledby="lv-next-title">
@@ -63,6 +72,7 @@ export function LearnContinue({ journey, onOpenAula, onOpenModulo }: LearnContin
           {aula?.section_name && <li>{aula.section_name}</li>}
           {aula && <li>Aula {aula.position} de {modulo.totalAulas} · {typeLabel(aula.type)} · {formatNumber(aula.xp)} XP</li>}
         </ol>
+        {fechada && aula && <p className="lv-next-line">{aula.lock_reason === 'scheduled' ? `Próxima aula: ${textoDeBloqueio(aula.lock_reason, aula.opens_at).toLowerCase()}.` : `${textoDeBloqueio(aula.lock_reason, aula.opens_at)}.`}</p>}
         <div className="lv-next-progress">
           <span>Aulas do módulo</span>
           <span

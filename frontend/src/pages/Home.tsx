@@ -21,6 +21,7 @@ import { AppButton } from '@/components/ui/buttons/AppButton';
 import { useCompanyFeatures } from '@/hooks/useCompanyFeatures';
 import { companyIdentityKey } from '@/config/features';
 import type { CurrentUser } from '@/services/me';
+import { initialAuthenticatedPath } from '@/components/admin/console/consoleNavigation';
 const Admin = lazy(() => import('@/pages/Admin'));
 export type Section = 'dashboard' | 'desafios' | 'ranking' | 'conquistas' | 'conteudos' | 'perfil' | 'admin';
 const validSections: Section[] = ['dashboard', 'desafios', 'ranking', 'conquistas', 'conteudos', 'perfil', 'admin'];
@@ -39,7 +40,7 @@ function sectionPath(section: Section, target: ContentTarget | null): string {
  * garante o acesso e o RolesGuard no backend. Serve para nao montar a tela nem
  * disparar as chamadas dela para quem vai receber 403.
  */
-const restrictedSections: Partial<Record<Section, string[]>> = { admin: ['platform_admin', 'admin'] };
+const restrictedSections: Partial<Record<Section, string[]>> = { admin: ['platform_admin', 'admin', 'teacher'] };
 function HomeContent() {
     const features = useCompanyFeatures();
     const navigate = useNavigate();
@@ -108,11 +109,11 @@ function HomeContent() {
     const setActiveSection = useCallback((section: Section) => {
         enteredContentFrom.current = null;
         if (section === 'admin' && canOpenSection('admin')) {
-            navigate('/admin/inicio');
+            navigate(initialAuthenticatedPath(user));
             return;
         }
         go(section, null);
-    }, [canOpenSection, go, navigate]);
+    }, [canOpenSection, go, navigate, user]);
     // "Você" no trilho: Conquistas já aberto na aba Colecionáveis.
     const openCollectibles = useCallback(() => {
         enteredContentFrom.current = null;

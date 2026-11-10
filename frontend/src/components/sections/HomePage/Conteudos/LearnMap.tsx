@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { JourneyMap, type JourneyMapNode } from '@/components/shared/JourneyMap/JourneyMap';
 import { getModuleArtwork } from '@/lib/staticArtwork';
 import type { LearnJourney, LearnModule, TerritoryIndex } from './learnMapModel';
+import { bloqueioDaTurma, textoDeBloqueio } from './lockCopy';
 
 interface LearnMapProps {
   journey: LearnJourney;
@@ -15,7 +16,9 @@ function ariaOf(item: LearnModule): string {
   if (item.state === 'done') return `${title}, concluído. Abrir módulo.`;
   if (item.state === 'here') return `${title}, você está aqui, ${lessons}. Abrir módulo.`;
   if (item.state === 'locked') return `${title}, bloqueado. Conclua o módulo anterior para liberar.`;
-  return `${title}, ${lessons}, pode acessar. Abrir módulo.`;
+  const next = item.modulo.nextAula;
+  const aviso = next && bloqueioDaTurma(next.lock_reason) ? ` Próxima aula: ${textoDeBloqueio(next.lock_reason, next.opens_at)}.` : '';
+  return `${title}, ${lessons}, pode acessar.${aviso} Abrir módulo.`;
 }
 
 /**

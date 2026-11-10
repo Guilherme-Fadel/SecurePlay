@@ -102,7 +102,7 @@ function AccountSchool({ user }: { user: CurrentUser }) {
 }
 
 function AccountActions({ showAdmin, onClose }: { showAdmin: boolean; onClose: () => void }) {
-  const { clearSession } = useCurrentUser();
+  const { user, clearSession } = useCurrentUser();
   const navigate = useNavigate();
   const { setActiveSection } = useSectionContext();
 
@@ -126,7 +126,7 @@ function AccountActions({ showAdmin, onClose }: { showAdmin: boolean; onClose: (
       {showAdmin && (
         <button type="button" className="sp-account-item" onClick={() => open('admin')}>
           <ShieldIcon size={17} aria-hidden="true" />
-          Administrador
+          {user?.role === 'teacher' ? 'Minhas turmas' : 'Administrador'}
         </button>
       )}
       <button type="button" className="sp-account-item" onClick={() => open('perfil')}>

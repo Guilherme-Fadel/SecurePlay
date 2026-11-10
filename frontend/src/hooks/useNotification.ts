@@ -7,6 +7,7 @@ import {
 } from '@/services/notification';
 import { useSocket } from '@/hooks/useSocket';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
+import { useJornadaAtualizada } from '@/hooks/useJornadaAtualizada';
 
 export function useNotification() {
     const [notification, setNotification] = useState<Notification[]>([]);
@@ -16,6 +17,8 @@ export function useNotification() {
     const userId = user?.userId ?? null;
 
     const socket = useSocket(userId);
+    // Mesmo socket da sessão: alunos recebem também as aberturas de aula da turma.
+    useJornadaAtualizada(socket, user?.role === 'user');
 
     useEffect(() => {
         if (userLoading) return;

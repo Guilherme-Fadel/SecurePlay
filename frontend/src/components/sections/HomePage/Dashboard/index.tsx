@@ -12,14 +12,16 @@ import { HomeJourney } from './HomeJourney';
 import { HomeRanking } from './HomeRanking';
 import { HomeAchievements } from './HomeAchievements';
 import { buildHomeJourney, type HomeJourneyNode } from './homeJourneyModel';
+import { bloqueioDaTurma } from '../Conteudos/lockCopy';
 import '@/styles/home-start.css';
 
 /** Gestão vê os mesmos cards do aluno (pedido do usuário); só muda a saudação. */
-const MANAGEMENT_ROLES = new Set(['admin', 'platform_admin']);
+const MANAGEMENT_ROLES = new Set(['admin', 'platform_admin', 'teacher']);
 
 /** Aula em andamento abre direto; módulo novo ou completo abre o livro do módulo. */
 function contentTargetOf(node: HomeJourneyNode): ContentTarget {
-  const resume = !!node.nextAulaId && (node.hasStarted || node.completedAulas > 0) && node.state !== 'done';
+  // Próxima aula fechada pela turma abre o módulo, não a aula bloqueada.
+  const resume = !!node.nextAulaId && !bloqueioDaTurma(node.nextLessonLockReason) && (node.hasStarted || node.completedAulas > 0) && node.state !== 'done';
   return resume && node.nextAulaId ? { moduloId: node.id, aulaId: node.nextAulaId } : { moduloId: node.id };
 }
 
@@ -73,6 +75,8 @@ export function Dashboard() {
             error={!!journeyError}
             onRetry={refetch}
             onContinue={openNode}
+            onReview={(node) => navigateToContent(node.lastCompletedAulaId ? { moduloId: node.id, aulaId: node.lastCompletedAulaId } : { moduloId: node.id })}
+            onPlay={features.games.length > 0 ? () => navigateToSection('desafios') : undefined}
             onOpenLearn={() => navigateToSection('conteudos')}
           />
           <HomeLevelWeek stats={stats} streak={streak} />
