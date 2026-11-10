@@ -27,6 +27,8 @@ import { SaveSchoolPilotDto } from './dto/school-pilot.dto';
 import { SchoolPilotService } from './school-pilot.service';
 import { UpdateAdminUserDto } from './dto/update-admin-user.dto';
 
+import { filtrosDeTurmaDaQuery } from '../turma/turma-usuarios';
+
 type AdminRequest = { user: { userId: number } };
 
 @Controller('platform/admin')
@@ -292,6 +294,8 @@ export class PlatformAdminController {
     @Query('search') search?: string,
     @Query('status') status?: 'active' | 'inactive' | 'management',
     @Query('sort') sort?: 'asc' | 'desc',
+    @Query('papel') papel?: string,
+    @Query('turma') turma?: string,
   ) {
     return this.convitesService.listarUsuariosPaginadosDaEmpresa(empresaId, {
       page: Number(page),
@@ -299,6 +303,7 @@ export class PlatformAdminController {
       search,
       status,
       sort,
+      ...filtrosDeTurmaDaQuery(papel, turma),
     });
   }
 
