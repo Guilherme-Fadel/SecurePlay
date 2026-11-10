@@ -15,6 +15,7 @@ import { Role } from '../auth/roles.enum';
 import { AdminService } from './admin.service';
 import { ConvitesService } from './convites.service';
 import { CreateConviteDto } from './dto/create-convite.dto';
+import { papelDoConvite } from './convite-papel';
 import { CreateEmpresaDto } from './dto/create-empresa.dto';
 import { PresignLogoDto } from './dto/presign-logo.dto';
 import { UpdateTemaDto } from './dto/update-tema.dto';
@@ -25,6 +26,8 @@ import { ChangeUserStatusDto } from './dto/change-user-status.dto';
 import { SaveSchoolPilotDto } from './dto/school-pilot.dto';
 import { SchoolPilotService } from './school-pilot.service';
 import { UpdateAdminUserDto } from './dto/update-admin-user.dto';
+
+import { filtrosDeTurmaDaQuery } from '../turma/turma-usuarios';
 
 type AdminRequest = { user: { userId: number } };
 
@@ -291,6 +294,8 @@ export class PlatformAdminController {
     @Query('search') search?: string,
     @Query('status') status?: 'active' | 'inactive' | 'management',
     @Query('sort') sort?: 'asc' | 'desc',
+    @Query('papel') papel?: string,
+    @Query('turma') turma?: string,
   ) {
     return this.convitesService.listarUsuariosPaginadosDaEmpresa(empresaId, {
       page: Number(page),
@@ -298,6 +303,7 @@ export class PlatformAdminController {
       search,
       status,
       sort,
+      ...filtrosDeTurmaDaQuery(papel, turma),
     });
   }
 
@@ -366,7 +372,7 @@ export class PlatformAdminController {
       empresaId,
       req.user.userId,
       dto,
-      dto.administrador ? Role.ADMIN : Role.USER,
+      papelDoConvite(dto, true),
     );
   }
 

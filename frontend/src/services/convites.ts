@@ -7,7 +7,7 @@ export interface Convite {
   expires_at: string;
   max_uses: number;
   uses: number;
-  role: 'user' | 'admin';
+  role: 'user' | 'admin' | 'teacher';
   registration_mode: 'legacy_email' | 'school_student';
   status: 'ativo' | 'utilizado' | 'expirado' | 'revogado';
   created_at: string;
@@ -26,13 +26,15 @@ export interface UsuarioEmpresa {
   nickname: string | null;
   nickname_pending: string | null;
   nickname_request_status: 'none' | 'pending' | 'approved' | 'rejected';
+  /** Turma do aluno (listagem paginada); `null` sem turma. */
+  turma?: { id: number; nome: string } | null;
 }
 
 export interface ConvitePublico {
   empresa_nome: string;
   email: string | null;
   expires_at: string;
-  role: 'user' | 'admin';
+  role: 'user' | 'admin' | 'teacher';
   registration_mode: 'legacy_email' | 'school_student';
 }
 
@@ -46,7 +48,7 @@ export interface ApelidosPendentesPaginados {
 
 export type UsuariosPaginados = ApelidosPendentesPaginados;
 
-export type UpdateAdminUser = Partial<Pick<UsuarioEmpresa, 'name' | 'email' | 'nickname' | 'level'>> & { role?: 'user' | 'admin' };
+export type UpdateAdminUser = Partial<Pick<UsuarioEmpresa, 'name' | 'email' | 'nickname' | 'level'>> & { role?: 'user' | 'admin' | 'teacher' };
 export async function obterPropriosDadosPlataforma(id: number): Promise<UsuarioEmpresa> {
   return (await api.get(`/platform/admin/usuarios/${id}`)).data;
 }
@@ -78,7 +80,7 @@ function empresaPath(empresaId?: number) {
 }
 
 export async function listarUsuarios(
-  options: { page: number; pageSize?: number; search?: string; status?: 'active' | 'inactive' | 'management'; sort?: 'asc' | 'desc' },
+  options: { page: number; pageSize?: number; search?: string; status?: 'active' | 'inactive' | 'management'; sort?: 'asc' | 'desc'; papel?: 'user' | 'teacher' | 'admin'; turma?: number | 'nenhuma' },
   empresaId?: number,
 ): Promise<UsuariosPaginados> {
   const params = new URLSearchParams({
@@ -88,6 +90,8 @@ export async function listarUsuarios(
   if (options.search?.trim()) params.set('search', options.search.trim());
   if (options.status) params.set('status', options.status);
   if (options.sort) params.set('sort', options.sort);
+  if (options.papel) params.set('papel', options.papel);
+  if (options.turma !== undefined) params.set('turma', String(options.turma));
   const response = await api.get(`${empresaPath(empresaId)}/usuarios?${params}`);
   return response.data;
 }
@@ -139,7 +143,7 @@ export async function listarConvites(
 }
 
 export async function criarConvite(
-  data: { email?: string; validade_dias: number; max_uses: number; administrador?: boolean; registration_mode?: 'legacy_email' | 'school_student' },
+  data: { email?: string; validade_dias: number; max_uses: number; administrador?: boolean; registration_mode?: 'legacy_email' | 'school_student'; papel?: 'user' | 'teacher' | 'admin'; turma_id?: number },
   empresaId?: number,
 ) {
   const response = await api.post(`${empresaPath(empresaId)}/convites`, data);

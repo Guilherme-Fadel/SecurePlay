@@ -99,6 +99,23 @@ describe('DashboardService company parameters', () => {
     });
   });
 
+  it('trata o professor como gestão: vê o ranking da escola sem participar', async () => {
+    const { service, query, repository } = buildService(
+      { id: 3, nome: 'Escola' },
+      undefined,
+      'teacher' as Role,
+    );
+    await expect(service.getRanking(7, 'company')).resolves.toMatchObject({
+      scope: 'company',
+      currentUser: null,
+      viewerParticipates: false,
+    });
+    expect(repository.findOne).not.toHaveBeenCalled();
+    expect(query.andWhere).toHaveBeenCalledWith('u.role = :rankingRole', {
+      rankingRole: Role.USER,
+    });
+  });
+
   it('limita a classificação aos participantes', async () => {
     const { service, query } = buildService({ id: 3, nome: 'Escola' });
     await service.getRanking(7, 'company');

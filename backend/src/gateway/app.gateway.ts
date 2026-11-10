@@ -269,4 +269,29 @@ export class AppGateway
         entry.client.emit('new-notification', payload);
     }
   }
+
+  /** Professor mudou a jornada: só alunos da turma, com sessão revalidada, recarregam a trilha. */
+  @OnEvent('turma.jornada-atualizada')
+  async handleJornadaAtualizada(payload: {
+    turmaId: number;
+    usuarioIds: number[];
+    aulasAbertas: Array<{ id: number; titulo: string }>;
+  }): Promise<void> {
+    const alunos = new Set(payload.usuarioIds);
+    const aviso = {
+      turmaId: payload.turmaId,
+      aulasAbertas: payload.aulasAbertas,
+    };
+    const targets = [...this.connections.values()].filter((entry) =>
+      alunos.has(entry.session.userId),
+    );
+    for (const entry of targets) {
+      try {
+        if (await this.freshValidation(entry))
+          entry.client.emit('jornada-atualizada', aviso);
+      } catch {
+        this.close(entry);
+      }
+    }
+  }
 }

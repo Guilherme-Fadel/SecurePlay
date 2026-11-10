@@ -1,7 +1,7 @@
 import { useId, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Link, useLocation } from 'react-router-dom';
-import { Building2, ChevronLeft, ChevronRight, FileText, History, LayoutDashboard, MailPlus, Palette, School, ScrollText, UserRoundPen, Users, type LucideIcon } from 'lucide-react';
+import { BookOpen, Building2, ChevronLeft, ChevronRight, FileText, History, LayoutDashboard, MailPlus, Palette, School, ScrollText, UserRoundPen, Users, type LucideIcon } from 'lucide-react';
 import { BrandMark } from '@/components/shared/BrandMark';
 import { resolveConsolePage, type AdminConsoleScope } from './consoleNavigation';
 
@@ -13,13 +13,18 @@ export function AdminConsoleSidebar({ scope, collapsed = false, onToggle }: { sc
   const tooltipId = useId();
   const [tooltip, setTooltip] = useState<{ label: string; to: string; top: number; left: number } | null>(null);
   const platform = scope.kind === 'platform';
-  const groups: { label: string; items: Item[] }[] = [
+  const turmas = ['classes', 'new-class', 'class-detail'].includes(page);
+  // Professor só gerencia as próprias turmas; o restante do console é da gestão.
+  const groups: { label: string; items: Item[] }[] = scope.kind === 'teacher' ? [
+    { label: 'TURMAS', items: [{ label: 'Minhas turmas', to: '/admin/turmas', icon: BookOpen, active: turmas }] },
+  ] : [
     { label: 'PAINEL', items: [{ label: 'Visão geral', to: '/admin/inicio', icon: LayoutDashboard, active: page === 'overview' }] },
     { label: 'PESSOAS', items: [
       { label: 'Usuários', to: '/admin/pessoas/usuarios', icon: Users, active: page === 'users' || page === 'edit-user' },
       { label: 'Apelidos pendentes', to: '/admin/pessoas/apelidos', icon: UserRoundPen, active: page === 'nicknames' },
       { label: 'Convites', to: '/admin/pessoas/convites', icon: MailPlus, active: page === 'invitations' || page === 'new-invitation' },
     ] },
+    { label: 'ENSINO', items: [{ label: 'Turmas', to: '/admin/turmas', icon: BookOpen, active: turmas }] },
     { label: 'EMPRESA', items: [
       platform ? { label: 'Cadastro', to: '/admin/empresas', icon: Building2, active: ['companies', 'new-company', 'edit-company', 'data', 'summary', 'appearance', 'features'].includes(page) } : { label: 'Dados da empresa', to: '/admin/configuracoes/dados', icon: FileText, active: page === 'data' },
       ...(!platform ? [{ label: 'Aparência', to: '/admin/configuracoes/aparencia', icon: Palette, active: page === 'appearance' }] : []),
@@ -39,7 +44,7 @@ export function AdminConsoleSidebar({ scope, collapsed = false, onToggle }: { sc
   };
   return <aside className={`admin-console-sidebar${collapsed ? ' is-collapsed' : ''}`} aria-label="Navegação administrativa">
     <div className="admin-console-sidebar-header">
-      <Link className="admin-console-brand" to="/admin/inicio" aria-label="SecurePlay, visão geral"><span className="admin-console-brand-mark"><BrandMark decorative /></span><span className="admin-console-brand-copy"><strong>SecurePlay</strong><small>Administração</small></span></Link>
+      <Link className="admin-console-brand" to={scope.kind === 'teacher' ? '/admin/turmas' : '/admin/inicio'} aria-label="SecurePlay, visão geral"><span className="admin-console-brand-mark"><BrandMark decorative /></span><span className="admin-console-brand-copy"><strong>SecurePlay</strong><small>Administração</small></span></Link>
       {onToggle && <button type="button" className="admin-console-icon-button admin-console-collapse-menu" aria-controls={navId} aria-expanded={!collapsed} aria-label={collapsed ? 'Expandir menu lateral' : 'Recolher menu lateral'} title={collapsed ? 'Expandir menu lateral' : 'Recolher menu lateral'} onClick={() => { setTooltip(null); onToggle(); }}>{collapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}</button>}
     </div>
     <nav id={navId} className="admin-console-nav" aria-label="Menu principal" onScroll={() => setTooltip(null)}>

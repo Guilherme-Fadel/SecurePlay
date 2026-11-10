@@ -3,6 +3,7 @@ import {
   Inject,
   NotFoundException,
   ForbiddenException,
+  BadRequestException,
 } from '@nestjs/common';
 import { EntityManager, Repository } from 'typeorm';
 import { Modulo } from './modulo.entity';
@@ -10,6 +11,20 @@ import { Aula } from '../aula/aula.entity';
 import { UsuarioAula } from '../usuario-aula/usuario-aula.entity';
 import { CreateModuloDto, UpdateModuloDto } from './dto/modulo.dto';
 import { sortAulasByModuleSequence } from '../aula/aula-order';
+import {
+  JornadaDaTurma,
+  JornadaTurmaService,
+} from '../../turma/jornada-turma.service';
+import { mensagemDeBloqueio } from '../../turma/jornada-mensagens';
+import {
+  CargaJornada,
+  listarModulos,
+  resolverThumbnail,
+  resumoDaJornada,
+} from './modulo-jornada';
+
+const MODULO_BLOQUEADO =
+  'Módulo bloqueado. Conclua o módulo anterior para liberá-lo.';
 
 @Injectable()
 export class ModuloService {
@@ -22,22 +37,21 @@ export class ModuloService {
 
     @Inject('USUARIO_AULA_REPOSITORY')
     private usuarioAulaRepository: Repository<UsuarioAula>,
+
+    private jornadaTurma: JornadaTurmaService,
   ) {}
 
-  /** Assets padronizados são resolvidos no frontend pelo título/chave do módulo. */
-  private resolveThumbnail(source: string | null): string | null {
-    const normalized = source?.trim();
-    if (!normalized || normalized.startsWith('s3://')) return null;
-    return normalized;
-  }
-
-  async findAll(usuario_id: number, manager?: EntityManager) {
+  private async carregar(
+    usuario_id: number,
+    manager?: EntityManager,
+    jornadaPronta?: JornadaDaTurma | null,
+  ): Promise<CargaJornada> {
     const moduloRepository =
       manager?.getRepository(Modulo) ?? this.moduloRepository;
     const aulaRepository = manager?.getRepository(Aula) ?? this.aulaRepository;
     const usuarioAulaRepository =
       manager?.getRepository(UsuarioAula) ?? this.usuarioAulaRepository;
-    const [modulos, aulas, progressRows] = await Promise.all([
+    const [modulos, aulas, progressRows, jornada] = await Promise.all([
       moduloRepository.find({
         where: { active: true },
         order: { order: 'ASC', id: 'ASC' },
@@ -53,6 +67,9 @@ export class ModuloService {
         })
         .where('ua.usuario_id = :usuarioId', { usuarioId: usuario_id })
         .getMany(),
+      jornadaPronta !== undefined
+        ? Promise.resolve(jornadaPronta)
+        : this.jornadaTurma.jornadaDoAluno(usuario_id, manager),
     ]);
 
     const aulasByModulo = new Map<number, Aula[]>();
@@ -64,70 +81,16 @@ export class ModuloService {
     for (const [moduloId, moduloAulas] of aulasByModulo) {
       aulasByModulo.set(moduloId, sortAulasByModuleSequence(moduloAulas));
     }
-    const progressByAula = new Map(
-      progressRows.map((row) => [row.aula_id, row]),
-    );
+    return {
+      modulos,
+      aulasByModulo,
+      progressByAula: new Map(progressRows.map((row) => [row.aula_id, row])),
+      jornada,
+    };
+  }
 
-    // Cada trilha progride separadamente; a trilha principal preserva a ordem legada.
-    const completedByPath = new Map<string, boolean>();
-
-    return modulos.map((modulo) => {
-      const moduloAulas = aulasByModulo.get(modulo.id) ?? [];
-      const moduloProgress = moduloAulas
-        .map((aula) => progressByAula.get(aula.id))
-        .filter((row): row is UsuarioAula => Boolean(row));
-      const completedAulas = moduloAulas.filter(
-        (aula) => progressByAula.get(aula.id)?.completed,
-      ).length;
-      const lastAccessedAt = moduloProgress.reduce<Date | null>(
-        (latest, row) => {
-          if (!row.last_accessed_at) return latest;
-          return !latest || row.last_accessed_at > latest
-            ? row.last_accessed_at
-            : latest;
-        },
-        null,
-      );
-      const totalAulas = moduloAulas.length;
-      const progress =
-        totalAulas > 0 ? Math.round((completedAulas / totalAulas) * 100) : 0;
-      const nextAula = moduloAulas.find(
-        (aula) => !progressByAula.get(aula.id)?.completed,
-      );
-      const thumbnail = this.resolveThumbnail(modulo.thumbnail);
-
-      const path = modulo.learning_path || 'principal';
-      const previousModuloCompleted = completedByPath.get(path) ?? true;
-      const locked = !previousModuloCompleted;
-      // um modulo sem aulas ativas nao trava a cadeia
-      const isModuloCompleted = totalAulas === 0 || progress === 100;
-      completedByPath.set(path, previousModuloCompleted && isModuloCompleted);
-
-      return {
-        ...modulo,
-        thumbnail,
-        artworkUrl: thumbnail,
-        totalAulas,
-        completedAulas,
-        progress,
-        hasStarted: moduloProgress.length > 0,
-        lastAccessedAt,
-        nextAulaId: nextAula?.id ?? null,
-        // B1: detalhe da proxima aula para o "Continue de onde parou" sem request extra.
-        nextAula: nextAula
-          ? {
-              id: nextAula.id,
-              title: nextAula.title,
-              type: nextAula.type,
-              xp: nextAula.xp,
-              duration: nextAula.duration,
-              section_name: nextAula.section_name ?? null,
-              position: moduloAulas.indexOf(nextAula) + 1,
-            }
-          : null,
-        locked,
-      };
-    });
+  async findAll(usuario_id: number, manager?: EntityManager) {
+    return listarModulos(await this.carregar(usuario_id, manager)).modulos;
   }
 
   /**
@@ -148,107 +111,41 @@ export class ModuloService {
       throw new NotFoundException('Módulo não encontrado');
     }
     if (alvo?.locked) {
-      throw new ForbiddenException(
-        'Módulo bloqueado. Conclua o módulo anterior para liberá-lo.',
-      );
+      throw new ForbiddenException(MODULO_BLOQUEADO);
     }
   }
 
+  /**
+   * Regra da turma para abrir, salvar progresso, concluir ou responder uma aula.
+   * Devolve `false` para aluno sem turma: a regra sequencial legada decide.
+   */
+  async assertAulaDaTurma(
+    aula: Pick<Aula, 'id' | 'modulo_id'>,
+    usuario_id: number,
+    manager?: EntityManager,
+  ): Promise<boolean> {
+    const jornada = await this.jornadaTurma.jornadaDoAluno(usuario_id, manager);
+    if (!jornada) return false;
+    const { modulos, estados } = listarModulos(
+      await this.carregar(usuario_id, manager, jornada),
+    );
+    const modulo = modulos.find((item) => item.id === aula.modulo_id);
+    if (!modulo) throw new NotFoundException('Módulo não encontrado');
+    if (modulo.locked) throw new ForbiddenException(MODULO_BLOQUEADO);
+    const estado = estados?.get(aula.id);
+    if (!estado)
+      throw new BadRequestException(
+        mensagemDeBloqueio('outside_journey', null),
+      );
+    if (estado.status === 'locked')
+      throw new BadRequestException(
+        mensagemDeBloqueio(estado.lockReason ?? 'sequence', estado.opensAt),
+      );
+    return true;
+  }
+
   async getJourneySummary(usuario_id: number) {
-    const modules = await this.findAll(usuario_id);
-    const incomplete = modules.filter(
-      (modulo) => modulo.progress < 100 && !modulo.locked,
-    );
-    const current =
-      [...incomplete]
-        .filter((modulo) => modulo.hasStarted)
-        .sort((a, b) => {
-          const dateDifference =
-            (Date.parse(String(b.lastAccessedAt ?? '')) || 0) -
-            (Date.parse(String(a.lastAccessedAt ?? '')) || 0);
-          return dateDifference || a.order - b.order || a.id - b.id;
-        })[0] ??
-      incomplete[0] ??
-      modules.at(-1) ??
-      null;
-
-    const stageNames: Record<string, string> = {
-      iniciante: 'Bosque dos Fundamentos',
-      intermediario: 'Vale dos Guardiões',
-      avancado: 'Cidadela Digital',
-    };
-    const stageThemes: Record<string, string> = {
-      iniciante: 'meadow',
-      intermediario: 'valley',
-      avancado: 'citadel',
-    };
-    const stages = new Map<
-      string,
-      {
-        key: string;
-        title: string;
-        order: number;
-        theme: string;
-        artworkUrl: string | null;
-        nodes: Array<Record<string, unknown>>;
-      }
-    >();
-
-    modules.forEach((modulo, globalIndex) => {
-      const key = String(modulo.difficulty || 'jornada');
-      if (!stages.has(key)) {
-        stages.set(key, {
-          key,
-          title: stageNames[key] ?? modulo.category ?? 'Nova etapa',
-          order: stages.size,
-          theme: stageThemes[key] ?? 'default',
-          artworkUrl: null,
-          nodes: [],
-        });
-      }
-      stages.get(key)!.nodes.push({
-        id: modulo.id,
-        order: modulo.order,
-        globalPosition: globalIndex + 1,
-        title: modulo.title,
-        progress: modulo.progress,
-        totalAulas: modulo.totalAulas,
-        completedAulas: modulo.completedAulas,
-        hasStarted: modulo.hasStarted,
-        lastAccessedAt: modulo.lastAccessedAt,
-        artworkUrl: modulo.artworkUrl,
-        nextAulaId: modulo.nextAulaId,
-        xpTotal: modulo.xp_total,
-        xpBonus: modulo.xp_bonus,
-        locked: modulo.locked,
-        availability: modulo.locked ? 'locked' : 'available',
-      });
-    });
-
-    const totalLessons = modules.reduce(
-      (sum, modulo) => sum + modulo.totalAulas,
-      0,
-    );
-    const completedLessons = modules.reduce(
-      (sum, modulo) => sum + modulo.completedAulas,
-      0,
-    );
-
-    return {
-      summary: {
-        totalModules: modules.length,
-        completedModules: modules.filter((modulo) => modulo.progress === 100)
-          .length,
-        totalLessons,
-        completedLessons,
-        progressPercent:
-          totalLessons > 0
-            ? Math.round((completedLessons / totalLessons) * 100)
-            : 0,
-      },
-      currentModuleId: current?.id ?? null,
-      stages: Array.from(stages.values()),
-    };
+    return resumoDaJornada(await this.findAll(usuario_id));
   }
 
   async findOne(id: number, usuario_id: number) {
@@ -259,6 +156,9 @@ export class ModuloService {
     if (!modulo) {
       throw new NotFoundException('Módulo não encontrado');
     }
+
+    const jornada = await this.jornadaTurma.jornadaDoAluno(usuario_id);
+    if (jornada) return this.findOneDaTurma(modulo, usuario_id, jornada);
 
     await this.assertModuloDesbloqueado(id, usuario_id);
 
@@ -285,40 +185,71 @@ export class ModuloService {
     const aulasWithStatus = aulas.map((aula, index) => {
       const isCompleted = completedAulaIds.includes(aula.id);
       const isUnlocked = index === firstIncompleteIndex;
-      const progress = progressByAula.get(aula.id);
 
       return {
-        id: aula.id,
-        title: aula.title,
-        description: aula.description,
-        type: aula.type,
-        duration: aula.duration,
-        xp: aula.xp,
-        order: aula.order,
-        section_name: aula.section_name,
-        page_count: aula.pages?.length ?? 0,
+        ...this.aulaResumo(aula, progressByAula.get(aula.id)),
         status: isCompleted ? 'completed' : isUnlocked ? 'unlocked' : 'locked',
-        progress_percent: progress?.progress_percent ?? 0,
-        last_video_second: progress?.last_video_second ?? 0,
-        last_page: progress?.last_page ?? 0,
-        last_accessed_at: progress?.last_accessed_at ?? null,
-        artworkKey: null,
+        lock_reason: isCompleted || isUnlocked ? null : ('sequence' as const),
+        opens_at: null,
       };
     });
 
+    return this.detalhe(modulo, aulasWithStatus);
+  }
+
+  private async findOneDaTurma(
+    modulo: Modulo,
+    usuario_id: number,
+    jornada: JornadaDaTurma,
+  ) {
+    const carga = await this.carregar(usuario_id, undefined, jornada);
+    const { modulos, estados } = listarModulos(carga);
+    const alvo = modulos.find((item) => item.id === modulo.id);
+    if (!alvo) throw new NotFoundException('Módulo não encontrado');
+    if (alvo.locked) throw new ForbiddenException(MODULO_BLOQUEADO);
+    const aulas = (carga.aulasByModulo.get(modulo.id) ?? []).map((aula) => {
+      const estado = estados?.get(aula.id);
+      return {
+        ...this.aulaResumo(aula, carga.progressByAula.get(aula.id)),
+        status: estado?.status ?? 'locked',
+        lock_reason: estado ? estado.lockReason : 'outside_journey',
+        opens_at: estado?.opensAt?.toISOString() ?? null,
+      };
+    });
+    return this.detalhe(modulo, aulas);
+  }
+
+  private aulaResumo(aula: Aula, progress: UsuarioAula | undefined) {
+    return {
+      id: aula.id,
+      title: aula.title,
+      description: aula.description,
+      type: aula.type,
+      duration: aula.duration,
+      xp: aula.xp,
+      order: aula.order,
+      section_name: aula.section_name,
+      page_count: aula.pages?.length ?? 0,
+      progress_percent: progress?.progress_percent ?? 0,
+      last_video_second: progress?.last_video_second ?? 0,
+      last_page: progress?.last_page ?? 0,
+      last_accessed_at: progress?.last_accessed_at ?? null,
+      artworkKey: null,
+    };
+  }
+
+  private detalhe<T extends { status: string }>(modulo: Modulo, aulas: T[]) {
     const totalAulas = aulas.length;
-    const completedCount = aulasWithStatus.filter(
-      (a) => a.status === 'completed',
-    ).length;
+    const completedCount = aulas.filter((a) => a.status === 'completed').length;
     const progress =
       totalAulas > 0 ? Math.round((completedCount / totalAulas) * 100) : 0;
-    const thumbnail = this.resolveThumbnail(modulo.thumbnail);
+    const thumbnail = resolverThumbnail(modulo.thumbnail);
 
     return {
       ...modulo,
       thumbnail,
       artworkUrl: thumbnail,
-      aulas: aulasWithStatus,
+      aulas,
       totalAulas,
       completedAulas: completedCount,
       progress,

@@ -1,6 +1,24 @@
 import { UnauthorizedException } from '@nestjs/common';
 import { JwtStrategy } from './jwt.strategy';
 import { Role } from './roles.enum';
+import { activeAccountSession } from './session';
+import { Usuario } from '../usuario/usuario.entity';
+
+describe('activeAccountSession', () => {
+  it('aceita sessão de professor ativo', () => {
+    expect(
+      activeAccountSession(
+        {
+          active: true,
+          session_version: 0,
+          password_change_required: false,
+          role: 'teacher',
+        } as unknown as Usuario,
+        0,
+      ),
+    ).toBe(true);
+  });
+});
 
 describe('JwtStrategy session version', () => {
   let originalSecret: string | undefined;

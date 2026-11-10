@@ -26,6 +26,7 @@ import { CompanyFeaturesModule } from './common/features/company-features.module
 import { RegistrationModule } from './registration/registration.module';
 import { TrialAccessGuard } from './registration/trial-access.guard';
 import { DatabaseModule } from './database/database.molule';
+import { TurmaModule } from './turma/turma.module';
 
 @Module({
   imports: [
@@ -56,6 +57,7 @@ import { DatabaseModule } from './database/database.molule';
     CompanyFeaturesModule,
     RegistrationModule,
     AchievementsModule,
+    TurmaModule,
     ConfigModule.forRoot({
       isGlobal: true,
     }),

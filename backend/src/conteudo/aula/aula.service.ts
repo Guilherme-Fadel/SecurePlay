@@ -382,6 +382,9 @@ export class AulaService {
     const aulasRepository = manager?.getRepository(Aula) ?? this.aulaRepository;
     const progressRepository =
       manager?.getRepository(UsuarioAula) ?? this.usuarioAulaRepository;
+    // aluno com turma: a jornada da turma decide (abertura pelo professor + sequência)
+    if (await this.moduloService.assertAulaDaTurma(aula, usuario_id, manager))
+      return;
     // bloqueio de modulo tem precedencia sobre o bloqueio sequencial de aula
     await this.moduloService.assertModuloDesbloqueado(
       aula.modulo_id,

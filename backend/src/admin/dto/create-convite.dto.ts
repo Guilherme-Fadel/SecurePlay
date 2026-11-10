@@ -35,4 +35,15 @@ export class CreateConviteDto {
   @IsOptional()
   @IsIn(['legacy_email', 'school_student'])
   registration_mode?: 'legacy_email' | 'school_student';
+
+  @IsOptional()
+  @IsIn(['user', 'teacher', 'admin'])
+  papel?: 'user' | 'teacher' | 'admin';
+
+  /** Só para convite de aluno: o cadastro já entra nesta turma. */
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  turma_id?: number;
 }

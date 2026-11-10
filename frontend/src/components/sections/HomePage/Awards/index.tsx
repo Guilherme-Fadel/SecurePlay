@@ -23,7 +23,7 @@ type AwardsView = 'album' | 'collectibles';
 const TAB_PARAM = 'aba';
 const SHOP_TAB_VALUE = 'colecionaveis';
 const COLLECTION_PARAM = 'colecao';
-const MANAGEMENT_ROLES = new Set(['admin', 'platform_admin']);
+const MANAGEMENT_ROLES = new Set(['admin', 'platform_admin', 'teacher']);
 
 const TABS: ReadonlyArray<{ value: AwardsView; label: string }> = [
   { value: 'album', label: 'Álbum' },

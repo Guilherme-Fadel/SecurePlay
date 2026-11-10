@@ -5,6 +5,7 @@ import { BrandCharacter } from '@/components/shared/BrandCharacter';
 import { getModuleArtwork, missionRoomAssets } from '@/lib/staticArtwork';
 import type { JourneyData } from '@/services/dashboard';
 import { formatNumber, nextLessonNumber, type HomeJourney, type HomeJourneyNode } from './homeJourneyModel';
+import { bloqueioDaTurma, textoDeBloqueio } from '../Conteudos/lockCopy';
 
 interface HomeHeroProps {
   journey: HomeJourney;
@@ -13,19 +14,22 @@ interface HomeHeroProps {
   error: boolean;
   onRetry: () => void;
   onContinue: (node: HomeJourneyNode) => void;
+  /** Próxima aula fechada pela turma: revisar a última concluída (ou abrir o módulo). */
+  onReview: (node: HomeJourneyNode) => void;
+  onPlay?: () => void;
   onOpenLearn: () => void;
 }
 
 interface Stop { key: string; label: string; title: string; kind: 'done' | 'now' | 'next' }
 
 /** Card azul do Início: módulo atual, etapa, Antes/Agora/Depois e a ação principal. */
-export function HomeHero({ journey, summary, loading, error, onRetry, onContinue, onOpenLearn }: HomeHeroProps) {
+export function HomeHero({ journey, summary, loading, error, onRetry, onContinue, onReview, onPlay, onOpenLearn }: HomeHeroProps) {
   const empty = journey.nodes.length === 0;
   if (loading && empty) return <HeroLoading />;
   if (error && empty) return <HeroError onRetry={onRetry} />;
   const finished = !empty && journey.nodes.every((node) => node.state === 'done');
   if (!journey.current || finished) return <HeroWithoutModule finished={finished} onOpenLearn={onOpenLearn} />;
-  return <HeroCurrent journey={journey} current={journey.current} summary={summary} onContinue={onContinue} />;
+  return <HeroCurrent journey={journey} current={journey.current} summary={summary} onContinue={onContinue} onReview={onReview} onPlay={onPlay} />;
 }
 
 function HeroLoading() {
@@ -81,13 +85,21 @@ interface HeroCurrentProps {
   current: HomeJourneyNode;
   summary: JourneyData['summary'] | null;
   onContinue: (node: HomeJourneyNode) => void;
+  onReview: (node: HomeJourneyNode) => void;
+  onPlay?: () => void;
 }
 
-function HeroCurrent({ journey, current, summary, onContinue }: HeroCurrentProps) {
+function proximaFechada(current: HomeJourneyNode): string {
+  const texto = textoDeBloqueio(current.nextLessonLockReason, current.nextLessonOpensAt);
+  return current.nextLessonLockReason === 'scheduled' ? `Próxima aula ${texto.toLowerCase()}` : `Próxima aula: ${texto.toLowerCase()}`;
+}
+
+function HeroCurrent({ journey, current, summary, onContinue, onReview, onPlay }: HeroCurrentProps) {
   const total = summary?.totalLessons ?? 0;
   const done = summary?.completedLessons ?? 0;
   const lesson = nextLessonNumber(current);
   const started = current.completedAulas > 0 || current.hasStarted;
+  const fechada = bloqueioDaTurma(current.nextLessonLockReason);
   return (
     <article className="hv-hero" aria-labelledby="hv-hero-title">
       <div className="hv-hero-copy">
@@ -101,10 +113,16 @@ function HeroCurrent({ journey, current, summary, onContinue }: HeroCurrentProps
         <h2 id="hv-hero-title" className="hv-display">{current.title}</h2>
         <p className="hv-hero-line">Etapa {current.stageIndex + 1} · {current.stageTitle} · aula {lesson} de {current.totalAulas}</p>
         <HeroStops stops={heroStops(journey, current, lesson)} />
+        {fechada && <p className="hv-hero-line" role="status">{proximaFechada(current)}</p>}
         <div className="hv-hero-actions">
-          <AppButton variant="chunky" tone="yellow" size="big" icon={<Play size={22} fill="currentColor" aria-hidden="true" />} onClick={() => onContinue(current)}>
+          {fechada ? <>
+            <AppButton variant="chunky" tone="yellow" size="big" icon={<RotateCcw size={20} aria-hidden="true" />} onClick={() => onReview(current)}>
+              {current.lastCompletedAulaId ? 'Revisar a última aula' : 'Ver o módulo'}
+            </AppButton>
+            {onPlay && <AppButton variant="chunky" tone="ghost" size="md" onClick={onPlay}>Jogar</AppButton>}
+          </> : <AppButton variant="chunky" tone="yellow" size="big" icon={<Play size={22} fill="currentColor" aria-hidden="true" />} onClick={() => onContinue(current)}>
             {started ? 'Continuar' : 'Começar'} aula {lesson}
-          </AppButton>
+          </AppButton>}
           {current.xpBonus > 0 && <span className="hv-bonus">Bônus do módulo <strong>+{formatNumber(current.xpBonus)} XP</strong></span>}
         </div>
       </div>

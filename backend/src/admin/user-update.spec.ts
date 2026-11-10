@@ -10,6 +10,7 @@ import { Usuario } from '../usuario/usuario.entity';
 import { Role } from '../auth/roles.enum';
 import { validateSync } from 'class-validator';
 import { UpdateAdminUserDto } from './dto/update-admin-user.dto';
+import { TurmaAluno } from '../turma/entities/turma-aluno.entity';
 
 describe('Administrative user editing', () => {
   it('accepts level zero and rejects negative levels', () => {
@@ -94,6 +95,7 @@ describe('Administrative user editing', () => {
           ),
       ),
       count: jest.fn().mockResolvedValue(1),
+      delete: jest.fn().mockResolvedValue({ affected: 0 }),
       save: jest.fn((_entity: unknown, value: unknown) =>
         Promise.resolve(value),
       ),
@@ -114,6 +116,60 @@ describe('Administrative user editing', () => {
     );
     return { service, target, manager };
   }
+  it('aceita o papel de professor no DTO', () => {
+    expect(
+      validateSync(Object.assign(new UpdateAdminUserDto(), { role: 'teacher' })),
+    ).toHaveLength(0);
+  });
+  it('promove aluno a professor e remove o vínculo de turma na mesma transação', async () => {
+    const { service, manager } = setup();
+    await expect(
+      service.atualizarUsuario(1, 2, { role: 'teacher' } as never),
+    ).resolves.toMatchObject({ role: 'teacher' });
+    expect(manager.delete).toHaveBeenCalledWith(TurmaAluno, { usuario_id: 2 });
+  });
+  it('não transforma aluno sem e-mail em professor nem informando e-mail na mesma edição', async () => {
+    const { service, manager } = setup(Role.PLATFORM_ADMIN, {
+      email: null,
+      username: 'aluno.escola',
+    });
+    await expect(
+      service.atualizarUsuario(
+        1,
+        2,
+        { role: 'teacher', email: 'adulto@example.com' } as never,
+        10,
+      ),
+    ).rejects.toThrow('Use um convite de professor para contas sem e-mail');
+    expect(manager.save).not.toHaveBeenCalled();
+  });
+  it('exige e-mail para conta de professor', async () => {
+    const { service, manager } = setup(Role.PLATFORM_ADMIN, {
+      email: null,
+      username: 'professor.teste',
+    });
+    await expect(
+      service.atualizarUsuario(1, 2, { role: 'teacher' } as never, 10),
+    ).rejects.toThrow('Contas administrativas precisam de e-mail');
+    expect(manager.save).not.toHaveBeenCalled();
+  });
+  it('não transforma conta com código escolar em professor', async () => {
+    const { service } = setup(Role.PLATFORM_ADMIN, {
+      login_code: 'SCHOOL-123',
+      email: 'aluno@example.com',
+    });
+    await expect(
+      service.atualizarUsuario(1, 2, { role: 'teacher' } as never, 10),
+    ).rejects.toThrow(
+      'Use um convite de administrador para contas com código escolar',
+    );
+  });
+  it('mantém ao menos um administrador ativo quando o último vira professor', async () => {
+    const { service } = setup(Role.PLATFORM_ADMIN, { role: Role.ADMIN });
+    await expect(
+      service.atualizarUsuario(1, 2, { role: 'teacher' } as never, 10),
+    ).rejects.toThrow('A empresa precisa manter ao menos um administrador ativo');
+  });
   it('updates editable fields and audits field names without returning secrets', async () => {
     const { service, manager } = setup();
     const result = await service.atualizarUsuario(1, 2, {

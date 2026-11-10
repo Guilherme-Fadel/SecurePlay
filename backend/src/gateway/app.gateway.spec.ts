@@ -120,6 +120,39 @@ describe('AppGateway — ciclo da sessão', () => {
     gateway.onModuleDestroy();
   });
 
+  const jornada = {
+    turmaId: 4,
+    usuarioIds: [27, 31],
+    aulasAbertas: [{ id: 11, titulo: 'Senhas fortes' }],
+  };
+
+  it('avisa alunos da turma que a jornada mudou, sem enviar a lista de ids', async () => {
+    const { gateway, client } = setup();
+    await gateway.handleConnection(client as never);
+    await gateway.handleJornadaAtualizada(jornada);
+    expect(client.emit).toHaveBeenCalledWith('jornada-atualizada', {
+      turmaId: 4,
+      aulasAbertas: [{ id: 11, titulo: 'Senhas fortes' }],
+    });
+    gateway.onModuleDestroy();
+  });
+
+  it('não avisa quem não é aluno da turma', async () => {
+    const { gateway, client } = setup();
+    await gateway.handleConnection(client as never);
+    await gateway.handleJornadaAtualizada({ ...jornada, usuarioIds: [31] });
+    expect(client.emit).not.toHaveBeenCalled();
+    gateway.onModuleDestroy();
+  });
+
+  it('não avisa sessão revogada', async () => {
+    const { gateway, client, sessions } = setup();
+    await gateway.handleConnection(client as never);
+    sessions.validate.mockResolvedValue(null);
+    await gateway.handleJornadaAtualizada(jornada);
+    expect(client.emit).not.toHaveBeenCalled();
+  });
+
   it('timer encerra sessão expirada sem precisar de nova notificação', async () => {
     jest.useFakeTimers();
     const { gateway, client } = setup();

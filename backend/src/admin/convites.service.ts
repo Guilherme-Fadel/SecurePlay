@@ -18,6 +18,11 @@ import { Convite } from './entities/convite.entity';
 import { RegistrationService } from '../registration/registration.service';
 import { AdminAuditService } from './admin-audit.service';
 import { EventEmitter2 } from '@nestjs/event-emitter';
+import { removerVinculosAoMudarPapel } from '../turma/turma-vinculos';
+import { Turma } from '../turma/entities/turma.entity';
+import { ConviteTurma } from '../turma/entities/convite-turma.entity';
+import { papelDoConvite } from './convite-papel';
+import { filtrarPorTurma, turmasDosUsuarios } from '../turma/turma-usuarios';
 import { ensurePendingRankingSeasonsClosed } from '../dashboard/ranking-history';
 import { AdminAuditEvent } from './entities/admin-audit-event.entity';
 import { UpdateAdminUserDto } from './dto/update-admin-user.dto';
@@ -34,6 +39,9 @@ type UsuarioFiltros = {
   page?: number;
   pageSize?: number;
   search?: string;
+  papel?: 'user' | 'teacher' | 'admin';
+  /** Id da turma ou 'nenhuma' para quem ainda não tem turma. */
+  turma?: number | 'nenhuma';
   status?: 'active' | 'inactive' | 'management';
   sort?: 'asc' | 'desc';
 };
@@ -142,16 +150,29 @@ export class ConvitesService {
           throw new BadRequestException(
             'Contas administrativas precisam de e-mail',
           );
-        if (dto.role === Role.ADMIN && target.login_code)
+        if (
+          (dto.role === Role.ADMIN || dto.role === Role.TEACHER) &&
+          target.login_code
+        )
           throw new BadRequestException(
             'Use um convite de administrador para contas com código escolar',
+          );
+        // Professor é conta de adulto: aluno criado sem e-mail não vira professor numa edição.
+        if (
+          dto.role === Role.TEACHER &&
+          target.role !== Role.TEACHER &&
+          !target.email
+        )
+          throw new BadRequestException(
+            'Use um convite de professor para contas sem e-mail',
           );
         if (email !== target.email && target.password_change_required)
           throw new BadRequestException(
             'Conclua a definição de senha antes de alterar o e-mail',
           );
         if (
-          dto.role === Role.USER &&
+          dto.role !== undefined &&
+          dto.role !== Role.ADMIN &&
           target.role === Role.ADMIN &&
           target.active &&
           (await manager.count(Usuario, {
@@ -197,6 +218,12 @@ export class ConvitesService {
           fields.push('level');
         }
         if (dto.role && (dto.role as Role) !== target.role) {
+          await removerVinculosAoMudarPapel(
+            manager,
+            target.id,
+            target.role,
+            dto.role as Role,
+          );
           target.role = dto.role as Role;
           fields.push('role');
         }
@@ -262,6 +289,7 @@ export class ConvitesService {
         { search: `%${search}%` },
       );
     }
+    filtrarPorTurma(query, filtros);
 
     const direction = filtros.sort === 'desc' ? 'DESC' : 'ASC';
     const [usuarios, total] = await query
@@ -270,9 +298,16 @@ export class ConvitesService {
       .skip((page - 1) * pageSize)
       .take(pageSize)
       .getManyAndCount();
+    const turmas = await turmasDosUsuarios(
+      this.dataSource.manager,
+      usuarios.map((usuario) => usuario.id),
+    );
 
     return {
-      items: usuarios.map((usuario) => this.toUsuarioResumo(usuario)),
+      items: usuarios.map((usuario) => ({
+        ...this.toUsuarioResumo(usuario),
+        turma: turmas.get(usuario.id) ?? null,
+      })),
       page,
       pageSize,
       total,
@@ -436,8 +471,9 @@ export class ConvitesService {
   }
 
   async criar(userId: number, dto: CreateConviteDto) {
+    const role = papelDoConvite(dto, false);
     const empresa = await this.getEmpresaDoAdministrador(userId);
-    return this.criarParaEmpresa(empresa.id, userId, dto);
+    return this.criarParaEmpresa(empresa.id, userId, dto, role);
   }
 
   async criarParaEmpresa(
@@ -453,7 +489,8 @@ export class ConvitesService {
       );
     }
     const email = dto.email?.trim().toLowerCase() || null;
-    const roleDoConvite = role === Role.ADMIN ? Role.ADMIN : Role.USER;
+    const roleDoConvite =
+      role === Role.ADMIN || role === Role.TEACHER ? role : Role.USER;
     const registrationMode =
       roleDoConvite === Role.USER && dto.registration_mode === 'school_student'
         ? 'school_student'
@@ -469,6 +506,18 @@ export class ConvitesService {
       throw new BadRequestException(
         'Convites de administrador exigem um e-mail',
       );
+    }
+    if (roleDoConvite === Role.TEACHER && !email) {
+      throw new BadRequestException('Convites de professor exigem um e-mail');
+    }
+    if (dto.turma_id !== undefined) {
+      if (roleDoConvite !== Role.USER)
+        throw new BadRequestException('Turma só vale para convite de aluno');
+      const turma = await this.dataSource.getRepository(Turma).findOne({
+        where: { id: dto.turma_id, empresa_id: empresaId, ativa: true },
+      });
+      if (!turma)
+        throw new BadRequestException('Selecione uma turma ativa desta escola');
     }
 
     if (email && (await this.usuarioRepository.findOne({ where: { email } }))) {
@@ -489,13 +538,31 @@ export class ConvitesService {
       criado_por_id: userId,
       expires_at: expiresAt,
       max_uses:
-        roleDoConvite === Role.ADMIN || registrationMode === 'school_student'
+        roleDoConvite !== Role.USER || registrationMode === 'school_student'
           ? 1
           : (dto.max_uses ?? 1),
       role: roleDoConvite,
       registration_mode: registrationMode,
     });
-    const saved = await this.conviteRepository.save(convite);
+    const turmaId = dto.turma_id;
+    const saved =
+      turmaId === undefined
+        ? await this.conviteRepository.save(convite)
+        : await this.dataSource.transaction(async (manager) => {
+            const ativa = await manager.getRepository(Turma).findOne({
+              where: { id: turmaId, empresa_id: empresaId, ativa: true },
+              lock: { mode: 'pessimistic_read' },
+            });
+            if (!ativa)
+              throw new BadRequestException(
+                'Selecione uma turma ativa desta escola',
+              );
+            const criado = await manager.getRepository(Convite).save(convite);
+            await manager
+              .getRepository(ConviteTurma)
+              .insert({ convite_id: criado.id, turma_id: turmaId });
+            return criado;
+          });
     await this.adminAuditService.registrar({
       empresaId,
       atorId: userId,

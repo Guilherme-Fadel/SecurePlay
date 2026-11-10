@@ -20,6 +20,8 @@ import { Throttle } from '@nestjs/throttler';
 import { ChangeUserStatusDto } from './dto/change-user-status.dto';
 import { UpdateAdminUserDto } from './dto/update-admin-user.dto';
 
+import { filtrosDeTurmaDaQuery } from '../turma/turma-usuarios';
+
 type AdminRequest = { user: { userId: number } };
 
 @Controller('admin/empresa')
@@ -59,6 +61,8 @@ export class AdminController {
     @Query('search') search?: string,
     @Query('status') status?: 'active' | 'inactive' | 'management',
     @Query('sort') sort?: 'asc' | 'desc',
+    @Query('papel') papel?: string,
+    @Query('turma') turma?: string,
   ) {
     return this.convitesService.listarUsuariosPaginados(req.user.userId, {
       page: Number(page),
@@ -66,6 +70,7 @@ export class AdminController {
       search,
       status,
       sort,
+      ...filtrosDeTurmaDaQuery(papel, turma),
     });
   }
 
