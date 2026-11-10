@@ -22,6 +22,7 @@ import { removerVinculosAoMudarPapel } from '../turma/turma-vinculos';
 import { Turma } from '../turma/entities/turma.entity';
 import { ConviteTurma } from '../turma/entities/convite-turma.entity';
 import { papelDoConvite } from './convite-papel';
+import { filtrarPorTurma, turmasDosUsuarios } from '../turma/turma-usuarios';
 import { ensurePendingRankingSeasonsClosed } from '../dashboard/ranking-history';
 import { AdminAuditEvent } from './entities/admin-audit-event.entity';
 import { UpdateAdminUserDto } from './dto/update-admin-user.dto';
@@ -38,6 +39,9 @@ type UsuarioFiltros = {
   page?: number;
   pageSize?: number;
   search?: string;
+  papel?: 'user' | 'teacher' | 'admin';
+  /** Id da turma ou 'nenhuma' para quem ainda não tem turma. */
+  turma?: number | 'nenhuma';
   status?: 'active' | 'inactive' | 'management';
   sort?: 'asc' | 'desc';
 };
@@ -276,6 +280,7 @@ export class ConvitesService {
         { search: `%${search}%` },
       );
     }
+    filtrarPorTurma(query, filtros);
 
     const direction = filtros.sort === 'desc' ? 'DESC' : 'ASC';
     const [usuarios, total] = await query
@@ -284,9 +289,16 @@ export class ConvitesService {
       .skip((page - 1) * pageSize)
       .take(pageSize)
       .getManyAndCount();
+    const turmas = await turmasDosUsuarios(
+      this.dataSource.manager,
+      usuarios.map((usuario) => usuario.id),
+    );
 
     return {
-      items: usuarios.map((usuario) => this.toUsuarioResumo(usuario)),
+      items: usuarios.map((usuario) => ({
+        ...this.toUsuarioResumo(usuario),
+        turma: turmas.get(usuario.id) ?? null,
+      })),
       page,
       pageSize,
       total,
