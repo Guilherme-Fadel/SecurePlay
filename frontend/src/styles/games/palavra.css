@@ -141,22 +141,36 @@
   .gw .bp-mini span { width: 32px; height: 32px; font-size: 17px; }
 }
 
-/* Notebook e tablet deitado baixos: porta à direita; dica e teclado na coluna da esquerda. */
+/* Notebook e tablet deitado baixos: porta à direita; dica e teclado empilhados na coluna da esquerda, o conjunto
+   centrado na altura da porta (linhas 1fr em cima e embaixo) e com um vão que deixa a dica inclinada longe das teclas. */
 @media (max-height: 760px) {
+  .gw.bp { --bp-h: clamp(0px, calc(100dvh - 600px), 160px); }
   @container (min-width: 701px) {
-    .gw .bp-grid { position: relative; grid-template-columns: minmax(0, 1fr) auto; grid-template-rows: auto 1fr; gap: 14px 30px; align-items: start; }
-    .gw .bp-center { display: contents; --bp-d: min(430px, 40cqi, calc(100dvh - 190px)); --bp-t: calc(var(--bp-d) * .0977); --bp-g: calc(var(--bp-d) * .014); }
+    .gw.bp .gw-main:has(> .bp-grid) { display: flex; flex-direction: column; }
+    .gw .bp-grid { position: relative; flex: 1 1 auto; grid-template-columns: minmax(0, 1fr) auto; grid-template-rows: 1fr auto auto 1fr; gap: 0 30px; align-items: start; }
+    .gw .bp-center { display: contents; --bp-d: min(480px, 40cqi, calc(100dvh - 190px)); --bp-t: calc(var(--bp-d) * .0977); --bp-g: calc(var(--bp-d) * .014); }
     .gw .bp-side { display: none; }
-    .gw .bp-note { grid-column: 1; grid-row: 1; padding: 16px 18px 14px; }
-    .gw .bp-note p { font-size: 15px; }
+    .gw .bp-note { grid-column: 1; grid-row: 2; padding: calc(16px + var(--bp-h) * .06) 18px calc(14px + var(--bp-h) * .06); transform: rotate(-1.2deg); }
+    .gw .bp-note h2 { font-size: calc(24px + var(--bp-h) * .03); }
+    .gw .bp-note p { font-size: calc(15px + var(--bp-h) * .012); }
+    .gw .bp-note p.gw-k { font-size: 13px; }
     .gw .bp-leg { flex-direction: row; flex-wrap: wrap; gap: 6px 16px; }
-    .gw .bp-door { grid-column: 2; grid-row: 1 / span 2; margin: 24px 64px 36px 26px; }
-    .gw .bp-kb { grid-column: 1; grid-row: 2; width: 100%; align-self: start; gap: 7px; }
-    .gw .bp-kb div { width: 100%; justify-content: center; }
-    .gw .bp-key { flex: 1 1 0; min-width: 0; max-width: 46px; height: 46px; padding: 0; font-size: 15px; }
-    .gw .bp-key.w { flex: 1.9 1 0; max-width: 72px; font-size: 13px; }
+    .gw .bp-door { grid-column: 2; grid-row: 1 / -1; align-self: center; margin: 24px 64px 36px 26px; }
+    .gw .bp-kb { grid-column: 1; grid-row: 3; width: 100%; align-self: start; margin-top: calc(26px + var(--bp-h) * .06); gap: calc(8px + var(--bp-h) * .02); }
+    .gw .bp-kb div { width: 100%; justify-content: center; gap: 7px; }
+    .gw .bp-key { flex: 1 1 0; min-width: 0; max-width: calc(54px + var(--bp-h) * .05); height: calc(48px + var(--bp-h) * .05); padding: 0; font-size: 16px; }
+    .gw .bp-key.w { flex: 1.9 1 0; max-width: calc(84px + var(--bp-h) * .08); font-size: 13px; }
     .gw .bp-toast { top: 4px; left: 25%; }
   }
+}
+
+/* Resultado em janelas baixas: o cofre aberto, a palavra e as tentativas crescem com a altura (--gw-h, em game-worlds.css). */
+@media (min-width: 700px) and (max-height: 860px) {
+  .gw .bp-open { width: calc(170px + var(--gw-h) * .4); height: calc(170px + var(--gw-h) * .4); }
+  .gw .bp-open-in { width: calc(118px + var(--gw-h) * .28); height: calc(118px + var(--gw-h) * .28); }
+  .gw .bp-open-in img { width: calc(80px + var(--gw-h) * .19); height: calc(80px + var(--gw-h) * .19); }
+  .gw .bp-word span { width: calc(42px + var(--gw-h) * .04); height: calc(42px + var(--gw-h) * .04); font-size: calc(24px + var(--gw-h) * .03); }
+  .gw .bp-mini span { width: calc(32px + var(--gw-h) * .03); height: calc(32px + var(--gw-h) * .03); }
 }
 
 /* ---------- Reduzir movimento: sem giro, balanço ou porta girando ---------- */

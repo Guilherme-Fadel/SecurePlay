@@ -25,25 +25,34 @@ interface Bulb {
     y: string;
     alt: boolean;
 }
-/** Lâmpadas no meio da faixa de 30px da moldura (centro a 15px da borda); cantos no arco de raio 40. */
+/**
+ * Lâmpadas no meio da faixa da moldura. A largura da faixa (--bq-band), o raio do canto (--bq-r) e a posição das
+ * lâmpadas dos cantos (--bq-c, sobre o arco a 45°) vêm do CSS, então a moldura pode afinar ou engrossar por altura de tela
+ * sem as lâmpadas saírem do lugar.
+ */
 function buildBulbs(nx: number, ny: number): Bulb[] {
     const out: {
         x: string;
         y: string;
     }[] = [];
-    const along = (t: number) => `calc(58px + (100% - 116px) * ${t.toFixed(4)})`;
+    const mid = 'calc(var(--bq-band) / 2)';
+    const far = 'calc(100% - var(--bq-band) / 2)';
+    const corner = 'var(--bq-c)';
+    const farCorner = 'calc(100% - var(--bq-c))';
+    const start = 'calc(var(--bq-r) + 18px)';
+    const along = (t: number) => `calc(${start} + (100% - 2 * ${start}) * ${t.toFixed(4)})`;
     for (let k = 0; k < nx; k++)
-        out.push({ x: along(k / (nx - 1)), y: '15px' });
-    out.push({ x: 'calc(100% - 22px)', y: '22px' });
+        out.push({ x: along(k / (nx - 1)), y: mid });
+    out.push({ x: farCorner, y: corner });
     for (let k = 0; k < ny; k++)
-        out.push({ x: 'calc(100% - 15px)', y: along(k / (ny - 1)) });
-    out.push({ x: 'calc(100% - 22px)', y: 'calc(100% - 22px)' });
+        out.push({ x: far, y: along(k / (ny - 1)) });
+    out.push({ x: farCorner, y: farCorner });
     for (let k = nx - 1; k >= 0; k--)
-        out.push({ x: along(k / (nx - 1)), y: 'calc(100% - 15px)' });
-    out.push({ x: '22px', y: 'calc(100% - 22px)' });
+        out.push({ x: along(k / (nx - 1)), y: far });
+    out.push({ x: corner, y: farCorner });
     for (let k = ny - 1; k >= 0; k--)
-        out.push({ x: '15px', y: along(k / (ny - 1)) });
-    out.push({ x: '22px', y: '22px' });
+        out.push({ x: mid, y: along(k / (ny - 1)) });
+    out.push({ x: corner, y: corner });
     return out.map((b, j) => ({ ...b, alt: j % 2 === 1 }));
 }
 const BULBS = buildBulbs(14, 5);
@@ -277,7 +286,7 @@ export function QuizBlitz({ onExit, xp, roundSize, onFinished }: QuizBlitzProps)
               <div><small>Respondidas</small><b>{answers.length}</b><span>de {total}</span></div>
             </div>
           </div>
-          <div className="bq-pods" role="group" aria-label="Respostas">
+          <div className="bq-pods" role="group" aria-label="Respostas" data-count={current.options.length}>
             {current.options.map((option, optionIndex) => (<button type="button" key={optionIndex} className={`bq-pod p${optionIndex % 4}${hit === optionIndex ? ' hit' : ''}`} onClick={() => answer(optionIndex)} aria-label={`Resposta ${LETTERS[optionIndex] ?? optionIndex + 1}: ${option}`}>
                 <b aria-hidden="true">{LETTERS[optionIndex] ?? optionIndex + 1}</b>
                 <span>{option}</span>

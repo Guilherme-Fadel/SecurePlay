@@ -26,8 +26,14 @@
 
 /* ---------- Jogando: telão com marquise ---------- */
 .gw .bq-grid { display: grid; grid-template-columns: minmax(0, 190px) minmax(0, 1fr) minmax(0, 190px); gap: 22px; align-items: end; }
-.gw .bq-marq { position: relative; padding: 30px; border-radius: 40px; background: #C45500; box-shadow: 0 0 0 4px #000000, inset 0 0 0 3px #A63F00; }
-.gw .bq-bulb { position: absolute; width: 13px; height: 13px; margin: -6.5px 0 0 -6.5px; border-radius: 50%; background: #FED501; box-shadow: 0 0 0 2px #000000, 0 0 10px 2px rgba(254, 213, 1, .85); animation: bq-blink 1s steps(1) infinite; }
+/* A moldura tem a largura da faixa (--bq-band) e o raio do canto (--bq-r); as lâmpadas ficam no meio da faixa (ver buildBulbs).
+   --bq-c é o ponto do canto sobre o arco, a 45°. O tamanho da lâmpada (--bq-bulb + 2px de contorno) tem de caber na faixa. */
+.gw .bq-marq {
+  --bq-band: 30px; --bq-r: 40px; --bq-bulb: 13px;
+  --bq-c: calc(var(--bq-r) - (var(--bq-r) - var(--bq-band) / 2) * .7071);
+  position: relative; padding: var(--bq-band); border-radius: var(--bq-r); background: #C45500; box-shadow: 0 0 0 4px #000000, inset 0 0 0 3px #A63F00;
+}
+.gw .bq-bulb { position: absolute; width: var(--bq-bulb); height: var(--bq-bulb); margin: calc(var(--bq-bulb) / -2) 0 0 calc(var(--bq-bulb) / -2); border-radius: 50%; background: #FED501; box-shadow: 0 0 0 2px #000000, 0 0 10px 2px rgba(254, 213, 1, .85); animation: bq-blink 1s steps(1) infinite; }
 .gw .bq-bulb.b { animation-delay: -.5s; }
 @keyframes bq-blink { 50% { background: #6B3A12; box-shadow: 0 0 0 2px #000000; } }
 .gw .bq-board { position: relative; z-index: 2; display: flex; flex-direction: column; gap: 14px; min-height: 220px; padding: 22px 26px 26px; border-radius: 20px; background: #FFFFFF; color: #000000; box-shadow: 0 0 0 4px #000000; }
@@ -46,8 +52,9 @@
 .gw .bq-score .low b { color: #B30E00; }
 
 /* ---------- Púlpitos (respostas) ---------- */
-.gw .bq-pods { position: relative; z-index: 2; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 18px; max-width: 1000px; margin: 34px auto 0; }
-.gw .bq-pod { display: flex; flex-direction: column; align-items: center; gap: 10px; min-height: 150px; padding: 16px 14px 18px; border: 0; border-radius: 28px 28px 12px 12px; background: #FFFFFF; color: #000000; text-align: center; font-size: 17px; font-weight: 700; line-height: 1.25; box-shadow: 0 0 0 3px #000000, 0 9px 0 3px #000000; transition: transform .15s, box-shadow .15s, background-color .2s; }
+/* Respostas: linha centralizada para 2, 3 ou 4 opções, todas com a mesma largura. */
+.gw .bq-pods { position: relative; z-index: 2; display: flex; flex-wrap: wrap; justify-content: center; gap: 18px; max-width: 1000px; margin: 34px auto 0; }
+.gw .bq-pod { flex: 1 1 0; min-width: 0; max-width: 300px; display: flex; flex-direction: column; align-items: center; gap: 10px; min-height: 150px; padding: 16px 14px 18px; border: 0; border-radius: 28px 28px 12px 12px; background: #FFFFFF; color: #000000; text-align: center; font-size: 17px; font-weight: 700; line-height: 1.25; box-shadow: 0 0 0 3px #000000, 0 9px 0 3px #000000; transition: transform .15s, box-shadow .15s, background-color .2s; }
 .gw .bq-pod b { display: grid; place-items: center; flex: 0 0 auto; width: 58px; height: 58px; border-radius: 50%; box-shadow: 0 0 0 3px #000000; font-size: 30px; font-weight: 800; }
 .gw .bq-pod.p0 b { background: #2662E7; color: #FFFFFF; }
 .gw .bq-pod.p1 b { background: #FE96C7; color: #000000; }
@@ -70,7 +77,8 @@
   .gw .bq-grid { grid-template-columns: minmax(0, 1fr); gap: 16px; }
   .gw .bq-score { flex-direction: row; }
   .gw .bq-score > div { flex: 1; }
-  .gw .bq-pods { grid-template-columns: repeat(2, minmax(0, 1fr)); margin-top: 24px; }
+  .gw .bq-pods { margin-top: 24px; }
+  .gw .bq-pod { flex: 0 1 calc(50% - 9px); max-width: none; }
   .gw .bq-curt { width: 60px; }
 }
 /* Celular: placar em tira no topo, respostas empilhadas e compactas. */
@@ -85,13 +93,13 @@
   .gw .bq-score small { font-size: 13px; letter-spacing: .04em; }
   .gw .bq-score b { font-size: 34px; }
   .gw .bq-score span { font-size: 13px; }
-  .gw .bq-marq { padding: 14px; border-radius: 26px; }
+  .gw .bq-marq { --bq-band: 18px; --bq-r: 26px; --bq-bulb: 9px; }
   .gw .bq-board { min-height: 0; gap: 10px; padding: 12px 14px 16px; }
   .gw .bq-q { font-size: 22px; }
   .gw .bq-lamps { gap: 4px; }
   .gw .bq-lamps li { width: 12px; height: 12px; }
-  .gw .bq-pods { grid-template-columns: minmax(0, 1fr); gap: 9px; margin-top: 14px; }
-  .gw .bq-pod { flex-direction: row; min-height: 56px; padding: 8px 14px; gap: 12px; border-radius: 22px 22px 10px 10px; text-align: left; font-size: 16px; box-shadow: 0 0 0 3px #000000, 0 5px 0 3px #000000; }
+  .gw .bq-pods { flex-direction: column; flex-wrap: nowrap; gap: 9px; margin-top: 14px; }
+  .gw .bq-pod { flex: 0 0 auto; flex-direction: row; min-height: 56px; padding: 8px 14px; gap: 12px; border-radius: 22px 22px 10px 10px; text-align: left; font-size: 16px; box-shadow: 0 0 0 3px #000000, 0 5px 0 3px #000000; }
   .gw .bq-pod b { width: 40px; height: 40px; font-size: 22px; }
   .gw .bq-pod:hover { transform: none; box-shadow: 0 0 0 3px #000000, 0 5px 0 3px #000000; }
   .gw .bq-pod.hit, .gw .bq-pod.hit:hover { transform: translateY(4px); box-shadow: 0 0 0 3px #000000, 0 1px 0 3px #000000; }
@@ -102,36 +110,40 @@
 @media (max-width: 699px) and (max-height: 700px) {
   .gw .bq-q { font-size: 20px; }
   .gw .bq-score b { font-size: 28px; }
-  .gw .bq-marq { padding: 10px; }
+  .gw .bq-marq { --bq-band: 16px; --bq-bulb: 8px; }
   .gw .bq-board { padding: 10px 12px 12px; gap: 8px; }
   .gw .bq-pods { gap: 7px; margin-top: 12px; }
   .gw .bq-pod { min-height: 52px; padding: 6px 12px; }
 }
 
-/* Janelas baixas (notebook, tablet deitado) */
+/* Janelas baixas (notebook, tablet deitado): a cena inteira fica centrada na altura útil, com telão e púlpitos
+   crescendo junto com a altura (--bq-h: 0 aos 600 px, até 200 px aos 800 px); a moldura mantém a faixa larga o bastante
+   para toda lâmpada aparecer em volta do telão. */
 @media (min-width: 700px) and (max-height: 860px) {
-  .gw .bq-marq { padding: 22px; }
-  .gw .bq-board { min-height: 0; gap: 10px; padding: 16px 22px 20px; }
-  .gw .bq-q { font-size: 28px; }
-  .gw .bq-pods { margin-top: 22px; }
-  .gw .bq-pod { min-height: 124px; padding: 12px 12px 14px; gap: 8px; }
-  .gw .bq-pod b { width: 50px; height: 50px; font-size: 26px; }
-  .gw .bq-score { gap: 10px; }
-  .gw .bq-score b { font-size: 48px; }
+  .gw.bq { --bq-h: clamp(0px, calc(100dvh - 600px), 200px); }
+  .gw.bq .gw-main:has(> .bq-grid) { display: flex; flex-direction: column; justify-content: center; }
+  .gw .bq-grid { align-items: stretch; }
+  .gw .bq-grid > .gw-guide { align-self: end; }
+  .gw .bq-marq { --bq-band: 28px; --bq-r: 36px; --bq-bulb: 12px; display: flex; }
+  .gw .bq-board { flex: 1 1 auto; min-height: calc(142px + var(--bq-h) * .28); gap: 10px; padding: 14px 24px 18px; justify-content: space-between; }
+  .gw .bq-q { display: flex; flex: 1 1 auto; align-items: center; font-size: calc(28px + var(--bq-h) * .02); }
+  .gw .bq-pods { margin-top: calc(26px + var(--bq-h) * .1); gap: 16px; }
+  .gw .bq-pod { min-height: calc(134px + var(--bq-h) * .34); padding: 12px 12px 16px; gap: 10px; font-size: calc(16px + var(--bq-h) * .012); }
+  .gw .bq-pod b { width: calc(46px + var(--bq-h) * .06); height: calc(46px + var(--bq-h) * .06); font-size: 26px; }
+  .gw .bq-score { gap: 12px; }
+  .gw .bq-score > div { flex: 1 1 0; justify-content: center; padding: 8px 10px 10px; }
+  .gw .bq-score b { font-size: calc(44px + var(--bq-h) * .06); }
+  .gw .bq-floor { bottom: -240px; }
   .gw .bq-cd-ring { width: 190px; height: 190px; }
   .gw .bq-cd-ring .gw-disp { font-size: 100px; }
 }
 @media (min-width: 700px) and (max-height: 740px) {
-  .gw .bq-marq { padding: 16px; }
-  .gw .bq-board { padding: 12px 18px 16px; }
-  .gw .bq-q { font-size: 26px; }
-  .gw .bq-pods { margin-top: 16px; gap: 12px; }
-  .gw .bq-pod { min-height: 100px; padding: 10px; gap: 6px; font-size: 16px; }
-  .gw .bq-pod b { width: 42px; height: 42px; font-size: 22px; }
-  .gw .bq-score > div { padding: 8px 10px 10px; }
-  .gw .bq-score b { font-size: 38px; }
+  .gw .bq-marq { --bq-band: 26px; --bq-r: 34px; }
   .gw .bq-cd-ring { width: 160px; height: 160px; }
   .gw .bq-cd-ring .gw-disp { font-size: 84px; }
+}
+@media (min-width: 700px) and (max-height: 660px) {
+  .gw .bq-marq { --bq-band: 24px; --bq-r: 32px; }
 }
 
 /* ---------- Reduzir movimento: o resto (animações e transições) já é cortado em game-worlds.css ---------- */
