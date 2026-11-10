@@ -1,6 +1,7 @@
 import { useCallback, useState, useEffect, useRef } from 'react';
 import { isAxiosError } from 'axios';
 import { ModuloDetalhes, getModulo } from '@/services/conteudo';
+import { useAoAtualizarJornada } from '@/hooks/useJornadaAtualizada';
 
 /** denied: 403 do backend (módulo bloqueado); missing: 404; failed: rede/servidor (permite tentar de novo). */
 export type ModuleErrorKind = 'denied' | 'missing' | 'failed';
@@ -54,6 +55,9 @@ export function useModulo(moduloId: number | null) {
     void fetch();
     return () => { generation.current += 1; };
   }, [fetch]);
+
+  // Aula aberta pelo professor enquanto o módulo está na tela.
+  useAoAtualizarJornada(fetch, Boolean(moduloId));
 
   // O ID muda no render antes da limpeza do efeito anterior.
   const current = state.id === moduloId;

@@ -194,6 +194,7 @@ test('notifications recover on connect and a late HTTP snapshot cannot erase a s
       useEffect(callback) { effects.push(callback); },
     },
     '@/hooks/useSocket': { useSocket: () => socket },
+    '@/hooks/useJornadaAtualizada': { useJornadaAtualizada() {} },
     '@/hooks/useCurrentUser': { useCurrentUser: () => ({ user: { userId: 1 }, loading: false }) },
     '@/services/notification': {
       getNotification: () => {

@@ -54,3 +54,68 @@ test('texto de bloqueio por motivo', () => {
   assert.equal(textoDeBloqueio(null, null, 'conclua o módulo anterior para liberar'), 'conclua o módulo anterior para liberar');
   assert.equal(textoDeBloqueio('scheduled', null), 'Conclua as aulas anteriores para liberar esta aula.');
 });
+
+function carregarHookJornada() {
+  const chamadas = { invalidate: [], toast: [], eventos: [] };
+  const ouvintes = new Map();
+  const janela = {
+    addEventListener(nome, fn) { ouvintes.set(nome, [...(ouvintes.get(nome) ?? []), fn]); },
+    removeEventListener(nome, fn) { ouvintes.set(nome, (ouvintes.get(nome) ?? []).filter((item) => item !== fn)); },
+    dispatchEvent(evento) { chamadas.eventos.push(evento.type); for (const fn of ouvintes.get(evento.type) ?? []) fn(evento); return true; },
+  };
+  const limpezas = [];
+  const source = fs.readFileSync(path.join(__dirname, '..', 'src/hooks/useJornadaAtualizada.ts'), 'utf8');
+  const compiled = ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } });
+  const module = { exports: {} };
+  vm.runInNewContext(compiled.outputText, {
+    module, exports: module.exports, window: janela,
+    document: { visibilityState: 'visible', addEventListener() {}, removeEventListener() {} },
+    CustomEvent: class { constructor(type) { this.type = type; } },
+    require: (name) => {
+      if (name === 'react') return { useEffect: (fn) => { const limpar = fn(); if (limpar) limpezas.push(limpar); } };
+      if (name === 'sonner') return { toast: (texto) => chamadas.toast.push(texto) };
+      if (name === '@/lib/queryCache') return { invalidate: (chave) => chamadas.invalidate.push(chave) };
+      throw new Error(`Import inesperado: ${name}`);
+    },
+  });
+  return { hook: module.exports, chamadas, janela, limpezas };
+}
+
+function socketFalso() {
+  const ouvintes = new Map();
+  return {
+    ouvintes,
+    on(nome, fn) { ouvintes.set(nome, fn); },
+    off(nome, fn) { if (ouvintes.get(nome) === fn) ouvintes.delete(nome); },
+  };
+}
+
+test('aviso de jornada recarrega a trilha, avisa o módulo aberto e anuncia cada aula aberta', () => {
+  const { hook, chamadas, limpezas } = carregarHookJornada();
+  const socket = socketFalso();
+  hook.useJornadaAtualizada(socket, true);
+  socket.ouvintes.get('jornada-atualizada')({ turmaId: 4, aulasAbertas: [{ id: 11, titulo: 'Senhas fortes' }, { id: 12, titulo: 'Frase-senha' }] });
+  assert.deepEqual([...chamadas.invalidate], ['conteudoModulos', 'dashboardJourney']);
+  assert.deepEqual([...chamadas.eventos], ['secureplay:jornada-atualizada']);
+  assert.deepEqual([...chamadas.toast], ['Nova aula aberta: Senhas fortes', 'Nova aula aberta: Frase-senha']);
+  limpezas.forEach((limpar) => limpar());
+  assert.equal(socket.ouvintes.has('jornada-atualizada'), false);
+});
+
+test('fora do papel de aluno o aviso de jornada não é escutado', () => {
+  const { hook } = carregarHookJornada();
+  const socket = socketFalso();
+  hook.useJornadaAtualizada(socket, false);
+  assert.equal(socket.ouvintes.size, 0);
+});
+
+test('módulo aberto recarrega quando a jornada da turma muda', () => {
+  const { hook, janela, limpezas } = carregarHookJornada();
+  let recargas = 0;
+  hook.useAoAtualizarJornada(() => { recargas += 1; }, true);
+  janela.dispatchEvent({ type: 'secureplay:jornada-atualizada' });
+  assert.equal(recargas, 1);
+  limpezas.forEach((limpar) => limpar());
+  janela.dispatchEvent({ type: 'secureplay:jornada-atualizada' });
+  assert.equal(recargas, 1);
+});

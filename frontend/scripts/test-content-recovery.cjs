@@ -114,7 +114,7 @@ test('module: A slow/B fast, stale failure, overlapping retries, invalid respons
   const h = hooks();
   const requests = [];
   const { useModulo } = load('src/hooks/useModulo.ts', {
-    react: h.react, axios: { isAxiosError: (e) => e?.isAxiosError === true }, '@/services/conteudo': { getModulo: (id) => {
+    react: h.react, axios: { isAxiosError: (e) => e?.isAxiosError === true }, '@/hooks/useJornadaAtualizada': { useAoAtualizarJornada() {} }, '@/services/conteudo': { getModulo: (id) => {
       const request = deferred(); requests.push({ id, ...request }); return request.promise;
     } },
   });
@@ -151,6 +151,7 @@ test('module: 403 keeps the backend reason as denied, 404 is missing and network
   let next;
   const { useModulo } = load('src/hooks/useModulo.ts', {
     react: h.react, axios: { isAxiosError: (e) => e?.isAxiosError === true },
+    '@/hooks/useJornadaAtualizada': { useAoAtualizarJornada() {} },
     '@/services/conteudo': { getModulo: () => { next = deferred(); return next.promise; } },
   });
   const render = () => h.render(() => useModulo(5));

@@ -2,6 +2,7 @@ import { ContentLoading } from '@/components/shared/ContentLoading';
 import { Check, Lock, Play } from 'lucide-react';
 import type { AulaResumo, ModuloDetalhes } from '@/services/conteudo';
 import { formatXp, lessonPosition } from './lessonContext';
+import { bloqueioDaTurma, textoDeBloqueio } from './lockCopy';
 
 interface LessonNavigatorProps {
   modulo: ModuloDetalhes | null;
@@ -17,7 +18,7 @@ function LessonRow({ aula, number, slot, onSelect }: { aula: AulaResumo; number:
   const done = aula.status === 'completed';
   const locked = aula.status === 'locked';
   const state = slot === 'current' ? 'is-current' : done ? 'is-done' : locked ? 'is-locked' : 'is-open';
-  const detail = slot === 'current' ? `Aula ${number} · agora` : `Aula ${number} · ${done ? 'concluída' : locked ? 'bloqueada' : `${formatXp(aula.xp)} XP`}`;
+  const detail = slot === 'current' ? `Aula ${number} · agora` : `Aula ${number} · ${done ? 'concluída' : locked ? (bloqueioDaTurma(aula.lock_reason) ? textoDeBloqueio(aula.lock_reason, aula.opens_at) : 'bloqueada') : `${formatXp(aula.xp)} XP`}`;
   const icon = slot === 'current' ? <Play size={14} fill="currentColor" />
     : done ? <Check size={18} strokeWidth={3.4} />
       : locked ? <Lock size={14} strokeWidth={2.8} /> : number;

@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 import { BookOpenText, Check, Lock, PanelsTopLeft, SquarePlay } from 'lucide-react';
 import type { AulaResumo } from '@/services/conteudo';
 import { LESSON_TYPE_LABEL, formatModuleNumber } from './ModulePageModel';
+import { textoDeBloqueio } from './lockCopy';
 
 interface AulaListItemProps {
   aula: AulaResumo;
@@ -43,7 +44,7 @@ export function AulaListItem({ aula, number, isNext, fresh, onSelect }: AulaList
         </span>
         <strong className="mv-row-title">{aula.title}</strong>
         {aula.description && <small className="mv-row-desc">{aula.description}</small>}
-        {locked && <small className="mv-row-lock">Conclua as aulas anteriores para liberar esta aula.</small>}
+        {locked && <small className="mv-row-lock">{textoDeBloqueio(aula.lock_reason, aula.opens_at)}</small>}
       </span>
       <span className="mv-row-side">
         {isNext && <span className="mv-here">{fresh ? 'Comece aqui' : 'Você está aqui'}</span>}
