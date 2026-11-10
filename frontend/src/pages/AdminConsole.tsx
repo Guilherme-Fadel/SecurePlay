@@ -18,7 +18,8 @@ import { PendingNicknamesTab } from '@/components/admin/PendingNicknamesTab';
 import { InvitationManagementTab } from '@/components/admin/InvitationManagementTab';
 import { SchoolPilotManagementTab } from '@/components/admin/SchoolPilotManagementTab';
 import { AdminConsoleSettings, type AdminConsoleSettingsKind } from '@/components/admin/console/AdminConsoleSettings';
-import { hasAdminConsoleAccess, resolveAdminConsoleScope, adminConsolePath, resolveConsolePage } from '@/components/admin/console/consoleNavigation';
+import { hasAdminConsoleAccess, resolveAdminConsoleScope, adminConsolePath, resolveConsolePage, initialAuthenticatedPath } from '@/components/admin/console/consoleNavigation';
+import { TurmasPage } from '@/components/admin/turmas/TurmasPage';
 import { PlatformCompanyFilter } from '@/components/admin/console/PlatformCompanyFilter';
 import { PlatformRecordsTab } from '@/components/admin/console/PlatformRecordsTab';
 import { CompanyRegistryTab } from '@/components/admin/console/CompanyRegistryTab';
@@ -39,7 +40,7 @@ export default function AdminConsole() {
   const scope = user ? resolveAdminConsoleScope(user) : null;
   if (!scope) return <Navigate to="/home" replace />;
   if (location.pathname === '/admin' || location.pathname === '/admin/') {
-    return <Navigate to={adminConsolePath('overview')} replace />;
+    return <Navigate to={initialAuthenticatedPath(user)} replace />;
   }
 
   const signOut = async () => {
@@ -126,6 +127,11 @@ function AdminConsolePage({ isOverview, scope, companyId }: { isOverview: boolea
   const location = useLocation();
   const navigate = useNavigate();
   const isPlatform = scope.kind === 'platform';
+  const turmaPage = ['classes', 'new-class', 'class-detail'].includes(resolveConsolePage(location.pathname).id);
+  // Professor: só as próprias turmas; qualquer outra rota volta para elas.
+  if (scope.kind === 'teacher') return turmaPage && !location.pathname.startsWith('/admin/empresas') ? <TurmasPage escopo={{ base: '/admin', gestao: false }} /> : <Navigate to="/admin/turmas" replace />;
+  if (turmaPage && scope.kind === 'company' && !location.pathname.startsWith('/admin/empresas')) return <TurmasPage escopo={{ base: '/admin', gestao: true }} />;
+  if (turmaPage && isPlatform && companyId === null) return <PlatformTurmasPicker />;
   if (isOverview) return scope.kind === 'company' ? <AdminOverviewTab empresaId={undefined} onNavigate={(tab) => navigate(`/admin/pessoas/${tab === 'usuarios' ? 'usuarios' : tab}`)} /> : <AdminOverviewTab platform onNavigate={(tab) => navigate(`/admin/pessoas/${tab}`)} headerActions={<Link className="admin-console-back-link" to="/admin/empresas"><Building2 size={16} />Instituições</Link>} />;
   if (resolveConsolePage(location.pathname).id === 'companies' && isPlatform) return <CompanyRegistryTab />;
   if (resolveConsolePage(location.pathname).id === 'new-company' && isPlatform) return <CompanyManagementTab headerActions={<ConsoleBackLink to="/admin/empresas" label="Cadastro" />} mode="new" consoleMode storageKey="admin-console:platform:companies-new" onEmpresaCriada={() => undefined} onAdministrar={(empresa) => navigate(`/admin/empresas/${empresa.id}/editar`)} />;
@@ -136,6 +142,12 @@ function AdminConsolePage({ isOverview, scope, companyId }: { isOverview: boolea
   if (scope.kind === 'company' && ['data', 'appearance', 'features'].includes(resolveConsolePage(location.pathname).id)) return <CompanySettingsPage />;
   if (scope.kind === 'company') return <CompanyPeoplePage empresaId={undefined} />;
   return <section className="admin-console-unavailable" role="status"><h1>Esta área ainda não está disponível</h1><p>A navegação será habilitada quando a etapa correspondente for iniciada.</p><Link to={adminConsolePath('overview')}>Voltar</Link></section>;
+}
+
+/** Plataforma em /admin/turmas: escolhe a escola e segue para as turmas dela. */
+function PlatformTurmasPicker() {
+  const navigate = useNavigate();
+  return <section className="admin-console-unavailable"><h1>Turmas</h1><p>Escolha a escola para ver e organizar as turmas.</p><PlatformCompanyFilter empresaId={undefined} onChange={(id) => { if (id) navigate(`/admin/empresas/${id}/turmas`); }} allowAll={false} /></section>;
 }
 
 function ResolvedCompany({ companyId }: { companyId: number }) {
@@ -198,6 +210,7 @@ function ConsoleCompanyPage({ empresa }: { empresa: EmpresaAdministravel }) {
   const path = location.pathname.replace(/\/+$/, '');
   const page = resolveConsolePage(path);
   if (['data', 'appearance', 'features'].includes(page.id)) return <CompanySettingsPage empresaId={empresaId} />;
+  if (['classes', 'new-class', 'class-detail'].includes(page.id)) return <TurmasPage key={empresaId} escopo={{ empresaId, base: `/admin/empresas/${empresaId}`, gestao: true }} />;
   if (page.id === 'audit-settings' || page.id === 'audit-events') return <AuditTab empresaId={empresaId} empresaNome={empresa.nome} view={page.id === 'audit-events' ? 'events' : 'settings'} />;
   if (['pilots', 'new-pilot', 'edit-pilot'].includes(page.id)) return <SchoolPilotManagementTab key={empresaId} empresaId={empresaId} empresaNome={empresa.nome} headerActions={page.id !== 'pilots' ? <ConsoleBackLink to={`/admin/empresas/${empresaId}/operacao/pilotos`} label="Pilotos escolares" /> : undefined} />;
   if (page.id === 'edit-user' || path.endsWith('/pessoas/usuarios') || path.endsWith('/pessoas')) return <CompanyPeoplePage empresaId={empresaId} />;
