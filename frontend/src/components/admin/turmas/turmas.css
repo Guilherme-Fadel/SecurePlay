@@ -117,6 +117,9 @@
 .turma-aula-acoes { display: flex; flex-wrap: wrap; gap: 6px; }
 .turma-item-error { display: flex; align-items: center; gap: 6px; flex-basis: 100%; margin: 0; color: var(--danger); font-size: var(--admin-copy-size); }
 
+/* Vence .admin-data-grid-toolbar .admin-list-toolbar > .app-select-wrap (160px), que corta o nome do professor. */
+.admin-data-grid-toolbar .admin-list-toolbar.turma-professores-toolbar > .app-select-wrap { flex: 0 1 280px; min-width: min(240px, 100%); }
+
 .turma-catalogo { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
 .turma-catalogo .app-select-control, .turma-catalogo > :first-child { min-width: min(320px, 100%); }
 

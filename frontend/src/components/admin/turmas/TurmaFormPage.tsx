@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { AlertCircle } from 'lucide-react';
 import { AppButton } from '@/components/ui/buttons/AppButton';
 import { AppInput } from '@/components/ui/forms/AppInput';
 import { AppSelect } from '@/components/ui/forms/AppSelect';
@@ -8,6 +7,7 @@ import { Modal } from '@/components/ui/modal';
 import { AdminPageHeader } from '@/components/admin/AdminListLayout';
 import { arquivarTurma, atualizarTurma, criarTurma, reativarTurma, type JornadaEdicao } from '@/services/turmas';
 import { anosLetivos, mensagemDeErro, rotaTurma, type EscopoTurmas } from './turmaUi';
+import { AdminFeedback } from '@/components/admin/console/AdminFeedback';
 
 type DadosTurma = JornadaEdicao['turma'];
 
@@ -71,8 +71,8 @@ export function TurmaFormPage({ escopo, turma, onSalvo }: TurmaFormPageProps) {
   return (
     <div className="admin-users-content turma-form-page">
       {!turma && <AdminPageHeader title="Nova turma" description="A turma nasce com os módulos do catálogo na ordem atual e todas as aulas fechadas. Depois você ajusta a jornada e abre as aulas." />}
-      {erro && <div className="admin-feedback is-error" role="alert"><AlertCircle size={17} aria-hidden="true" />{erro}</div>}
-      {aviso && <div className="admin-feedback" role="status">{aviso}</div>}
+      {erro && <AdminFeedback variant="error">{erro}</AdminFeedback>}
+      {aviso && <AdminFeedback>{aviso}</AdminFeedback>}
       <form className="turma-form" onSubmit={(event) => { event.preventDefault(); void salvar(); }}>
         <fieldset className="admin-form-grid" disabled={salvando || (turma ? !turma.ativa : false)}>
           <label className="admin-console-setting-field"><span>Nome da turma</span><AppInput value={nome} maxLength={80} required placeholder="Ex.: 5º ano A" onChange={(event) => setNome(event.target.value)} /></label>

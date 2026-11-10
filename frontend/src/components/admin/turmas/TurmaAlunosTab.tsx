@@ -1,5 +1,5 @@
 import { useDeferredValue, useState } from 'react';
-import { AlertCircle, UserPlus } from 'lucide-react';
+import { UserPlus } from 'lucide-react';
 import { AppButton } from '@/components/ui/buttons/AppButton';
 import { AppSearchInput } from '@/components/ui/forms/AppSearchInput';
 import { AppSelect } from '@/components/ui/forms/AppSelect';
@@ -12,6 +12,7 @@ import { adminQueryKey } from '@/lib/adminCache';
 import { listarUsuarios } from '@/services/convites';
 import { adicionarAlunosTurma, listarAlunosDaJornada, listarAlunosTurma, removerAlunoTurma, type AlunoDaTurma } from '@/services/turmas';
 import { mensagemDeErro, type EscopoTurmas } from './turmaUi';
+import { AdminFeedback } from '@/components/admin/console/AdminFeedback';
 
 function dataCurta(iso: string) {
   return new Date(iso).toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' });
@@ -43,7 +44,7 @@ function AdicionarAlunos({ escopo, turmaId, onClose, onAdicionados }: { escopo: 
   };
   return (
     <Modal open onClose={onClose} title="Adicionar alunos" maxWidth="560px">
-      {erro && <div className="admin-feedback is-error" role="alert"><AlertCircle size={17} aria-hidden="true" />{erro}</div>}
+      {erro && <AdminFeedback variant="error">{erro}</AdminFeedback>}
       <div className="turma-add-toolbar">
         <AppSelect aria-label="Mostrar alunos" value={origem} onChange={(event) => { setOrigem(event.target.value as typeof origem); setMarcados(new Set()); }}>
           <option value="nenhuma">Sem turma</option>
@@ -100,8 +101,8 @@ export function TurmaAlunosTab({ escopo, turmaId, ativa }: { escopo: EscopoTurma
   };
   return (
     <section aria-label="Alunos da turma">
-      {aviso && <div className="admin-feedback" role="status">{aviso}</div>}
-      {erro && <div className="admin-feedback is-error" role="alert"><AlertCircle size={17} aria-hidden="true" />{erro}</div>}
+      {aviso && <AdminFeedback>{aviso}</AdminFeedback>}
+      {erro && <AdminFeedback variant="error">{erro}</AdminFeedback>}
       <AdminDataGrid
         columns={[
           { key: 'nome', label: 'Aluno', render: (aluno) => aluno.name },
