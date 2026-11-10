@@ -9,6 +9,7 @@ import { AppSearchInput } from '@/components/ui/forms/AppSearchInput';
 import { AppSelect } from '@/components/ui/forms/AppSelect';
 import { AdminListToolbar, AdminPageHeader, AdminPagination } from './AdminListLayout';
 import { emitirLinkRedefinicaoAluno, inativarUsuario, listarUsuarios, obterUsuario, reativarUsuario, type UsuarioEmpresa, type UsuariosPaginados } from '@/services/convites';
+import { listarTurmas } from '@/services/turmas';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { useNotebookLayout } from '@/hooks/useNotebookLayout';
 import { AdminDataGrid, type AdminDataGridColumn } from '@/components/admin/console/AdminDataGrid';
@@ -37,11 +38,13 @@ export function UserManagementTab({ empresaId, consoleMode = false, usuarioId }:
   const deferredSearch = useDeferredValue(search);
   const [status, setStatus] = useState<'active' | 'inactive' | 'management' | ''>('');
   const [sort, setSort] = useState<'asc' | 'desc'>('asc');
+  const [turmaFiltro, setTurmaFiltro] = useState('');
   const [page, setPage] = useState(1);
   const [updatingUser, setUpdatingUser] = useState<number | null>(null);
   const [feedback, setFeedback] = useState<string | null>(null);
   const [restoredKey, setRestoredKey] = useState<string | null>(null);
-  const filters = { page, pageSize, search: deferredSearch, status: status || undefined, sort };
+  const filters = { page, pageSize, search: deferredSearch, status: status || undefined, sort, turma: turmaFiltro === 'nenhuma' ? 'nenhuma' as const : turmaFiltro ? Number(turmaFiltro) : undefined };
+  const turmas = useCachedQuery(adminQueryKey('classes', empresaId, { filtroUsuarios: true }), () => listarTurmas({ situacao: 'ativa', pageSize: 100 }, empresaId), { enabled: !usuarioId });
   const query = useCachedQuery(adminQueryKey('users', empresaId, filters), () => listarUsuarios(filters, empresaId), { enabled: !usuarioId && restoredKey === sessionKey });
   const detail = useCachedQuery(adminQueryKey('users', empresaId, { id: usuarioId }), () => user?.role === 'platform_admin' && !empresaId ? obterPropriosDadosPlataforma(usuarioId ?? 0) : obterUsuario(usuarioId ?? 0, empresaId), { enabled: Boolean(usuarioId) });
   const usuarios = query.data ?? emptyResult;
@@ -67,7 +70,7 @@ export function UserManagementTab({ empresaId, consoleMode = false, usuarioId }:
     if (draft.email !== baseline.email) changes.email = draft.email.trim() || null;
     if (draft.nickname !== baseline.nickname) changes.nickname = draft.nickname.trim() || null;
     if (draft.level !== baseline.level) changes.level = draft.level;
-    if (draft.role !== baseline.role && (draft.role === 'admin' || draft.role === 'user')) changes.role = draft.role;
+    if (draft.role !== baseline.role && (draft.role === 'admin' || draft.role === 'user' || draft.role === 'teacher')) changes.role = draft.role;
     setSavingRecord(true); setFeedback(null);
     try {
       const saved = await atualizarUsuarioAdministrativo(usuarioId, changes, empresaId, user?.role === 'platform_admin');
@@ -163,8 +166,9 @@ export function UserManagementTab({ empresaId, consoleMode = false, usuarioId }:
   const reativar = (usuario: UsuarioEmpresa) => solicitarAlteracao(usuario, 'reativar');
 
   const columns: AdminDataGridColumn<UsuarioEmpresa>[] = [
-    { key: 'name', label: 'Nome', render: (usuario) => <><strong>{usuario.name}</strong>{usuario.role === 'admin' && <small>Administrador</small>}{usuario.role === 'platform_admin' && <small>Gestão da plataforma</small>}</> },
+    { key: 'name', label: 'Nome', render: (usuario) => <><strong>{usuario.name}</strong>{usuario.role === 'admin' && <small>Administrador</small>}{usuario.role === 'teacher' && <small>Professor</small>}{usuario.role === 'platform_admin' && <small>Gestão da plataforma</small>}</> },
     { key: 'nickname', label: 'Apelido', render: (usuario) => usuario.nickname || '—' },
+    { key: 'turma', label: 'Turma', render: (usuario) => usuario.turma?.nome ?? '—' },
     { key: 'username', label: 'Usuário de acesso', render: (usuario) => usuario.username || '—' },
     { key: 'email', label: 'E-mail', width: 'minmax(0, 1.3fr)', render: (usuario) => usuario.email || (usuario.login_method === 'school_code' ? 'Acesso por código da escola' : 'Sem e-mail') },
     { key: 'level', label: 'Nível', render: (usuario) => usuario.level },
@@ -242,7 +246,7 @@ export function UserManagementTab({ empresaId, consoleMode = false, usuarioId }:
               <label className="admin-console-setting-field"><span>Telefone</span><AppInput readOnly value={detail.data.phone ?? ''} placeholder="Não informado" /></label>
               <label className="admin-console-setting-field"><span>E-mail</span><AppInput type="email" value={draft.email} maxLength={100} required={detail.data.login_method === 'email' || Boolean(detail.data.username && detail.data.email)} onChange={event => setDraft({ ...draft, email: event.target.value })} /></label>
               <label className="admin-console-setting-field"><span>Apelido</span><AppInput value={draft.nickname} minLength={2} maxLength={24} onChange={event => setDraft({ ...draft, nickname: event.target.value })} /></label>
-              <label className="admin-console-setting-field"><span>Perfil</span><AppSelect aria-label="Perfil" value={draft.role} disabled={!canEditRecord || savingRecord || draft.role === 'platform_admin'} onChange={event => setDraft({ ...draft, role: event.target.value })}><option value="user">Aluno</option><option value="admin">Administrador</option>{draft.role === 'platform_admin' && <option value="platform_admin">Administrador da plataforma</option>}</AppSelect></label>
+              <label className="admin-console-setting-field"><span>Perfil</span><AppSelect aria-label="Perfil" value={draft.role} disabled={!canEditRecord || savingRecord || draft.role === 'platform_admin'} onChange={event => setDraft({ ...draft, role: event.target.value })}><option value="user">Aluno</option><option value="teacher">Professor</option><option value="admin">Administrador</option>{draft.role === 'platform_admin' && <option value="platform_admin">Administrador da plataforma</option>}</AppSelect></label>
               <label className="admin-console-setting-field"><span>Nível</span><input className="app-text-input" type="number" value={draft.level} min={0} max={100000} required onChange={event => setDraft({ ...draft, level: Number(event.target.value) })} /></label>
             </fieldset>
             {!canEditRecord && <p role="status">Somente o administrador da plataforma pode editar os próprios dados. Contas da plataforma são editadas pelo próprio titular.</p>}
@@ -257,6 +261,10 @@ export function UserManagementTab({ empresaId, consoleMode = false, usuarioId }:
           <AppSelect aria-label="Filtrar usuários" value={status} onChange={(event) => { setStatus(event.target.value as typeof status); setPage(1); }}>
             <option value="">Todos</option><option value="active">Ativos</option><option value="inactive">Inativos</option><option value="management">Gerência</option>
           </AppSelect>
+          {(turmas.data?.items.length ?? 0) > 0 && <AppSelect aria-label="Filtrar usuários por turma" value={turmaFiltro} onChange={(event) => { setTurmaFiltro(event.target.value); setPage(1); }}>
+            <option value="">Todas as turmas</option><option value="nenhuma">Sem turma</option>
+            {turmas.data?.items.map((turma) => <option key={turma.id} value={String(turma.id)}>{turma.nome}</option>)}
+          </AppSelect>}
           <AppSelect aria-label="Ordenar usuários por nome" value={sort} onChange={(event) => { setSort(event.target.value as 'asc' | 'desc'); setPage(1); }}>
             <option value="asc">Nome A–Z</option><option value="desc">Nome Z–A</option>
           </AppSelect>

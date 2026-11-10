@@ -12,6 +12,7 @@ import { AppSelect } from '@/components/ui/forms/AppSelect';
 import { AppInput } from '@/components/ui/forms/AppInput';
 import { AdminCardHeading, AdminPagination, AdminPageHeader, AdminListToolbar } from '@/components/admin/AdminListLayout';
 import { criarConvite, listarConvites, revogarConvite, type ConvitesPaginados } from '@/services/convites';
+import { listarTurmas } from '@/services/turmas';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { useNotebookLayout } from '@/hooks/useNotebookLayout';
 import { AdminDataGrid, type AdminDataGridColumn } from '@/components/admin/console/AdminDataGrid';
@@ -53,7 +54,10 @@ export function InvitationManagementTab({ empresaId: initialCompanyId, selectCom
   const [email, setEmail] = useState('');
   const [validade, setValidade] = useState(7);
   const [maxUses, setMaxUses] = useState(1);
-  const [administrador, setAdministrador] = useState(false);
+  const [papel, setPapel] = useState<'user' | 'teacher' | 'admin'>('user');
+  const [turmaId, setTurmaId] = useState('');
+  const adulto = papel !== 'user';
+  const rotuloPapel = papel === 'admin' ? 'administrador' : papel === 'teacher' ? 'professor' : 'aluno';
   const [registrationMode, setRegistrationMode] = useState<'legacy_email' | 'school_student'>('school_student');
   const [creating, setCreating] = useState(false);
   const [revoking, setRevoking] = useState<number | null>(null);
@@ -63,7 +67,7 @@ export function InvitationManagementTab({ empresaId: initialCompanyId, selectCom
   const [feedback, setFeedback] = useState<string | null>(null);
   const [feedbackError, setFeedbackError] = useState(false);
   const [restoredKey, setRestoredKey] = useState<string | null>(null);
-  const { prompt: unsavedPrompt } = useAdminUnsavedChanges(consoleMode && mode === 'new' && (creating || (canSelectCompany && selectedCompanyId !== initialCompanyId) || Boolean(email.trim() || (linkGerado && !conviteCopiado)) || validade !== 7 || maxUses !== 1 || administrador || registrationMode !== 'school_student'), undefined, creating);
+  const { prompt: unsavedPrompt } = useAdminUnsavedChanges(consoleMode && mode === 'new' && (creating || (canSelectCompany && selectedCompanyId !== initialCompanyId) || Boolean(email.trim() || (linkGerado && !conviteCopiado)) || validade !== 7 || maxUses !== 1 || adulto || Boolean(turmaId) || registrationMode !== 'school_student'), undefined, creating);
   const dialogRef = useRef<HTMLDialogElement>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
   const openerRef = useRef<HTMLElement | null>(null);
@@ -105,6 +109,7 @@ export function InvitationManagementTab({ empresaId: initialCompanyId, selectCom
 
   const filters = { page, pageSize, search: deferredSearch, sort };
   const query = useCachedQuery(adminQueryKey('invitations', empresaId, filters), () => listarConvites(filters, empresaId), { enabled: mode !== 'new' && restoredKey === sessionKey });
+  const turmas = useCachedQuery(adminQueryKey('classes', empresaId, { convite: true }), () => listarTurmas({ situacao: 'ativa', pageSize: 100 }, empresaId), { enabled: mode !== 'list' && papel === 'user' && (user?.role !== 'platform_admin' || Boolean(empresaId)) });
   const result = query.data ?? emptyResult;
   const loading = query.loading;
   const loadError = Boolean(query.error);
@@ -119,8 +124,8 @@ export function InvitationManagementTab({ empresaId: initialCompanyId, selectCom
     setFeedbackError(false);
     setConviteCopiado(false);
     try {
-      const modo = administrador ? 'legacy_email' : registrationMode;
-      const result = await criarConvite({ email: modo === 'legacy_email' ? (email.trim() || undefined) : undefined, validade_dias: validade, max_uses: modo === 'school_student' ? 1 : maxUses, administrador: podeCriarAdministrador && administrador, registration_mode: modo }, empresaId);
+      const modo = adulto ? 'legacy_email' : registrationMode;
+      const result = await criarConvite({ email: modo === 'legacy_email' ? (email.trim() || undefined) : undefined, validade_dias: validade, max_uses: modo === 'school_student' || adulto ? 1 : maxUses, papel: papel === 'admin' && !podeCriarAdministrador ? 'user' : papel, registration_mode: modo, turma_id: papel === 'user' && turmaId ? Number(turmaId) : undefined }, empresaId);
       openerRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
       setLinkGerado(`${window.location.origin}/cadastro#${result.token}`);
       setPage(1);
@@ -131,8 +136,9 @@ export function InvitationManagementTab({ empresaId: initialCompanyId, selectCom
       setValidade(7);
       setMaxUses(1);
       setRegistrationMode('school_student');
-      setAdministrador(false);
-      setFeedback(administrador ? 'Convite de administrador criado com sucesso.' : 'Convite criado com sucesso. Compartilhe o link ou QR code.');
+      setPapel('user');
+      setTurmaId('');
+      setFeedback(papel === 'admin' ? 'Convite de administrador criado com sucesso.' : papel === 'teacher' ? 'Convite de professor criado com sucesso.' : 'Convite criado com sucesso. Compartilhe o link ou QR code.');
     } catch (error: any) {
       setFeedbackError(true);
       setFeedback(error.response?.data?.message ?? 'Não foi possível criar o convite.');
@@ -158,7 +164,7 @@ export function InvitationManagementTab({ empresaId: initialCompanyId, selectCom
   };
   const ativos = useMemo(() => result.items.filter((convite) => convite.status === 'ativo').length, [result.items]);
   const columns: AdminDataGridColumn<ConvitesPaginados['items'][number]>[] = [
-    { key: 'recipient', label: 'Destinatário', render: (convite) => <><strong>{convite.email ?? (convite.registration_mode === 'school_student' ? 'Convite escolar individual' : 'Link aberto para a empresa')}{convite.role === 'admin' ? ' · Administrador' : ''}</strong><small>Expira em {formatDate(convite.expires_at)} · {convite.uses}/{convite.max_uses} usos</small></> },
+    { key: 'recipient', label: 'Destinatário', render: (convite) => <><strong>{convite.email ?? (convite.registration_mode === 'school_student' ? 'Convite escolar individual' : 'Link aberto para a empresa')}{convite.role === 'admin' ? ' · Administrador' : convite.role === 'teacher' ? ' · Professor' : ''}</strong><small>Expira em {formatDate(convite.expires_at)} · {convite.uses}/{convite.max_uses} usos</small></> },
     { key: 'status', label: 'Status', render: (convite) => <span className={`admin-invite-status is-${convite.status}`}>{convite.status}</span> },
     { key: 'actions', label: 'Revogar', className: 'admin-grid-icon-column', render: (convite) => convite.status !== 'revogado' ? <button type="button" className="admin-grid-icon-action" aria-label={`Revogar convite ${convite.id}`} title="Revogar convite" disabled={revoking === convite.id} onClick={() => void revogar(convite.id)}><Trash2 size={16} aria-hidden="true" /></button> : null },
   ];
@@ -168,20 +174,17 @@ export function InvitationManagementTab({ empresaId: initialCompanyId, selectCom
     {feedback && <AdminFeedback variant={feedbackError ? 'error' : 'success'}>{feedback}</AdminFeedback>}
     <div className={`admin-invites-workspace${mode === 'new' ? ' is-new-only' : mode === 'list' ? ' is-list-only' : ''}`}>
       {mode !== 'list' && <FormCard className={consoleMode ? 'admin-invite-form-card' : 'admin-users-card admin-invite-form-card'}>
-        {!consoleMode && <AdminCardHeading title="Novo convite" description={administrador ? 'O responsável receberá acesso de administrador desta empresa.' : registrationMode === 'school_student' ? 'Acesso individual de aluno por usuário ou e-mail, sem data de nascimento.' : 'Cadastro por e-mail e confirmação.'} icon={<Plus size={19} />} />}
+        {!consoleMode && <AdminCardHeading title="Novo convite" description={papel === 'admin' ? 'O responsável receberá acesso de administrador desta empresa.' : papel === 'teacher' ? 'O professor recebe acesso às turmas a que for vinculado.' : registrationMode === 'school_student' ? 'Acesso individual de aluno por usuário ou e-mail, sem data de nascimento.' : 'Cadastro por e-mail e confirmação.'} icon={<Plus size={19} />} />}
         <form id={consoleMode ? "admin-console-invitation-form" : undefined} onSubmit={criar} className="admin-invite-form">
           {canSelectCompany && <div className="admin-invite-company-field"><span>Empresa</span><PlatformCompanyFilter fieldLabel="Empresa do convite" empresaId={empresaId} onChange={id => { setSelectedCompanyId(id); setFeedback(null); }} allowAll={false} compact disabled={creating || Boolean(linkGerado)} /></div>}
-          {!administrador && <label className="admin-invite-email-field"><span>Forma de cadastro</span><AppSelect aria-label="Forma de cadastro" value={registrationMode} onChange={(event) => { const next = event.target.value as 'legacy_email' | 'school_student'; setRegistrationMode(next); if (next === 'school_student') setMaxUses(1); }}><option value="school_student">Aluno por usuário ou e-mail</option><option value="legacy_email">Cadastro com e-mail</option></AppSelect></label>}
-          {(administrador || registrationMode === 'legacy_email') && <label className="admin-invite-email-field">
-            <span className="admin-invite-email-label">E-mail do {administrador ? 'administrador' : 'aluno'} {!administrador && <small>opcional</small>}</span>
-            <AppInput type="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder={administrador ? 'admin@empresa.com' : 'aluno@empresa.com'} required={administrador} />
+          <label className="admin-invite-email-field"><span>Perfil do convite</span><AppSelect aria-label="Perfil do convite" value={papel} onChange={(event) => { const next = event.target.value as typeof papel; setPapel(next); if (next !== 'user') { setMaxUses(1); setTurmaId(''); } }}><option value="user">Aluno</option><option value="teacher">Professor</option>{podeCriarAdministrador && <option value="admin">Administrador</option>}</AppSelect></label>
+          {!adulto && <label className="admin-invite-email-field"><span>Forma de cadastro</span><AppSelect aria-label="Forma de cadastro" value={registrationMode} onChange={(event) => { const next = event.target.value as 'legacy_email' | 'school_student'; setRegistrationMode(next); if (next === 'school_student') setMaxUses(1); }}><option value="school_student">Aluno por usuário ou e-mail</option><option value="legacy_email">Cadastro com e-mail</option></AppSelect></label>}
+          {(adulto || registrationMode === 'legacy_email') && <label className="admin-invite-email-field">
+            <span className="admin-invite-email-label">E-mail do {rotuloPapel} {!adulto && <small>opcional</small>}</span>
+            <AppInput type="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder={`${rotuloPapel}@empresa.com`} required={adulto} />
           </label>}
-          {podeCriarAdministrador && <label className="admin-invite-admin-flag">
-            <input type="checkbox" checked={administrador} onChange={(event) => { setAdministrador(event.target.checked); if (event.target.checked) setMaxUses(1); }} />
-            <span className="settings-switch" aria-hidden="true"><i /></span>
-            <span>Administrador</span>
-          </label>}
-          <div className="admin-invite-options"><label>Validade<AppSelect value={validade} onChange={(event) => setValidade(Number(event.target.value))}><option value={1}>1 dia</option><option value={7}>7 dias</option><option value={14}>14 dias</option><option value={30}>30 dias</option></AppSelect></label><label>Usos permitidos<AppSelect value={registrationMode === 'school_student' || administrador ? 1 : maxUses} disabled={administrador || registrationMode === 'school_student'} onChange={(event) => setMaxUses(Number(event.target.value))}><option value={1}>1 uso</option>{!administrador && registrationMode === 'legacy_email' && <><option value={5}>5 usos</option><option value={20}>20 usos</option><option value={100}>100 usos</option></>}</AppSelect></label></div>
+          {papel === 'user' && (turmas.data?.items.length ?? 0) > 0 && <label className="admin-invite-email-field"><span>Turma <small>opcional</small></span><AppSelect aria-label="Turma do aluno" value={turmaId} onChange={(event) => setTurmaId(event.target.value)}><option value="">Sem turma</option>{turmas.data?.items.map((turma) => <option key={turma.id} value={String(turma.id)}>{turma.nome} · {turma.ano_letivo}</option>)}</AppSelect></label>}
+          <div className="admin-invite-options"><label>Validade<AppSelect value={validade} onChange={(event) => setValidade(Number(event.target.value))}><option value={1}>1 dia</option><option value={7}>7 dias</option><option value={14}>14 dias</option><option value={30}>30 dias</option></AppSelect></label><label>Usos permitidos<AppSelect value={registrationMode === 'school_student' || adulto ? 1 : maxUses} disabled={adulto || registrationMode === 'school_student'} onChange={(event) => setMaxUses(Number(event.target.value))}><option value={1}>1 uso</option>{!adulto && registrationMode === 'legacy_email' && <><option value={5}>5 usos</option><option value={20}>20 usos</option><option value={100}>100 usos</option></>}</AppSelect></label></div>
           {!consoleMode && <AppButton type="submit" disabled={creating || (user?.role === 'platform_admin' && !empresaId)} icon={<Link2 size={16} />}>{creating ? 'Gerando...' : 'Gerar convite'}</AppButton>}
         </form>
       </FormCard>}
