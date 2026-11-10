@@ -1,4 +1,5 @@
 import { api } from '@/services/api';
+import type { LockReason } from '@/components/sections/HomePage/Conteudos/lockCopy';
 
 export interface Modulo {
   id: number;
@@ -21,6 +22,8 @@ export interface Modulo {
   /** B1: detalhe da próxima aula não concluída (posição 1-based na sequência do módulo). */
   nextAula?: ProximaAula | null;
   locked?: boolean;
+  outside_journey?: boolean;
+  lastCompletedAulaId?: number | null;
 }
 
 export interface ProximaAula {
@@ -31,6 +34,8 @@ export interface ProximaAula {
   duration: number;
   section_name: string | null;
   position: number;
+  lock_reason?: LockReason | null;
+  opens_at?: string | null;
 }
 
 export interface AulaResumo {
@@ -43,6 +48,8 @@ export interface AulaResumo {
   order: number;
   section_name: string | null;
   status: 'completed' | 'unlocked' | 'locked';
+  lock_reason?: LockReason | null;
+  opens_at?: string | null;
   page_count: number;
   progress_percent: number;
   last_video_second: number;

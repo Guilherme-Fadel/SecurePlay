@@ -20,6 +20,7 @@
     "test:termotech-storage": "node scripts/test-termotech-storage.cjs",
     "test:company-parameters": "node scripts/test-company-parameters.cjs",
     "test:admin-console": "node scripts/test-admin-console.cjs",
+    "test:turmas": "node --test scripts/test-turmas.cjs",
     "dev": "vite"
   },
   "dependencies": {

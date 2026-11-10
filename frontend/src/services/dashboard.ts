@@ -1,3 +1,4 @@
+import type { LockReason } from '@/components/sections/HomePage/Conteudos/lockCopy';
 import { api } from '@/services/api';
 
 export interface DashboardStats {
@@ -129,6 +130,11 @@ export interface JourneyNodeData {
   xpTotal: number;
   xpBonus: number;
   availability: 'available' | 'locked';
+  /** Campos da jornada da turma (opcionais para respostas antigas). */
+  outsideJourney?: boolean;
+  nextLessonLockReason?: LockReason | null;
+  nextLessonOpensAt?: string | null;
+  lastCompletedAulaId?: number | null;
 }
 
 export interface JourneyStageData {
