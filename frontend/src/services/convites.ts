@@ -48,7 +48,7 @@ export interface ApelidosPendentesPaginados {
 
 export type UsuariosPaginados = ApelidosPendentesPaginados;
 
-export type UpdateAdminUser = Partial<Pick<UsuarioEmpresa, 'name' | 'email' | 'nickname' | 'level'>> & { role?: 'user' | 'admin' };
+export type UpdateAdminUser = Partial<Pick<UsuarioEmpresa, 'name' | 'email' | 'nickname' | 'level'>> & { role?: 'user' | 'admin' | 'teacher' };
 export async function obterPropriosDadosPlataforma(id: number): Promise<UsuarioEmpresa> {
   return (await api.get(`/platform/admin/usuarios/${id}`)).data;
 }
@@ -143,7 +143,7 @@ export async function listarConvites(
 }
 
 export async function criarConvite(
-  data: { email?: string; validade_dias: number; max_uses: number; administrador?: boolean; registration_mode?: 'legacy_email' | 'school_student' },
+  data: { email?: string; validade_dias: number; max_uses: number; administrador?: boolean; registration_mode?: 'legacy_email' | 'school_student'; papel?: 'user' | 'teacher' | 'admin'; turma_id?: number },
   empresaId?: number,
 ) {
   const response = await api.post(`${empresaPath(empresaId)}/convites`, data);
