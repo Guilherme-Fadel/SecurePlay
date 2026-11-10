@@ -17,6 +17,7 @@ import { getLocalDateKey } from '../common/utils/date.utils';
 import { TrialRegisterDto } from './dto/trial-register.dto';
 import { EmailService } from './email.service';
 import { PendingRegistration } from './pending-registration.entity';
+import { vincularAlunoPorConvite } from '../turma/turma-vinculos';
 import { ensurePendingRankingSeasonsClosed } from '../dashboard/ranking-history';
 import {
   normalizePhone,
@@ -169,6 +170,7 @@ export class RegistrationService {
           nickname_onboarding_pending: !nickname,
         });
         await users.save(user);
+        await vincularAlunoPorConvite(manager, invite.id, user);
         invite.uses += 1;
         await manager.getRepository(Convite).save(invite);
 
@@ -439,6 +441,8 @@ export class RegistrationService {
           nickname_onboarding_pending: role === Role.USER && !pending.nickname,
         });
         await manager.getRepository(Usuario).save(user);
+        if (pending.kind === 'invite' && pending.invite_id)
+          await vincularAlunoPorConvite(manager, pending.invite_id, user);
         await manager.getRepository(PendingRegistration).remove(pending);
         return {
           sucesso: true,

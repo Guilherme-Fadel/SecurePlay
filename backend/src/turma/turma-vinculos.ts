@@ -1,5 +1,6 @@
 import { EntityManager, In } from 'typeorm';
 import { Role } from '../auth/roles.enum';
+import { Usuario } from '../usuario/usuario.entity';
 import { Convite } from '../admin/entities/convite.entity';
 import { ConviteTurma } from './entities/convite-turma.entity';
 import { TurmaAluno } from './entities/turma-aluno.entity';
@@ -21,6 +22,32 @@ export async function removerVinculosAoMudarPapel(
     await manager.delete(TurmaProfessor, { usuario_id: usuarioId });
   if (anterior === Role.USER)
     await manager.delete(TurmaAluno, { usuario_id: usuarioId });
+}
+
+/** Cadastro por convite ligado a uma turma: o aluno entra nela na mesma transação. */
+export async function vincularAlunoPorConvite(
+  manager: EntityManager,
+  conviteId: number,
+  usuario: Pick<Usuario, 'id' | 'empresa_id' | 'role'>,
+): Promise<void> {
+  if (usuario.role !== Role.USER) return;
+  const ligacao = await manager
+    .getRepository(ConviteTurma)
+    .findOne({ where: { convite_id: conviteId } });
+  if (!ligacao) return;
+  const turma = await manager.getRepository(Turma).findOne({
+    where: {
+      id: ligacao.turma_id,
+      empresa_id: usuario.empresa_id,
+      ativa: true,
+    },
+  });
+  if (!turma) return;
+  await manager.getRepository(TurmaAluno).insert({
+    usuario_id: usuario.id,
+    turma_id: turma.id,
+    entrou_em: new Date(),
+  });
 }
 
 /** Ao arquivar a turma, convites ainda não revogados que levariam alunos a ela deixam de valer. */

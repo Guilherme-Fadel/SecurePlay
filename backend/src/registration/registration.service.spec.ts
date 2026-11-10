@@ -4,6 +4,9 @@ import { Usuario } from '../usuario/usuario.entity';
 import { Convite } from '../admin/entities/convite.entity';
 import { Empresa } from '../empresa/empresa.entity';
 import { Role } from '../auth/roles.enum';
+import { ConviteTurma } from '../turma/entities/convite-turma.entity';
+import { Turma } from '../turma/entities/turma.entity';
+import { TurmaAluno } from '../turma/entities/turma-aluno.entity';
 import * as bcrypt from 'bcrypt';
 import { createHash } from 'crypto';
 
@@ -93,6 +96,72 @@ describe('Cadastro com confirmação por e-mail', () => {
       expect(emailService.sendPasswordSetup).not.toHaveBeenCalled();
     },
   );
+
+  it('aluno escolar convidado para uma turma entra nela na mesma transação', async () => {
+    const invite = {
+      id: 31,
+      token_hash: createHash('sha256').update('turma-token').digest('hex'),
+      email: null,
+      empresa_id: 8,
+      role: Role.USER,
+      registration_mode: 'school_student',
+      uses: 0,
+      max_uses: 1,
+      revoked: false,
+      expires_at: new Date(Date.now() + 60_000),
+    };
+    const users = {
+      findOne: jest.fn().mockResolvedValue(null),
+      create: jest.fn((value: Partial<Usuario>) => value),
+      save: jest.fn((value: Partial<Usuario>) =>
+        Promise.resolve(Object.assign(value, { id: 77 })),
+      ),
+    };
+    const inviteRepository = {
+      findOne: jest.fn().mockResolvedValue(invite),
+      createQueryBuilder: jest.fn().mockReturnValue({
+        setLock: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        getOne: jest.fn().mockResolvedValue(invite),
+      }),
+      save: jest.fn((value: unknown) => Promise.resolve(value)),
+    };
+    const vinculos = { insert: jest.fn().mockResolvedValue(undefined) };
+    const turmaRepository = {
+      findOne: jest.fn().mockResolvedValue({ id: 4, empresa_id: 8, ativa: true }),
+    };
+    const repositories = new Map<unknown, unknown>([
+      [Convite, inviteRepository],
+      [ConviteTurma, { findOne: jest.fn().mockResolvedValue({ convite_id: 31, turma_id: 4 }) }],
+      [Turma, turmaRepository],
+      [TurmaAluno, vinculos],
+    ]);
+    const manager = {
+      getRepository: (entity: unknown) => repositories.get(entity) ?? users,
+    };
+    const service = new RegistrationService(
+      {
+        getRepository: manager.getRepository,
+        transaction: (callback: (value: unknown) => unknown) => callback(manager),
+      } as never,
+      { sendVerification: jest.fn(), sendPasswordSetup: jest.fn() } as never,
+    );
+
+    await service.startInvite('turma-token', {
+      name: 'Aluna Turma',
+      password: 'senha-segura-123',
+      username: 'aluna.turma',
+    });
+
+    expect(turmaRepository.findOne).toHaveBeenCalledWith({
+      where: { id: 4, empresa_id: 8, ativa: true },
+    });
+    expect(vinculos.insert).toHaveBeenCalledWith({
+      usuario_id: 77,
+      turma_id: 4,
+      entrou_em: expect.any(Date) as Date,
+    });
+  });
 
   it('consome link de redefinição, atualiza senha e invalida sessões existentes', async () => {
     const token = 'recovery-token';
@@ -487,6 +556,8 @@ describe('Cadastro com confirmação por e-mail', () => {
           if (entity === Convite) return inviteRepository;
           if (entity === Usuario) return userRepository;
           if (entity === Empresa) return { findOne: jest.fn() };
+          if (entity === ConviteTurma)
+            return { findOne: jest.fn().mockResolvedValue(null) };
         },
       };
       const dataSource = {

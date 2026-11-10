@@ -15,6 +15,7 @@ import { Role } from '../auth/roles.enum';
 import { AdminService } from './admin.service';
 import { ConvitesService } from './convites.service';
 import { CreateConviteDto } from './dto/create-convite.dto';
+import { papelDoConvite } from './convite-papel';
 import { CreateEmpresaDto } from './dto/create-empresa.dto';
 import { PresignLogoDto } from './dto/presign-logo.dto';
 import { UpdateTemaDto } from './dto/update-tema.dto';
@@ -366,7 +367,7 @@ export class PlatformAdminController {
       empresaId,
       req.user.userId,
       dto,
-      dto.administrador ? Role.ADMIN : Role.USER,
+      papelDoConvite(dto, true),
     );
   }
 
