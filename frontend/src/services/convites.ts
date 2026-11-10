@@ -26,6 +26,8 @@ export interface UsuarioEmpresa {
   nickname: string | null;
   nickname_pending: string | null;
   nickname_request_status: 'none' | 'pending' | 'approved' | 'rejected';
+  /** Turma do aluno (listagem paginada); `null` sem turma. */
+  turma?: { id: number; nome: string } | null;
 }
 
 export interface ConvitePublico {
@@ -78,7 +80,7 @@ function empresaPath(empresaId?: number) {
 }
 
 export async function listarUsuarios(
-  options: { page: number; pageSize?: number; search?: string; status?: 'active' | 'inactive' | 'management'; sort?: 'asc' | 'desc' },
+  options: { page: number; pageSize?: number; search?: string; status?: 'active' | 'inactive' | 'management'; sort?: 'asc' | 'desc'; papel?: 'user' | 'teacher' | 'admin'; turma?: number | 'nenhuma' },
   empresaId?: number,
 ): Promise<UsuariosPaginados> {
   const params = new URLSearchParams({
@@ -88,6 +90,8 @@ export async function listarUsuarios(
   if (options.search?.trim()) params.set('search', options.search.trim());
   if (options.status) params.set('status', options.status);
   if (options.sort) params.set('sort', options.sort);
+  if (options.papel) params.set('papel', options.papel);
+  if (options.turma !== undefined) params.set('turma', String(options.turma));
   const response = await api.get(`${empresaPath(empresaId)}/usuarios?${params}`);
   return response.data;
 }

@@ -11,6 +11,8 @@ export function adminBreadcrumbs(pathname: string, platform: boolean, returnTo?:
     'new-invitation': { label: 'Convites', path: '/admin/pessoas/convites' },
     'new-pilot': { label: 'Pilotos escolares', path: '/admin/operacao/pilotos' },
     'edit-pilot': { label: 'Pilotos escolares', path: '/admin/operacao/pilotos' },
+    'new-class': { label: 'Turmas', path: '/admin/turmas' },
+    'class-detail': { label: 'Turmas', path: '/admin/turmas' },
   };
   const parent = parents[page.id];
   if (platform && ['data', 'summary', 'appearance', 'features'].includes(page.id)) items.push({ label: 'Cadastro', to: '/admin/empresas' });
