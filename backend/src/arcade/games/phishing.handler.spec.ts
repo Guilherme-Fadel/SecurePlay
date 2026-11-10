@@ -106,13 +106,99 @@ describe('PhishingHandler', () => {
     };
     expect(feedback.items[0].explanation).toBe(persisted.explanation);
   });
-  it('marcar sinal extra em amostra legitima erra a parte de sinais', async () => {
+  it('marcar sinal extra em amostra legitima nao afeta a pontuacao', async () => {
     handler.fixture = [sample(1, false, [])];
     const run = await handler.buildRun();
     const result = handler.correct(run.answerKey, {
       phishingAnswers: [{ sampleId: 1, report: false, signals: ['url'] }],
     });
-    expect(result.score).toBe(50);
+    expect(result.score).toBe(100);
+    const feedback = result.feedback as {
+      items: Array<{ decisionRight: boolean }>;
+    };
+    expect(feedback.items[0].decisionRight).toBe(true);
+  });
+  it('decisao correta com sinais errados/extras = credito integral', async () => {
+    handler.fixture = [sample(1, true, ['url', 'urgency'])];
+    const run = await handler.buildRun();
+    const result = handler.correct(run.answerKey, {
+      phishingAnswers: [
+        { sampleId: 1, report: true, signals: ['url', 'reward', 'spelling'] },
+      ],
+    });
+    expect(result.score).toBe(100);
+    expect(result.feedback).toMatchObject({
+      total: 1,
+      points: 1,
+      maxPoints: 1,
+    });
+  });
+  it('decisao correta sem nenhum sinal = credito integral', async () => {
+    handler.fixture = [sample(1, true, ['url', 'urgency'])];
+    const run = await handler.buildRun();
+    const result = handler.correct(run.answerKey, {
+      phishingAnswers: [{ sampleId: 1, report: true, signals: [] }],
+    });
+    expect(result.score).toBe(100);
+  });
+  it('decisao errada com sinais perfeitos = nenhum credito', async () => {
+    handler.fixture = [sample(1, true, ['url', 'urgency'])];
+    const run = await handler.buildRun();
+    const result = handler.correct(run.answerKey, {
+      phishingAnswers: [
+        { sampleId: 1, report: false, signals: ['url', 'urgency'] },
+      ],
+    });
+    expect(result.score).toBe(0);
+    const feedback = result.feedback as {
+      points: number;
+      items: Array<{ decisionRight: boolean }>;
+    };
+    expect(feedback.points).toBe(0);
+    expect(feedback.items[0].decisionRight).toBe(false);
+  });
+  it('rodada mista: so as decisoes contam, sinais so aparecem no feedback', async () => {
+    handler.fixture = [
+      sample(1, true, ['url']),
+      sample(2, false, []),
+      sample(3, true, ['sender', 'reward']),
+      sample(4, false, []),
+      sample(5, true, ['attachment']),
+    ];
+    const run = await handler.buildRun();
+    const result = handler.correct(run.answerKey, {
+      phishingAnswers: [
+        { sampleId: 1, report: true, signals: ['spelling'] }, // certo, sinal errado
+        { sampleId: 2, report: false, signals: ['url'] }, // certo, sinal extra
+        { sampleId: 3, report: true, signals: [] }, // certo, sem sinais
+        { sampleId: 4, report: true, signals: [] }, // errado
+        { sampleId: 5, report: false, signals: ['attachment'] }, // errado, sinal perfeito
+      ],
+    });
+    expect(result.score).toBe(60);
+    const feedback = result.feedback as {
+      total: number;
+      points: number;
+      maxPoints: number;
+      items: Array<{
+        sampleId: number;
+        isPhishing: boolean;
+        correctSignals: string[];
+        decisionRight: boolean;
+        explanation: string;
+      }>;
+    };
+    expect(feedback).toMatchObject({ total: 5, points: 3, maxPoints: 5 });
+    expect(feedback.items.map((i) => i.decisionRight)).toEqual([
+      true,
+      true,
+      true,
+      false,
+      false,
+    ]);
+    expect(feedback.items[2].correctSignals).toEqual(['sender', 'reward']);
+    expect(feedback.items[2].isPhishing).toBe(true);
+    expect(feedback.items[2].explanation).toBe('motivo');
   });
   it('amostra sem resposta conta como erro total', async () => {
     handler.fixture = [sample(1, true, ['url'])];

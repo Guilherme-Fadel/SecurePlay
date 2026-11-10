@@ -162,7 +162,7 @@ npm --prefix frontend run build
 # Verificações de integração e regras do frontend
 npm --prefix frontend run test:api-proxy
 npm --prefix frontend run test:company-parameters
-npm --prefix frontend run test:termotech-dictionary
+npm --prefix frontend run test:palavra-dictionary
 
 # Backend: build e testes unitários
 npm --prefix backend run build

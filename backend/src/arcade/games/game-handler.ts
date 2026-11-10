@@ -8,6 +8,8 @@ export interface GameCorrection {
   feedback: unknown;
 }
 export interface GameHandler {
+  /** Quantidade de itens de uma rodada; exposta no catalogo dos jogos. */
+  readonly roundSize?: number;
   buildRun(): Promise<GameRun>;
   correct(answerKey: unknown, dto: SubmitRunDto): GameCorrection;
 }

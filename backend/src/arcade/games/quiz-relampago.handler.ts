@@ -85,6 +85,7 @@ function presentQuestion(
 }
 @Injectable()
 export class QuizRelampagoHandler implements GameHandler {
+  readonly roundSize = QUIZ_SIZE;
   constructor(
     @Inject('QUESTION_REPOSITORY')
     private readonly questionRepository: Repository<Question>,
@@ -97,7 +98,7 @@ export class QuizRelampagoHandler implements GameHandler {
       .getMany();
   }
   async buildRun(): Promise<GameRun> {
-    const questions = await this.pickQuestions(QUIZ_SIZE);
+    const questions = await this.pickQuestions(this.roundSize);
     const correct: Record<number, number> = {};
     const order: number[] = [];
     for (const q of questions) {

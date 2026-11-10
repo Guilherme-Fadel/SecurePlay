@@ -8,6 +8,7 @@ export interface GameCardData {
     status: GameStatus;
     tag: string;
     gameType?: string;
+    roundSize?: number;
 }
 
 /** Textos das cartas por slug; o que não estiver aqui usa o texto do catálogo. */

@@ -2,12 +2,12 @@
 
 O jogo mantém dois repertórios separados:
 
-- `termoWords.ts` contém somente as palavras pedagógicas de tecnologia que podem ser sorteadas, junto com suas dicas.
-- `frontend/public/dictionaries/termotech-valid-words-5.txt` contém um vocabulário amplo usado apenas para validar palpites. Ele nunca passa a ser repertório sorteável automaticamente.
+- `palavraWords.ts` contém somente as palavras pedagógicas de tecnologia que podem ser sorteadas, junto com suas dicas.
+- `frontend/public/dictionaries/palavra-valid-words-5.txt` contém um vocabulário amplo usado apenas para validar palpites. Ele nunca passa a ser repertório sorteável automaticamente.
 
 ## Geração
 
-O arquivo local é gerado por `npm run build:termotech-dictionary` a partir de:
+O arquivo local é gerado por `npm run build:palavra-dictionary` a partir de:
 
 - `dictionary-pt`, dicionário hunspell de português derivado do LibreOffice.
 - `an-array-of-english-words`, lista ampla de palavras em inglês.
@@ -20,4 +20,4 @@ Termos impróprios em português e inglês são excluídos antes da geração do
 
 ## Verificação
 
-Use `npm run test:termotech-dictionary` para confirmar que o arquivo contém casos esperados, como `CYBER`, `PRIME` e `PRIDE`, e que sequências inexistentes ou bloqueadas não foram incluídas.
+Use `npm run test:palavra-dictionary` para confirmar que o arquivo contém casos esperados, como `CYBER`, `PRIME` e `PRIDE`, e que sequências inexistentes ou bloqueadas não foram incluídas.

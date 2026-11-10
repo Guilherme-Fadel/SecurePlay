@@ -1,0 +1,114 @@
+/* Detetives de Mensagens: cena vermelha com mural de cortiça, carta fixada e kit de carimbos.
+   Usa a camada compartilhada (.gw, .gw-paper, .gw-guide...) de styles/game-worlds.css. */
+
+.gw.gw--det.bd {
+  background-color: #B30E00;
+  background-image: repeating-linear-gradient(90deg, rgba(0, 0, 0, .16) 0 3px, transparent 3px 54px);
+}
+.gw .bd-desk { left: 0; right: 0; bottom: 0; height: 150px; background: #000000; }
+.gw .bd-desk::before { content: ''; position: absolute; left: 0; right: 0; top: 0; height: 14px; background: #2D2D34; }
+
+.gw .bd-grid { display: grid; grid-template-columns: minmax(0, 1.45fr) minmax(0, 1fr); gap: 26px; align-items: start; }
+
+/* Mural */
+.gw .bd-cork {
+  position: relative; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 170px); gap: 18px; align-items: start;
+  min-height: 500px; padding: 34px 24px 28px 30px; border-radius: 22px;
+  background-color: #F9EEDC;
+  background-image: radial-gradient(rgba(166, 63, 0, .2) 1.2px, transparent 1.6px), radial-gradient(rgba(166, 63, 0, .12) 1px, transparent 1.4px);
+  background-size: 11px 11px, 7px 7px; background-position: 0 0, 4px 5px;
+  box-shadow: 0 0 0 4px #000000, 0 0 0 14px #FF7101, 0 0 0 18px #000000, 0 10px 0 18px #000000;
+}
+
+/* Carta fixada */
+.gw .bd-paper {
+  position: relative; padding: 28px 24px 26px; border-radius: 4px; background: #FFFFFF; color: #000000;
+  box-shadow: 0 0 0 2px #000000, 7px 9px 0 rgba(0, 0, 0, .22); transform: rotate(-1.4deg);
+}
+.gw .bd-pin {
+  position: absolute; top: -13px; left: 50%; width: 26px; height: 26px; margin-left: -13px; border-radius: 50%;
+  background: #F51300; box-shadow: 0 0 0 3px #000000, inset -5px -5px 0 rgba(0, 0, 0, .25);
+}
+.gw .bd-kind {
+  display: inline-flex; align-items: center; gap: 6px; padding: 5px 12px; border-radius: 999px;
+  background: #000000; color: #FFFFFF; font-size: 12px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase;
+}
+.gw .bd-meta { display: flex; flex-direction: column; margin: 14px 0; }
+.gw .bd-meta > div {
+  display: grid; grid-template-columns: 86px minmax(0, 1fr); gap: 10px; align-items: baseline;
+  padding: 8px 0; border-bottom: 2px solid #E6D9C2; font-size: 16px;
+}
+.gw .bd-meta > div > span { font-size: 12px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: #5A534A; }
+.gw .bd-meta strong { font-weight: 800; overflow-wrap: anywhere; }
+.gw .bd-body { font-size: 18px; font-weight: 600; line-height: 1.5; overflow-wrap: anywhere; }
+
+/* Grifo da pista marcada */
+.gw .hl {
+  background-image: linear-gradient(#FED501, #FED501); background-repeat: no-repeat; background-position: 0 88%;
+  background-size: 100% 46%; animation: bd-mark .45s ease-out;
+}
+@keyframes bd-mark { from { background-size: 0 46%; } }
+
+/* Bilhetes */
+.gw .bd-notes { display: flex; flex-direction: column; gap: 14px; padding-top: 6px; }
+.gw .bd-note {
+  position: relative; padding: 16px 12px 12px; background: #FED501; color: #000000; font-size: 14px; font-weight: 800; line-height: 1.25;
+  box-shadow: 0 0 0 2px #000000, 4px 6px 0 rgba(0, 0, 0, .22); animation: bd-stick .35s cubic-bezier(.3, 1.6, .5, 1) backwards;
+}
+.gw .bd-note::before {
+  content: ''; position: absolute; top: -8px; left: 50%; width: 16px; height: 16px; margin-left: -8px; border-radius: 50%;
+  background: #2662E7; box-shadow: 0 0 0 2px #000000;
+}
+@keyframes bd-stick { from { transform: scale(1.6) rotate(12deg); opacity: 0; } }
+.gw .bd-empty { padding: 14px 12px; border: 2px dashed rgba(0, 0, 0, .35); border-radius: 6px; font-size: 13px; font-weight: 700; color: #5A534A; text-align: center; }
+
+/* Carimbo grande sobre a carta */
+.gw .bd-stamp {
+  position: absolute; top: 46%; left: 50%; z-index: 3; padding: 6px 18px; border: 6px solid currentColor; border-radius: 14px;
+  background: rgba(255, 255, 255, .88); font-size: 58px; transform: translate(-50%, -50%) rotate(-12deg);
+  animation: bd-stamp .35s cubic-bezier(.3, 1.6, .5, 1) backwards; pointer-events: none;
+}
+.gw .bd-stamp.safe { color: #1D50C2; }
+.gw .bd-stamp.sus { color: #B30E00; }
+@keyframes bd-stamp { from { transform: translate(-50%, -50%) rotate(-26deg) scale(2.4); opacity: 0; } }
+
+/* Kit do detetive */
+.gw .bd-kit { display: flex; flex-direction: column; gap: 14px; }
+.gw .bd-kit .gw-paper { gap: 12px; padding: 20px 20px 22px; }
+.gw .bd-kit h2 { display: flex; align-items: center; gap: 10px; font-size: 22px; font-weight: 800; }
+.gw .bd-clues { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.gw .bd-clue {
+  display: flex; align-items: center; gap: 10px; min-height: 48px; padding: 6px 10px; border: 0; border-radius: 12px;
+  background: #FFFFFF; color: #000000; text-align: left; font-size: 14px; font-weight: 700; line-height: 1.2; box-shadow: 0 0 0 2px #000000;
+}
+.gw .bd-clue i {
+  flex: 0 0 auto; display: grid; place-items: center; width: 24px; height: 24px; border-radius: 6px;
+  box-shadow: inset 0 0 0 2px #000000; color: #000000;
+}
+.gw .bd-clue i svg { opacity: 0; }
+.gw .bd-clue.on { background: #FED501; }
+.gw .bd-clue.on i { background: #000000; color: #FED501; }
+.gw .bd-clue.on i svg { opacity: 1; }
+.gw .bd-ask { font-size: 20px; font-weight: 800; color: #FFFFFF; }
+
+.gw .bd-stamps { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.gw .bd-st { display: flex; flex-direction: column; align-items: center; padding: 0; border: 0; background: transparent; transition: transform .15s; }
+.gw .bd-st .h { width: 46px; height: 44px; border-radius: 16px 16px 6px 6px; background: #2D2D34; box-shadow: 0 0 0 3px #000000; }
+.gw .bd-st .n { width: 22px; height: 12px; background: #2D2D34; box-shadow: 0 0 0 3px #000000; }
+.gw .bd-st .b {
+  width: 100%; padding: 14px 8px 12px; border-radius: 14px; background: #FFFFFF;
+  box-shadow: 0 0 0 3px #000000, 0 7px 0 3px #000000; font-size: 28px; text-align: center;
+}
+.gw .bd-st.safe .b { color: #1D50C2; }
+.gw .bd-st.sus .b { color: #B30E00; }
+.gw .bd-st:hover { transform: translateY(-5px) rotate(-2deg); }
+.gw .bd-st:active { transform: translateY(4px); }
+
+@container (max-width: 900px) {
+  .gw .bd-grid { grid-template-columns: minmax(0, 1fr); }
+  .gw .bd-cork { grid-template-columns: minmax(0, 1fr); }
+  .gw .bd-notes { flex-direction: row; flex-wrap: wrap; }
+}
+@container (max-width: 560px) {
+  .gw .bd-clues { grid-template-columns: minmax(0, 1fr); }
+}

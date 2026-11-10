@@ -6,49 +6,6 @@
 @media (min-width: 1101px) and (max-height: 820px) {
   /* Janelas baixas: menos respiro, mesma conta de altura útil (--sp-fit-h). */
   .secure-home .secure-home-main { --sp-main-pad-y: 12px; --sp-main-pad-x: 20px; }
-  .secure-home-main > .arcade-mission-shell { min-height: 0; flex: 1 1 0; }
-  .arcade-mission-shell .arcade-mission-header { min-height: 56px; padding: 5px 12px; gap: 10px; }
-  .arcade-mission-shell .arcade-mission-artwork { width: 40px; height: 40px; flex-basis: 40px; }
-  .arcade-mission-shell .arcade-mission-identity h1 { font-size: 20px; }
-  .arcade-mission-shell .arcade-mission-stage { padding: 8px; }
-  .termotech-mission .termotech-board { padding: 8px; }
-  .termotech-mission .termotech-board .termotech-tile { width: clamp(28px, calc((100dvh - 340px) / 6), 44px); height: clamp(28px, calc((100dvh - 340px) / 6), 44px); border-radius: 9px; font-size: 20px; }
-  .termotech-mission .termotech-board .termotech-grid { margin-bottom: 8px; }
-  .termotech-mission .termotech-keyboard, .termotech-mission .termotech-keyboard > div { gap: 4px; }
-  .termotech-mission .termotech-key { min-height: 36px; height: 36px; }
-  .termotech-mission .termotech-briefing { padding: 14px; }
-  .termotech-mission .termotech-tile:focus-visible { outline: none; border-color: var(--primary); }
-  .arcade-mission-shell .arcade-game-state { min-height: 0; padding: 24px; }
-  .phishing-mission .phishing-mission-workspace { padding: 0; }
-  .phishing-mission .phishing-message-console { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(230px, .8fr); grid-template-rows: auto minmax(0, 1fr) auto; }
-  .phishing-mission .phishing-console-bar { grid-column: 1 / -1; min-height: 40px; padding: 7px 12px; }
-  .phishing-mission .phishing-message-content { grid-column: 1; min-height: 0; padding: 12px; }
-  .phishing-mission .phishing-message-metadata { padding: 8px; gap: 5px; }
-  .phishing-mission .phishing-message-metadata-row { font-size: 13px; }
-  .phishing-mission .phishing-message-body { min-height: 0; padding: 10px 0 0; font-size: 15px; line-height: 1.4; }
-  .phishing-mission .phishing-signal-panel { grid-column: 2; min-height: 0; padding: 12px; border-top: 0; border-left: 1px solid var(--arcade-paper-edge); }
-  .phishing-mission .phishing-signal-list { display: grid; grid-template-columns: minmax(0, 1fr); gap: 5px; }
-  .phishing-mission .phishing-signal-list button { min-height: 34px; font-size: 13px; }
-  .phishing-mission .phishing-decision-bar { grid-column: 1 / -1; padding: 7px 12px; }
-  .phishing-mission .phishing-decision-bar button { min-height: 36px; font-size: 14px; }
-  .data-mission .data-mission-workspace { padding: 0; }
-  .data-mission .data-document-console > header { min-height: 42px; padding: 7px 12px; }
-  .data-mission .data-document-console > header h2 { font-size: 16px; }
-  .data-mission .data-document-row { gap: 5px 7px; padding: 8px; }
-  .data-mission .data-document-name strong { font-size: 13px; line-height: 1.2; }
-  .data-mission .data-level-selector { gap: 5px; }
-  .data-mission .data-level-selector button { min-height: 32px; padding: 3px; font-size: 12px; }
-  .data-mission .data-level-selector button > small { font-size: 10px; }
-  .data-mission .data-submit-bar { min-height: 44px; padding: 5px 12px; }
-  .data-mission .data-submit-bar .app-button { min-height: 34px; font-size: 13px; }
-  .arcade-mission-shell .arcade-result-summary { padding: 18px; }
-  .arcade-mission-shell .arcade-result-summary h2 { font-size: 21px; }
-  .arcade-mission-shell .arcade-result-review { padding: 12px; }
-  .arcade-mission-shell .quiz-result-analysis { min-height: 0; }
-  .arcade-mission-shell .quiz-score-dial { width: 80px; height: 80px; }
-  .arcade-mission-shell .quiz-result-analysis h3 { margin: 8px 0 4px; }
-  .arcade-mission-shell .quiz-result-review { margin-top: 8px; }
-  .arcade-mission-shell .quiz-result-review li { padding: 8px; }
 
   .admin-page-embedded { --app-control-height: 36px; display: flex; height: auto; min-height: 0; flex-direction: column; }
   .admin-page-embedded .app-button { min-height: 30px; }

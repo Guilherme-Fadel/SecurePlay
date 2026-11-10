@@ -1,0 +1,88 @@
+/*
+ * Escudos dos Segredos (classificacao-dados): cena rosa com a parede de escudos.
+ * Parte própria do jogo; a base compartilhada (HUD, papel, botões, abertura, resultado) vem de game-worlds.css.
+ * Importado por games/DataClassify.tsx. Tudo sob `.gw`.
+ */
+
+/* ---------- Cenário ---------- */
+.gw.gw--esc.be {
+  background-color: #FE96C7;
+  background-image: linear-gradient(rgba(0, 0, 0, .09) 3px, transparent 3px), linear-gradient(90deg, rgba(0, 0, 0, .09) 3px, transparent 3px);
+  background-size: 96px 48px, 96px 96px;
+}
+.gw .be-floor { left: 0; right: 0; bottom: 0; height: 230px; background: #D9629C; box-shadow: 0 -4px 0 #000000; }
+.gw .be-ban { top: 0; width: 86px; height: 180px; background: #2662E7; clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 80%, 0 100%); }
+.gw .be-ban::after { content: ''; position: absolute; left: 50%; top: 58px; width: 40px; height: 40px; margin-left: -20px; border-radius: 50%; background: #FED501; }
+.gw .be-ban.l { left: 4%; }
+.gw .be-ban.r { right: 4%; }
+
+/* ---------- Parede de escudos ---------- */
+.gw .be-wall { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 18px; max-width: 1000px; margin: 0 auto; }
+.gw .be-col { display: flex; flex-direction: column; align-items: center; gap: 8px; min-width: 0; }
+.gw .be-sh {
+  position: relative; display: flex; flex-direction: column; align-items: center; gap: 10px;
+  min-height: 0; padding: 0; border: 0; border-radius: 0; background: transparent; box-shadow: none; color: #000000;
+}
+.gw .be-sh::before { content: ''; width: 14px; height: 14px; margin-bottom: -6px; border-radius: 50%; background: #2D2D34; box-shadow: 0 0 0 3px #000000; }
+.gw .be-sh svg { width: 116px; height: 131px; filter: drop-shadow(0 7px 0 rgba(0, 0, 0, .35)); transition: transform .2s; }
+.gw .be-sh:hover svg { transform: rotate(-5deg) translateY(-4px); }
+.gw .be-sh.go svg { animation: be-catch .5s ease-out; }
+@keyframes be-catch { 30% { transform: scale(1.14) rotate(4deg); } 60% { transform: scale(.96) rotate(-3deg); } }
+.gw .be-plate { display: flex; flex-direction: column; align-items: center; min-width: 132px; padding: 6px 12px 8px; border-radius: 12px; background: #000000; color: #F9EEDC; }
+.gw .be-plate strong { font-size: 16px; font-weight: 800; }
+.gw .be-plate small { font-size: 12px; font-weight: 700; color: #CFC6B8; }
+.gw .be-sh.on .be-plate { background: #FED501; color: #000000; box-shadow: 0 0 0 3px #000000; }
+.gw .be-sh.on .be-plate small { color: #5C4A00; }
+.gw .be-cnt {
+  position: absolute; top: 20px; right: calc(50% - 70px); display: grid; place-items: center; width: 34px; height: 34px;
+  border-radius: 50%; background: #FFFFFF; color: #000000; box-shadow: 0 0 0 3px #000000; font-size: 15px; font-weight: 800;
+}
+.gw .be-chips { display: flex; flex-direction: column; align-items: center; gap: 5px; min-height: 58px; }
+.gw .be-chip {
+  max-width: 180px; min-height: 0; padding: 4px 10px; border: 0; border-radius: 8px; background: #FFFCF7; color: #000000;
+  font-size: 12px; font-weight: 700; line-height: 1.25; box-shadow: 0 0 0 2px #000000;
+}
+.gw .be-chip:hover { background: #FFF6C2; }
+.gw .be-chip[aria-current='true'] { background: #FFF6C2; }
+
+/* ---------- Mesa: guia, pergaminho e entrega ---------- */
+.gw .be-table { display: grid; grid-template-columns: minmax(0, 260px) minmax(0, 1fr) minmax(0, 230px); gap: 24px; align-items: end; margin-top: 18px; }
+.gw .be-scroll {
+  position: relative; justify-self: center; width: min(540px, 100%); padding: 22px 42px 24px; border-radius: 6px;
+  background: #FFFCF7; color: #000000; text-align: center; box-shadow: 0 0 0 3px #000000, 0 8px 0 3px #000000;
+}
+.gw .be-scroll::before, .gw .be-scroll::after {
+  content: ''; position: absolute; top: -12px; bottom: -12px; width: 26px; border-radius: 13px; background: #F1E6D3; box-shadow: 0 0 0 3px #000000;
+}
+.gw .be-scroll::before { left: -16px; }
+.gw .be-scroll::after { right: -16px; }
+.gw .be-scroll h2 { margin: 6px 0; font-size: 32px; font-weight: 800; line-height: 1.1; }
+.gw .be-scroll p { font-size: 15px; font-weight: 700; color: #39332C; }
+.gw .be-scroll p.gw-k { font-size: 12px; font-weight: 800; color: var(--gk); }
+.gw .be-scroll.fly.f0 { animation: be-f0 .45s ease-in forwards; }
+.gw .be-scroll.fly.f1 { animation: be-f1 .45s ease-in forwards; }
+.gw .be-scroll.fly.f2 { animation: be-f2 .45s ease-in forwards; }
+.gw .be-scroll.fly.f3 { animation: be-f3 .45s ease-in forwards; }
+@keyframes be-f0 { to { transform: translate(-360px, -300px) scale(.2) rotate(-20deg); opacity: 0; } }
+@keyframes be-f1 { to { transform: translate(-120px, -300px) scale(.2) rotate(-8deg); opacity: 0; } }
+@keyframes be-f2 { to { transform: translate(120px, -300px) scale(.2) rotate(8deg); opacity: 0; } }
+@keyframes be-f3 { to { transform: translate(360px, -300px) scale(.2) rotate(20deg); opacity: 0; } }
+.gw .be-side { display: flex; flex-direction: column; gap: 12px; align-items: stretch; }
+.gw .be-side .gw-chip { justify-content: center; white-space: normal; text-align: center; }
+
+/* ---------- Container queries (largura da própria cena) ---------- */
+@container (max-width: 900px) {
+  .gw .be-table { grid-template-columns: minmax(0, 1fr); }
+  .gw .be-wall { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@container (max-width: 560px) {
+  .gw .be-sh svg { width: 84px; height: 95px; }
+  .gw .be-cnt { right: calc(50% - 56px); }
+  .gw .be-scroll { padding: 20px 34px 22px; }
+  .gw .be-scroll h2 { font-size: 26px; }
+}
+
+/* Reduzir movimento: o pergaminho não voa (o jogo também aplica a escolha na hora). */
+@media (prefers-reduced-motion: reduce) {
+  .gw .be-scroll.fly { opacity: 1; transform: none; }
+}

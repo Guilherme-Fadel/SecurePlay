@@ -1,7 +1,7 @@
 Thumbnails dos jogos da secao Desafios e Arcade.
 
 Arquivos:
-  termotech.png              (arte do jogo Termo Tech)
+  termotech.png              (arte do jogo Palavra Secreta)
   quiz-relampago.svg         (placeholder - raio/relampago, fundo azul)
   caca-phishing.svg          (placeholder - anzol/hook, fundo vermelho)
   classificacao-dados.svg    (placeholder - escudo/lock, fundo verde)

@@ -2,7 +2,7 @@ export const COMPANY_GAMES = [
   { slug: 'quiz-relampago', label: 'Quiz Relâmpago' },
   { slug: 'caca-phishing', label: 'Caça ao Phishing' },
   { slug: 'classificacao-dados', label: 'Classificação de Dados' },
-  { slug: 'termotech', label: 'Termo Tech' },
+  { slug: 'termotech', label: 'Palavra Secreta' },
 ] as const;
 
 export type CompanyGameSlug = (typeof COMPANY_GAMES)[number]['slug'];

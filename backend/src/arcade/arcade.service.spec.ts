@@ -76,6 +76,50 @@ describe('ArcadeService — catálogo e início durável', () => {
       'quiz-relampago',
     ]);
   });
+  it('expõe roundSize do handler de cada tipo e omite em client_only', async () => {
+    const { service, games, features, game } = setup();
+    const svc = service as unknown as {
+      quizHandler: { roundSize: number };
+      phishingHandler: { roundSize: number };
+      dataClassifyHandler: { roundSize: number };
+    };
+    svc.quizHandler = { roundSize: 8 };
+    svc.phishingHandler = { roundSize: 5 };
+    svc.dataClassifyHandler = { roundSize: 6 };
+    features.forUser.mockResolvedValue(
+      resolveCompanyParameters({
+        enabledGames: [
+          'quiz-relampago',
+          'caca-phishing',
+          'classificacao-dados',
+          'termotech',
+        ],
+      }),
+    );
+    games.find.mockResolvedValue([
+      game,
+      {
+        ...game,
+        slug: 'caca-phishing',
+        game_type: ArcadeGameType.PHISHING,
+      },
+      {
+        ...game,
+        slug: 'classificacao-dados',
+        game_type: ArcadeGameType.DATA_CLASSIFY,
+      },
+      { ...game, slug: 'termotech', game_type: ArcadeGameType.CLIENT_ONLY },
+    ]);
+    const list = await service.listGames(1);
+    const sizes = Object.fromEntries(list.map((g) => [g.slug, g.roundSize]));
+    expect(sizes).toEqual({
+      'quiz-relampago': 8,
+      'caca-phishing': 5,
+      'classificacao-dados': 6,
+      termotech: undefined,
+    });
+    expect(list).toHaveLength(4);
+  });
   it('recusa jogo desabilitado antes de criar uma partida', async () => {
     const { service, features, submissions } = setup();
     features.requireGame.mockRejectedValue(new NotFoundException());

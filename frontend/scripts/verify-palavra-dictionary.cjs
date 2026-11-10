@@ -6,7 +6,7 @@ const DICTIONARY_PATH = path.join(
   '..',
   'public',
   'dictionaries',
-  'termotech-valid-words-5.txt',
+  'palavra-valid-words-5.txt',
 );
 
 const REQUIRED_WORDS = ['CYBER', 'PRIME', 'PRIDE'];
@@ -38,5 +38,5 @@ for (const word of REJECTED_WORDS) {
 }
 
 if (process.exitCode !== 1) {
-  console.log(`TermoTech dictionary verified with ${words.length} words.`);
+  console.log(`Palavra Secreta dictionary verified with ${words.length} words.`);
 }
