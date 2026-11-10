@@ -7,7 +7,7 @@ export interface Convite {
   expires_at: string;
   max_uses: number;
   uses: number;
-  role: 'user' | 'admin';
+  role: 'user' | 'admin' | 'teacher';
   registration_mode: 'legacy_email' | 'school_student';
   status: 'ativo' | 'utilizado' | 'expirado' | 'revogado';
   created_at: string;
@@ -32,7 +32,7 @@ export interface ConvitePublico {
   empresa_nome: string;
   email: string | null;
   expires_at: string;
-  role: 'user' | 'admin';
+  role: 'user' | 'admin' | 'teacher';
   registration_mode: 'legacy_email' | 'school_student';
 }
 
