@@ -104,11 +104,77 @@
 .gw .bd-st:hover { transform: translateY(-5px) rotate(-2deg); }
 .gw .bd-st:active { transform: translateY(4px); }
 
-@container (max-width: 900px) {
-  .gw .bd-grid { grid-template-columns: minmax(0, 1fr); }
-  .gw .bd-cork { grid-template-columns: minmax(0, 1fr); }
+/* ---------- Responsivo (largura da própria cena; alturas em faixas) ---------- */
+/* Intermediário (tablet deitado): mural e kit lado a lado, bilhetes embaixo da carta. */
+@container (max-width: 1000px) {
+  .gw .bd-grid { grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 18px; }
+  .gw .bd-cork { grid-template-columns: minmax(0, 1fr); gap: 14px; min-height: 0; padding: 28px 20px 22px 22px; }
   .gw .bd-notes { flex-direction: row; flex-wrap: wrap; }
+  .gw .bd-note { flex: 0 1 auto; }
+  .gw .bd-body { font-size: 17px; }
+  .gw .bd-meta > div { grid-template-columns: 74px minmax(0, 1fr); }
+  .gw .bd-stamp { font-size: 46px; }
 }
+/* Tablet em pé: uma coluna. */
+@container (max-width: 700px) {
+  .gw .bd-grid { grid-template-columns: minmax(0, 1fr); }
+  .gw .bd-kit .gw-guide { display: none; }
+  .gw .bd-clues { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+/* Celular: a carta rola; o kit de pistas vem depois e os carimbos ficam grudados no pé da tela. */
 @container (max-width: 560px) {
-  .gw .bd-clues { grid-template-columns: minmax(0, 1fr); }
+  .gw--det .gw-main { padding-inline: 16px; }
+  .gw .bd-grid { display: flex; flex-direction: column; align-items: stretch; gap: 14px; }
+  .gw .bd-kit { display: contents; }
+  .gw .bd-cork { gap: 10px; padding: 22px 12px 14px; border-radius: 18px; box-shadow: 0 0 0 3px #000000, 0 0 0 8px #FF7101, 0 0 0 11px #000000, 0 6px 0 11px #000000; }
+  .gw .bd-paper { padding: 20px 12px 12px; }
+  .gw .bd-meta { margin: 8px 0 6px; }
+  .gw .bd-meta > div { grid-template-columns: 64px minmax(0, 1fr); gap: 8px; padding: 4px 0; font-size: 15px; }
+  .gw .bd-meta > div > span { font-size: 13px; }
+  .gw .bd-body { font-size: 15px; line-height: 1.4; }
+  .gw .bd-notes { gap: 8px; padding-top: 2px; }
+  .gw .bd-kind { font-size: 13px; }
+  .gw .bd-stamp { font-size: 38px; border-width: 4px; }
+  .gw .bd-note { padding: 14px 10px 8px; font-size: 14px; }
+  .gw .bd-kit .gw-paper { gap: 8px; padding: 12px 12px 14px; }
+  .gw .bd-kit h2 { font-size: 17px; }
+  .gw .bd-clues { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+  .gw .bd-clue { min-height: 48px; padding: 6px 8px; gap: 8px; font-size: 14px; }
+  .gw .bd-ask { font-size: 15px; text-align: center; }
+  .gw .bd-stamps {
+    position: sticky; bottom: 24px; z-index: 6; gap: 10px; padding: 8px 10px 12px;
+    border-radius: 22px; background: #000000; box-shadow: 0 0 0 3px #FFFFFF, 0 0 0 6px #000000;
+  }
+  .gw .bd-st .h, .gw .bd-st .n { display: none; }
+  .gw .bd-st .b { padding: 0; min-height: 52px; display: grid; place-items: center; border-radius: 14px; font-size: 24px; box-shadow: 0 0 0 3px #000000, 0 4px 0 3px #000000; }
+  .gw .bd-st:hover { transform: none; }
+  .gw .bd-st:active .b { transform: translateY(3px); }
 }
+
+/* Janelas baixas (notebook, tablet deitado) */
+@media (min-width: 700px) and (max-height: 860px) {
+  .gw .bd-cork { min-height: 0; padding: 28px 22px 22px 26px; }
+  .gw .bd-paper { padding: 22px 22px 20px; }
+  .gw .bd-meta { margin: 10px 0; }
+  .gw .bd-meta > div { padding: 6px 0; font-size: 15px; }
+  .gw .bd-body { font-size: 17px; line-height: 1.45; }
+  .gw .bd-kit { gap: 10px; }
+  .gw .bd-kit .gw-paper { padding: 16px 18px 18px; gap: 10px; }
+  .gw .bd-st .b { padding: 10px 8px; font-size: 26px; }
+}
+@media (min-width: 700px) and (max-height: 740px) {
+  .gw .bd-kit > .gw-guide { display: none; }
+  .gw .bd-ask { font-size: 17px; }
+  .gw .bd-kit h2 { font-size: 19px; }
+  .gw .bd-st .h { height: 34px; }
+  .gw .bd-st .n { height: 8px; }
+  .gw .bd-clue { min-height: 44px; }
+}
+@media (min-width: 700px) and (max-height: 660px) {
+  .gw .bd-cork { padding: 24px 20px 18px 24px; }
+  .gw .bd-paper { padding: 18px 20px 16px; }
+  .gw .bd-body { font-size: 16px; }
+  .gw .bd-st .h { display: none; }
+  .gw .bd-st .n { display: none; }
+}
+

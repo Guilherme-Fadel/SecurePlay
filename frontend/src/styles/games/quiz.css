@@ -18,7 +18,7 @@
 .gw .bq-floor { position: absolute; left: 50%; bottom: -210px; width: 1400px; height: 380px; margin-left: -700px; border-radius: 50%; background: #FF7101; box-shadow: inset 0 18px 0 #FFB066, 0 0 0 4px #000000; }
 
 /* ---------- Contagem: 3, 2, 1, Vai! ---------- */
-.gw .bq-cd { position: relative; z-index: 4; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; min-height: 600px; text-align: center; }
+.gw .bq-cd { position: relative; z-index: 4; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; min-height: max(300px, min(600px, calc(var(--sp-fit-h, 100dvh) - 170px))); text-align: center; }
 .gw .bq-cd-ring { display: grid; place-items: center; width: 230px; height: 230px; border-radius: 50%; background: radial-gradient(circle, rgba(254, 213, 1, .95), rgba(254, 213, 1, .08) 72%); box-shadow: 0 0 0 6px #000000; }
 .gw .bq-cd-ring .gw-disp { font-size: 124px; color: #000000; line-height: 1; animation: bq-cd-pop .6s cubic-bezier(.3, 1.6, .5, 1); }
 @keyframes bq-cd-pop { from { transform: scale(.35); opacity: 0; } }
@@ -56,19 +56,82 @@
 .gw .bq-pod:hover { transform: translateY(-6px); box-shadow: 0 0 0 3px #000000, 0 15px 0 3px #000000; }
 .gw .bq-pod.hit, .gw .bq-pod.hit:hover { background: #FED501; transform: translateY(6px); box-shadow: 0 0 0 3px #000000, 0 3px 0 3px #000000; }
 
-/* ---------- Container queries (largura da própria cena) ---------- */
-@container (max-width: 900px) {
-  .gw .bq-grid { grid-template-columns: minmax(0, 1fr); }
+/* ---------- Responsivo (largura da própria cena; alturas em faixas) ---------- */
+/* Intermediário (tablet deitado): sem guia lateral, placar do lado do telão. */
+@container (max-width: 1000px) {
+  .gw .bq-grid { grid-template-columns: minmax(0, 1fr) minmax(0, 170px); gap: 18px; }
+  .gw .bq-grid > .gw-guide { display: none; }
+  .gw .bq-marq { padding: 24px; }
+  .gw .bq-pods { gap: 14px; }
+  .gw .bq-curt { width: 100px; }
+}
+/* Tablet em pé: tudo em uma coluna, placar em linha, 2×2 respostas. */
+@container (max-width: 700px) {
+  .gw .bq-grid { grid-template-columns: minmax(0, 1fr); gap: 16px; }
   .gw .bq-score { flex-direction: row; }
   .gw .bq-score > div { flex: 1; }
-  .gw .bq-pods { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .gw .bq-pods { grid-template-columns: repeat(2, minmax(0, 1fr)); margin-top: 24px; }
+  .gw .bq-curt { width: 60px; }
 }
+/* Celular: placar em tira no topo, respostas empilhadas e compactas. */
 @container (max-width: 560px) {
-  .gw .bq-curt { width: 40px; }
-  .gw .bq-q { font-size: 24px; }
-  .gw .bq-pods { grid-template-columns: minmax(0, 1fr); }
-  .gw .bq-pod { flex-direction: row; min-height: 0; text-align: left; }
-  .gw .bq-pod b { width: 46px; height: 46px; font-size: 24px; }
+  .gw .bq-curt { width: 22px; }
+  .gw .bq-grid { gap: 10px; }
+  .gw .bq-score { order: -1; gap: 8px; }
+  .gw .bq-score > div { flex-direction: row; justify-content: center; align-items: baseline; gap: 8px; padding: 6px 10px 8px; border-radius: 16px; box-shadow: 0 0 0 3px #000000, 0 4px 0 3px #000000; }
+  .gw .bq-score > div { min-width: 0; }
+  .gw .bq-score > div:first-child { flex: 0 0 auto; }
+  .gw .bq-score > div:first-child span { display: none; }
+  .gw .bq-score small { font-size: 13px; letter-spacing: .04em; }
+  .gw .bq-score b { font-size: 34px; }
+  .gw .bq-score span { font-size: 13px; }
+  .gw .bq-marq { padding: 14px; border-radius: 26px; }
+  .gw .bq-board { min-height: 0; gap: 10px; padding: 12px 14px 16px; }
+  .gw .bq-q { font-size: 22px; }
+  .gw .bq-lamps { gap: 4px; }
+  .gw .bq-lamps li { width: 12px; height: 12px; }
+  .gw .bq-pods { grid-template-columns: minmax(0, 1fr); gap: 9px; margin-top: 14px; }
+  .gw .bq-pod { flex-direction: row; min-height: 56px; padding: 8px 14px; gap: 12px; border-radius: 22px 22px 10px 10px; text-align: left; font-size: 16px; box-shadow: 0 0 0 3px #000000, 0 5px 0 3px #000000; }
+  .gw .bq-pod b { width: 40px; height: 40px; font-size: 22px; }
+  .gw .bq-pod:hover { transform: none; box-shadow: 0 0 0 3px #000000, 0 5px 0 3px #000000; }
+  .gw .bq-pod.hit, .gw .bq-pod.hit:hover { transform: translateY(4px); box-shadow: 0 0 0 3px #000000, 0 1px 0 3px #000000; }
+  .gw .bq-cd { min-height: 340px; }
+  .gw .bq-cd-ring { width: 170px; height: 170px; }
+  .gw .bq-cd-ring .gw-disp { font-size: 92px; }
+}
+@media (max-width: 699px) and (max-height: 700px) {
+  .gw .bq-q { font-size: 20px; }
+  .gw .bq-score b { font-size: 28px; }
+  .gw .bq-marq { padding: 10px; }
+  .gw .bq-board { padding: 10px 12px 12px; gap: 8px; }
+  .gw .bq-pods { gap: 7px; margin-top: 12px; }
+  .gw .bq-pod { min-height: 52px; padding: 6px 12px; }
+}
+
+/* Janelas baixas (notebook, tablet deitado) */
+@media (min-width: 700px) and (max-height: 860px) {
+  .gw .bq-marq { padding: 22px; }
+  .gw .bq-board { min-height: 0; gap: 10px; padding: 16px 22px 20px; }
+  .gw .bq-q { font-size: 28px; }
+  .gw .bq-pods { margin-top: 22px; }
+  .gw .bq-pod { min-height: 124px; padding: 12px 12px 14px; gap: 8px; }
+  .gw .bq-pod b { width: 50px; height: 50px; font-size: 26px; }
+  .gw .bq-score { gap: 10px; }
+  .gw .bq-score b { font-size: 48px; }
+  .gw .bq-cd-ring { width: 190px; height: 190px; }
+  .gw .bq-cd-ring .gw-disp { font-size: 100px; }
+}
+@media (min-width: 700px) and (max-height: 740px) {
+  .gw .bq-marq { padding: 16px; }
+  .gw .bq-board { padding: 12px 18px 16px; }
+  .gw .bq-q { font-size: 26px; }
+  .gw .bq-pods { margin-top: 16px; gap: 12px; }
+  .gw .bq-pod { min-height: 100px; padding: 10px; gap: 6px; font-size: 16px; }
+  .gw .bq-pod b { width: 42px; height: 42px; font-size: 22px; }
+  .gw .bq-score > div { padding: 8px 10px 10px; }
+  .gw .bq-score b { font-size: 38px; }
+  .gw .bq-cd-ring { width: 160px; height: 160px; }
+  .gw .bq-cd-ring .gw-disp { font-size: 84px; }
 }
 
 /* ---------- Reduzir movimento: o resto (animações e transições) já é cortado em game-worlds.css ---------- */
