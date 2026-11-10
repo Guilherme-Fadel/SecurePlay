@@ -12,9 +12,11 @@ const TABELAS = [
 
 function runner(existentes: string[] = []) {
   return {
-    hasTable: jest.fn(async (name: string) => existentes.includes(name)),
-    createTable: jest.fn(async () => undefined),
-    dropTable: jest.fn(async () => undefined),
+    hasTable: jest.fn((name: string) =>
+      Promise.resolve(existentes.includes(name)),
+    ),
+    createTable: jest.fn(() => Promise.resolve()),
+    dropTable: jest.fn(() => Promise.resolve()),
     addColumn: jest.fn(),
     changeColumn: jest.fn(),
     query: jest.fn(),
@@ -22,7 +24,9 @@ function runner(existentes: string[] = []) {
 }
 
 function criadas(r: ReturnType<typeof runner>): Table[] {
-  return r.createTable.mock.calls.map((call) => (call as unknown as [Table])[0]);
+  return r.createTable.mock.calls.map(
+    (call) => (call as unknown as [Table])[0],
+  );
 }
 
 describe('CreateTurmas migration', () => {
@@ -74,12 +78,24 @@ describe('CreateTurmas migration', () => {
     expect(primarias('turma_aula_abertura')).toEqual(['turma_id', 'aula_id']);
     expect(primarias('convite_turma')).toEqual(['convite_id']);
     const indices = criadas(r).flatMap((t) =>
-      t.indices.map((i) => ({ nome: i.name, unico: !!i.isUnique, colunas: i.columnNames })),
+      t.indices.map((i) => ({
+        nome: i.name,
+        unico: !!i.isUnique,
+        colunas: i.columnNames,
+      })),
     );
     expect(indices).toEqual(
       expect.arrayContaining([
-        { nome: 'ux_turma_empresa_ano_nome', unico: true, colunas: ['empresa_id', 'ano_letivo', 'nome'] },
-        { nome: 'ix_turma_professor_usuario', unico: false, colunas: ['usuario_id'] },
+        {
+          nome: 'ux_turma_empresa_ano_nome',
+          unico: true,
+          colunas: ['empresa_id', 'ano_letivo', 'nome'],
+        },
+        {
+          nome: 'ix_turma_professor_usuario',
+          unico: false,
+          colunas: ['usuario_id'],
+        },
         { nome: 'ix_turma_aluno_turma', unico: false, colunas: ['turma_id'] },
         { nome: 'ix_convite_turma_turma', unico: false, colunas: ['turma_id'] },
       ]),

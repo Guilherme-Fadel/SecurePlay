@@ -24,7 +24,13 @@ describe('AdminAuditService.registrar', () => {
     expect(manager.getRepository).toHaveBeenCalledWith(AdminAuditEvent);
     expect(dataSource.getRepository).not.toHaveBeenCalled();
     expect(save).toHaveBeenCalledWith(
-      expect.objectContaining({ empresa_id: 3, ator_id: 9, acao: 'turma.criada', alvo_tipo: 'turma', alvo_id: 4 }),
+      expect.objectContaining({
+        empresa_id: 3,
+        ator_id: 9,
+        acao: 'turma.criada',
+        alvo_tipo: 'turma',
+        alvo_id: 4,
+      }),
     );
   });
 

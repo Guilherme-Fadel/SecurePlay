@@ -21,7 +21,10 @@ describe('removerVinculosAoMudarPapel', () => {
     const m = manager();
     await removerVinculosAoMudarPapel(m as never, 5, Role.USER, TEACHER);
     expect(m.delete).toHaveBeenCalledWith(TurmaAluno, { usuario_id: 5 });
-    expect(m.delete).not.toHaveBeenCalledWith(TurmaProfessor, expect.anything());
+    expect(m.delete).not.toHaveBeenCalledWith(
+      TurmaProfessor,
+      expect.anything(),
+    );
   });
 
   it('remove o vínculo de aluno quando o aluno vira administrador', async () => {

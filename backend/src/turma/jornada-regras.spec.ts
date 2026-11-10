@@ -49,7 +49,11 @@ function modulo(e: EntradaJornada, moduloId: number) {
   return resolverEstadoJornada(e).find((m) => m.moduloId === moduloId)!;
 }
 
-function falha(fn: () => unknown, tipo: new (...args: never[]) => Error, mensagem: string) {
+function falha(
+  fn: () => unknown,
+  tipo: new (...args: never[]) => Error,
+  mensagem: string,
+) {
   let erro: unknown;
   try {
     fn();
@@ -67,27 +71,54 @@ describe('resolverEstadoJornada — estado das aulas', () => {
       foraDaJornada: [m2],
       progresso: new Map([[21, { completed: true }]]),
     });
-    expect(estado(e, 21)).toEqual({ aulaId: 21, status: 'completed', lockReason: null, opensAt: null });
+    expect(estado(e, 21)).toEqual({
+      aulaId: 21,
+      status: 'completed',
+      lockReason: null,
+      opensAt: null,
+    });
   });
 
   it('aula começada continua acessível mesmo sem abertura', () => {
     const e = entrada({ progresso: new Map([[11, { completed: false }]]) });
-    expect(estado(e, 11)).toEqual({ aulaId: 11, status: 'unlocked', lockReason: null, opensAt: null });
+    expect(estado(e, 11)).toEqual({
+      aulaId: 11,
+      status: 'unlocked',
+      lockReason: null,
+      opensAt: null,
+    });
   });
 
   it('aula aberta com a anterior incompleta fica bloqueada pela sequência', () => {
-    const e = entrada({ aberturas: new Map([[11, antes], [12, antes]]) });
+    const e = entrada({
+      aberturas: new Map([
+        [11, antes],
+        [12, antes],
+      ]),
+    });
     expect(estado(e, 11).status).toBe('unlocked');
-    expect(estado(e, 12)).toMatchObject({ status: 'locked', lockReason: 'sequence', opensAt: null });
+    expect(estado(e, 12)).toMatchObject({
+      status: 'locked',
+      lockReason: 'sequence',
+      opensAt: null,
+    });
   });
 
   it('aula agendada no futuro informa quando abre', () => {
     const e = entrada({ aberturas: new Map([[11, depois]]) });
-    expect(estado(e, 11)).toEqual({ aulaId: 11, status: 'locked', lockReason: 'scheduled', opensAt: depois });
+    expect(estado(e, 11)).toEqual({
+      aulaId: 11,
+      status: 'locked',
+      lockReason: 'scheduled',
+      opensAt: depois,
+    });
   });
 
   it('aula sem abertura aguarda o professor', () => {
-    expect(estado(entrada(), 11)).toMatchObject({ status: 'locked', lockReason: 'awaiting_teacher' });
+    expect(estado(entrada(), 11)).toMatchObject({
+      status: 'locked',
+      lockReason: 'awaiting_teacher',
+    });
   });
 
   it('aula com abertura exatamente agora está aberta', () => {
@@ -102,7 +133,10 @@ describe('resolverEstadoJornada — estado das aulas', () => {
       progresso: new Map([[21, { completed: true }]]),
       aberturas: new Map([[22, antes]]),
     });
-    expect(estado(e, 22)).toMatchObject({ status: 'locked', lockReason: 'outside_journey' });
+    expect(estado(e, 22)).toMatchObject({
+      status: 'locked',
+      lockReason: 'outside_journey',
+    });
     expect(modulo(e, 2)).toMatchObject({ locked: false, outsideJourney: true });
   });
 
@@ -114,9 +148,17 @@ describe('resolverEstadoJornada — estado das aulas', () => {
 
 describe('resolverEstadoJornada — bloqueio de módulos', () => {
   it('bloqueia o módulo seguinte enquanto o anterior não termina', () => {
-    const e = entrada({ aberturas: new Map([[11, antes], [21, antes]]) });
+    const e = entrada({
+      aberturas: new Map([
+        [11, antes],
+        [21, antes],
+      ]),
+    });
     expect(modulo(e, 2).locked).toBe(true);
-    expect(estado(e, 21)).toMatchObject({ status: 'locked', lockReason: 'sequence' });
+    expect(estado(e, 21)).toMatchObject({
+      status: 'locked',
+      lockReason: 'sequence',
+    });
   });
 
   it('não bloqueia módulo em que o aluno já tem progresso', () => {
@@ -127,15 +169,25 @@ describe('resolverEstadoJornada — bloqueio de módulos', () => {
 
   it('módulo sem aulas não trava o seguinte', () => {
     const vazio: ModuloRef = { id: 9, aulas: [] };
-    const e = entrada({ modulos: [vazio, m1], aberturas: new Map([[11, antes]]) });
+    const e = entrada({
+      modulos: [vazio, m1],
+      aberturas: new Map([[11, antes]]),
+    });
     expect(modulo(e, 1).locked).toBe(false);
     expect(estado(e, 11).status).toBe('unlocked');
   });
 
   it('libera o módulo seguinte quando o anterior termina', () => {
     const e = entrada({
-      progresso: new Map([[11, { completed: true }], [12, { completed: true }]]),
-      aberturas: new Map([[11, antes], [12, antes], [21, antes]]),
+      progresso: new Map([
+        [11, { completed: true }],
+        [12, { completed: true }],
+      ]),
+      aberturas: new Map([
+        [11, antes],
+        [12, antes],
+        [21, antes],
+      ]),
     });
     expect(modulo(e, 2).locked).toBe(false);
     expect(estado(e, 21).status).toBe('unlocked');
@@ -148,29 +200,53 @@ describe('resolverEstadoJornada — bloqueio de módulos', () => {
 
 describe('aulasParaAbrirAgora', () => {
   it('abre a aula e todas as anteriores fechadas', () => {
-    expect(aulasParaAbrirAgora(ordem, 21, new Map(), agora)).toEqual([11, 12, 21]);
+    expect(aulasParaAbrirAgora(ordem, 21, new Map(), agora)).toEqual([
+      11, 12, 21,
+    ]);
   });
 
   it('ignora as anteriores já abertas', () => {
-    expect(aulasParaAbrirAgora(ordem, 21, new Map([[11, antes]]), agora)).toEqual([12, 21]);
+    expect(
+      aulasParaAbrirAgora(ordem, 21, new Map([[11, antes]]), agora),
+    ).toEqual([12, 21]);
   });
 
   it('antecipa anteriores agendadas no futuro', () => {
-    expect(aulasParaAbrirAgora(ordem, 21, new Map([[11, antes], [12, depois]]), agora)).toEqual([12, 21]);
+    expect(
+      aulasParaAbrirAgora(
+        ordem,
+        21,
+        new Map([
+          [11, antes],
+          [12, depois],
+        ]),
+        agora,
+      ),
+    ).toEqual([12, 21]);
   });
 
   it('recusa aula que já está aberta', () => {
-    falha(() => aulasParaAbrirAgora(ordem, 12, new Map([[12, antes]]), agora), ConflictException, 'Esta aula já está aberta');
+    falha(
+      () => aulasParaAbrirAgora(ordem, 12, new Map([[12, antes]]), agora),
+      ConflictException,
+      'Esta aula já está aberta',
+    );
   });
 
   it('recusa aula fora da jornada', () => {
-    falha(() => aulasParaAbrirAgora(ordem, 99, new Map(), agora), NotFoundException, 'Aula não encontrada nesta jornada');
+    falha(
+      () => aulasParaAbrirAgora(ordem, 99, new Map(), agora),
+      NotFoundException,
+      'Aula não encontrada nesta jornada',
+    );
   });
 });
 
 describe('validarAgendamento', () => {
-  const validar = (alvo: number, abreEm: Date, aberturas = new Map<number, Date>()) => () =>
-    validarAgendamento(ordem, alvo, abreEm, aberturas, agora);
+  const validar =
+    (alvo: number, abreEm: Date, aberturas = new Map<number, Date>()) =>
+    () =>
+      validarAgendamento(ordem, alvo, abreEm, aberturas, agora);
 
   it('aceita a primeira aula da jornada', () => {
     expect(validar(11, depois)).not.toThrow();
@@ -191,48 +267,98 @@ describe('validarAgendamento', () => {
   });
 
   it('exige abertura da aula anterior', () => {
-    falha(validar(12, depois), BadRequestException, 'Abra ou agende a aula anterior primeiro');
+    falha(
+      validar(12, depois),
+      BadRequestException,
+      'Abra ou agende a aula anterior primeiro',
+    );
   });
 
   it('recusa data anterior à abertura da aula anterior', () => {
-    falha(validar(12, depois, new Map([[11, muitoDepois]])), BadRequestException, 'Abra ou agende a aula anterior primeiro');
+    falha(
+      validar(12, depois, new Map([[11, muitoDepois]])),
+      BadRequestException,
+      'Abra ou agende a aula anterior primeiro',
+    );
   });
 
   it('recusa data posterior à abertura da aula seguinte', () => {
     falha(
-      validar(12, muitoDepois, new Map([[11, antes], [21, depois]])),
+      validar(
+        12,
+        muitoDepois,
+        new Map([
+          [11, antes],
+          [21, depois],
+        ]),
+      ),
       BadRequestException,
       'A aula seguinte abre antes; ajuste-a primeiro',
     );
   });
 
   it('recusa reagendar aula que já abriu', () => {
-    falha(validar(11, depois, new Map([[11, antes]])), ConflictException, 'Esta aula já abriu');
+    falha(
+      validar(11, depois, new Map([[11, antes]])),
+      ConflictException,
+      'Esta aula já abriu',
+    );
   });
 
   it('recusa aula fora da jornada', () => {
-    falha(validar(99, depois), NotFoundException, 'Aula não encontrada nesta jornada');
+    falha(
+      validar(99, depois),
+      NotFoundException,
+      'Aula não encontrada nesta jornada',
+    );
   });
 });
 
 describe('validarCancelamento', () => {
   it('permite cancelar o último agendamento', () => {
-    expect(() => validarCancelamento(ordem, 12, new Map([[11, antes], [12, depois]]), agora)).not.toThrow();
+    expect(() =>
+      validarCancelamento(
+        ordem,
+        12,
+        new Map([
+          [11, antes],
+          [12, depois],
+        ]),
+        agora,
+      ),
+    ).not.toThrow();
   });
 
   it('recusa cancelar aula que já abriu', () => {
-    falha(() => validarCancelamento(ordem, 11, new Map([[11, antes]]), agora), ConflictException, 'Esta aula já abriu');
+    falha(
+      () => validarCancelamento(ordem, 11, new Map([[11, antes]]), agora),
+      ConflictException,
+      'Esta aula já abriu',
+    );
   });
 
   it('recusa cancelar quando a seguinte tem abertura', () => {
     falha(
-      () => validarCancelamento(ordem, 12, new Map([[12, depois], [21, muitoDepois]]), agora),
+      () =>
+        validarCancelamento(
+          ordem,
+          12,
+          new Map([
+            [12, depois],
+            [21, muitoDepois],
+          ]),
+          agora,
+        ),
       BadRequestException,
       'Cancele primeiro as aulas seguintes',
     );
   });
 
   it('recusa cancelar aula sem agendamento', () => {
-    falha(() => validarCancelamento(ordem, 12, new Map(), agora), ConflictException, 'Esta aula não tem agendamento');
+    falha(
+      () => validarCancelamento(ordem, 12, new Map(), agora),
+      ConflictException,
+      'Esta aula não tem agendamento',
+    );
   });
 });
