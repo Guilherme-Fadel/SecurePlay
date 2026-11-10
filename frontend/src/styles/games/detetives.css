@@ -173,6 +173,11 @@
   .gw .bd-clue { min-height: 44px; font-size: calc(14px + var(--bd-h) * .01); }
   .gw .bd-st .b { padding: calc(10px + var(--bd-h) * .03) 8px; font-size: calc(26px + var(--bd-h) * .02); }
 }
+
+/* Desktop alto (acima de 860 px): mural e kit centrados na altura útil, em vez de presos no topo. */
+@media (min-width: 1101px) and (min-height: 861px) {
+  .gw.bd .gw-main:has(> .bd-grid) { display: flex; flex-direction: column; justify-content: center; }
+}
 @media (min-width: 700px) and (max-height: 740px) {
   .gw .bd-kit > .gw-guide { display: none; }
   .gw .bd-ask { font-size: 17px; }

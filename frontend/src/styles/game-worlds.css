@@ -461,6 +461,14 @@
   .gw .gw-rv li { min-height: calc(110px + var(--gw-h) * .35); }
 }
 
+/* ---------- Desktop alto (monitor grande) ----------
+   Acima de 860 px de altura nenhuma faixa acima vale e a cena ficava presa no topo, com uma faixa vazia embaixo.
+   Aqui abertura e resultado ficam centrados na altura útil; o CSS de cada jogo centra a própria jogada. */
+@media (min-width: 1101px) and (min-height: 861px) {
+  .gw .gw-main:has(> .gw-open), .gw .gw-main:has(> .gw-res) { display: flex; flex-direction: column; justify-content: center; }
+  .gw .gw-open { min-height: 0; }
+}
+
 /* ---------- Reduzir movimento ---------- */
 @media (prefers-reduced-motion: reduce) {
   .gw *, .gw *::before, .gw *::after { animation: none !important; transition: none !important; }

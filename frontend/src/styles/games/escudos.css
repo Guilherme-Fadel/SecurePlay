@@ -151,6 +151,13 @@
   .gw .be-plate { padding: 5px 12px 7px; }
 }
 
+/* Desktop alto (acima de 860 px): parede de escudos e mesa centradas na altura útil, em vez de presas no topo,
+   com o chão começando abaixo da parede (como nas janelas baixas) para a mesa ficar apoiada nele. */
+@media (min-width: 1101px) and (min-height: 861px) {
+  .gw.be .gw-main:has(> .be-wall) { display: flex; flex-direction: column; justify-content: center; }
+  .gw .be-floor { top: 64%; height: auto; }
+}
+
 /* Reduzir movimento: o pergaminho não voa (o jogo também aplica a escolha na hora). */
 @media (prefers-reduced-motion: reduce) {
   .gw .be-scroll.fly { opacity: 1; transform: none; }
