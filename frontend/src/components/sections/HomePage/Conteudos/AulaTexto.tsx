@@ -17,6 +17,7 @@ import { useLessonStepFocus } from './lessonFocus';
 import { buildLessonSteps } from './lessonSteps';
 import { NEXT_LABEL, lessonNextAction, pagedStepItems, readerPercent } from './lessonStepItems';
 import { ProgressSaveStatus } from './ProgressSaveStatus';
+import { useCanonicalLearnPath } from './useCanonicalLearnPath';
 
 interface AulaTextoProps {
   aulaId: number;
@@ -28,6 +29,7 @@ interface AulaTextoProps {
 export function AulaTexto({ aulaId, moduloId, onBack, onSelectAula }: AulaTextoProps) {
   const { aula, setAula, loading, error: aulaError, errorKind, refetch } = useAula(aulaId);
   const { modulo, refetch: refetchModulo } = useModulo(moduloId);
+  useCanonicalLearnPath(modulo, aula && { id: aula.id, title: aula.title, moduloId: aula.modulo_id });
   const { concluir, salvarProgresso, retryProgress, saveStatus, loading: concluding, error: progressError } = useAulaProgress();
   const [showQuiz, setShowQuiz] = useState(false);
   const [xpGanho, setXpGanho] = useState<number | null>(null);

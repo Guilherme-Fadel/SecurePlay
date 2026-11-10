@@ -1,6 +1,7 @@
 import { ContentLoading } from '@/components/shared/ContentLoading';
 import { useModulo } from '@/hooks/useModulo';
 import { useConteudos } from '@/hooks/useConteudos';
+import { useCanonicalLearnPath } from './useCanonicalLearnPath';
 import { moduleNumberOf } from './learnMapModel';
 import { buildModulePage } from './ModulePageModel';
 import { ModuleBackLink, ModulePageHero } from './ModulePageHero';
@@ -15,6 +16,8 @@ export function ModuloDetalhes({ moduloId, onBack, onSelectAula }: ModuloDetalhe
   const { modulo, loading, error, errorKind, refetch } = useModulo(moduloId);
   // Lista em cache compartilhada com o mapa: dá o "Módulo N" sem depender de `order`.
   const { modulos } = useConteudos();
+  // Antes dos retornos antecipados: a URL ganha o texto do módulo quando ele carrega.
+  useCanonicalLearnPath(modulo);
 
   if (loading) return (
     <div className="module-v">

@@ -198,6 +198,7 @@ function loadModuleView(state, actions) {
     './ModulePageHero': hero,
     './ModulePageChapters': { ModulePageChapters: 'module-chapters' },
     './ModulePageState': statePart,
+    './useCanonicalLearnPath': { useCanonicalLearnPath() {} },
     '@/styles/module-page.css': {},
   }).ModuloDetalhes;
 }
@@ -295,4 +296,58 @@ test('module number: same API position on the map and on the module page, never 
   assert.equal(moduleNumberOf(modulos, 9), 3);
   assert.equal(moduleNumberOf(modulos, 99), null);
   assert.equal(moduleNumberOf(null, 9), null);
+});
+
+function canonicalFixture(pathname, extra = {}) {
+  const h = hooks();
+  const calls = [];
+  const location = { pathname, search: '', hash: '', state: null, ...extra };
+  const { useCanonicalLearnPath } = load('src/components/sections/HomePage/Conteudos/useCanonicalLearnPath.ts', {
+    react: h.react,
+    'react-router-dom': { useLocation: () => location, useNavigate: () => (to, options) => calls.push({ to, options }) },
+    '@/lib/appPaths': load('src/lib/appPaths.ts', {}),
+  });
+  return { calls, run: (modulo, aula) => h.render(() => useCanonicalLearnPath(modulo, aula)) };
+}
+
+test('canonical learn path: bare module URL gains the title slug with replace, keeping search, hash and state', () => {
+  const f = canonicalFixture('/aprender/8', { search: '?x=1', hash: '#topo', state: { from: 'a' } });
+  f.run({ id: 8, title: 'Senhas Fortes & Seguras' });
+  assert.equal(f.calls.length, 1);
+  // Objetos criados no contexto vm: compara por JSON, não por protótipo.
+  assert.equal(JSON.stringify(f.calls[0].to), JSON.stringify({ pathname: '/aprender/8-senhas-fortes-e-seguras', search: '?x=1', hash: '#topo' }));
+  assert.equal(f.calls[0].options.replace, true);
+  assert.equal(f.calls[0].options.state.from, 'a');
+});
+
+test('canonical learn path: URL already canonical, wrong module id, other section or unloaded data never navigate', () => {
+  const canonical = canonicalFixture('/aprender/8-senhas');
+  canonical.run({ id: 8, title: 'Senhas' });
+  assert.equal(canonical.calls.length, 0);
+  const otherModule = canonicalFixture('/aprender/9');
+  otherModule.run({ id: 8, title: 'Senhas' });
+  assert.equal(otherModule.calls.length, 0, 'a corrida entre módulos não reescreve a URL do outro');
+  const otherSection = canonicalFixture('/jogos');
+  otherSection.run({ id: 8, title: 'Senhas' });
+  assert.equal(otherSection.calls.length, 0);
+  const notLoaded = canonicalFixture('/aprender/8');
+  notLoaded.run(null);
+  assert.equal(notLoaded.calls.length, 0, 'sem dado carregado (403/404/erro) a URL fica como digitada');
+});
+
+test('canonical learn path: lesson URL gets both slugs and the module number follows the lesson modulo_id', () => {
+  const f = canonicalFixture('/aprender/8/47');
+  f.run({ id: 8, title: 'Senhas' }, { id: 47, title: 'Criando uma senha', moduloId: 8 });
+  assert.equal(f.calls[0].to.pathname, '/aprender/8-senhas/47-criando-uma-senha');
+  const wrong = canonicalFixture('/aprender/8-senhas/47-x');
+  wrong.run({ id: 8, title: 'Senhas' }, { id: 47, title: 'Criando', moduloId: 3 });
+  assert.equal(wrong.calls[0].to.pathname, '/aprender/3/47-criando', 'slug do módulo errado não é reaproveitado');
+});
+
+test('canonical learn path: lesson waits for the module title instead of stripping the slug already in the URL', () => {
+  const f = canonicalFixture('/aprender/8-senhas/47-criando');
+  f.run(null, { id: 47, title: 'Criando', moduloId: 8 });
+  assert.equal(f.calls.length, 0);
+  f.run({ id: 8, title: 'Senhas' }, { id: 47, title: 'Criando', moduloId: 8 });
+  assert.equal(f.calls.length, 0, 'já canônica depois que o módulo carrega');
 });

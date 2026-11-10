@@ -1,15 +1,13 @@
 import { useEffect, useRef, useState, type MouseEvent, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import type { Section } from '@/pages/Home';
+import { paths, studentSectionPath } from '@/lib/appPaths';
 import { BrandCharacter } from './BrandCharacter';
 import { RailAwardsIcon, RailGamesIcon, RailHomeIcon, RailLearnIcon, RailRankingIcon } from './AppRailIcons';
 import { AccountGroup, type AccountPanel } from './layout/header';
 import { ACCOUNT_PANEL_ID } from './layout/header/UserMenu';
 import { RailLayerContext } from './layout/header/RailPopover';
 import '@/styles/app-rail.css';
-
-/** Conquistas › Colecionáveis: a aba é aberta pelo parâmetro `aba` da URL. */
-export const COLLECTIBLES_PATH = '/home/conquistas?aba=colecionaveis';
 
 type RailSection = Extract<Section, 'dashboard' | 'conteudos' | 'desafios' | 'ranking' | 'conquistas'>;
 
@@ -104,7 +102,7 @@ function RailList({ items, activeSection, onSelect }: { items: RailItemConfig[];
           <li key={item.id} ref={active ? activeRef : undefined} className={`sp-rail-item sp-rail-item--${item.id}${active ? ' is-active' : ''}`}>
             <a
               className="sp-rail-link"
-              href={`/home/${item.id}`}
+              href={studentSectionPath(item.id)}
               aria-current={active ? 'page' : undefined}
               onClick={(event) => followInApp(event, () => onSelect(item.id))}
             >
@@ -153,7 +151,7 @@ function RailMe({ showAchievements, accountOpen, onOpenCollectibles, onOpenAccou
   return (
     <a
       className="sp-rail-me"
-      href={COLLECTIBLES_PATH}
+      href={paths.colecionaveis()}
       aria-label="Seu personagem: personalizar em Conquistas, Colecionáveis"
       onClick={(event) => followInApp(event, onOpenCollectibles)}
     >

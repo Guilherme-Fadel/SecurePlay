@@ -3,6 +3,7 @@ import { AnimatePresence } from 'framer-motion';
 import { lazy, Suspense } from 'react';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { initialAuthenticatedPath } from '@/components/admin/console/consoleNavigation';
+import { isStudentAreaPath, legacyHomeTarget } from '@/lib/appPaths';
 import { PrivateRoute, PublicRoute } from '@/routes/PrivateRoute';
 import { PageLoading } from '@/components/shared/PageLoading';
 const Landing = lazy(() => import('@/pages/Landing'));
@@ -21,9 +22,9 @@ const TermsPage = lazy(() => import('@/pages/LegalPages').then((module) => ({ de
 const NotFoundPage = lazy(() => import('@/pages/LegalPages').then((module) => ({ default: module.NotFoundPage })));
 export default function App() {
     const location = useLocation();
-    // A transicao de rota anima por segmento raiz. Sem isso, navegar entre secoes
-    // (/home/ranking -> /home/conteudos) remontaria a Home inteira a cada aba.
-    const animationKey = location.pathname.startsWith('/home') ? '/home' : location.pathname.startsWith('/admin') ? '/admin' : location.pathname;
+    // A transicao de rota anima por area. Sem isso, navegar entre secoes do aluno
+    // (/ranking -> /aprender) remontaria a Home inteira a cada aba.
+    const animationKey = isStudentAreaPath(location.pathname) ? 'student' : location.pathname.startsWith('/admin') ? '/admin' : location.pathname;
     return (<AnimatePresence mode="wait">
       <Routes location={location} key={animationKey}>
         <Route path="/" element={<Suspense fallback={<PageLoading />}><Landing /></Suspense>}/>
@@ -32,7 +33,19 @@ export default function App() {
         <Route path="/login" element={<PublicRoute><Suspense fallback={<PageLoading />}><Login /></Suspense></PublicRoute>}/>
         <Route path="/home/admin" element={<PrivateRoute><LegacyAdminRedirect /></PrivateRoute>}/>
         <Route path="/home/admin/*" element={<PrivateRoute><LegacyAdminRedirect /></PrivateRoute>}/>
-        <Route path="/home/:section?/:moduloId?/:aulaId?" element={<PrivateRoute><Suspense fallback={<PageLoading />}><Home /></Suspense></PrivateRoute>}/>
+        {/* Area do aluno: uma Home so para todas as secoes. Ela le a secao da URL, sem Outlet. */}
+        <Route element={<PrivateRoute><Suspense fallback={<PageLoading />}><Home /></Suspense></PrivateRoute>}>
+          <Route path="/inicio"/>
+          <Route path="/aprender"/>
+          <Route path="/aprender/:moduloRef"/>
+          <Route path="/aprender/:moduloRef/:aulaRef"/>
+          <Route path="/jogos"/>
+          <Route path="/ranking"/>
+          <Route path="/conquistas"/>
+          <Route path="/perfil"/>
+        </Route>
+        {/* Links antigos (/home/...) seguem funcionando e caem no caminho novo. */}
+        <Route path="/home/*" element={<LegacyHomeRedirect />}/>
         <Route path="/admin/*" element={<PrivateRoute><Suspense fallback={<PageLoading />}><AdminConsole /></Suspense></PrivateRoute>}/>
         {AdminGridPreview && <Route path="/__dev/admin-grid" element={<Suspense fallback={<PageLoading />}><AdminGridPreview /></Suspense>}/>}
         <Route path="/cadastro" element={<Suspense fallback={<PageLoading />}>
@@ -54,6 +67,11 @@ export default function App() {
 function LegacyInviteRedirect() {
   const { token } = useParams();
   return <Navigate to={`/cadastro#${token ?? ''}`} replace />;
+}
+
+function LegacyHomeRedirect() {
+  const { pathname, search, hash } = useLocation();
+  return <Navigate to={{ pathname: legacyHomeTarget(pathname), search, hash }} replace />;
 }
 
 function LegacyAdminRedirect() {
