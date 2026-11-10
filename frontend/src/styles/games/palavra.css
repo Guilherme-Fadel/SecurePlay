@@ -173,6 +173,11 @@
   .gw .bp-mini span { width: calc(32px + var(--gw-h) * .03); height: calc(32px + var(--gw-h) * .03); }
 }
 
+/* Desktop alto (acima de 860 px): dica, porta e teclado centrados na altura útil, em vez de presos no topo. */
+@media (min-width: 1101px) and (min-height: 861px) {
+  .gw.bp .gw-main:has(> .bp-grid) { display: flex; flex-direction: column; justify-content: center; }
+}
+
 /* ---------- Reduzir movimento: sem giro, balanço ou porta girando ---------- */
 @media (prefers-reduced-motion: reduce) {
   /* Sem a animação, a porta ficaria fechada cobrindo a arte: o cofre já aparece aberto. */

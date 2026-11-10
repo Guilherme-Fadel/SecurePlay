@@ -146,6 +146,21 @@
   .gw .bq-marq { --bq-band: 24px; --bq-r: 32px; }
 }
 
+/* Desktop alto (acima de 860 px): a cena fica centrada na altura útil, a pergunta no meio do telão e os púlpitos
+   descem até o palco. --bq-t: 0 aos 860 px, até 240 px aos 1100 px; telão e púlpitos crescem com ela. */
+@media (min-width: 1101px) and (min-height: 861px) {
+  .gw.bq { --bq-t: clamp(0px, calc(100dvh - 860px), 240px); }
+  .gw.bq .gw-main:has(> .bq-grid) { display: flex; flex-direction: column; justify-content: center; }
+  .gw .bq-grid { align-items: stretch; }
+  .gw .bq-grid > .gw-guide { align-self: end; }
+  .gw .bq-marq { display: flex; }
+  .gw .bq-board { flex: 1 1 auto; min-height: calc(220px + var(--bq-t) * .45); }
+  .gw .bq-q { display: flex; flex: 1 1 auto; align-items: center; font-size: calc(32px + var(--bq-t) * .04); }
+  .gw .bq-score > div { flex: 1 1 0; justify-content: center; }
+  .gw .bq-pods { margin-top: calc(34px + var(--bq-t) * .3); }
+  .gw .bq-pod { min-height: calc(150px + var(--bq-t) * .3); font-size: calc(17px + var(--bq-t) * .015); }
+}
+
 /* ---------- Reduzir movimento: o resto (animações e transições) já é cortado em game-worlds.css ---------- */
 @media (prefers-reduced-motion: reduce) {
   .gw .bq-spot.l { transform: rotate(-10deg); }
