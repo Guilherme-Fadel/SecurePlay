@@ -8,6 +8,7 @@
     "test:content-recovery": "node --test scripts/test-content-recovery.cjs",
     "test:progress-sync": "node --test scripts/test-progress-sync.cjs",
     "test:api-proxy": "node --test scripts/test-api-proxy.mjs",
+    "test:assets-fallback": "node --test scripts/test-assets-fallback.mjs",
     "build": "vite build",
     "prebuild": "npm run check:assets && npm run typecheck",
     "check:assets": "node scripts/check-assets.cjs",
