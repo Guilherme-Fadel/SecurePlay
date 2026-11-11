@@ -1,9 +1,10 @@
-import { useEffect, useRef, useState, type KeyboardEvent } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { ArrowRight } from 'lucide-react';
 import type { AulaDetalhes, QuizAnswer, QuizResult } from '@/services/conteudo';
 import { useAulaProgress } from '@/hooks/useAulaProgress';
 import { AppButton } from '@/components/ui/buttons/AppButton';
 import { LessonCheckpoint } from './LessonCheckpoint';
+import { LessonQuestion } from './LessonQuestion';
 
 interface AulaQuizProps {
   aula: AulaDetalhes;
@@ -27,27 +28,15 @@ export function AulaQuiz({ aula, onBack, onComplete, onReread, onResult }: AulaQ
   const [result, setResult] = useState<QuizResult | null>(null);
   const { enviarQuiz, loading, error } = useAulaProgress();
   const headingRef = useRef<HTMLHeadingElement | null>(null);
-  const optionsRef = useRef<HTMLDivElement | null>(null);
 
   const questions = aula.quiz;
   const question = questions[currentQuestion];
   const isLastQuestion = currentQuestion >= questions.length - 1;
 
-  // O quiz só monta por ação do aluno ("Ir para o quiz"); o botão que abriu some,
-  // então o foco vai para a pergunta já na montagem e a cada troca de pergunta/resultado.
+  // O foco da pergunta é de LessonQuestion; o título do resultado (botão que enviou some) recebe o foco aqui.
   useEffect(() => {
-    headingRef.current?.focus({ preventScroll: true });
-  }, [currentQuestion, result]);
-
-  /** Padrão de radiogroup: setas movem e selecionam; só a opção marcada entra no Tab. */
-  const handleOptionKey = (event: KeyboardEvent<HTMLButtonElement>, index: number, total: number) => {
-    const step = event.key === 'ArrowDown' || event.key === 'ArrowRight' ? 1 : event.key === 'ArrowUp' || event.key === 'ArrowLeft' ? -1 : 0;
-    if (!step) return;
-    event.preventDefault();
-    const next = (index + step + total) % total;
-    setSelectedIndex(next);
-    optionsRef.current?.querySelectorAll<HTMLButtonElement>('[role="radio"]')[next]?.focus();
-  };
+    if (result) headingRef.current?.focus({ preventScroll: true });
+  }, [result]);
 
   const handleNext = async () => {
     if (selectedIndex === null || !question) return;
@@ -100,24 +89,14 @@ export function AulaQuiz({ aula, onBack, onComplete, onReread, onResult }: AulaQ
   return (
     <>
       <div className="lesson-page lesson-quiz">
-        <div className="lesson-quiz-top"><span>Pergunta {currentQuestion + 1} de {questions.length}</span><span>Avaliação</span></div>
-        <h2 ref={headingRef} tabIndex={-1} id={`lesson-question-${question.id}`}>{question.text}</h2>
-        <div ref={optionsRef} className="lesson-options" role="radiogroup" aria-labelledby={`lesson-question-${question.id}`}>
-          {question.options.map((option, index) => (
-            <button
-              key={`${question.id}-${index}`}
-              type="button"
-              role="radio"
-              className="lesson-option"
-              aria-checked={selectedIndex === index}
-              tabIndex={(selectedIndex ?? 0) === index ? 0 : -1}
-              onClick={() => setSelectedIndex(index)}
-              onKeyDown={(event) => handleOptionKey(event, index, question.options.length)}
-            >
-              <b aria-hidden="true">{String.fromCharCode(65 + index)}</b><span>{option}</span>
-            </button>
-          ))}
-        </div>
+        <LessonQuestion
+          question={question}
+          index={currentQuestion}
+          total={questions.length}
+          label="Avaliação"
+          selectedIndex={selectedIndex}
+          onSelect={setSelectedIndex}
+        />
         {error && <p className="lesson-error" role="alert">{error}</p>}
       </div>
       <nav className="lesson-nav" aria-label="Navegação do quiz">

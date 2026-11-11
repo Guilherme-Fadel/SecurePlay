@@ -150,6 +150,9 @@ export function DailyChallenge() {
         onClose={handleCloseModal}
         returnFocusRef={titleRef}
         title={challenge.title}
+        eyebrow="Missão do dia"
+        variant="card"
+        maxWidth="max-w-2xl"
       >
         <QuizContent
           challengeId={challenge.id}
