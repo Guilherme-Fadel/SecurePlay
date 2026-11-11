@@ -14,7 +14,11 @@ import { Roles } from '../auth/roles.decorator';
 import { Role } from '../auth/roles.enum';
 import { TurmaService } from './turma.service';
 import { SalvarTurmaDto } from './dto/salvar-turma.dto';
-import { ListarTurmasDto, PaginacaoDto } from './dto/listar-turmas.dto';
+import {
+  ListarTurmasDto,
+  ListarTurmasPlataformaDto,
+  PaginacaoDto,
+} from './dto/listar-turmas.dto';
 import { VincularProfessorDto } from './dto/vincular-professor.dto';
 import { AdicionarAlunosDto } from './dto/adicionar-alunos.dto';
 
@@ -151,5 +155,20 @@ export class TurmaPlatformController {
       usuarioId,
     );
     return { sucesso: true };
+  }
+}
+
+/** Plataforma: turmas de todas as escolas numa grade só, com filtro opcional de escola. */
+@Controller('platform/admin/turmas')
+@Roles(Role.PLATFORM_ADMIN)
+export class TurmaPlatformGlobalController {
+  constructor(private readonly turmas: TurmaService) {}
+
+  @Get()
+  async listar(@Query() filtros: ListarTurmasPlataformaDto) {
+    if (filtros.empresa_id !== undefined)
+      await this.turmas.assertEmpresa(filtros.empresa_id);
+    const { empresa_id: empresaId, ...resto } = filtros;
+    return this.turmas.listar(empresaId, resto, true);
   }
 }

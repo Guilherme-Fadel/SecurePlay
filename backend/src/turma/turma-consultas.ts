@@ -1,5 +1,6 @@
 import { EntityManager, In, MoreThan } from 'typeorm';
 import { Usuario } from '../usuario/usuario.entity';
+import { Empresa } from '../empresa/empresa.entity';
 import { Turma } from './entities/turma.entity';
 import { TurmaProfessor } from './entities/turma-professor.entity';
 import { TurmaAluno } from './entities/turma-aluno.entity';
@@ -7,6 +8,7 @@ import { TurmaAulaAbertura } from './entities/turma-aula-abertura.entity';
 
 export interface TurmaResumo {
   id: number;
+  empresa_id: number;
   nome: string;
   ano_letivo: number;
   ativa: boolean;
@@ -120,6 +122,7 @@ export async function resumirTurmas(
   ]);
   return turmas.map((turma) => ({
     id: turma.id,
+    empresa_id: turma.empresa_id,
     nome: turma.nome,
     ano_letivo: turma.ano_letivo,
     ativa: !!turma.ativa,
@@ -156,6 +159,28 @@ export async function listarTurmas(
     .take(pageSize)
     .getManyAndCount();
   return paginado(await resumirTurmas(manager, turmas), total, page, pageSize);
+}
+
+/** Plataforma: como `listarTurmas`, com o nome da escola em cada linha (a grade junta várias escolas). */
+export async function listarTurmasComEscola(
+  manager: EntityManager,
+  filtros: FiltrosTurmas & { empresaId?: number },
+): Promise<Paginado<TurmaResumo & { empresa_nome: string }>> {
+  const pagina = await listarTurmas(manager, filtros);
+  const ids = [...new Set(pagina.items.map((turma) => turma.empresa_id))];
+  const empresas = ids.length
+    ? await manager
+        .getRepository(Empresa)
+        .find({ select: { id: true, nome: true }, where: { id: In(ids) } })
+    : [];
+  const nomes = new Map(empresas.map((empresa) => [empresa.id, empresa.nome]));
+  return {
+    ...pagina,
+    items: pagina.items.map((turma) => ({
+      ...turma,
+      empresa_nome: nomes.get(turma.empresa_id) ?? '',
+    })),
+  };
 }
 
 export async function listarProfessoresDaTurma(

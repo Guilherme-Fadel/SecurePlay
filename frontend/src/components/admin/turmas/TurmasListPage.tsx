@@ -1,21 +1,31 @@
-import { useDeferredValue, useState } from 'react';
+import { useDeferredValue, useState, type ReactNode } from 'react';
 import { Link, Navigate, useNavigate } from 'react-router-dom';
 import { Plus } from 'lucide-react';
 import { AppSearchInput } from '@/components/ui/forms/AppSearchInput';
 import { AppSelect } from '@/components/ui/forms/AppSelect';
+import { AppButton } from '@/components/ui/buttons/AppButton';
 import { AdminListToolbar, AdminPageHeader } from '@/components/admin/AdminListLayout';
 import { AdminDataGrid, type AdminDataGridColumn } from '@/components/admin/console/AdminDataGrid';
 import { AdminGridPagination } from '@/components/admin/console/AdminGridPagination';
 import { useCachedQuery } from '@/hooks/useCachedQuery';
 import { adminQueryKey } from '@/lib/adminCache';
 import { formatarAbertura } from '@/lib/brasiliaTime';
-import { listarTurmas, minhasTurmas, type TurmaResumo } from '@/services/turmas';
+import { listarTurmas, listarTurmasPlataforma, minhasTurmas, type FiltrosTurmas, type TurmaDaPlataforma, type TurmaResumo } from '@/services/turmas';
 import { anosLetivos, rotaTurma, type EscopoTurmas } from './turmaUi';
 import './turmas.css';
 
-function colunas(escopo: EscopoTurmas, abrir: (turma: TurmaResumo) => void): AdminDataGridColumn<TurmaResumo>[] {
+/** Plataforma em /admin/turmas: escola escolhida no filtro (ou todas) e o próprio filtro, para a barra da grade. */
+export interface TurmasPlataforma {
+  empresaId?: number;
+  filtroEmpresa: ReactNode;
+}
+
+function colunas(escopo: EscopoTurmas, abrir: (turma: TurmaResumo) => void, plataforma?: TurmasPlataforma): AdminDataGridColumn<TurmaResumo>[] {
+  // Com todas as escolas na grade, a coluna Escola diz de onde é cada turma.
+  const comEscola = Boolean(plataforma) && !plataforma?.empresaId;
   return [
     { key: 'nome', label: 'Turma', render: (turma) => <button type="button" className="turma-link" onClick={() => abrir(turma)}>{turma.nome}</button> },
+    ...(comEscola ? [{ key: 'escola', label: 'Escola', render: (turma: TurmaResumo) => (turma as TurmaDaPlataforma).empresa_nome || `Empresa #${turma.empresa_id}` }] : []),
     { key: 'ano', label: 'Ano letivo', render: (turma) => turma.ano_letivo },
     ...(escopo.gestao ? [{ key: 'professores', label: 'Professores', render: (turma: TurmaResumo) => turma.professores }] : []),
     { key: 'alunos', label: 'Alunos', render: (turma) => turma.alunos },
@@ -24,8 +34,32 @@ function colunas(escopo: EscopoTurmas, abrir: (turma: TurmaResumo) => void): Adm
   ];
 }
 
-/** Turmas da escola para admin e plataforma, com busca, filtros e paginação. */
-function TurmasDaEscola({ escopo }: { escopo: EscopoTurmas }) {
+const DESCRICAO_ESCOLA = 'Organize as turmas da escola, vincule professores e alunos. A jornada e as aberturas de aula ficam dentro de cada turma.';
+const DESCRICAO_PLATAFORMA = 'Turmas de todas as escolas. Filtre por empresa para organizar as turmas de uma escola; a jornada e as aberturas de aula ficam dentro de cada turma.';
+
+/** Na plataforma a turma nasce numa escola: sem escola no filtro, o botão explica o que falta. */
+function NovaTurma({ escopo, plataforma }: { escopo: EscopoTurmas; plataforma?: TurmasPlataforma }) {
+  const destino = !plataforma ? `${rotaTurma(escopo)}/nova` : plataforma.empresaId ? `/admin/empresas/${plataforma.empresaId}/turmas/nova` : null;
+  if (!destino) return <AppButton disabled title="Escolha a escola no filtro para criar a turma nela."><Plus size={16} aria-hidden="true" />Nova turma</AppButton>;
+  return <Link className="admin-console-primary-link" to={destino}><Plus size={16} aria-hidden="true" />Nova turma</Link>;
+}
+
+// Na plataforma a chave fica em admin:platform:records: qualquer alteração de turma, em qualquer escola, já invalida esse prefixo.
+function chaveTurmas(filtros: FiltrosTurmas, escopo: EscopoTurmas, plataforma?: TurmasPlataforma) {
+  return plataforma ? `admin:platform:records:classes:${JSON.stringify({ ...filtros, empresa_id: plataforma.empresaId })}` : adminQueryKey('classes', escopo.empresaId, filtros);
+}
+
+function mensagemVazia(busca: string, ano: string, situacao: string) {
+  return busca || ano || situacao !== 'ativa' ? 'Nenhuma turma corresponde aos filtros.' : 'Nenhuma turma cadastrada ainda.';
+}
+
+function buscarTurmas(filtros: FiltrosTurmas, escopo: EscopoTurmas, plataforma?: TurmasPlataforma) {
+  return plataforma ? listarTurmasPlataforma({ ...filtros, empresa_id: plataforma.empresaId }) : listarTurmas(filtros, escopo.empresaId);
+}
+
+/** Turmas da escola para admin e plataforma, com busca, filtros e paginação. Com `plataforma`, lista todas as
+ * escolas (ou a do filtro) e cada turma abre no contexto da própria escola. */
+function TurmasDaEscola({ escopo, plataforma }: { escopo: EscopoTurmas; plataforma?: TurmasPlataforma }) {
   const navigate = useNavigate();
   const [busca, setBusca] = useState('');
   const buscaAdiada = useDeferredValue(busca);
@@ -40,23 +74,24 @@ function TurmasDaEscola({ escopo }: { escopo: EscopoTurmas }) {
     ano_letivo: ano ? Number(ano) : undefined,
     situacao: situacao || undefined,
   };
-  const query = useCachedQuery(adminQueryKey('classes', escopo.empresaId, filtros), () => listarTurmas(filtros, escopo.empresaId), { keepPreviousDataOnInvalidate: true });
+  const query = useCachedQuery(chaveTurmas(filtros, escopo, plataforma), () => buscarTurmas(filtros, escopo, plataforma), { keepPreviousDataOnInvalidate: true });
   const resultado = query.data ?? { items: [], page: 1, pageSize, total: 0, totalPages: 0 };
-  const abrir = (turma: TurmaResumo) => navigate(rotaTurma(escopo, turma.id, 'jornada'));
+  const abrir = (turma: TurmaResumo) => navigate(plataforma ? `/admin/empresas/${turma.empresa_id}/turmas/${turma.id}/jornada` : rotaTurma(escopo, turma.id, 'jornada'));
   return (
     <div className="admin-users-content">
-      <AdminPageHeader title="Turmas" description="Organize as turmas da escola, vincule professores e alunos. A jornada e as aberturas de aula ficam dentro de cada turma." />
+      <AdminPageHeader title="Turmas" description={plataforma ? DESCRICAO_PLATAFORMA : DESCRICAO_ESCOLA} />
       <AdminDataGrid
-        columns={colunas(escopo, abrir)}
+        columns={colunas(escopo, abrir, plataforma)}
         rows={resultado.items}
         rowKey={(turma) => turma.id}
         onOpenRow={abrir}
         loading={query.loading}
         error={query.error ? 'Não foi possível carregar as turmas.' : undefined}
         onRetry={query.refetch}
-        empty={busca || ano || situacao !== 'ativa' ? 'Nenhuma turma corresponde aos filtros.' : 'Nenhuma turma cadastrada ainda.'}
-        toolbar={<AdminListToolbar actions={<Link className="admin-console-primary-link" to={`${rotaTurma(escopo)}/nova`}><Plus size={16} aria-hidden="true" />Nova turma</Link>}>
+        empty={mensagemVazia(busca, ano, situacao)}
+        toolbar={<AdminListToolbar actions={<NovaTurma escopo={escopo} plataforma={plataforma} />}>
           <AppSearchInput label="Buscar turmas" value={busca} onChange={(event) => { setBusca(event.target.value); setPage(1); }} placeholder="Buscar pelo nome da turma" />
+          {plataforma?.filtroEmpresa}
           <AppSelect aria-label="Filtrar por ano letivo" value={ano} onChange={(event) => { setAno(event.target.value); setPage(1); }}>
             <option value="">Todos os anos</option>
             {anosLetivos().map((item) => <option key={item} value={String(item)}>{item}</option>)}
@@ -97,6 +132,6 @@ function MinhasTurmas({ escopo }: { escopo: EscopoTurmas }) {
   );
 }
 
-export function TurmasListPage({ escopo }: { escopo: EscopoTurmas }) {
-  return escopo.gestao ? <TurmasDaEscola escopo={escopo} /> : <MinhasTurmas escopo={escopo} />;
+export function TurmasListPage({ escopo, plataforma }: { escopo: EscopoTurmas; plataforma?: TurmasPlataforma }) {
+  return escopo.gestao ? <TurmasDaEscola escopo={escopo} plataforma={plataforma} /> : <MinhasTurmas escopo={escopo} />;
 }
