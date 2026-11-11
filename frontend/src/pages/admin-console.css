@@ -23,6 +23,14 @@ html[data-admin-console='true'] body { min-width: 320px; overflow: hidden; }
   --app-control-border: #7E8DA5;
   background: var(--dashboard-bg);
 }
+/* Console no tema claro: fundo cinza-claro neutro, coerente com os cinzas frios acima; o creme da marca fica
+   para a área do aluno. A classe dobrada vence o bloco de tema de app-ui.css sem depender da ordem dos CSS. */
+[data-theme='light'] .admin-console.admin-console {
+  --dashboard-bg: #F3F5F8;
+  --dashboard-surface-soft: #F8FAFC;
+  --dashboard-border: #C6CFDD;
+  --app-rule: #E3E8EF;
+}
 .admin-console-desktop-navigation { display: flex; flex: 0 0 232px; min-height: 0; }
 .admin-console-open-menu.admin-console-open-menu, .admin-console-mobile-navigation { display: none; }
 .admin-console-sidebar { display: flex; flex: 0 0 232px; flex-direction: column; min-width: 0; min-height: 0; padding: 20px 12px 14px; border-right: 1px solid var(--admin-console-border); background: var(--admin-console-surface); }
