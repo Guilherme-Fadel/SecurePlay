@@ -3,6 +3,7 @@ import { api } from './api';
 
 export interface TurmaResumo {
   id: number;
+  empresa_id: number;
   nome: string;
   ano_letivo: number;
   ativa: boolean;
@@ -72,6 +73,12 @@ function mudou(empresaId?: number) {
 
 export async function listarTurmas(filtros: FiltrosTurmas, empresaId?: number): Promise<Paginado<TurmaResumo>> {
   return (await api.get(turmaAdminPath(empresaId), { params: filtros })).data;
+}
+
+/** Plataforma: turmas de todas as escolas, ou só da escolhida em `empresa_id`, com o nome da escola. */
+export type TurmaDaPlataforma = TurmaResumo & { empresa_nome: string };
+export async function listarTurmasPlataforma(filtros: FiltrosTurmas & { empresa_id?: number }): Promise<Paginado<TurmaDaPlataforma>> {
+  return (await api.get('/platform/admin/turmas', { params: filtros })).data;
 }
 
 export async function criarTurma(data: DadosTurma, empresaId?: number): Promise<TurmaResumo> {

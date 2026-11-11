@@ -9,7 +9,10 @@ import { Role } from '../auth/roles.enum';
 import { RolesGuard } from '../auth/roles.guard';
 import { CsrfGuard } from '../auth/csrf.guard';
 import { TurmaAdminController } from './turma-admin.controller';
-import { TurmaPlatformController } from './turma-platform.controller';
+import {
+  TurmaPlatformController,
+  TurmaPlatformGlobalController,
+} from './turma-platform.controller';
 import { TurmaService } from './turma.service';
 import { TurmaAcessoService } from './turma-acesso.service';
 
@@ -49,7 +52,11 @@ describe('HTTP — gestão de turmas', () => {
   beforeEach(async () => {
     jest.clearAllMocks();
     const module = await Test.createTestingModule({
-      controllers: [TurmaAdminController, TurmaPlatformController],
+      controllers: [
+        TurmaAdminController,
+        TurmaPlatformController,
+        TurmaPlatformGlobalController,
+      ],
       providers: [
         { provide: TurmaService, useValue: service },
         { provide: TurmaAcessoService, useValue: acesso },
@@ -208,5 +215,40 @@ describe('HTTP — gestão de turmas', () => {
       situacao: 'ativa',
       busca: '5',
     });
+  });
+
+  it('plataforma lista as turmas de todas as escolas sem exigir empresa', async () => {
+    const response = await chamar(
+      'GET',
+      '/platform/admin/turmas?page=1&situacao=ativa',
+      9,
+    );
+    expect(response.statusCode).toBe(200);
+    expect(service.assertEmpresa).not.toHaveBeenCalled();
+    expect(service.listar).toHaveBeenCalledWith(
+      undefined,
+      { page: 1, situacao: 'ativa' },
+      true,
+    );
+  });
+
+  it('plataforma filtra por escola e confere se ela existe', async () => {
+    await chamar('GET', '/platform/admin/turmas?empresa_id=20', 9);
+    expect(service.assertEmpresa).toHaveBeenCalledWith(20);
+    expect(service.listar).toHaveBeenCalledWith(20, {}, true);
+    expect(
+      (await chamar('GET', '/platform/admin/turmas?empresa_id=abc', 9))
+        .statusCode,
+    ).toBe(400);
+  });
+
+  it('admin da escola e professor não listam as turmas de todas as escolas', async () => {
+    expect((await chamar('GET', '/platform/admin/turmas', 1)).statusCode).toBe(
+      403,
+    );
+    expect((await chamar('GET', '/platform/admin/turmas', 5)).statusCode).toBe(
+      403,
+    );
+    expect(service.listar).not.toHaveBeenCalled();
   });
 });

@@ -20,6 +20,7 @@ import { SchoolPilotManagementTab } from '@/components/admin/SchoolPilotManageme
 import { AdminConsoleSettings, type AdminConsoleSettingsKind } from '@/components/admin/console/AdminConsoleSettings';
 import { hasAdminConsoleAccess, resolveAdminConsoleScope, adminConsolePath, resolveConsolePage, initialAuthenticatedPath } from '@/components/admin/console/consoleNavigation';
 import { TurmasPage } from '@/components/admin/turmas/TurmasPage';
+import { TurmasListPage } from '@/components/admin/turmas/TurmasListPage';
 import { PlatformCompanyFilter } from '@/components/admin/console/PlatformCompanyFilter';
 import { PlatformRecordsTab } from '@/components/admin/console/PlatformRecordsTab';
 import { CompanyRegistryTab } from '@/components/admin/console/CompanyRegistryTab';
@@ -132,7 +133,7 @@ function AdminConsolePage({ isOverview, scope, companyId }: { isOverview: boolea
   // Professor: só as próprias turmas; qualquer outra rota volta para elas.
   if (scope.kind === 'teacher') return turmaPage && !location.pathname.startsWith('/admin/empresas') ? <TurmasPage escopo={{ base: '/admin', gestao: false }} /> : <Navigate to="/admin/turmas" replace />;
   if (turmaPage && scope.kind === 'company' && !location.pathname.startsWith('/admin/empresas')) return <TurmasPage escopo={{ base: '/admin', gestao: true }} />;
-  if (turmaPage && isPlatform && companyId === null) return <PlatformTurmasPicker />;
+  if (turmaPage && isPlatform && companyId === null) return <PlatformTurmas />;
   if (isOverview) return scope.kind === 'company' ? <AdminOverviewTab empresaId={undefined} onNavigate={(tab) => navigate(`/admin/pessoas/${tab === 'usuarios' ? 'usuarios' : tab}`)} /> : <AdminOverviewTab platform onNavigate={(tab) => navigate(`/admin/pessoas/${tab}`)} headerActions={<Link className="admin-console-back-link" to="/admin/empresas"><Building2 size={16} />Instituições</Link>} />;
   if (resolveConsolePage(location.pathname).id === 'companies' && isPlatform) return <CompanyRegistryTab />;
   if (resolveConsolePage(location.pathname).id === 'new-company' && isPlatform) return <CompanyManagementTab headerActions={<ConsoleBackLink to="/admin/empresas" label="Cadastro" />} mode="new" consoleMode storageKey="admin-console:platform:companies-new" onEmpresaCriada={() => undefined} onAdministrar={(empresa) => navigate(`/admin/empresas/${empresa.id}/editar`)} />;
@@ -145,10 +146,16 @@ function AdminConsolePage({ isOverview, scope, companyId }: { isOverview: boolea
   return <section className="admin-console-unavailable" role="status"><h1>Esta área ainda não está disponível</h1><p>A navegação será habilitada quando a etapa correspondente for iniciada.</p><Link to={adminConsolePath('overview')}>Voltar</Link></section>;
 }
 
-/** Plataforma em /admin/turmas: escolhe a escola e segue para as turmas dela. */
-function PlatformTurmasPicker() {
+/** Plataforma em /admin/turmas: grade com as turmas de todas as escolas e o filtro de empresa (?empresa=), como em Usuários. */
+function PlatformTurmas() {
+  const location = useLocation();
   const navigate = useNavigate();
-  return <section className="admin-console-unavailable"><h1>Turmas</h1><p>Escolha a escola para ver e organizar as turmas.</p><PlatformCompanyFilter empresaId={undefined} onChange={(id) => { if (id) navigate(`/admin/empresas/${id}/turmas`); }} allowAll={false} /></section>;
+  const bruto = Number(new URLSearchParams(location.search).get('empresa'));
+  const empresaId = Number.isSafeInteger(bruto) && bruto > 0 ? bruto : undefined;
+  // Sem escola na rota não há turma ou formulário para abrir: volta para a grade.
+  if (resolveConsolePage(location.pathname).id !== 'classes') return <Navigate to="/admin/turmas" replace />;
+  const filtroEmpresa = <PlatformCompanyFilter empresaId={empresaId} onChange={(id) => navigate(`/admin/turmas${id ? `?empresa=${id}` : ''}`)} compact />;
+  return <TurmasListPage key={empresaId ?? 'all'} escopo={{ base: '/admin', gestao: true }} plataforma={{ empresaId, filtroEmpresa }} />;
 }
 
 function ResolvedCompany({ companyId }: { companyId: number }) {

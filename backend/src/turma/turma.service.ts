@@ -30,6 +30,7 @@ import {
   listarAlunosDaTurma,
   listarProfessoresDaTurma,
   listarTurmas,
+  listarTurmasComEscola,
   resumirTurmas,
 } from './turma-consultas';
 
@@ -109,11 +110,14 @@ export class TurmaService {
     return (await resumirTurmas(manager, [turma]))[0];
   }
 
+  /** Com `comEscola` (plataforma), cada linha traz o nome da escola; sem `empresaId`, lista todas. */
   listar(
-    empresaId: number,
+    empresaId: number | undefined,
     filtros: FiltrosTurmas,
+    comEscola = false,
   ): Promise<Paginado<TurmaResumo>> {
-    return listarTurmas(this.dataSource.manager, { ...filtros, empresaId });
+    const consulta = comEscola ? listarTurmasComEscola : listarTurmas;
+    return consulta(this.dataSource.manager, { ...filtros, empresaId });
   }
 
   async criar(

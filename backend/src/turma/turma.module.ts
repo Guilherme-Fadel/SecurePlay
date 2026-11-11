@@ -6,7 +6,10 @@ import { JornadaTurmaService } from './jornada-turma.service';
 import { TurmaAcessoService } from './turma-acesso.service';
 import { TurmaService } from './turma.service';
 import { TurmaAdminController } from './turma-admin.controller';
-import { TurmaPlatformController } from './turma-platform.controller';
+import {
+  TurmaPlatformController,
+  TurmaPlatformGlobalController,
+} from './turma-platform.controller';
 import { JornadaController } from './jornada.controller';
 import { JornadaEdicaoService } from './jornada-edicao.service';
 
@@ -15,6 +18,7 @@ import { JornadaEdicaoService } from './jornada-edicao.service';
   controllers: [
     TurmaAdminController,
     TurmaPlatformController,
+    TurmaPlatformGlobalController,
     JornadaController,
   ],
   providers: [

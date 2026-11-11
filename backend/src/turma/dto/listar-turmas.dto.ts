@@ -41,3 +41,12 @@ export class ListarTurmasDto extends PaginacaoDto {
   @IsIn(['ativa', 'arquivada'])
   situacao?: 'ativa' | 'arquivada';
 }
+
+/** Listagem da plataforma: todas as escolas ou só a escolhida no filtro. */
+export class ListarTurmasPlataformaDto extends ListarTurmasDto {
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  empresa_id?: number;
+}
