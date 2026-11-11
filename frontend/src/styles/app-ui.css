@@ -596,6 +596,102 @@
   box-shadow: 0 24px 70px rgba(0, 0, 0, 0.28) !important;
 }
 
+/*
+ * Modal em variante card (missão do dia): moldura dos cartões da Home (.hv-card), cabeçalho
+ * como .hv-card-head e corpo rolável. O painel é coluna flex limitada à viewport (folga para
+ * a sombra dura), então o conteúdo rola por dentro sem número mágico de cabeçalho.
+ * Os seletores com .secure-home vencem a regra genérica acima (também !important).
+ */
+.app-modal.app-modal--card,
+.secure-home .app-modal.app-modal--card {
+  display: flex;
+  flex-direction: column;
+  max-height: calc(100vh - 32px);
+  max-height: calc(100dvh - 32px);
+  overflow: hidden;
+  border: var(--app-line) !important;
+  border-radius: 28px !important;
+  background: var(--dashboard-surface) !important;
+  box-shadow: 0 8px 0 var(--app-shadow-color) !important;
+}
+
+:root[data-theme='light'] .app-modal.app-modal--card,
+:root[data-theme='light'] .secure-home .app-modal.app-modal--card {
+  background: var(--dashboard-surface-soft) !important;
+}
+
+.app-modal--card .app-modal-head {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 20px 24px 16px;
+  border-bottom: var(--app-line);
+}
+
+.app-modal--card .app-modal-heading { min-width: 0; flex: 1 1 auto; }
+
+.app-modal--card .app-modal-eyebrow {
+  margin: 0;
+  color: var(--app-eyebrow);
+  font-family: var(--font-family-brand);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  line-height: 1.3;
+  text-transform: uppercase;
+}
+
+.app-modal--card .app-modal-title {
+  margin: 8px 0 0;
+  color: var(--app-heading);
+  font-family: var(--font-family-brand);
+  font-size: 34px;
+  font-stretch: 75%;
+  font-weight: 800;
+  letter-spacing: -0.005em;
+  line-height: 0.92;
+  overflow-wrap: anywhere;
+  text-transform: uppercase;
+}
+
+.app-modal--card .app-modal-close {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: var(--app-line);
+  border-radius: 14px;
+  background: transparent;
+  color: var(--dashboard-text);
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.app-modal--card .app-modal-close:hover { background: var(--dashboard-surface-raised); }
+.app-modal--card .app-modal-close:focus-visible { outline: var(--app-focus-ring); outline-offset: 2px; }
+
+.app-modal--card .app-modal-body {
+  min-height: 0;
+  flex: 1 1 auto;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+}
+
+@media (max-width: 480px) {
+  .app-modal--card .app-modal-head { gap: 12px; padding: 16px 16px 12px; }
+  .app-modal--card .app-modal-title { font-size: 26px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app-modal--card .app-modal-close { transition: none; }
+}
+
 
 .notification-popover {
   position: absolute;

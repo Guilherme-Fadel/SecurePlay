@@ -45,17 +45,19 @@ interface LessonCheckpointProps {
   headingRef?: Ref<HTMLHeadingElement>;
   /** compact: faixa amarela sob o quadrinho/vídeo; full: resultado do quiz. */
   variant?: 'full' | 'compact';
+  /** Sobretítulo do resultado completo (padrão "Checkpoint!"). */
+  eyebrow?: string;
 }
 
 /** Resultado "Checkpoint": XP vem de `submitQuiz`/`concluir` (o servidor é a autoridade). */
-export function LessonCheckpoint({ title, summary, xp, actions, headingRef, variant = 'full' }: LessonCheckpointProps) {
+export function LessonCheckpoint({ title, summary, xp, actions, headingRef, variant = 'full', eyebrow = 'Checkpoint!' }: LessonCheckpointProps) {
   if (variant === 'compact') {
     return <CompactCheckpoint title={title} xp={xp} actions={actions} />;
   }
   return (
     <div className="lesson-result" role="status">
       <BrandCharacter className="lesson-result-art" expression="happy" />
-      <p className="lesson-eyebrow">Checkpoint!</p>
+      <p className="lesson-eyebrow">{eyebrow}</p>
       <h2 ref={headingRef} tabIndex={-1} className="lesson-display">{title}</h2>
       {summary && <p>{summary}</p>}
       <LessonXpCount xp={xp} />

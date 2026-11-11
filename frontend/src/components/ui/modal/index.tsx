@@ -11,6 +11,14 @@ interface ModalProps {
   Height?: string;
   maxWidth?: string;
   maxHeight?: string;
+  /**
+   * `default`: janela genérica (admin, perfil). `card`: moldura dos cartões da Home (borda
+   * `--app-line`, raio 28, sombra dura), cabeçalho no estilo `.hv-card-head` e corpo rolável
+   * sem padding, para conteúdo que cuida do próprio espaçamento (ex.: quiz da missão do dia).
+   */
+  variant?: 'default' | 'card';
+  /** Sobretítulo caixa-alta acima do título; só aparece na variante `card`. */
+  eyebrow?: string;
   /** Alvo do foco ao fechar quando quem abriu sumiu da tela (ex.: botão trocado por um aviso). */
   returnFocusRef?: RefObject<HTMLElement | null>;
 }
@@ -81,9 +89,12 @@ export function Modal({
   Width = '',
   Height = '',
   maxWidth = 'max-w-350',
-  maxHeight = 'max-h-250',
+  maxHeight,
+  variant = 'default',
+  eyebrow,
   returnFocusRef,
 }: ModalProps) {
+  const card = variant === 'card';
   const titleId = useId();
   const panelRef = useRef<HTMLDivElement>(null);
   const reduceMotion = useReducedMotion() === true;
@@ -137,11 +148,13 @@ export function Modal({
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={reduceMotion ? { opacity: 0 } : { opacity: 0, scale: 0.95, y: 20 }}
             transition={{ duration, ease: 'easeOut' }}
-            className={`app-modal relative z-10 w-full ${maxWidth} ${maxHeight} ${Height} ${Width} mx-4 bg-[var(--surface)] border-2 border-[var(--border)] rounded-xl shadow-2xl outline-none`}
+            className={card
+              ? `app-modal app-modal--card relative z-10 w-full ${maxWidth} ${maxHeight ?? ''} ${Height} ${Width} mx-4 outline-none`
+              : `app-modal relative z-10 w-full ${maxWidth} ${maxHeight ?? 'max-h-250'} ${Height} ${Width} mx-4 bg-[var(--surface)] border-2 border-[var(--border)] rounded-xl shadow-2xl outline-none`}
           >
-            <ModalHeader title={title} titleId={titleId} onClose={onClose} />
+            <ModalHeader title={title} titleId={titleId} onClose={onClose} card={card} eyebrow={card ? eyebrow : undefined} />
 
-            <div className="p-6">
+            <div className={card ? 'app-modal-body' : 'app-modal-body p-6'}>
               {children}
             </div>
           </motion.div>
@@ -153,17 +166,38 @@ export function Modal({
 
 const CLOSE_CLASS = 'p-1.5 rounded-md hover:bg-[var(--background)] transition-colors text-[var(--text-secondary)] hover:text-[var(--text-primary)]';
 
+interface ModalHeaderProps {
+  title?: string;
+  titleId: string;
+  onClose: () => void;
+  card: boolean;
+  eyebrow?: string;
+}
+
 /** Cabeçalho com título (nome do diálogo) ou só o botão de fechar no canto. */
-function ModalHeader({ title, titleId, onClose }: { title?: string; titleId: string; onClose: () => void }) {
+function ModalHeader({ title, titleId, onClose, card, eyebrow }: ModalHeaderProps) {
+  // Na variante card o estilo do botão vem de `.app-modal--card .app-modal-close`, sem utilitários concorrentes.
+  const closeClass = card ? 'app-modal-close' : `app-modal-close ${CLOSE_CLASS}`;
   const close = (
-    <button type="button" data-modal-close="" onClick={() => onClose()} className={title ? CLOSE_CLASS : `absolute top-3 right-3 ${CLOSE_CLASS}`} aria-label="Fechar modal">
+    <button type="button" data-modal-close="" onClick={() => onClose()} className={title || card ? closeClass : `absolute top-3 right-3 ${closeClass}`} aria-label="Fechar modal">
       <X size={20} aria-hidden="true" />
     </button>
   );
   if (!title) return close;
+  if (card) {
+    return (
+      <div className="app-modal-head">
+        <div className="app-modal-heading">
+          {eyebrow && <p className="app-modal-eyebrow">{eyebrow}</p>}
+          <h2 id={titleId} className="app-modal-title">{title}</h2>
+        </div>
+        {close}
+      </div>
+    );
+  }
   return (
-    <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--border)]">
-      <h2 id={titleId} className="text-[var(--text-primary)] text-lg font-semibold">
+    <div className="app-modal-head flex items-center justify-between px-6 py-4 border-b border-[var(--border)]">
+      <h2 id={titleId} className="app-modal-title text-[var(--text-primary)] text-lg font-semibold">
         {title}
       </h2>
       {close}
