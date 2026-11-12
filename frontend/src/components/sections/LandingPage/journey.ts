@@ -60,7 +60,7 @@ export interface Territory {
 export const TERRITORIES: readonly [Territory, Territory, Territory] = [
   { name: 'Bosque dos Fundamentos', description: 'Aulas em quadrinhos, vídeo, texto e quiz para começar do zero.', icon: levelEasy, range: [0, 0.35], stageTop: 3.5 },
   { name: 'Vale dos Guardiões', description: 'Mais prática: jogos curtos treinam o olhar para golpes, senhas e segredos.', icon: levelMedium, range: [0.35, 0.7375], stageTop: 38 },
-  { name: 'Cidadela Digital', description: 'Desafios maiores para quem já domina o básico.', icon: levelHard, range: [0.7375, 1], stageTop: 71 },
+  { name: 'Cidadela Digital', description: 'Desafios maiores para quem já domina o básico.', icon: levelHard, range: [0.7375, 1], stageTop: 75.5 },
 ];
 
 export function territoryProgress(progress: number, territory: Territory): number {
