@@ -91,7 +91,7 @@ export function LandingHero() {
 
         <figure className="lp-hero-art" aria-hidden="true">
           <div className="lp-hero-arch" />
-          <div className="lp-hero-mascot">
+          <div className="lp-hero-mascot" data-traveler="hero">
             <BrandCharacter body="var(--sp-yellow)" face="var(--sp-black)" eyes="var(--sp-yellow)" look={3.5} lift={-2} blink />
           </div>
           <div className="lp-hero-bubble">Bora aprender?</div>

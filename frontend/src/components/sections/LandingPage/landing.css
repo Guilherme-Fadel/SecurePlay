@@ -117,12 +117,13 @@ html:has(.landing) { scroll-behavior: smooth; }
 .lp-jr-node.is-locked img { opacity: .45; filter: grayscale(1); }
 .lp-jr-badge { position: absolute; top: -8%; right: -6%; display: grid; place-items: center; width: 28px; height: 28px; border: 2px solid #FFFFFF; border-radius: 999px; background: var(--sp-black); color: #FFFFFF; }
 .lp-jr-badge.is-locked { background: #7B6A4F; }
-.lp-jr-label { padding: 5px 10px; border-radius: 10px; background: var(--sp-paper); box-shadow: 0 3px 0 rgba(0, 0, 0, .18); color: var(--sp-black); font-size: 12px; font-weight: 800; line-height: 1.2; text-align: center; white-space: nowrap; }
+/* O rótulo fica fora do centro do nó: a pedra é que fica centrada no ponto da trilha. */
+.lp-jr-label { position: absolute; top: calc(100% + 6px); left: 50%; transform: translateX(-50%); padding: 5px 10px; border-radius: 10px; background: var(--sp-paper); box-shadow: 0 3px 0 rgba(0, 0, 0, .18); color: var(--sp-black); font-size: 12px; font-weight: 800; line-height: 1.2; text-align: center; white-space: nowrap; }
 .lp-jr-label small { display: block; color: var(--sp-muted); font-size: 11px; font-weight: 600; }
 .lp-jr-flag { position: absolute; z-index: 2; top: 92%; left: 70%; width: 12%; height: auto; transform: translate(-50%, -70%); }
-.lp-jr-char { position: absolute; z-index: 3; display: flex; flex-direction: column; align-items: center; gap: 6px; width: 14%; transform: translate(-50%, -94%); pointer-events: none; }
+.lp-jr-char { position: absolute; z-index: 3; width: 14%; transform: translate(-50%, -50%); pointer-events: none; }
 .lp-jr-char-art { filter: drop-shadow(0 6px 0 rgba(0, 0, 0, .25)); }
-.lp-jr-pill { padding: 4px 10px; border-radius: 999px; background: var(--sp-blue); color: #FFFFFF; font-size: 10px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; white-space: nowrap; }
+.lp-jr-pill { position: absolute; bottom: calc(100% + 6px); left: 50%; z-index: 1; padding: 4px 10px; border-radius: 999px; background: var(--sp-blue); color: #FFFFFF; font-size: 10px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; white-space: nowrap; }
 .lp-jr-pill.is-dark { background: var(--sp-black); }
 .lp-jr-bar { height: 8px; margin-top: 12px; overflow: hidden; border-radius: 999px; background: var(--sp-sand); }
 .lp-jr-bar i { display: block; height: 100%; border-radius: 999px; background: var(--sp-blue); }
@@ -269,3 +270,11 @@ html:has(.landing) { scroll-behavior: smooth; }
   .lp-marquee-toggle { display: none; }
   .lp-step, .lp-jr-fade, .lp-btn, .lp-game-row, .lp-header-login { transition: none; }
 }
+
+/* Mascote viajante (LandingTraveler): um só personagem fixo que segue as âncoras
+   [data-traveler]; elas continuam no layout, invisíveis enquanto ele existe. */
+.lp-traveler { position: fixed; top: 0; left: 0; z-index: 30; opacity: 0; pointer-events: none; transform-origin: 50% 50%; will-change: transform, width; filter: drop-shadow(0 8px 0 rgba(0, 0, 0, .2)); }
+.lp-traveler > svg { display: block; width: 100%; height: auto; }
+.lp-has-traveler [data-traveler] { visibility: hidden; }
+.lp-jr-char-slot, .lp-play-mascot { display: block; }
+.lp-jr-char-slot > svg, .lp-play-mascot > svg { display: block; width: 100%; height: auto; }

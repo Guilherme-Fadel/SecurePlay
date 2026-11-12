@@ -14,6 +14,16 @@ function measure(section: HTMLElement, pin: HTMLElement, head: HTMLElement): num
   const rect = section.getBoundingClientRect();
   const viewport = window.innerHeight || document.documentElement.clientHeight;
   if (rect.top >= 0 && rect.bottom <= viewport) return null;
+  const { start, travel } = journeyCourse(section, pin, head);
+  return travel > 0 ? Math.min(1, Math.max(0, -start / travel)) : 1;
+}
+
+/**
+ * Curso do mapa na rolagem atual: `start` é quanto falta (px) para o mapa prender
+ * (negativo depois que prendeu) e `travel` é o trecho em que ele fica preso.
+ */
+function journeyCourse(section: HTMLElement, pin: HTMLElement, head: HTMLElement): { start: number; travel: number } {
+  const rect = section.getBoundingClientRect();
   const sectionStyle = window.getComputedStyle(section);
   const pinStyle = window.getComputedStyle(pin);
   const paddingTop = parseFloat(sectionStyle.paddingTop) || 0;
@@ -24,8 +34,18 @@ function measure(section: HTMLElement, pin: HTMLElement, head: HTMLElement): num
   const offset = sideBySide ? 0 : (headRect.bottom - (rect.top + paddingTop)) + (parseFloat(pinStyle.marginTop) || 0);
   const travel = rect.height - paddingTop - paddingBottom - offset - pinRect.height;
   const stickyTop = parseFloat(pinStyle.top) || 0;
-  const start = rect.top + paddingTop + offset;
-  return travel > 0 ? Math.min(1, Math.max(0, (stickyTop - start) / travel)) : 1;
+  return { start: rect.top + paddingTop + offset - stickyTop, travel };
+}
+
+/** Trecho da rolagem (posições absolutas de scrollY) em que a jornada é percorrida. */
+export function journeyScrollRange(): { from: number; to: number } | null {
+  const section = document.getElementById('jornada');
+  const pin = section?.querySelector<HTMLElement>('.lp-jr-pin');
+  const head = section?.querySelector<HTMLElement>('.lp-jr-head');
+  if (!section || !pin || !head) return null;
+  const { start, travel } = journeyCourse(section, pin, head);
+  const from = window.scrollY + start;
+  return { from, to: from + Math.max(travel, 0) };
 }
 
 /**

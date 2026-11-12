@@ -10,6 +10,7 @@ import { useJourneyProgress } from './useJourneyProgress';
 
 const PEBBLE_PATH = 'M24.992 80.248C12.298 93.583-8.017 100.251-35.968 100.251-63.903 100.251-83.901 93.733-95.972 80.727-108.026 67.703-114.074 50.396-114.074 28.817-114.074 7.221-108.026-10.236-95.972-23.571-83.901-36.906-63.903-43.574-35.968-43.574-8.017-43.574 12.298-36.906 24.992-23.571 37.704-10.236 44.042 7.221 44.042 28.817 44.042 49.772 37.704 66.913 24.992 80.248';
 const CROWN_PATH = 'M0 0C-7.494-6.648-24.607-7.544-31.769-7.616L-31.767-7.618H-31.98C-32.62-7.623-33.176-7.622-33.629-7.618H-36.402C-36.855-7.622-37.412-7.623-38.051-7.618H-38.075C-45.12-7.559-62.47-6.708-70.032 0-79.638 8.522-85.525 39.664-76.539 45.242-67.553 50.819-58.001 34.241-58.001 34.241-58.001 34.241-47.566 64.299-35.016 64.299-22.466 64.299-12.03 34.241-12.03 34.241-12.03 34.241-2.479 50.819 6.507 45.242 15.494 39.664 9.606 8.522 0 0';
+const PILL_GAP = 6;
 const SYMBOL_TRANSFORM = 'matrix(1 0 0 -1 114.2315 100.4042)';
 
 function TerritoryBar({ progress, territory }: { progress: MotionValue<number>; territory: Territory }) {
@@ -26,6 +27,18 @@ export function LandingJourney() {
   const trailOpacity = useTransform(progress, (value) => (value > 0.004 ? 1 : 0));
   const characterLeft = useTransform(progress, (value) => `${characterPosition(value).left}%`);
   const characterTop = useTransform(progress, (value) => `${characterPosition(value).top}%`);
+  // O personagem fica centrado no ponto da trilha (centro das molduras). O balão
+  // fica acima dele; perto do topo do mapa, onde seria cortado, passa para baixo.
+  const mapRef = useRef<HTMLDivElement>(null);
+  const charRef = useRef<HTMLDivElement>(null);
+  const pillRef = useRef<HTMLSpanElement>(null);
+  const pillY = useTransform(progress, (value) => {
+    const mapH = mapRef.current?.offsetHeight ?? 0;
+    const charH = charRef.current?.offsetHeight ?? 0;
+    const pillH = pillRef.current?.offsetHeight ?? 0;
+    const roomAbove = (characterPosition(value).top / 100) * mapH - charH / 2;
+    return roomAbove < pillH + PILL_GAP + 4 ? charH + pillH + PILL_GAP * 2 : 0;
+  });
   const inCitadel = snapshot.territory === TERRITORIES.length - 1;
   const currentTerritory = TERRITORIES[snapshot.territory] ?? TERRITORIES[0];
 
@@ -38,7 +51,7 @@ export function LandingJourney() {
       </div>
 
       <div ref={pinRef} className="lp-jr-pin">
-        <div className="lp-jr-map" aria-hidden="true">
+        <div ref={mapRef} className="lp-jr-map" aria-hidden="true">
           <svg viewBox="0 0 600 760" className="lp-jr-land">
             <path d="M-20 268 C 120 230, 220 300, 320 262 C 420 226, 520 270, 620 240 V 522 C 520 556, 440 504, 330 540 C 220 578, 100 512, -20 548 Z" fill="var(--sp-pink)" />
             <path d="M-20 548 C 100 512, 220 578, 330 540 C 440 504, 520 556, 620 522 V 780 H -20 Z" fill="var(--sp-blue)" />
@@ -77,17 +90,19 @@ export function LandingJourney() {
 
           <img className="lp-jr-flag" src={flagIcon} alt="" />
 
-          <motion.div className="lp-jr-char" style={{ left: characterLeft, top: characterTop }}>
-            <span className={`lp-jr-pill${inCitadel ? ' is-dark' : ''}`}>{snapshot.finished ? 'Fim da trilha' : 'Você está aqui'}</span>
-            <BrandCharacter
-              className="lp-jr-char-art"
-              body={inCitadel ? 'var(--sp-yellow)' : 'var(--sp-blue)'}
-              face={inCitadel ? 'var(--sp-black)' : 'var(--sp-cream)'}
-              expression={snapshot.finished ? 'happy' : 'open'}
-              look={5}
-              blink
-              float
-            />
+          <motion.div ref={charRef} className="lp-jr-char" style={{ left: characterLeft, top: characterTop }}>
+            <motion.span ref={pillRef} className={`lp-jr-pill${inCitadel ? ' is-dark' : ''}`} style={{ x: '-50%', y: pillY }}>{snapshot.finished ? 'Fim da trilha' : 'Você está aqui'}</motion.span>
+            <span className="lp-jr-char-slot" data-traveler="journey">
+              <BrandCharacter
+                className="lp-jr-char-art"
+                body={inCitadel ? 'var(--sp-yellow)' : 'var(--sp-blue)'}
+                face={inCitadel ? 'var(--sp-black)' : 'var(--sp-cream)'}
+                expression={snapshot.finished ? 'happy' : 'open'}
+                look={5}
+                blink
+                float
+              />
+            </span>
           </motion.div>
         </div>
         <div className="lp-jr-mob" aria-hidden="true">

@@ -28,8 +28,8 @@ export function LandingMissions() {
     <section id="jogos" className="lp-missions" aria-labelledby="lp-missoes-titulo">
       <div className="lp-missions-card">
         <img className="lp-missions-sticker" src={LANDING_GAMES[0].image} alt="" aria-hidden="true" />
-        <div className="lp-missions-pal" aria-hidden="true">
-          <BrandCharacter body="var(--sp-pink)" face="var(--sp-black)" eyes="var(--sp-pink)" expression="sleepy" />
+        <div className="lp-missions-pal" aria-hidden="true" data-traveler="missions">
+          <BrandCharacter body="var(--sp-yellow)" face="var(--sp-black)" eyes="var(--sp-yellow)" expression="happy" />
         </div>
 
         <div className="lp-missions-copy">

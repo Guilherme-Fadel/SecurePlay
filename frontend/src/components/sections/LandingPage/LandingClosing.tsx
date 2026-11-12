@@ -55,7 +55,7 @@ export function LandingPlay() {
     <section className="lp-play" aria-labelledby="lp-play-titulo">
       <PlayStrip />
       <div className="lp-play-body">
-        <BrandCharacter className="lp-play-mascot" body="var(--sp-yellow)" face="var(--sp-black)" eyes="var(--sp-yellow)" expression="happy" float />
+        <div className="lp-play-mascot" data-traveler="play"><BrandCharacter body="var(--sp-yellow)" face="var(--sp-black)" eyes="var(--sp-yellow)" expression="happy" float /></div>
         <h2 id="lp-play-titulo" className="sp-display lp-play-title">Não tem mais fase por aqui. <span>Hora de começar a aventura.</span></h2>
         <div className="lp-play-actions">
           <Link to="/teste-gratuito" className="lp-btn lp-btn--chunky">Teste grátis por 7 dias</Link>

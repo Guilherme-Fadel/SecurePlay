@@ -25,7 +25,7 @@ export function characterPosition(progress: number): { left: number; top: number
   const [x1, y1] = POINTS[index + 1] ?? POINTS[index] ?? start;
   const x = x0 + (x1 - x0) * fraction;
   const y = y0 + (y1 - y0) * fraction;
-  return { left: x / 6, top: Math.max(y, 108) / 7.6 };
+  return { left: x / 6, top: y / 7.6 };
 }
 
 export interface JourneyStop {
