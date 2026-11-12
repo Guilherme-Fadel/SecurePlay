@@ -65,7 +65,7 @@ export function LandingJourney() {
             return (
               <div key={stop.name} className={`lp-jr-node is-${state}`} style={{ left: `${stop.left}%`, top: `${stop.top}%` }}>
                 <div className="lp-jr-pebble">
-                  <svg viewBox="-5 -5 169 154"><path transform={SYMBOL_TRANSFORM} d={PEBBLE_PATH} /></svg>
+                  <svg className="lp-jr-shape" viewBox="-5 -5 169 154"><path transform={SYMBOL_TRANSFORM} d={PEBBLE_PATH} /></svg>
                   <img src={stop.image} alt="" />
                   {state === 'done' && <span className="lp-jr-badge"><Check size={14} strokeWidth={3.6} /></span>}
                   {state === 'locked' && <span className="lp-jr-badge is-locked"><Lock size={13} strokeWidth={3} /></span>}
@@ -95,7 +95,6 @@ export function LandingJourney() {
           <span>Agora: {snapshot.current}</span>
           <TerritoryBar progress={progress} territory={currentTerritory} />
         </div>
-        <p className="lp-jr-caption">A trilha se desenha conforme a página desce e o personagem anda até a próxima parada.</p>
       </div>
 
       <ol className="lp-jr-steps">

@@ -80,7 +80,7 @@ export function LandingHero() {
           <h1 id="lp-hero-titulo" className="sp-display lp-hero-title">
             Proteger-se online também pode ser uma <span>aventura.</span>
           </h1>
-          <p className="lp-hero-lead">A SecurePlay transforma conversas importantes sobre internet em missões criativas, feitas para crianças de 6 a 10 anos.</p>
+          <p className="lp-hero-lead">A SecurePlay transforma conversas importantes sobre internet em missões criativas, feitas para crianças e adolescentes.</p>
           <div className="lp-hero-actions">
             <Link to="/teste-gratuito" className="lp-btn lp-btn--yellow">
               Teste grátis por 7 dias <ArrowRight size={18} strokeWidth={2.6} aria-hidden="true" />
@@ -90,14 +90,7 @@ export function LandingHero() {
         </div>
 
         <figure className="lp-hero-art" aria-hidden="true">
-          <div className="lp-hero-arch">
-            <div className="lp-hero-group">
-              <BrandCharacter className="lp-hero-group-side" body="var(--sp-cream)" face="var(--sp-blue)" eyes="var(--sp-cream)" look={-3} blink />
-              <BrandCharacter className="lp-hero-group-main" body="var(--sp-black)" face="var(--sp-cream)" eyes="var(--sp-black)" expression="happy" float />
-              <BrandCharacter className="lp-hero-group-side" body="var(--sp-blue)" face="var(--sp-cream)" eyes="var(--sp-blue)" expression="wink" />
-            </div>
-          </div>
-          <div className="lp-hero-dot" />
+          <div className="lp-hero-arch" />
           <div className="lp-hero-mascot">
             <BrandCharacter body="var(--sp-yellow)" face="var(--sp-black)" eyes="var(--sp-yellow)" look={3.5} lift={-2} blink />
           </div>
