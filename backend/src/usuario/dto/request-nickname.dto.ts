@@ -1,11 +1,13 @@
 import { IsString, Matches, MaxLength, MinLength } from 'class-validator';
+import {
+  NICKNAME_MESSAGE,
+  NICKNAME_PATTERN,
+} from '../../common/validators/nickname';
 
 export class RequestNicknameDto {
   @IsString()
   @MinLength(3)
   @MaxLength(24)
-  @Matches(/^[\p{L}\p{N} _-]+$/u, {
-    message: 'O apelido pode usar letras, números, espaço, hífen e sublinhado',
-  })
+  @Matches(NICKNAME_PATTERN, { message: NICKNAME_MESSAGE })
   nickname: string;
 }

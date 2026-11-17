@@ -3,12 +3,17 @@ import {
   IsIn,
   IsInt,
   IsString,
+  Matches,
   Max,
   MaxLength,
   Min,
   MinLength,
   ValidateIf,
 } from 'class-validator';
+import {
+  NICKNAME_MESSAGE,
+  NICKNAME_PATTERN,
+} from '../../common/validators/nickname';
 
 export class UpdateAdminUserDto {
   @ValidateIf((_object, value) => value !== undefined)
@@ -26,6 +31,7 @@ export class UpdateAdminUserDto {
   @IsString()
   @MinLength(2)
   @MaxLength(24)
+  @Matches(NICKNAME_PATTERN, { message: NICKNAME_MESSAGE })
   nickname?: string | null;
 
   @ValidateIf((_object, value) => value !== undefined)
