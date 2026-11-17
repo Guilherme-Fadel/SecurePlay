@@ -24,13 +24,43 @@ export function proxiedClientIp(
   return typeof ip === 'string' && isIP(ip.trim()) ? ip.trim() : null;
 }
 
+/**
+ * IP do cliente no cabeçalho preenchido pela borda (ex.: `cf-connecting-ip`), nomeado em
+ * CLIENT_IP_HEADER. Só configure um cabeçalho que a borda sempre sobrescreve: um valor
+ * enviado pelo próprio cliente não pode chegar intacto à API.
+ */
+export function edgeClientIp(
+  headers: Record<string, unknown> | undefined,
+  headerName = process.env.CLIENT_IP_HEADER,
+): string | null {
+  const name = headerName?.trim().toLowerCase();
+  if (!name || !headers) return null;
+  const raw = headers[name];
+  const value = typeof raw === 'string' ? raw.trim() : '';
+  return isIP(value) ? value : null;
+}
+
+/**
+ * Fonte única do IP do cliente para os limites por IP, na ordem: proxy da Pages (com
+ * segredo), cabeçalho da borda (CLIENT_IP_HEADER) e o IP calculado com TRUST_PROXY.
+ */
+export function clientIp(request: {
+  headers?: Record<string, unknown>;
+  ip?: string;
+}): string {
+  return (
+    proxiedClientIp(request.headers) ??
+    edgeClientIp(request.headers) ??
+    request.ip ??
+    ''
+  );
+}
+
 @Injectable()
 export class AppThrottlerGuard extends ThrottlerGuard {
   protected getTracker(request: Record<string, any>): Promise<string> {
     // Atrás do proxy da Pages, request.ip é o IP da Cloudflare (igual para todos os alunos).
     // Fastify já aplica trustProxy ao calcular ip; ips[0] é o proxy mais próximo.
-    return Promise.resolve(
-      proxiedClientIp(request.headers) ?? (request.ip as string),
-    );
+    return Promise.resolve(clientIp(request));
   }
 }

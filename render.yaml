@@ -47,6 +47,8 @@ services:
         value: "1"
       - key: PROXY_SHARED_SECRET
         sync: false
+      - key: CLIENT_IP_HEADER
+        sync: false
       - key: S3_BUCKET_NAME
         sync: false
       - key: AWS_REGION
