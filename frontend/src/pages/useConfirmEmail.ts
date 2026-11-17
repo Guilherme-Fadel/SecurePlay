@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { confirmEmail, setPassword as setRegistrationPassword } from '@/services/registration';
 import { passwordValidationMessage } from '@/lib/password-policy';
-import { backendCode, backendMessage, readHashToken } from '@/components/shared/publicAccountMessages';
+import { backendCode, backendMessage, backendValidationMessage, readHashToken } from '@/components/shared/publicAccountMessages';
 
 const LINK_UNAVAILABLE = 'O link expirou, já foi usado ou não está disponível. Peça outro link.';
 
@@ -60,8 +60,10 @@ export function useConfirmEmail() {
       if (!passwordSetupToken) return;
       await setRegistrationPassword(passwordSetupToken, password);
       setSuccess(true);
-    } catch {
-      setError(LINK_UNAVAILABLE);
+    } catch (failure: unknown) {
+      const validation = backendValidationMessage(failure);
+      if (validation) setFieldError({ field: 'password', message: validation });
+      else setError(LINK_UNAVAILABLE);
     } finally {
       setSubmitting(false);
     }

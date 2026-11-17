@@ -22,6 +22,14 @@ export function backendMessage(error: unknown, fallback: string): string {
   return fallback;
 }
 
+/** Erros de validação do ValidationPipe (lista de textos), ex.: senha comum recusada. */
+export function backendValidationMessage(error: unknown): string | null {
+  const message = responseData(error)?.message;
+  if (!Array.isArray(message)) return null;
+  const parts = message.filter((part): part is string => typeof part === 'string' && part.length > 0);
+  return parts.length ? parts.join('. ') : null;
+}
+
 export function backendCode(error: unknown): string | undefined {
   const code = responseData(error)?.code;
   return typeof code === 'string' ? code : undefined;

@@ -93,7 +93,7 @@ export function ProfileSecurity() {
           <PasswordField
             id="new-password"
             label="Nova senha"
-            hint="Use ao menos 6 caracteres e no máximo 72 bytes."
+            hint="Use ao menos 8 caracteres, evite senhas óbvias como 12345678 e não passe de 72 bytes."
             value={passwords.newPassword}
             visible={showPasswords.next}
             invalid={invalid('next')}

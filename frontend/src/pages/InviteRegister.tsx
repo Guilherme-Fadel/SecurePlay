@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { MIN_PASSWORD_LENGTH } from '@/lib/password-policy';
 import { BirthDateField } from '@/components/shared/BirthDateField';
 import { PublicAccountShell, type AccountCharacter } from '@/components/shared/PublicAccountShell';
 import { AccountCode, AccountInput, AccountLoading, AccountPasswordInput, AccountSubmit } from '@/components/shared/PublicAccountUi';
@@ -32,12 +33,12 @@ function SchoolStudentFields({ state }: { state: InviteRegisterState }) {
     />
     <RegistrationContactFields username={form.username} phone={form.phone} setUsername={setField('username')} setPhone={setField('phone')} usernameRequired={schoolWithoutEmail} disabled={submitting} />
     {schoolWithoutEmail && <>
-      <AccountPasswordInput label="Crie uma senha" value={form.password} onChange={(event) => setField('password')(event.target.value)} minLength={6} maxLength={72} autoComplete="new-password" required />
+      <AccountPasswordInput label="Crie uma senha" value={form.password} onChange={(event) => setField('password')(event.target.value)} minLength={MIN_PASSWORD_LENGTH} maxLength={72} autoComplete="new-password" required />
       <AccountPasswordInput
         label="Confirme a senha"
         value={form.confirmPassword}
         onChange={(event) => setField('confirmPassword')(event.target.value)}
-        minLength={6}
+        minLength={MIN_PASSWORD_LENGTH}
         maxLength={72}
         autoComplete="new-password"
         required

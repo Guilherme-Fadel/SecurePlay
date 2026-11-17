@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { MIN_PASSWORD_LENGTH } from '@/lib/password-policy';
 import { Link, useSearchParams } from 'react-router-dom';
 import { PublicAccountShell, type AccountCharacter } from '@/components/shared/PublicAccountShell';
 import { AccountInput, AccountLoading, AccountMessage, AccountPasswordInput, AccountSubmit, type AccountFeedback } from '@/components/shared/PublicAccountUi';
@@ -128,8 +129,8 @@ function PasswordDialog({ state }: { state: ConfirmEmailState }) {
           {state.error && <AccountMessage tone="error" message={<>{state.error} <Link to="/verifique-email">Pedir outro link</Link></>} />}
         </div>
         <form className="pas-form" onSubmit={(event) => void state.submit(event)}>
-          <AccountPasswordInput label="Crie uma senha" inputRef={passwordInputRef} value={state.password} onChange={(event) => state.setPassword(event.target.value)} minLength={6} maxLength={72} required autoComplete="new-password" error={fieldError('password')} />
-          <AccountPasswordInput label="Repita a senha" value={state.repeatPassword} onChange={(event) => state.setRepeatPassword(event.target.value)} minLength={6} maxLength={72} required autoComplete="new-password" error={fieldError('repeat')} />
+          <AccountPasswordInput label="Crie uma senha" inputRef={passwordInputRef} value={state.password} onChange={(event) => state.setPassword(event.target.value)} minLength={MIN_PASSWORD_LENGTH} maxLength={72} required autoComplete="new-password" error={fieldError('password')} />
+          <AccountPasswordInput label="Repita a senha" value={state.repeatPassword} onChange={(event) => state.setRepeatPassword(event.target.value)} minLength={MIN_PASSWORD_LENGTH} maxLength={72} required autoComplete="new-password" error={fieldError('repeat')} />
           <AccountSubmit busy={state.submitting} busyLabel="Ativando conta...">Confirmar e ativar conta</AccountSubmit>
         </form>
       </div>

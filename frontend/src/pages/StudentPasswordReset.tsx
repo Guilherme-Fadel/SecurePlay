@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from 'react';
+import { MIN_PASSWORD_LENGTH } from '@/lib/password-policy';
 import { Link } from 'react-router-dom';
 import { PublicAccountShell, type AccountCharacter } from '@/components/shared/PublicAccountShell';
 import { AccountCode, AccountPasswordInput, AccountSubmit, type AccountFeedback } from '@/components/shared/PublicAccountUi';
@@ -66,11 +67,11 @@ function resetCharacter(state: ResetState): AccountCharacter {
 function ResetForm({ state }: { state: ResetState }) {
   return (
     <form onSubmit={(event) => void state.submit(event)} className="pas-form">
-      <AccountPasswordInput label="Nova senha" autoComplete="new-password" minLength={6} maxLength={72} required value={state.password} onChange={(event) => state.setPassword(event.target.value)} />
+      <AccountPasswordInput label="Nova senha" autoComplete="new-password" minLength={MIN_PASSWORD_LENGTH} maxLength={72} required value={state.password} onChange={(event) => state.setPassword(event.target.value)} />
       <AccountPasswordInput
         label="Confirme a nova senha"
         autoComplete="new-password"
-        minLength={6}
+        minLength={MIN_PASSWORD_LENGTH}
         maxLength={72}
         required
         value={state.confirmation}
