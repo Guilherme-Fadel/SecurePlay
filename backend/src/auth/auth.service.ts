@@ -1,4 +1,4 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { Injectable, Optional, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { UsuarioService } from '../usuario/usuario.service';
@@ -12,6 +12,9 @@ import { EventEmitter2 } from '@nestjs/event-emitter';
 import { ChangePasswordDto } from './dto/change-password.dto';
 import { sessionPayload, sessionTokenHash } from './session';
 import { LoginAttemptsService, loginSubject } from './login-attempts.service';
+import { MFA_CHALLENGE_TTL_SECONDS } from './mfa/mfa-challenge';
+import { MfaService } from './mfa/mfa.service';
+import type { Usuario } from '../usuario/usuario.entity';
 
 /** Hash bcrypt (custo 10, igual ao das contas) de um texto aleatório descartado. */
 export const TIMING_DUMMY_HASH =
@@ -27,6 +30,7 @@ export class AuthService {
     private readonly registrationService: RegistrationService,
     private readonly events: EventEmitter2,
     private readonly loginAttempts: LoginAttemptsService,
+    @Optional() private readonly mfa?: MfaService,
   ) {}
 
   get cookieOptions() {
@@ -54,6 +58,11 @@ export class AuthService {
       maxAge: 2 * 60 * 60,
       ...(domain ? { domain } : {}),
     } as const;
+  }
+
+  /** Mesmas opções do cookie de sessão, com a validade curta do desafio de MFA. */
+  get challengeCookieOptions() {
+    return { ...this.cookieOptions, maxAge: MFA_CHALLENGE_TTL_SECONDS };
   }
 
   get cookieClearOptions() {
@@ -117,7 +126,18 @@ export class AuthService {
       };
     }
 
-    const token = this.jwtService.sign(sessionPayload(user));
+    if (this.mfa?.appliesTo(user)) {
+      return {
+        requiresMfa: true,
+        mfaSetupRequired: !user.mfa_enabled_at,
+        challengeToken: this.mfa.issueChallenge(user),
+        message: user.mfa_enabled_at
+          ? 'Informe o código do aplicativo autenticador para entrar.'
+          : 'Cadastre o aplicativo autenticador para concluir o acesso.',
+      };
+    }
+
+    const token = this.createSessionToken(user);
 
     return {
       token,
@@ -125,6 +145,13 @@ export class AuthService {
       nome: user.name,
       message: 'Login realizado com sucesso',
     };
+  }
+
+  /** Sessão emitida no login, na confirmação do MFA e na troca de senha. */
+  createSessionToken(
+    user: Pick<Usuario, 'id' | 'email' | 'role' | 'session_version'>,
+  ): string {
+    return this.jwtService.sign(sessionPayload(user));
   }
 
   async signOut(token: string | undefined) {

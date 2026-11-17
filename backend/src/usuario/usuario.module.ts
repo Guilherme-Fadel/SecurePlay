@@ -9,6 +9,6 @@ import { S3Service } from '../conteudo/s3/s3.service';
   imports: [DatabaseModule],
   controllers: [UsuarioController],
   providers: [...usuarioProviders, UsuarioService, S3Service],
-  exports: [UsuarioService],
+  exports: [UsuarioService, 'USUARIO_REPOSITORY'],
 })
 export class UsuarioModule {}

@@ -11,6 +11,9 @@ import { RedisModule } from 'src/redis/redis.module';
 import { RegistrationModule } from '../registration/registration.module';
 import { SocketSessionService } from './socket-session.service';
 import { LoginAttemptsService } from './login-attempts.service';
+import { MfaController } from './mfa/mfa.controller';
+import { MfaService } from './mfa/mfa.service';
+import { MfaStore } from './mfa/mfa.store';
 
 @Module({
   imports: [
@@ -42,8 +45,10 @@ import { LoginAttemptsService } from './login-attempts.service';
     JwtAuthGuard,
     SocketSessionService,
     LoginAttemptsService,
+    MfaStore,
+    MfaService,
   ],
-  controllers: [AuthController],
+  controllers: [AuthController, MfaController],
   exports: [AuthService, JwtAuthGuard, JwtModule, SocketSessionService],
 })
 export class AuthModule {}

@@ -18,6 +18,7 @@ import { ChangePasswordDto } from './dto/change-password.dto';
 import { AllowExpiredTrial } from '../registration/trial-access.guard';
 import { extractRequestToken } from '../common/utils/token.utils';
 import type { AuthenticatedRequest } from './session';
+import { MFA_CHALLENGE_COOKIE } from './mfa/mfa-challenge';
 import type { FastifyReply } from 'fastify';
 
 @Controller('auth')
@@ -39,6 +40,21 @@ export class AuthController {
 
     if (result.requiresEmailVerification || result.requiresPasswordSetup) {
       return result;
+    }
+
+    if (result.requiresMfa) {
+      // Desafio de MFA: cookie próprio e curto, nunca o cookie de sessão.
+      res.setCookie(
+        MFA_CHALLENGE_COOKIE,
+        result.challengeToken,
+        this.authService.challengeCookieOptions,
+      );
+      res.header('Cache-Control', 'private, no-store');
+      return {
+        requiresMfa: true,
+        mfaSetupRequired: result.mfaSetupRequired,
+        message: result.message,
+      };
     }
 
     if (!result.token || !result.userId) throw new Error('Sessão não emitida');

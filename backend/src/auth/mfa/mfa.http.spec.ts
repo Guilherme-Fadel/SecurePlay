@@ -1,0 +1,211 @@
+import { Role } from '../roles.enum';
+import { MFA_CHALLENGE_COOKIE } from './mfa-challenge';
+import { CenarioMfa, criarCenarioMfa } from './mfa-http-fixture';
+import { hashRecoveryCode } from './recovery-codes';
+
+const CHAVE_MFA = 'chave-mfa-de-teste';
+
+describe('HTTP: MFA por TOTP para gestão', () => {
+  let c: CenarioMfa;
+
+  beforeEach(async () => {
+    c = await criarCenarioMfa();
+  });
+
+  afterEach(async () => {
+    await c.encerrar();
+  });
+
+  it('admin sem MFA é levado ao cadastro, sem cookie de sessão', async () => {
+    const res = await c.entrar();
+    expect(res.statusCode).toBe(200);
+    expect(res.json()).toEqual({
+      requiresMfa: true,
+      mfaSetupRequired: true,
+      message: expect.any(String) as string,
+    });
+    expect(c.cookieDe(res, 'token')).toBeUndefined();
+    const desafio = res.cookies.find(
+      (item) => item.name === MFA_CHALLENGE_COOKIE,
+    ) as { httpOnly?: boolean; maxAge?: number };
+    expect(desafio.httpOnly).toBe(true);
+    expect(desafio.maxAge).toBe(300);
+    expect(res.headers['cache-control']).toBe('private, no-store');
+  });
+
+  it('admin com MFA ativo recebe o desafio sem pedir cadastro', async () => {
+    await c.cadastrar();
+    const res = await c.entrar();
+    expect(res.json()).toMatchObject({
+      requiresMfa: true,
+      mfaSetupRequired: false,
+    });
+    expect(c.cookieDe(res, 'token')).toBeUndefined();
+  });
+
+  it('cadastro: setup, verify com o código certo, sessão, 8 códigos e só hashes gravados', async () => {
+    const desafio = await c.desafioDe();
+    const setup = await c.post('/auth/mfa/setup', desafio);
+    expect(setup.statusCode).toBe(200);
+    const { secret, otpauthUrl } = setup.json<{
+      secret: string;
+      otpauthUrl: string;
+    }>();
+    expect(otpauthUrl).toContain(`secret=${secret}`);
+    expect(otpauthUrl).toContain('SecurePlay:gestao%40example.test');
+    const guardado = c.contas.get(7)!;
+    expect(guardado.mfa_secret_encrypted).toMatch(/^v1:/);
+    expect(guardado.mfa_secret_encrypted).not.toContain(secret);
+    expect(guardado.mfa_enabled_at).toBeNull();
+
+    const res = await c.post('/auth/mfa/verify', desafio, {
+      code: c.codigoAtual(secret),
+    });
+    expect(res.statusCode).toBe(200);
+    const corpo = res.json<{
+      nome: string;
+      user: { userId: number };
+      recoveryCodes: string[];
+    }>();
+    expect(corpo.nome).toBe('Gestão');
+    expect(corpo.user.userId).toBe(7);
+    expect(corpo.recoveryCodes).toHaveLength(8);
+    expect(c.cookieDe(res, 'token')?.value).toBeTruthy();
+    expect(c.cookieDe(res, MFA_CHALLENGE_COOKIE)?.value ?? '').toBe('');
+    expect(res.headers['cache-control']).toBe('private, no-store');
+
+    expect(guardado.mfa_enabled_at).toBeInstanceOf(Date);
+    expect(guardado.mfa_recovery_codes).toEqual(
+      corpo.recoveryCodes.map((item) => hashRecoveryCode(item, CHAVE_MFA)),
+    );
+    for (const codigo of corpo.recoveryCodes)
+      expect(JSON.stringify(guardado.mfa_recovery_codes)).not.toContain(codigo);
+    expect(c.attempts.zerados).toContain('u:7');
+
+    const sessao = await c.app.inject({
+      method: 'GET',
+      url: '/sonda/protegida',
+      headers: { cookie: `token=${c.cookieDe(res, 'token')?.value}` },
+    });
+    expect(sessao.statusCode).toBe(200);
+  });
+
+  it('chamar o setup de novo antes de confirmar gera outro segredo', async () => {
+    const desafio = await c.desafioDe();
+    const primeiro = (await c.post('/auth/mfa/setup', desafio)).json<{
+      secret: string;
+    }>();
+    const segundo = (await c.post('/auth/mfa/setup', desafio)).json<{
+      secret: string;
+    }>();
+    expect(segundo.secret).not.toBe(primeiro.secret);
+    // O código do segredo antigo já não confirma o cadastro.
+    const res = await c.post('/auth/mfa/verify', desafio, {
+      code: c.codigoAtual(primeiro.secret),
+    });
+    expect(res.statusCode).toBe(401);
+  });
+
+  it('setup com o MFA já ativo responde 409', async () => {
+    await c.cadastrar();
+    const res = await c.post('/auth/mfa/setup', await c.desafioDe());
+    expect(res.statusCode).toBe(409);
+  });
+
+  it('verify sem segredo pendente responde 409', async () => {
+    const res = await c.post('/auth/mfa/verify', await c.desafioDe(), {
+      code: '123456',
+    });
+    expect(res.statusCode).toBe(409);
+  });
+
+  it('código errado não emite sessão e conta como falha no bloqueio da conta', async () => {
+    const desafio = await c.desafioDe();
+    const { secret } = (await c.post('/auth/mfa/setup', desafio)).json<{
+      secret: string;
+    }>();
+    const certo = c.codigoAtual(secret);
+    const errado = certo === '000000' ? '000001' : '000000';
+    const res = await c.post('/auth/mfa/verify', desafio, { code: errado });
+    expect(res.statusCode).toBe(401);
+    expect(res.json()).toMatchObject({
+      message: 'Código inválido.',
+      code: 'mfa_code_invalid',
+    });
+    expect(c.cookieDe(res, 'token')).toBeUndefined();
+    expect(c.attempts.consultados).toContain('u:7');
+    expect(c.attempts.falhas).toEqual(['u:7']);
+    expect(c.contas.get(7)!.mfa_enabled_at).toBeNull();
+  });
+
+  it('código de recuperação vale uma vez', async () => {
+    const { recoveryCodes } = await c.cadastrar();
+    const primeira = await c.post('/auth/mfa/verify', await c.desafioDe(), {
+      recoveryCode: recoveryCodes[0].toLowerCase().replace('-', ''),
+    });
+    expect(primeira.statusCode).toBe(200);
+    expect(c.cookieDe(primeira, 'token')?.value).toBeTruthy();
+    expect(primeira.json()).not.toHaveProperty('recoveryCodes');
+    expect(c.contas.get(7)!.mfa_recovery_codes).toHaveLength(7);
+
+    const repetida = await c.post('/auth/mfa/verify', await c.desafioDe(), {
+      recoveryCode: recoveryCodes[0],
+    });
+    expect(repetida.statusCode).toBe(401);
+    expect(repetida.json()).toMatchObject({ code: 'mfa_code_invalid' });
+    expect(c.attempts.falhas).toEqual(['u:7']);
+  });
+
+  it('replay do mesmo passo TOTP é recusado; o passo seguinte entra', async () => {
+    const { secret } = await c.cadastrar();
+    const desafio = await c.desafioDe();
+    const replay = await c.post('/auth/mfa/verify', desafio, {
+      code: c.codigoAtual(secret),
+    });
+    expect(replay.statusCode).toBe(401);
+    expect(replay.json()).toMatchObject({ code: 'mfa_code_invalid' });
+
+    c.avancar(30);
+    const seguinte = await c.post('/auth/mfa/verify', desafio, {
+      code: c.codigoAtual(secret),
+    });
+    expect(seguinte.statusCode).toBe(200);
+    expect(c.cookieDe(seguinte, 'token')?.value).toBeTruthy();
+  });
+
+  it('segue sem antirreplay, com aviso, se o Redis falhar', async () => {
+    const { secret } = await c.cadastrar();
+    c.redis.indisponivel = true;
+    const res = await c.post('/auth/mfa/verify', await c.desafioDe(), {
+      code: c.codigoAtual(secret),
+    });
+    expect(res.statusCode).toBe(200);
+  });
+
+  it('aluno não é afetado: login idêntico ao atual, com sessão direta', async () => {
+    const res = await c.entrar('aluno@example.test');
+    expect(res.statusCode).toBe(200);
+    expect(res.json()).toEqual({
+      message: 'Login realizado com sucesso',
+      nome: 'Gestão',
+      user: { userId: 8, role: Role.USER },
+    });
+    expect(c.cookieDe(res, 'token')?.value).toBeTruthy();
+    expect(c.cookieDe(res, MFA_CHALLENGE_COOKIE)).toBeUndefined();
+  });
+
+  it('sem MFA_ENCRYPTION_KEY o MFA fica desligado e o admin entra como hoje', async () => {
+    const desafio = await c.desafioDe();
+    delete process.env.MFA_ENCRYPTION_KEY;
+
+    const res = await c.entrar();
+    expect(res.json()).not.toHaveProperty('requiresMfa');
+    expect(c.cookieDe(res, 'token')?.value).toBeTruthy();
+    expect(c.cookieDe(res, MFA_CHALLENGE_COOKIE)).toBeUndefined();
+
+    // Um desafio emitido antes de desligar também deixa de valer.
+    const setup = await c.post('/auth/mfa/setup', desafio);
+    expect(setup.statusCode).toBe(401);
+    expect(setup.json()).toMatchObject({ code: 'mfa_challenge_invalid' });
+  });
+});

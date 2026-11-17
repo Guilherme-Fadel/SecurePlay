@@ -25,6 +25,25 @@ function userCacheTtlMs(): number {
   return Number.isFinite(raw) && raw > 0 ? Math.min(raw, 10_000) : 0;
 }
 
+/**
+ * Só token de sessão vira sessão. Qualquer `purpose` (como o desafio de MFA) é recusado,
+ * mesmo que algum dia chegue assinado com a mesma chave.
+ */
+function assertSessionPayload(payload: {
+  sub: number;
+  exp?: number;
+  purpose?: unknown;
+}): void {
+  if (
+    payload.purpose !== undefined ||
+    !Number.isSafeInteger(payload.sub) ||
+    payload.sub <= 0 ||
+    !Number.isSafeInteger(payload.exp) ||
+    (payload.exp ?? 0) <= Date.now() / 1000
+  )
+    throw new UnauthorizedException('Sessão inválida');
+}
+
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
   private readonly accountCache = new Map<
@@ -64,14 +83,9 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     sub: number;
     sessionVersion?: number;
     exp?: number;
+    purpose?: unknown;
   }) {
-    if (
-      !Number.isSafeInteger(payload.sub) ||
-      payload.sub <= 0 ||
-      !Number.isSafeInteger(payload.exp) ||
-      (payload.exp ?? 0) <= Date.now() / 1000
-    )
-      throw new UnauthorizedException('Sessão inválida');
+    assertSessionPayload(payload);
     const ttl = userCacheTtlMs();
     const cached = ttl ? this.accountCache.get(payload.sub) : undefined;
     const sessionVersion = payload.sessionVersion ?? 0;

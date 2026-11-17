@@ -107,6 +107,23 @@ export class Usuario {
   @Column({ type: 'varchar', length: 20, default: 'user' })
   role: Role;
 
+  /** Segredo TOTP cifrado (AES-256-GCM). Nunca sai nas respostas da API. */
+  @Column({
+    type: 'varchar',
+    length: 255,
+    nullable: true,
+    select: false,
+  })
+  mfa_secret_encrypted: string | null;
+
+  /** Preenchido quando o cadastro do MFA é confirmado; nulo = ainda não cadastrado. */
+  @Column({ type: 'datetime', precision: 6, nullable: true })
+  mfa_enabled_at: Date | null;
+
+  /** Hashes SHA-256 hex dos códigos de recuperação ainda válidos. */
+  @Column({ type: 'json', nullable: true, select: false })
+  mfa_recovery_codes: string[] | null;
+
   @Column({ nullable: true })
   empresa_id: number;
 
