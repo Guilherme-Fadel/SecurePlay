@@ -12,6 +12,12 @@ export interface CheckinResult {
 }
 
 /** Requer o lock do usuário e a transação de XP do chamador. */
+
+/** Bônus do check-in: 5 XP por dia de sequência, com teto em 7 dias (35 XP/dia, D6). */
+export const CHECKIN_STREAK_CAP = 7;
+export function checkinBonusXp(streak: number): number {
+  return Math.min(Math.max(streak, 0), CHECKIN_STREAK_CAP) * 5;
+}
 export async function createDailyCheckinDraft(
   manager: EntityManager,
   usuarioId: number,
@@ -33,7 +39,7 @@ export async function createDailyCheckinDraft(
     stats.last_checkin_date = day;
     await statsRepo.save(stats);
   }
-  const bonusXp = legacy ? 0 : stats.current_streak * 5;
+  const bonusXp = legacy ? 0 : checkinBonusXp(stats.current_streak);
   await manager.getRepository(DailyCheckin).insert({
     usuario_id: usuarioId,
     day,
