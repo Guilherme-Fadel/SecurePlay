@@ -11,13 +11,13 @@ export interface CheckinResult {
   legacy: boolean;
 }
 
-/** Requer o lock do usuário e a transação de XP do chamador. */
-
 /** Bônus do check-in: 5 XP por dia de sequência, com teto em 7 dias (35 XP/dia, D6). */
 export const CHECKIN_STREAK_CAP = 7;
 export function checkinBonusXp(streak: number): number {
   return Math.min(Math.max(streak, 0), CHECKIN_STREAK_CAP) * 5;
 }
+
+/** Requer o lock do usuário e a transação de XP do chamador. */
 export async function createDailyCheckinDraft(
   manager: EntityManager,
   usuarioId: number,

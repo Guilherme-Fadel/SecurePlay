@@ -107,7 +107,7 @@ describe('Logout com LOGOUT_REVOKES_ALL_SESSIONS (D5)', () => {
     return { service, usuarioService, events };
   }
 
-  it('token deslogado continua inválido após limpar o Redis (versão da sessão incrementada)', async () => {
+  it('logout com a variável incrementa a versão da sessão (a revogação não depende do Redis; o t7 prova ponta a ponta)', async () => {
     process.env.LOGOUT_REVOKES_ALL_SESSIONS = 'true';
     const { service, usuarioService, events } = build();
     await service.signOut('a.b.c');
