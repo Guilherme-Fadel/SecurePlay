@@ -616,9 +616,13 @@ describe('ConvitesService.emitirLinkRedefinicaoAluno', () => {
       expect(student.password_reset_token_hash).not.toBe(result.reset_token);
       expect(student.password_reset_token_hash).toMatch(/^[a-f0-9]{64}$/);
       expect(student.session_version).toBe(5);
+      // I3: a autoria fica registrada (quem gerou, para quem), sem o token.
       expect(auditEvents[0]).toEqual(
         expect.objectContaining({
           acao: 'aluno.link_redefinicao_emitido',
+          ator_id: 2,
+          alvo_tipo: 'usuario',
+          alvo_id: 32,
           detalhes: { expira_em_minutos: 20 },
         }),
       );
