@@ -188,6 +188,7 @@ function lessonDependencies(h, overrides) {
     './useCanonicalLearnPath': { useCanonicalLearnPath() {} },
     './lessonFocus': { useLessonStepFocus: () => ({ headingRef: { current: null }, arm() {} }) },
     './lessonContext': lessonContext,
+    './useReadingGate': load('src/components/sections/HomePage/Conteudos/useReadingGate.ts', { react: h.react }),
     './lessonStepItems': load('src/components/sections/HomePage/Conteudos/lessonStepItems.ts', {}),
     ...overrides,
   };
@@ -212,6 +213,29 @@ test('completed video and comic do not attempt another progress write or show a 
     assert.equal(timers, 0, component);
     assert.equal(findButton(tree, /concluir/i), undefined, `${component} offers no second completion`);
   }
+});
+
+test('reading gate opens the quiz only when the server accepted the last page (>= 99%)', async () => {
+  const h = hooks();
+  const { useReadingGate } = load('src/components/sections/HomePage/Conteudos/useReadingGate.ts', { react: h.react });
+  const sent = [];
+  let accepted = 60;
+  const save = async (id, progress) => { sent.push([id, progress]); return { percent: accepted }; };
+  const render = () => h.render(() => useReadingGate({ lessonId: 7, pageCount: 5, save }));
+
+  assert.equal(await render().confirmRead(), false);
+  await settle();
+  assert.match(render().readingNotice, /com calma/);
+  accepted = 99;
+  assert.equal(await render().confirmRead(), true);
+  await settle();
+  assert.equal(render().readingNotice, null);
+  assert.equal(JSON.stringify(sent.map(([, progress]) => progress)), JSON.stringify(Array(2).fill({ progress_percent: 99, last_page: 4 })));
+
+  const failing = h.render(() => useReadingGate({ lessonId: 7, pageCount: 5, save: async () => null }));
+  assert.equal(await failing.confirmRead(), false, 'save failure keeps the reader in place');
+  const empty = h.render(() => useReadingGate({ lessonId: 7, pageCount: 0, save }));
+  assert.equal(await empty.confirmRead(), true, 'lesson without pages has no reading requirement');
 });
 
 test('video completion failure stays actionable; retry recovers a server-committed result and shows success only then', async () => {

@@ -22,7 +22,7 @@ import { sortAulasByModuleSequence } from './aula-order';
 import {
   cappedProgress,
   consumptionError,
-  maxProgressGain,
+  maxAllowedProgress,
 } from './lesson-consumption';
 import { ActivityCompletionService } from '../../common/gamification/activity-completion.service';
 import {
@@ -201,7 +201,6 @@ export class AulaService {
       });
       const now = new Date();
 
-      const firstRecord = !progress;
       if (!progress) {
         progress = repository.create({
           usuario_id,
@@ -213,15 +212,17 @@ export class AulaService {
       }
 
       progress.started_at ??= now;
-      const since = progress.last_accessed_at ?? progress.started_at;
       progress.last_accessed_at = now;
 
       if (!progress.completed && dto.progress_percent !== undefined) {
-        // O servidor limita o avanço pelo tempo real desde o último registro (A2).
+        // O servidor limita o progresso pelo tempo total desde o início da aula (A2).
         progress.progress_percent = cappedProgress(
           progress.progress_percent ?? 0,
           dto.progress_percent,
-          maxProgressGain(aula, now.getTime() - since.getTime(), firstRecord),
+          maxAllowedProgress(
+            aula,
+            now.getTime() - progress.started_at.getTime(),
+          ),
         );
       }
       if (dto.last_video_second !== undefined) {

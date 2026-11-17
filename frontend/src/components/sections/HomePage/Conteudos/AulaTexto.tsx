@@ -18,6 +18,7 @@ import { buildLessonSteps } from './lessonSteps';
 import { NEXT_LABEL, lessonNextAction, pagedStepItems, readerPercent } from './lessonStepItems';
 import { ProgressSaveStatus } from './ProgressSaveStatus';
 import { useCanonicalLearnPath } from './useCanonicalLearnPath';
+import { useReadingGate } from './useReadingGate';
 
 interface AulaTextoProps {
   aulaId: number;
@@ -40,10 +41,8 @@ export function AulaTexto({ aulaId, moduloId, onBack, onSelectAula }: AulaTextoP
   const hasQuiz = (aula?.quiz?.length ?? 0) > 0;
   const loadedId = aula?.id;
   // O servidor só aceita concluir (ou o quiz) depois de registrar a última página (A2).
-  const saveLastPage = useCallback(() => (loadedId && pages.length
-    ? salvarProgresso(loadedId, { progress_percent: 99, last_page: pages.length - 1 })
-    : Promise.resolve(null)), [loadedId, pages.length, salvarProgresso]);
-  const openQuiz = useCallback(() => { void saveLastPage().finally(() => setShowQuiz(true)); }, [saveLastPage]);
+  const { readingNotice, confirmRead } = useReadingGate({ lessonId: loadedId, pageCount: pages.length, save: salvarProgresso });
+  const openQuiz = useCallback(() => { void confirmRead().then((accepted) => { if (accepted) setShowQuiz(true); }); }, [confirmRead]);
   const { currentPage, isLastPage, goNext, goPrev, goTo } = usePageNavigation({
     totalPages: pages.length,
     enabled: !showQuiz,
@@ -78,7 +77,7 @@ export function AulaTexto({ aulaId, moduloId, onBack, onSelectAula }: AulaTextoP
   };
 
   const handleComplete = async () => {
-    await saveLastPage();
+    if (!(await confirmRead())) return;
     const result = await concluir(aulaId);
     if (!result) return;
     setXpGanho(result.xp_ganho);
@@ -144,6 +143,7 @@ export function AulaTexto({ aulaId, moduloId, onBack, onSelectAula }: AulaTextoP
 
           {(pages.length > 0 || hasQuiz) && (
             <nav className="lesson-nav" aria-label="Navegação da aula">
+              {readingNotice && <p className="lesson-hint" role="status">{readingNotice}</p>}
               <AppButton variant="chunky" tone="ghost" size="sm" onClick={goPrev} disabled={currentPage === 0}>Voltar</AppButton>
               <span aria-live="polite">{pages.length ? `Etapa ${currentPage + 1} de ${pages.length}` : 'Sem páginas'}</span>
               {xpGanho === null && (

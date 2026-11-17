@@ -25,31 +25,32 @@ export function hasConsumableContent(aula: LessonShape): boolean {
 }
 
 /**
- * Ganho máximo de progresso (pontos percentuais) desde o último registro, pelo tempo real.
- * `firstRecord` libera a primeira página da leitura assim que a aula abre.
+ * Progresso máximo (pontos percentuais) que o tempo TOTAL desde o início da aula permite.
+ * Não soma ganhos por chamada: assim o arredondamento de PATCHes frequentes não trava o aluno.
+ * Leitura: a primeira página conta ao abrir e depois 1 a cada 2 s; vídeo: até 2× a velocidade.
  */
-export function maxProgressGain(
+export function maxAllowedProgress(
   aula: LessonShape,
-  elapsedMs: number,
-  firstRecord: boolean,
+  elapsedTotalMs: number,
 ): number {
   if (!hasConsumableContent(aula)) return 100;
-  const elapsedSeconds = Math.max(0, elapsedMs) / 1000;
+  const elapsedSeconds = Math.max(0, elapsedTotalMs) / 1000;
   if (isPagedLesson(aula)) {
-    const pages = elapsedSeconds / SECONDS_PER_PAGE + (firstRecord ? 1 : 0);
+    const pages = elapsedSeconds / SECONDS_PER_PAGE + 1;
     return (pages * 100) / aula.pages.length;
   }
   const videoSeconds = Math.max((aula.duration ?? 0) * 60, MIN_VIDEO_SECONDS);
   return (elapsedSeconds * MAX_VIDEO_SPEED * 100) / videoSeconds;
 }
 
-/** Progresso a gravar: nunca diminui e nunca passa do que o tempo real permite. */
+/** Progresso a gravar: nunca diminui, o pedido do cliente é teto e o tempo total é o limite. */
 export function cappedProgress(
   previous: number,
   requested: number,
-  maxGain: number,
+  allowed: number,
 ): number {
-  const ceiling = Math.floor(previous + maxGain);
+  // A tolerância evita que erro de ponto flutuante (89,9999…) derrube um ponto inteiro.
+  const ceiling = Math.floor(allowed + 1e-9);
   return Math.max(previous, Math.min(requested, ceiling, 100));
 }
 
