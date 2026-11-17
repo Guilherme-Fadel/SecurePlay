@@ -45,6 +45,40 @@ describe('CsrfGuard', () => {
     ).toThrow(ForbiddenException);
   });
 
+  describe('rotas @Public()', () => {
+    const publicReflector = {
+      getAllAndOverride: jest.fn().mockReturnValue(true),
+    } as unknown as Reflector;
+    const publicGuard = new CsrfGuard(publicReflector);
+
+    beforeEach(() => {
+      process.env.NODE_ENV = 'production';
+      process.env.CORS_ORIGIN = 'https://app.example.com';
+    });
+
+    it('rota pública recusa Origin de outro site', () => {
+      expect(() =>
+        publicGuard.canActivate(context('POST', 'https://evil.example')),
+      ).toThrow(ForbiddenException);
+    });
+
+    it('rota pública sem Origin continua liberada', () => {
+      expect(publicGuard.canActivate(context('POST'))).toBe(true);
+    });
+
+    it('rota pública com Origin permitido passa', () => {
+      expect(
+        publicGuard.canActivate(context('POST', 'https://app.example.com')),
+      ).toBe(true);
+    });
+
+    it('GET público com Origin externo continua liberado', () => {
+      expect(
+        publicGuard.canActivate(context('GET', 'https://evil.example')),
+      ).toBe(true);
+    });
+  });
+
   it('continues to reject unsafe requests without an origin', () => {
     process.env.NODE_ENV = 'development';
 

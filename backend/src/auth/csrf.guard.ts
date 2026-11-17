@@ -25,10 +25,6 @@ export class CsrfGuard implements CanActivate {
       context.getClass(),
     ]);
 
-    if (isPublic) {
-      return true;
-    }
-
     const request = context
       .switchToHttp()
       .getRequest<{ method: string; headers: { origin?: string } }>();
@@ -37,14 +33,22 @@ export class CsrfGuard implements CanActivate {
     }
 
     const origin = request.headers.origin;
-    const allowed =
-      isAllowedOrigin(origin, getAllowedOrigins()) ||
-      (isDevEnvironment() && isLocalOrigin(origin));
-
-    if (!allowed) {
+    // Rota pública sem Origin segue liberada para clientes fora do navegador; com Origin,
+    // um site de terceiros não pode disparar login, cadastro ou e-mail em nome do visitante.
+    if (isPublic && !origin) {
+      return true;
+    }
+    if (!this.isAllowed(origin)) {
       throw new ForbiddenException('Origem da solicitação não permitida');
     }
 
     return true;
+  }
+
+  private isAllowed(origin: string | undefined): boolean {
+    return (
+      isAllowedOrigin(origin, getAllowedOrigins()) ||
+      (isDevEnvironment() && isLocalOrigin(origin))
+    );
   }
 }
