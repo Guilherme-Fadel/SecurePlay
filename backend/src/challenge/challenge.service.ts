@@ -9,8 +9,13 @@ import { Challenge } from './challenge.entity';
 import { Question } from '../question/question.entity';
 import { UsuarioChallenge } from '../usuario-challenge/usuario-challenge.entity';
 import { DailyChallengeAssignment } from './daily-challenge-assignment.entity';
+import {
+  pickDailyChallengeId,
+  readDailyCache,
+  writeDailyCache,
+} from './daily-challenge-selection';
 import { RedisService } from '../redis/redis.service';
-import { getLocalDateKey, ttlUntilEndOfDay } from '../common/utils/date.utils';
+import { getLocalDateKey } from '../common/utils/date.utils';
 import { SubmitChallengeDto } from './dto/challenge.dto';
 import { ActivityCompletionService } from '../common/gamification/activity-completion.service';
 import {
@@ -43,7 +48,7 @@ export class ChallengeService {
   }
 
   async getDailyChallenge(usuario_id: number): Promise<Challenge | null> {
-    const cached = await this.getRedisDailyChallenge(usuario_id);
+    const cached = await readDailyCache(this.redisService, usuario_id);
     if (cached) {
       const current = await this.challengeRepository.findOne({
         where: { id: cached.id },
@@ -59,42 +64,25 @@ export class ChallengeService {
     const assigned = await this.findAssignedChallenge(usuario_id, day);
     if (assigned) return assigned;
 
-    const records = await this.usuarioChallengeRepository.find({
-      where: { usuario_id },
-      select: ['challenge_id', 'completed', 'started_at'],
-      order: { started_at: 'DESC' },
-    });
-    const completedIds = records
-      .filter((record) => record.completed)
-      .map((record) => record.challenge_id);
-
-    const activeChallenges = await this.challengeRepository.find({
-      where: { active: true },
-      select: ['id'],
-      order: { id: 'ASC' },
-    });
-    const completed = new Set(completedIds);
-    const availableIds = activeChallenges
-      .map(({ id }) => id)
-      .filter((id) => !completed.has(id));
-    if (availableIds.length === 0) return null;
-
-    // Seleção estável por usuário e dia: evita ORDER BY RAND(), que força o
-    // banco a ordenar todos os desafios ativos a cada cache miss.
-    const seed = `${usuario_id}:${getLocalDateKey()}`;
-    let hash = 0;
-    for (let index = 0; index < seed.length; index += 1) {
-      hash = (hash * 31 + seed.charCodeAt(index)) >>> 0;
-    }
-    const partial = records.find(
-      (record) =>
-        !record.completed &&
-        record.started_at &&
-        getLocalDateKey(new Date(record.started_at)) === getLocalDateKey() &&
-        availableIds.includes(record.challenge_id),
+    const [records, activeChallenges] = await Promise.all([
+      this.usuarioChallengeRepository.find({
+        where: { usuario_id },
+        select: ['challenge_id', 'completed', 'started_at'],
+        order: { started_at: 'DESC' },
+      }),
+      this.challengeRepository.find({
+        where: { active: true },
+        select: ['id'],
+        order: { id: 'ASC' },
+      }),
+    ]);
+    const selectedId = pickDailyChallengeId(
+      usuario_id,
+      day,
+      records,
+      activeChallenges.map(({ id }) => id),
     );
-    const selectedId =
-      partial?.challenge_id ?? availableIds[hash % availableIds.length];
+    if (selectedId === null) return null;
     // INSERT IGNORE resolve a corrida: requisições simultâneas ficam com a mesma escolha.
     await this.usuarioChallengeRepository.manager.query(
       'INSERT IGNORE INTO daily_challenge_assignment (usuario_id, day, challenge_id) VALUES (?, ?, ?)',
@@ -107,7 +95,7 @@ export class ChallengeService {
     });
 
     if (challenge) {
-      await this.setRedisDailyChallenge(usuario_id, challenge);
+      await writeDailyCache(this.redisService, usuario_id, challenge);
     }
 
     return challenge
@@ -142,32 +130,8 @@ export class ChallengeService {
       where: { id: assignment.challenge_id },
     });
     if (!challenge) return null;
-    await this.setRedisDailyChallenge(usuario_id, challenge);
+    await writeDailyCache(this.redisService, usuario_id, challenge);
     return { ...challenge, image: this.localImageReference(challenge.image) };
-  }
-
-  private async getRedisDailyChallenge(
-    usuario_id: number,
-  ): Promise<Challenge | null> {
-    const cacheKey = `daily-challenge:${usuario_id}`;
-    try {
-      const cached = await this.redisService.get(cacheKey);
-      return cached ? (JSON.parse(cached) as Challenge) : null;
-    } catch {
-      // Redis fora do ar: a atribuição vem do SQL.
-      return null;
-    }
-  }
-
-  private async setRedisDailyChallenge(
-    usuario_id: number,
-    challenge: Challenge,
-  ): Promise<void> {
-    const cacheKey = `daily-challenge:${usuario_id}`;
-    const ttl = ttlUntilEndOfDay();
-    await this.redisService
-      .set(cacheKey, JSON.stringify(challenge), ttl)
-      .catch(() => undefined);
   }
 
   async getStatus(challengeId: number, usuario_id: number) {
