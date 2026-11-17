@@ -5,6 +5,7 @@ import { Empresa } from '../../empresa/empresa.entity';
 import { Usuario } from '../../usuario/usuario.entity';
 import { UsuarioStats } from '../../usuario-stats/usuario-stats.entity';
 import { UsuarioChallenge } from '../../usuario-challenge/usuario-challenge.entity';
+import { DailyChallengeAssignment } from '../../challenge/daily-challenge-assignment.entity';
 import { Challenge } from '../../challenge/challenge.entity';
 import { Question } from '../../question/question.entity';
 import { ChallengeService } from '../../challenge/challenge.service';
@@ -48,6 +49,7 @@ isolated('C01/C02/C03 — MySQL e Redis descartáveis', () => {
     Usuario,
     UsuarioStats,
     UsuarioChallenge,
+    DailyChallengeAssignment,
     Challenge,
     Question,
     Modulo,
