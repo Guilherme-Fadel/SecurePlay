@@ -19,6 +19,7 @@ import { ArcadeGame } from './entities/arcade-game.entity';
 import { ArcadeRunStore } from './arcade-run.store';
 import { UsuarioArcadeStats } from './entities/usuario-arcade-stats.entity';
 import { SubmitRunDto } from './dto/arcade.dto';
+import type { GameRun } from './games/game-handler';
 import { advanceArcadeDay, arcadeReward, ArcadeResult } from './arcade-rewards';
 
 @Injectable()
@@ -46,8 +47,8 @@ export class ArcadeSubmissionService implements OnModuleInit, OnModuleDestroy {
     if (this.timer) clearInterval(this.timer);
   }
 
-  create(user: number, runId: string, game: ArcadeGame, answerKey: unknown) {
-    return this.runs.create(user, runId, game, answerKey);
+  openOrCreate(user: number, game: ArcadeGame, build: () => Promise<GameRun>) {
+    return this.runs.openOrCreate(user, game, build);
   }
 
   submit(

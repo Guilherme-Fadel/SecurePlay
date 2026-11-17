@@ -11,7 +11,7 @@ import { Usuario } from '../../usuario/usuario.entity';
 import { ArcadeGameType } from './arcade-game.entity';
 import type { GameCorrection } from '../games/game-handler';
 
-@Entity({ name: 'arcade_run'})
+@Entity({ name: 'arcade_run' })
 @Index('ux_arcade_run_uuid', ['run_id'], { unique: true })
 @Index('ix_arcade_run_pending', ['completed', 'submitted_at'])
 @Index('ix_arcade_run_expiry', ['expires_at'])
@@ -29,6 +29,8 @@ export class ArcadeRun {
   @Column({ type: 'varchar', length: 24 }) game_type: ArcadeGameType;
   @Column() xp_base: number;
   @Column({ type: 'json', nullable: true }) answer_key: unknown;
+  /** Enunciado entregue ao aluno (sem gabarito); permite devolver a partida aberta. */
+  @Column({ type: 'json', nullable: true }) payload: unknown;
   @Column({ type: 'json', nullable: true }) correction: GameCorrection | null;
   @Column({ type: 'datetime', precision: 6 }) expires_at: Date;
   @Column({ type: 'datetime', precision: 6, nullable: true })

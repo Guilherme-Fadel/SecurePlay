@@ -200,7 +200,18 @@ export async function arcadeFixture() {
       options: ['A', 'B'],
       correct_index: 0,
     });
+  /** O Quiz Relâmpago só sorteia perguntas de desafios que o aluno já concluiu. */
+  const unlockQuiz = (usuarioId: number) =>
+    source.getRepository(UsuarioChallenge).save({
+      usuario_id: usuarioId,
+      challenge_id: challenge.id,
+      progress: 100,
+      completed: true,
+      completed_at: new Date(),
+      answered_question_ids: [],
+    });
   return {
+    unlockQuiz,
     source,
     redis,
     events,

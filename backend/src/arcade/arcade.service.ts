@@ -7,7 +7,6 @@ import {
   OnModuleInit,
 } from '@nestjs/common';
 import { Repository } from 'typeorm';
-import { randomUUID } from 'crypto';
 import { ArcadeGame, ArcadeGameType } from './entities/arcade-game.entity';
 import { DataItem, DataLevel } from './entities/data-item.entity';
 import { RedisService } from '../redis/redis.service';
@@ -235,10 +234,19 @@ export class ArcadeService implements OnModuleInit {
         `Sem tentativas no momento. Proxima em ${Math.ceil(secs / 60)} min.`,
       );
     }
+    const gameInfo = {
+      slug: game.slug,
+      title: game.title,
+      gameType: game.game_type,
+    };
     const handler = this.handlerFor(game.game_type);
-    const run = await handler.buildRun();
-    const runId = randomUUID();
-    await this.submissions.create(usuario_id, runId, game, run.answerKey);
+    // Repetir o start não sorteia outra partida: devolve a aberta do mesmo jogo (M2).
+    const run = await this.submissions.openOrCreate(usuario_id, game, () =>
+      handler.buildRun(usuario_id),
+    );
+    if (run.answerKey === undefined)
+      return { runId: run.runId, game: gameInfo, payload: run.payload, tokens };
+    const runId = run.runId;
     const stored: StoredRun = {
       usuario_id,
       slug: game.slug,
@@ -255,12 +263,7 @@ export class ArcadeService implements OnModuleInit {
     } catch {
       /* A partida já é durável em SQL; este cache é só compatibilidade. */
     }
-    return {
-      runId,
-      game: { slug: game.slug, title: game.title, gameType: game.game_type },
-      payload: run.payload,
-      tokens,
-    };
+    return { runId, game: gameInfo, payload: run.payload, tokens };
   }
   submit(usuario_id: number, runId: string, dto: SubmitRunDto) {
     return this.submissions.submit(usuario_id, runId, dto);

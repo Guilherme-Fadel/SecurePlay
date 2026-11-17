@@ -10,6 +10,7 @@ export interface GameCorrection {
 export interface GameHandler {
   /** Quantidade de itens de uma rodada; exposta no catalogo dos jogos. */
   readonly roundSize?: number;
-  buildRun(): Promise<GameRun>;
+  /** Sorteia a rodada; o aluno define o conjunto permitido em jogos que dependem do estudo. */
+  buildRun(usuarioId: number): Promise<GameRun>;
   correct(answerKey: unknown, dto: SubmitRunDto): GameCorrection;
 }

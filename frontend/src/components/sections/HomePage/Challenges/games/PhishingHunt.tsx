@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { arcadeRewardNote } from '@/lib/arcadeReward';
 import { Search } from 'lucide-react';
 import { startRun, submitRun, type PhishingSampleView, type PhishingAnswer, type SubmitRunResponse, type TokenState, } from '@/services/arcade';
 import { CoinFact, GameWorld, WorldFlags, WorldGuide, WorldOpening, WorldPaper, WorldResult, WorldReviewItem, WorldReviewList, WorldState } from '../world';
@@ -242,9 +243,7 @@ export function PhishingHunt({ onExit, onFinished, xp, roundSize }: PhishingHunt
           </div>
         </div>)}
 
-      {phase === 'result' && result && (<WorldResult title="Casos encerrados!" score={result.score} xp={result.xpEarned} xpText={`${solved} de ${feedbackItems.length || total} casos resolvidos corretamente.`} note={result.multiplier < 1
-                ? `${result.playsToday}ª vez hoje: XP reduzido para ${Math.round(result.multiplier * 100)}%.`
-                : undefined} guide="Bom faro! Veja o que cada mensagem escondia." onPlayAgain={playAgain} playAgainSuffix="· 1 ficha" onExit={onExit}>
+      {phase === 'result' && result && (<WorldResult title="Casos encerrados!" score={result.score} xp={result.xpEarned} xpText={`${solved} de ${feedbackItems.length || total} casos resolvidos corretamente.`} note={arcadeRewardNote(result)} guide="Bom faro! Veja o que cada mensagem escondia." onPlayAgain={playAgain} playAgainSuffix="· 1 ficha" onExit={onExit}>
           <WorldReviewList label="Resultado de cada caso">
             {feedbackItems.map((item, itemIndex) => {
                 const chosen = answers.find((answer) => answer.sampleId === item.sampleId);

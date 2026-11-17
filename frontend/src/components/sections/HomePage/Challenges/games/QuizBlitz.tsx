@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { arcadeRewardNote } from '@/lib/arcadeReward';
 import { startRun, submitRun, type QuizAnswer, type QuizQuestion, type SubmitRunResponse, type TokenState, } from '@/services/arcade';
 import { getChallengeArtwork } from '@/lib/challengeArtwork';
 import { CoinFact, GameWorld, WorldFlags, WorldGuide, WorldOpening, WorldResult, WorldReviewItem, WorldReviewList, WorldState, } from '../world';
@@ -294,9 +295,7 @@ export function QuizBlitz({ onExit, xp, roundSize, onFinished }: QuizBlitzProps)
           </div>
         </>)}
 
-      {phase === 'result' && result && (<WorldResult title="Show encerrado!" score={result.score} xp={result.xpEarned} xpText={`${okCount} de ${total} respostas certas.`} note={result.multiplier < 1
-                ? `${result.playsToday}ª vez hoje: XP reduzido para ${Math.round(result.multiplier * 100)}% da base de ${result.xpBase}.`
-                : undefined} guide="Mandou bem! Vamos ver o que aprendemos." onPlayAgain={playAgain} playAgainSuffix="· 1 ficha" onExit={onExit}>
+      {phase === 'result' && result && (<WorldResult title="Show encerrado!" score={result.score} xp={result.xpEarned} xpText={`${okCount} de ${total} respostas certas.`} note={arcadeRewardNote(result, true)} guide="Mandou bem! Vamos ver o que aprendemos." onPlayAgain={playAgain} playAgainSuffix="· 1 ficha" onExit={onExit}>
           <WorldReviewList>
             {feedbackItems.map((item, itemIndex) => {
                 const question = questions.find((candidate) => candidate.id === item.questionId);

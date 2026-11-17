@@ -1,6 +1,7 @@
 import { BadRequestException, Inject, Injectable } from '@nestjs/common';
 import { DataSource } from 'typeorm';
 import { isUUID } from 'class-validator';
+import { randomUUID } from 'node:crypto';
 import { RedisService } from '../redis/redis.service';
 import { ActivityCompletionService } from '../common/gamification/activity-completion.service';
 import { ArcadeRun } from './entities/arcade-run.entity';
@@ -8,8 +9,15 @@ import { ArcadeGame, ArcadeGameType } from './entities/arcade-game.entity';
 import { QuizRelampagoHandler } from './games/quiz-relampago.handler';
 import { PhishingHandler } from './games/phishing.handler';
 import { DataClassifyHandler } from './games/data-classify.handler';
-import { GameHandler } from './games/game-handler';
+import { GameHandler, GameRun } from './games/game-handler';
 import { SubmitRunDto } from './dto/arcade.dto';
+
+/** Partida entregue no start; `answerKey` só existe quando a partida acabou de ser criada. */
+export interface OpenedRun {
+  runId: string;
+  payload: unknown;
+  answerKey?: unknown;
+}
 
 @Injectable()
 export class ArcadeRunStore {
@@ -21,20 +29,41 @@ export class ArcadeRunStore {
     private readonly phishing: PhishingHandler,
     private readonly classify: DataClassifyHandler,
   ) {}
-  async create(
+  /**
+   * Devolve a partida aberta do mesmo jogo (não enviada e não expirada) ou sorteia outra,
+   * serializado pela trava do aluno: starts simultâneos não abrem partidas extras (M2).
+   */
+  async openOrCreate(
     user: number,
-    runId: string,
     game: ArcadeGame,
-    answerKey: unknown,
-  ): Promise<void> {
-    await this.source.getRepository(ArcadeRun).save({
-      run_id: runId,
-      usuario_id: user,
-      slug: game.slug,
-      game_type: game.game_type,
-      xp_base: game.xp_base,
-      answer_key: answerKey,
-      expires_at: new Date(Date.now() + 30 * 60_000),
+    build: () => Promise<GameRun>,
+  ): Promise<OpenedRun> {
+    return this.completions.updateProgress(user, async (manager) => {
+      const repository = manager.getRepository(ArcadeRun);
+      const open = await repository
+        .createQueryBuilder('run')
+        .where('run.usuario_id = :user', { user })
+        .andWhere('run.slug = :slug', { slug: game.slug })
+        .andWhere('run.submitted_at IS NULL')
+        .andWhere('run.completed = :completed', { completed: false })
+        .andWhere('run.expires_at > :now', { now: new Date() })
+        .andWhere('run.payload IS NOT NULL')
+        .orderBy('run.created_at', 'DESC')
+        .getOne();
+      if (open) return { runId: open.run_id, payload: open.payload };
+      const run = await build();
+      const runId = randomUUID();
+      await repository.save({
+        run_id: runId,
+        usuario_id: user,
+        slug: game.slug,
+        game_type: game.game_type,
+        xp_base: game.xp_base,
+        answer_key: run.answerKey,
+        payload: run.payload,
+        expires_at: new Date(Date.now() + 30 * 60_000),
+      });
+      return { runId, payload: run.payload, answerKey: run.answerKey };
     });
   }
 

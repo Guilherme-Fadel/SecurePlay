@@ -5,7 +5,8 @@ describe('Regras de recompensa do arcade', () => {
     [1, 1, 100],
     [2, 0.5, 50],
     [3, 0.25, 25],
-    [10, 0.25, 25],
+    [4, 0, 0],
+    [10, 0, 0],
   ])(
     'partida %i aplica multiplicador %f e XP %i',
     (plays, multiplier, xpEarned) => {
@@ -15,9 +16,16 @@ describe('Regras de recompensa do arcade', () => {
       });
     },
   );
-  it('mantém piso positivo e não aplica piso quando não houve acerto', () => {
-    expect(arcadeReward(20, 100, 3).xpEarned).toBe(10);
-    expect(arcadeReward(0, 100, 3).xpEarned).toBe(0);
+  it('piso de 10 XP só na 1ª partida do dia e nunca sem acerto', () => {
+    expect(arcadeReward(5, 100, 1).xpEarned).toBe(10);
+    expect(arcadeReward(20, 100, 3).xpEarned).toBe(5);
+    expect(arcadeReward(0, 100, 1).xpEarned).toBe(0);
+  });
+  it('4ª partida do dia rende 0 XP', () => {
+    expect(arcadeReward(100, 100, 4)).toMatchObject({
+      multiplier: 0,
+      xpEarned: 0,
+    });
   });
   it('soma as duas chaves legadas quando o fuso UTC dividiu o dia de São Paulo', () => {
     // Jest isola process.env; modelar explicitamente os getters do host UTC.

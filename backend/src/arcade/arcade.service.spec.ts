@@ -6,6 +6,7 @@ import {
 import { ArcadeService } from './arcade.service';
 import { ArcadeGameType } from './entities/arcade-game.entity';
 import { resolveCompanyParameters } from '../config/features';
+import type { GameRun } from './games/game-handler';
 
 describe('ArcadeService — catálogo e início durável', () => {
   const setup = () => {
@@ -40,7 +41,21 @@ describe('ArcadeService — catálogo e início durável', () => {
       requireGame: jest.fn().mockResolvedValue(undefined),
     };
     const submissions = {
-      create: jest.fn().mockResolvedValue(undefined),
+      // Sem partida aberta: sorteia e grava (a trava por aluno fica no ArcadeRunStore).
+      openOrCreate: jest.fn(
+        async (
+          _user: number,
+          _game: unknown,
+          build: () => Promise<GameRun>,
+        ) => {
+          const run = await build();
+          return {
+            runId: 'nova-1',
+            payload: run.payload,
+            answerKey: run.answerKey,
+          };
+        },
+      ),
       submit: jest.fn(),
     };
     const service = new ArcadeService(
@@ -126,7 +141,7 @@ describe('ArcadeService — catálogo e início durável', () => {
     await expect(service.start(1, 'quiz-relampago')).rejects.toThrow(
       NotFoundException,
     );
-    expect(submissions.create).not.toHaveBeenCalled();
+    expect(submissions.openOrCreate).not.toHaveBeenCalled();
   });
   it('recusa jogo inexistente ou inativo', async () => {
     const { service, games } = setup();
@@ -144,7 +159,7 @@ describe('ArcadeService — catálogo e início durável', () => {
     await expect(service.start(1, 'termotech')).rejects.toThrow(
       BadRequestException,
     );
-    expect(submissions.create).not.toHaveBeenCalled();
+    expect(submissions.openOrCreate).not.toHaveBeenCalled();
   });
   it('não cria partida quando não há fichas', async () => {
     const { service, tokens, handler } = setup();
@@ -162,12 +177,27 @@ describe('ArcadeService — catálogo e início durável', () => {
   it('só retorna a partida depois de persistir a chave de correção no servidor', async () => {
     const { service, submissions, game } = setup();
     const result = await service.start(7, 'quiz-relampago');
-    expect(submissions.create).toHaveBeenCalledWith(7, result.runId, game, {
-      correct: {},
-      order: [],
-    });
+    expect(submissions.openOrCreate).toHaveBeenCalledWith(
+      7,
+      game,
+      expect.any(Function),
+    );
+    expect(result.runId).toBe('nova-1');
     expect(result.payload).toEqual({ questions: [] });
     expect(result).not.toHaveProperty('answerKey');
+  });
+  it('start com partida aberta devolve a mesma partida', async () => {
+    const { service, submissions, handler } = setup();
+    submissions.openOrCreate.mockResolvedValueOnce({
+      runId: 'aberta-1',
+      payload: { questions: [{ id: 3 }] },
+    } as never);
+    const result = await service.start(7, 'quiz-relampago');
+    expect(result).toMatchObject({
+      runId: 'aberta-1',
+      payload: { questions: [{ id: 3 }] },
+    });
+    expect(handler.buildRun).not.toHaveBeenCalled();
   });
   it('falha no cache não perde uma partida já persistida', async () => {
     const { service, redis } = setup();
@@ -178,7 +208,9 @@ describe('ArcadeService — catálogo e início durável', () => {
   });
   it('não anuncia partida quando a persistência SQL falha', async () => {
     const { service, redis, submissions } = setup();
-    submissions.create.mockRejectedValue(new Error('fixture SQL unavailable'));
+    submissions.openOrCreate.mockRejectedValue(
+      new Error('fixture SQL unavailable'),
+    );
     await expect(service.start(7, 'quiz-relampago')).rejects.toThrow(
       'fixture SQL unavailable',
     );

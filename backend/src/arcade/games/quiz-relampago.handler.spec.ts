@@ -2,6 +2,8 @@ import { QuizRelampagoHandler } from './quiz-relampago.handler';
 import { Question } from '../../question/question.entity';
 import { Repository } from 'typeorm';
 class TestQuizHandler extends QuizRelampagoHandler {
+  // Os casos de correção usam rodadas curtas; o tamanho mínimo tem teste próprio.
+  roundSize = 0;
   public fixture: Question[] = [];
   protected pickQuestions(): Promise<Question[]> {
     return Promise.resolve(this.fixture);
@@ -25,7 +27,7 @@ describe('QuizRelampagoHandler', () => {
   });
   it('nao expoe correct_index no payload da partida', async () => {
     handler.fixture = [makeQuestion(1, 2), makeQuestion(2, 0)];
-    const run = await handler.buildRun();
+    const run = await handler.buildRun(7);
     const payload = run.payload as {
       questions: Array<{ id: number; text: string; options: string[] }>;
     };
@@ -50,7 +52,7 @@ describe('QuizRelampagoHandler', () => {
     customizedLegacy.options = [...legacy.options];
     handler.fixture = [legacy, custom, customizedLegacy];
 
-    const run = await handler.buildRun();
+    const run = await handler.buildRun(7);
     const payload = run.payload as {
       questions: Array<{ id: number; text: string; options: string[] }>;
     };
@@ -87,7 +89,7 @@ describe('QuizRelampagoHandler', () => {
   });
   it('todas corretas resultam em score 100 (com combo limitado a 100)', async () => {
     handler.fixture = [makeQuestion(1, 1), makeQuestion(2, 2)];
-    const run = await handler.buildRun();
+    const run = await handler.buildRun(7);
     const result = handler.correct(run.answerKey, {
       quizAnswers: [
         { questionId: 1, selectedIndex: 1 },
@@ -103,7 +105,7 @@ describe('QuizRelampagoHandler', () => {
       makeQuestion(3, 3),
       makeQuestion(4, 0),
     ];
-    const run = await handler.buildRun();
+    const run = await handler.buildRun(7);
     const result = handler.correct(run.answerKey, {
       quizAnswers: [
         { questionId: 1, selectedIndex: 1 },
@@ -121,7 +123,7 @@ describe('QuizRelampagoHandler', () => {
   });
   it('pergunta respondida que nao existe na run e ignorada (nao pontua)', async () => {
     handler.fixture = [makeQuestion(1, 1)];
-    const run = await handler.buildRun();
+    const run = await handler.buildRun(7);
     const result = handler.correct(run.answerKey, {
       quizAnswers: [{ questionId: 999, selectedIndex: 1 }],
     });
@@ -130,5 +132,47 @@ describe('QuizRelampagoHandler', () => {
     };
     expect(fb.correctCount).toBe(0);
     expect(result.score).toBe(0);
+  });
+});
+
+describe('QuizRelampagoHandler — sorteio só de desafios concluídos (M2)', () => {
+  interface FakeBuilder {
+    innerJoin: jest.Mock<FakeBuilder>;
+    orderBy: jest.Mock<FakeBuilder>;
+    limit: jest.Mock<FakeBuilder>;
+    getMany: jest.Mock<Promise<Question[]>>;
+  }
+  function queryBuilder(rows: Question[]): FakeBuilder {
+    const builder = {} as FakeBuilder;
+    builder.innerJoin = jest.fn(() => builder);
+    builder.orderBy = jest.fn(() => builder);
+    builder.limit = jest.fn(() => builder);
+    builder.getMany = jest.fn(() => Promise.resolve(rows));
+    return builder;
+  }
+
+  it('não sorteia pergunta de desafio não concluído', async () => {
+    const rows = Array.from({ length: 8 }, (_, i) => makeQuestion(i + 1, 0));
+    const builder = queryBuilder(rows);
+    const handler = new QuizRelampagoHandler({
+      createQueryBuilder: () => builder,
+    } as unknown as Repository<Question>);
+    await handler.buildRun(42);
+    expect(builder.innerJoin).toHaveBeenCalledWith(
+      expect.anything(),
+      'uc',
+      expect.stringContaining('uc.completed = :completed'),
+      { usuarioId: 42, completed: true },
+    );
+  });
+
+  it('pool insuficiente responde 409 pedindo mais desafios', async () => {
+    const handler = new QuizRelampagoHandler({
+      createQueryBuilder: () => queryBuilder([makeQuestion(1, 0)]),
+    } as unknown as Repository<Question>);
+    await expect(handler.buildRun(42)).rejects.toMatchObject({
+      status: 409,
+      message: 'Conclua mais desafios diários para liberar o Quiz Relâmpago.',
+    });
   });
 });

@@ -15,13 +15,22 @@ export interface ArcadeResult {
   tokens: TokenState;
 }
 
+/** Partidas do mesmo jogo no dia: 1ª 100%, 2ª 50%, 3ª 25%, da 4ª em diante 0 XP (D3). */
+export function arcadeMultiplier(plays: number): number {
+  if (plays <= 1) return 1;
+  if (plays === 2) return 0.5;
+  return plays === 3 ? 0.25 : 0;
+}
+
 export function arcadeReward(score: number, xpBase: number, plays: number) {
   const base = Math.round((xpBase * score) / 100);
-  const multiplier = plays <= 1 ? 1 : plays === 2 ? 0.5 : 0.25;
+  const multiplier = arcadeMultiplier(plays);
+  const earned = Math.round(base * multiplier);
   return {
     xpBase: base,
     multiplier,
-    xpEarned: base > 0 ? Math.max(10, Math.round(base * multiplier)) : 0,
+    // O mínimo de 10 XP vale só para a 1ª partida do dia.
+    xpEarned: base > 0 && plays <= 1 ? Math.max(10, earned) : earned,
   };
 }
 

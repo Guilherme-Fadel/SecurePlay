@@ -17,7 +17,7 @@ import { UsuarioArcadeStats } from './entities/usuario-arcade-stats.entity';
 import { ArcadeSubmissionService } from './arcade-submission.service';
 import { ArcadeGameType } from './entities/arcade-game.entity';
 import { resolveCompanyParameters } from '../config/features';
-import { legacyArcadeDayKeys } from './arcade-rewards';
+import { arcadeMultiplier, legacyArcadeDayKeys } from './arcade-rewards';
 import { ArcadeRunCompletion1793318400000 } from '../database/migrations/1793318400000-arcade-run-completion';
 
 const isolated =
@@ -37,6 +37,7 @@ isolated('C04 — partidas duráveis, recibos e XP no MySQL/Redis reais', () => 
       password: 'fixture-unused',
       empresa_id: f.company.id,
     });
+    await f.unlockQuiz(user.id);
     await f.tokens.refillToCap(user.id);
   });
   afterEach(() => {
@@ -330,7 +331,7 @@ isolated('C04 — partidas duráveis, recibos e XP no MySQL/Redis reais', () => 
 
   it('importa run legada mantendo proprietário e TTL restante, sem renovar 30min', async () => {
     const runId = randomUUID();
-    const built = await f.quiz.buildRun();
+    const built = await f.quiz.buildRun(user.id);
     await f.redis.set(
       `arcade-run:${user.id}:${runId}`,
       JSON.stringify({
@@ -375,7 +376,9 @@ isolated('C04 — partidas duráveis, recibos e XP no MySQL/Redis reais', () => 
       await f.redis.set(key, '2', 600);
     const run = await start();
     const result = await f.arcade.submit(user.id, run.runId, answers(run));
-    expect(result.multiplier).toBe(0.25);
+    // Contador legado somado: a partida cai na faixa reduzida (25%) ou já sem XP (0).
+    expect(result.multiplier).toBe(arcadeMultiplier(result.playsToday));
+    expect(result.multiplier).toBeLessThanOrEqual(0.25);
     expect(result.playsToday).toBe(
       legacyArcadeDayKeys(user.id, 'quiz-relampago', new Date()).length * 2 + 1,
     );
@@ -512,6 +515,7 @@ isolated('C04 — partidas duráveis, recibos e XP no MySQL/Redis reais', () => 
       password: 'fixture-unused',
       empresa_id: f.company.id,
     });
+    await f.unlockQuiz(other.id);
     const otherRun = await f.arcade.start(other.id, 'quiz-relampago');
     let release!: () => void;
     let entered!: () => void;
@@ -559,7 +563,7 @@ isolated('C04 — partidas duráveis, recibos e XP no MySQL/Redis reais', () => 
     }
   });
 
-  it('3ª partida com XP baixo mantém o piso de 10, sem aplicá-lo a score zero', async () => {
+  it('3ª partida com XP baixo não recebe o piso de 10 (só a 1ª do dia)', async () => {
     for (let index = 0; index < 2; index++) {
       const run = await start();
       await f.arcade.submit(user.id, run.runId, answers(run));
@@ -568,6 +572,6 @@ isolated('C04 — partidas duráveis, recibos e XP no MySQL/Redis reais', () => 
     jest.spyOn(f.quiz, 'correct').mockReturnValue({ score: 20, feedback: {} });
     expect(
       await f.arcade.submit(user.id, run.runId, answers(run)),
-    ).toMatchObject({ xpBase: 20, multiplier: 0.25, xpEarned: 10 });
+    ).toMatchObject({ xpBase: 20, multiplier: 0.25, xpEarned: 5 });
   });
 });

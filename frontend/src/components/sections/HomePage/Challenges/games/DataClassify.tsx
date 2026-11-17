@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { arcadeRewardNote } from '@/lib/arcadeReward';
 import { useReducedMotion } from 'motion/react';
 import { startRun, submitRun, type DataItemView, type DataAnswer, type SubmitRunResponse, type TokenState, } from '@/services/arcade';
 import { CoinFact, GameWorld, WorldButton, WorldChip, WorldFlags, WorldGuide, WorldOpening, WorldResult, WorldReviewItem, WorldReviewList, WorldState, } from '../world';
@@ -193,9 +194,7 @@ export function DataClassify({ onExit, xp, roundSize, onFinished }: DataClassify
         })?.items ?? [];
         const okCount = feedbackItems.filter((item) => item.correct).length;
         return (<GameWorld {...world} deco={<Deco />} celebrate>
-        <WorldResult title="Segredos protegidos!" score={result.score} xp={result.xpEarned} xpText={`${okCount} de ${items.length} informações no escudo certo.`} note={result.multiplier < 1
-                ? `${result.playsToday}ª vez hoje: XP reduzido para ${Math.round(result.multiplier * 100)}%.`
-                : undefined} guide="Tudo guardado! Confira se cada escudo ficou certinho." onPlayAgain={playAgain} playAgainSuffix="· 1 ficha" onExit={onExit}>
+        <WorldResult title="Segredos protegidos!" score={result.score} xp={result.xpEarned} xpText={`${okCount} de ${items.length} informações no escudo certo.`} note={arcadeRewardNote(result)} guide="Tudo guardado! Confira se cada escudo ficou certinho." onPlayAgain={playAgain} playAgainSuffix="· 1 ficha" onExit={onExit}>
           <WorldReviewList label="Resultado de cada informação">
             {feedbackItems.map((item) => {
                 const levelLabel = LEVELS.find((level) => level.key === item.correctLevel)?.label ?? item.correctLevel;

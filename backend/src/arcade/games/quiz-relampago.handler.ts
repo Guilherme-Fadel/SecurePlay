@@ -1,9 +1,12 @@
-import { Injectable, Inject } from '@nestjs/common';
+import { ConflictException, Injectable, Inject } from '@nestjs/common';
 import { Repository } from 'typeorm';
 import { Question } from '../../question/question.entity';
+import { UsuarioChallenge } from '../../usuario-challenge/usuario-challenge.entity';
 import { GameHandler, GameRun, GameCorrection } from './game-handler';
 import { SubmitRunDto } from '../dto/arcade.dto';
 const QUIZ_SIZE = 8;
+export const QUIZ_POOL_LOCKED_MESSAGE =
+  'Conclua mais desafios diários para liberar o Quiz Relâmpago.';
 const COMBO_BONUS_PER_STREAK = 2;
 interface QuizAnswerKey {
   correct: Record<number, number>;
@@ -85,20 +88,32 @@ function presentQuestion(
 }
 @Injectable()
 export class QuizRelampagoHandler implements GameHandler {
-  readonly roundSize = QUIZ_SIZE;
+  readonly roundSize: number = QUIZ_SIZE;
   constructor(
     @Inject('QUESTION_REPOSITORY')
     private readonly questionRepository: Repository<Question>,
   ) {}
-  protected async pickQuestions(size: number): Promise<Question[]> {
+  /** Só perguntas de desafios que o aluno já concluiu: estudo antes de jogo (D3). */
+  protected async pickQuestions(
+    size: number,
+    usuarioId: number,
+  ): Promise<Question[]> {
     return this.questionRepository
       .createQueryBuilder('q')
+      .innerJoin(
+        UsuarioChallenge,
+        'uc',
+        'uc.challenge_id = q.challenge_id AND uc.usuario_id = :usuarioId AND uc.completed = :completed',
+        { usuarioId, completed: true },
+      )
       .orderBy('RAND()')
       .limit(size)
       .getMany();
   }
-  async buildRun(): Promise<GameRun> {
-    const questions = await this.pickQuestions(this.roundSize);
+  async buildRun(usuarioId: number): Promise<GameRun> {
+    const questions = await this.pickQuestions(this.roundSize, usuarioId);
+    if (questions.length < this.roundSize)
+      throw new ConflictException(QUIZ_POOL_LOCKED_MESSAGE);
     const correct: Record<number, number> = {};
     const order: number[] = [];
     for (const q of questions) {
