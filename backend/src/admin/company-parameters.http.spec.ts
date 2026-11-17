@@ -479,6 +479,20 @@ describe('HTTP — parâmetros institucionais', () => {
             }
           : null;
       },
+      // CompanyFeaturesService.forUser usa query builder (1 consulta); a fixture
+      // resolve o mesmo resultado delegando ao findOne acima.
+      createQueryBuilder: () => {
+        let id = 0;
+        const builder = {
+          leftJoinAndSelect: () => builder,
+          where: (_condition: string, params: { userId: number }) => {
+            id = params.userId;
+            return builder;
+          },
+          getOne: () => userRepository.findOne({ where: { id } }),
+        };
+        return builder;
+      },
     };
     const companyRepository = {
       findOne: async ({ where }: { where: { id: number } }) =>

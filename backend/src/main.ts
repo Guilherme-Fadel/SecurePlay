@@ -13,19 +13,13 @@ import {
   isDevEnvironment,
   isLocalOrigin,
 } from './config/origins';
-
-function getTrustProxy(): boolean | number {
-  const configuredHops = Number(process.env.TRUST_PROXY ?? 0);
-  return Number.isInteger(configuredHops) && configuredHops > 0
-    ? configuredHops
-    : false;
-}
+import { trustProxyFromEnv } from './config/trust-proxy';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestFastifyApplication>(
     AppModule,
     new FastifyAdapter({
-      trustProxy: getTrustProxy(),
+      trustProxy: trustProxyFromEnv(),
       logger: {
         redact: ['req.headers.authorization', 'req.body.token'],
       },

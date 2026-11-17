@@ -1,4 +1,5 @@
 import fastify from 'fastify';
+import { trustProxyFromEnv } from '../../config/trust-proxy';
 import {
   AppThrottlerGuard,
   PROXY_CLIENT_IP_HEADER,
@@ -15,7 +16,7 @@ class TestGuard extends AppThrottlerGuard {
 describe('AppThrottlerGuard — identidade calculada pelo Fastify', () => {
   const guard = Object.create(TestGuard.prototype) as TestGuard;
   it('separa clientes sob o mesmo proxy confiável e mantém a identidade do mesmo cliente', async () => {
-    const app = fastify({ trustProxy: 1 });
+    const app = fastify({ trustProxy: trustProxyFromEnv('1') });
     app.get('/', async (request) => ({
       tracker: await guard.tracker(
         request as unknown as Record<string, unknown>,
@@ -66,7 +67,7 @@ describe('AppThrottlerGuard — identidade calculada pelo Fastify', () => {
     it('separa alunos atrás do mesmo IP da Cloudflare', async () => {
       const previous = process.env.PROXY_SHARED_SECRET;
       process.env.PROXY_SHARED_SECRET = secret;
-      const app = fastify({ trustProxy: 1 });
+      const app = fastify({ trustProxy: trustProxyFromEnv('1') });
       app.get('/', async (request) => ({
         tracker: await guard.tracker(request as unknown as Record<string, unknown>),
       }));

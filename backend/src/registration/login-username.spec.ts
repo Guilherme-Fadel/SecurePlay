@@ -140,7 +140,7 @@ describe('Usuário de acesso por convite', () => {
   });
   it('recusa duplicado global sem gerar conta nem consumir convite', async () => {
     const { service, users, invites } = setup();
-    users.findOne.mockResolvedValue({ id: 99, empresa_id: 33 } as never);
+    users.findOne.mockResolvedValue({ id: 99, empresa_id: 33 });
     await expect(
       service.startInvite('token', {
         name: 'Aluno',

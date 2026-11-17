@@ -15,12 +15,9 @@ describe('AdminAuditService.registrar', () => {
     const save = jest.fn().mockRejectedValue(new Error('falha de escrita'));
     const manager = { getRepository: jest.fn().mockReturnValue({ save }) };
     const service = new AdminAuditService(dataSource as never);
-    await expect(
-      (service.registrar as (e: unknown, m: unknown) => Promise<void>)(
-        evento,
-        manager,
-      ),
-    ).rejects.toThrow('falha de escrita');
+    await expect(service.registrar(evento, manager as never)).rejects.toThrow(
+      'falha de escrita',
+    );
     expect(manager.getRepository).toHaveBeenCalledWith(AdminAuditEvent);
     expect(dataSource.getRepository).not.toHaveBeenCalled();
     expect(save).toHaveBeenCalledWith(

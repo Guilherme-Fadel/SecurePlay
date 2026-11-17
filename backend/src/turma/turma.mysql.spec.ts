@@ -440,6 +440,7 @@ turmaIntegration('TurmaService em MySQL descartável', () => {
     expect(lista.items).toEqual([
       {
         id: turma.id,
+        empresa_id: massa.escolaA.id,
         nome: 'Lista',
         ano_letivo: 2030,
         ativa: true,

@@ -1,4 +1,4 @@
-import { Table, TableColumn, TableIndex } from 'typeorm';
+import { Table, TableColumn } from 'typeorm';
 import { AddSchoolStudentInvite1792800000000 } from './1792800000000-add-school-student-invite';
 
 describe('AddSchoolStudentInvite migration', () => {
@@ -26,7 +26,7 @@ describe('AddSchoolStudentInvite migration', () => {
         name: 'ux_usuario_login_code',
         columnNames: ['login_code'],
         isUnique: true,
-      } as Partial<TableIndex>),
+      }),
     );
     const inviteMode = queryRunner.addColumn.mock.calls.find(
       ([table, column]) => table === 'convite' && column.name === 'registration_mode',

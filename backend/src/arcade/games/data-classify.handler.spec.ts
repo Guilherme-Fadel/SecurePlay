@@ -14,7 +14,7 @@ function item(id: number, level: DataLevel): DataItem {
     correct_level: level,
     explanation: 'motivo',
     active: true,
-  } as DataItem;
+  };
 }
 describe('DataClassifyHandler', () => {
   let handler: TestDataHandler;

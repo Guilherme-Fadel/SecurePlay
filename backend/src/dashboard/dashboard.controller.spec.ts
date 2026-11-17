@@ -34,7 +34,7 @@ describe('DashboardController ranking query', () => {
   );
 
   it('returns 400 for an invalid scope', async () => {
-    await expect(controller.getRanking(request, '-1' as never)).rejects.toThrow(
+    await expect(controller.getRanking(request, '-1')).rejects.toThrow(
       BadRequestException,
     );
   });

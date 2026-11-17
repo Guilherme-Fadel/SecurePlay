@@ -72,7 +72,12 @@ isolated(
       type: 'achievement',
       created_at: new Date(),
     });
+    // Esta suíte prova a revogação por session_version entre instâncias. O cache
+    // de 2 s da conta (jwt.strategy.ts) é um atraso documentado e tem cobertura
+    // própria em jwt-strategy-session-version.spec.ts; aqui fica desligado.
+    const previousCacheTtl = process.env.AUTH_USER_CACHE_TTL_MS;
     beforeAll(async () => {
+      process.env.AUTH_USER_CACHE_TTL_MS = '0';
       f = await arcadeFixture();
       a = await sessionApplication(f);
       b = await sessionApplication(f);
@@ -99,6 +104,9 @@ isolated(
       await b?.app.close();
       f?.redis.onModuleDestroy();
       await f?.source.destroy();
+      if (previousCacheTtl === undefined)
+        delete process.env.AUTH_USER_CACHE_TTL_MS;
+      else process.env.AUTH_USER_CACHE_TTL_MS = previousCacheTtl;
     });
 
     it('troca senha, renova cookie e rejeita JWT antigo em HTTP e handshake', async () => {

@@ -25,7 +25,7 @@ function sample(
     explanation: 'motivo',
     difficulty: PhishingDifficulty.INICIANTE,
     active: true,
-  } as PhishingSample;
+  };
 }
 describe('PhishingHandler', () => {
   let handler: TestPhishingHandler;

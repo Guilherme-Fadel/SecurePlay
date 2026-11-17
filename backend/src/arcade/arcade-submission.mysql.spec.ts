@@ -79,14 +79,21 @@ isolated('C04 — partidas duráveis, recibos e XP no MySQL/Redis reais', () => 
     await f.source.query('DROP TRIGGER fixture_arcade_failure');
   };
 
-  it('migração suporta up/down/up vazios sem sincronização antecipada', async () => {
+  it('migração faz down/up convivendo com o synchronize de arcade_run', async () => {
     const runner = f.source.createQueryRunner();
     const migration = new ArcadeRunCompletion1793318400000();
     try {
       await migration.down(runner);
-      await f.source.synchronize();
       expect(await runner.hasTable('arcade_run')).toBe(false);
+      expect(await runner.hasTable('arcade_daily_plays')).toBe(false);
+      // Desde b653a92 a entidade ArcadeRun é sincronizada; o contador diário
+      // continua só na migração (synchronize: false) e o up não pode depender
+      // da ausência de arcade_run.
+      await f.source.synchronize();
+      expect(await runner.hasTable('arcade_run')).toBe(true);
+      expect(await runner.hasTable('arcade_daily_plays')).toBe(false);
       await migration.up(runner);
+      expect(await runner.hasTable('arcade_daily_plays')).toBe(true);
     } finally {
       await runner.release();
     }
