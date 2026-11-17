@@ -13,6 +13,10 @@ import { ChangePasswordDto } from './dto/change-password.dto';
 import { sessionPayload, sessionTokenHash } from './session';
 import { LoginAttemptsService, loginSubject } from './login-attempts.service';
 
+/** Hash bcrypt (custo 10, igual ao das contas) de um texto aleatório descartado. */
+export const TIMING_DUMMY_HASH =
+  '$2b$10$Yi9abbrr2oaTtgs.vbaSpuh6hIz8DD4cGuGhNNhamxLz1hTJuOTVG';
+
 @Injectable()
 export class AuthService {
   constructor(
@@ -66,8 +70,13 @@ export class AuthService {
     const attemptSubject = loginSubject(identifier, user?.id);
     await this.loginAttempts.assertNotLocked(attemptSubject);
 
-    const valid =
-      !!user?.active && (await bcrypt.compare(password, user.password));
+    // Conta inexistente ou inativa também paga um bcrypt, para o tempo não revelar qual é o caso.
+    const usable = !!user?.active;
+    const matches = await bcrypt.compare(
+      password,
+      usable ? user.password : TIMING_DUMMY_HASH,
+    );
+    const valid = usable && matches;
     if (!user || !valid) {
       await this.loginAttempts.registerFailure(attemptSubject);
       throw new UnauthorizedException('Usuário ou senha inválidos');

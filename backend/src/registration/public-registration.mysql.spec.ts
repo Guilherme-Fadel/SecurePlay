@@ -27,6 +27,7 @@ isolated('C20 — respostas públicas em HTTP/MySQL/Redis descartáveis', () => 
   let redis: RedisService;
   let app: NestFastifyApplication;
   let company: Empresa;
+  let publicRegistration: PublicRegistrationService;
   const email = {
     sendVerification: jest.fn(),
     sendPasswordSetup: jest.fn(),
@@ -101,7 +102,7 @@ isolated('C20 — respostas públicas em HTTP/MySQL/Redis descartáveis', () => 
       .getRepository(Empresa)
       .save({ nome: 'Escola Fixture C20' });
     const registration = new RegistrationService(source, email as never);
-    const publicRegistration = new PublicRegistrationService(
+    publicRegistration = new PublicRegistrationService(
       registration,
       email as never,
       redis,
@@ -123,6 +124,8 @@ isolated('C20 — respostas públicas em HTTP/MySQL/Redis descartáveis', () => 
     await app.init();
     await app.getHttpAdapter().getInstance().ready();
   }, 30_000);
+  afterEach(() => publicRegistration.settled());
+
   beforeEach(() => {
     jest.clearAllMocks();
     email.sendVerification.mockResolvedValue(undefined);
@@ -321,6 +324,7 @@ isolated('C20 — respostas públicas em HTTP/MySQL/Redis descartáveis', () => 
     const response = await post('resend', { email: address });
     expect(response.statusCode).toBe(201);
     expect(response.json()).toEqual(PUBLIC_REGISTRATION_RESPONSE);
+    await publicRegistration.settled();
     expect(
       (await source.getRepository(Usuario).findOneByOrFail({ id: user.id }))
         .password_setup_token_hash,
