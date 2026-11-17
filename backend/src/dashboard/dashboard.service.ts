@@ -15,7 +15,7 @@ import { CompanyFeaturesService } from '../common/features/company-features.serv
 import { Role } from '../auth/roles.enum';
 import { loadRankingWeek, unavailableRankingWeek } from './ranking-weekly';
 import { getRankingSeason, getSeasonXpByUser } from './ranking-season';
-import { rankKey } from './rank-key';
+import { rankDisplayName, rankKey } from './rank-key';
 import { Empresa } from '../empresa/empresa.entity';
 import { creditSeasonXp } from '../common/gamification/credit-season-xp';
 import { closeRankingSeason, ensurePendingRankingSeasonsClosed, historicalSeason, loadSeasonPoints, rankingHistoryContext, RankingMode } from './ranking-history';
@@ -230,13 +230,12 @@ export class DashboardService implements OnModuleInit, OnModuleDestroy {
               position: previousPosition,
               name:
                 mode === 'season'
-                  ? (entry.usuario?.nickname ?? `Aventureiro ${entry.usuario_id}`)
+                  ? rankDisplayName(entry.usuario?.nickname, entry.usuario_id)
                   : entry.usuario_id === usuario_id
                   ? (currentEntry?.usuario?.nickname ??
                     currentEntry?.usuario?.name ??
                     'Você')
-                  : (entry.usuario?.nickname ??
-                    `Aventureiro ${entry.usuario_id}`),
+                  : rankDisplayName(entry.usuario?.nickname, entry.usuario_id),
               points,
               level: calcLevel(entry.total_points),
               companyName: mode === 'season' ? historicalCompanies.get(entry.usuario_id) ?? null : null,

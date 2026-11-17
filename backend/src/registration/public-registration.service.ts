@@ -11,7 +11,8 @@ import { RegistrationService } from './registration.service';
 import { TrialRegisterDto } from './dto/trial-register.dto';
 import { getLocalDateKey } from '../common/utils/date.utils';
 import {
-  publicEmailDailyLimit,
+  emailBudgetLimit,
+  PublicEmailBudget,
   runWithPublicEmailGate,
 } from './public-email-budget';
 
@@ -40,7 +41,7 @@ export class PublicRegistrationService implements OnApplicationShutdown {
   ) {}
 
   async startTrial(dto: TrialRegisterDto) {
-    return this.acknowledge(() =>
+    return this.acknowledge('cadastro', () =>
       this.registration.startTrial(dto, (address) =>
         this.existingAccountGuidance(address),
       ),
@@ -49,6 +50,7 @@ export class PublicRegistrationService implements OnApplicationShutdown {
 
   resend(address: string) {
     return this.acknowledgeInBackground(
+      'recuperacao',
       () => this.registration.resend(address),
       PUBLIC_REGISTRATION_RESPONSE,
     );
@@ -56,6 +58,7 @@ export class PublicRegistrationService implements OnApplicationShutdown {
 
   forgotPassword(address: string) {
     return this.acknowledgeInBackground(
+      'recuperacao',
       () => this.registration.requestPasswordReset(address),
       PUBLIC_PASSWORD_RESET_RESPONSE,
     );
@@ -75,10 +78,11 @@ export class PublicRegistrationService implements OnApplicationShutdown {
    * havia conta, convite pendente ou nada para o endereço.
    */
   private acknowledgeInBackground(
+    budget: PublicEmailBudget,
     action: () => Promise<unknown>,
     response: { sucesso: boolean; mensagem: string },
   ) {
-    const task: Promise<void> = this.withEmailBudget(action)
+    const task: Promise<void> = this.withEmailBudget(budget, action)
       .then(() => undefined)
       .catch((error: unknown) => {
         const name = error instanceof Error ? error.name : 'erro';
@@ -92,11 +96,12 @@ export class PublicRegistrationService implements OnApplicationShutdown {
   }
 
   private async acknowledge(
+    budget: PublicEmailBudget,
     action: () => Promise<unknown>,
     response = PUBLIC_REGISTRATION_RESPONSE,
   ) {
     try {
-      await this.withEmailBudget(action);
+      await this.withEmailBudget(budget, action);
     } catch (error: unknown) {
       if (!(error instanceof ServiceUnavailableException)) throw error;
       // Falha de entrega não pode revelar qual ramo de conta foi encontrado.
@@ -107,19 +112,27 @@ export class PublicRegistrationService implements OnApplicationShutdown {
     return { ...response };
   }
 
-  /** Cada e-mail enviado dentro do fluxo consome o orçamento diário dos fluxos públicos. */
-  private withEmailBudget<T>(action: () => Promise<T>): Promise<T> {
-    return runWithPublicEmailGate(() => this.consumeEmailBudget(), action);
+  /** Cada e-mail enviado dentro do fluxo consome o orçamento diário do seu tipo de fluxo. */
+  private withEmailBudget<T>(
+    budget: PublicEmailBudget,
+    action: () => Promise<T>,
+  ): Promise<T> {
+    return runWithPublicEmailGate(
+      () => this.consumeEmailBudget(budget),
+      action,
+    );
   }
 
-  private async consumeEmailBudget(): Promise<boolean> {
+  private async consumeEmailBudget(
+    budget: PublicEmailBudget,
+  ): Promise<boolean> {
     try {
       const used = await this.redis.incrBy(
-        `public-email:budget:${getLocalDateKey()}`,
+        `public-email:budget:${budget}:${getLocalDateKey()}`,
         1,
         PUBLIC_EMAIL_BUDGET_TTL_SECONDS,
       );
-      return used <= publicEmailDailyLimit();
+      return used <= emailBudgetLimit(budget);
     } catch {
       // Sem Redis o orçamento não é medido; os cooldowns por destinatário continuam valendo.
       this.logger.warn('Orçamento de e-mails públicos indisponível (Redis).');

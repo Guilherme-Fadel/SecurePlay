@@ -170,7 +170,7 @@ export async function closeRankingSeason(
       SELECT ?, s.usuario_id, COALESCE(p.points, 0),
         s.total_points - COALESCE((SELECT SUM(future.points) FROM ranking_season_points future
           WHERE future.usuario_id = s.usuario_id AND future.season_id > ?), 0),
-        COALESCE(u.nickname, CONCAT('Aventureiro ', u.id)), u.profile_image_key,
+        COALESCE(u.nickname, 'Aventureiro'), u.profile_image_key,
         u.empresa_id, e.nome,
         CASE WHEN u.trial_started_at IS NULL
           AND JSON_UNQUOTE(JSON_EXTRACT(e.parametros_funcionalidades, '$.globalRankingEnabled')) = 'true'

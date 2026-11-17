@@ -66,7 +66,7 @@ export function socketRequestIp(request: IncomingMessage): string {
 
 function isHandshake(request: IncomingMessage): boolean {
   const query = (request.url ?? '').split('?')[1] ?? '';
-  return !new URLSearchParams(query).has('sid');
+  return !new URLSearchParams(query).get('sid');
 }
 
 interface EngineSocket {

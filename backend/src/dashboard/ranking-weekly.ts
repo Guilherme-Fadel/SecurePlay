@@ -2,7 +2,7 @@ import type { UsuarioStats } from '../usuario-stats/usuario-stats.entity';
 import type { RedisService } from '../redis/redis.service';
 import { calcLevel } from '../common/utils/xp.utils';
 import { getRankingWeekStart } from './ranking-season';
-import { rankKey } from './rank-key';
+import { defaultRankName, rankKey } from './rank-key';
 
 export interface WeeklyRankingCandidate {
   id: number;
@@ -168,7 +168,7 @@ export async function loadRankingWeek(options: {
           entry.usuario?.nickname ??
           (entry.usuario_id === options.currentUserId
             ? (entry.usuario?.name ?? 'Você')
-            : `Aventureiro ${entry.usuario_id}`),
+            : defaultRankName(entry.usuario_id)),
         points: options.seasonPoints.get(entry.usuario_id) ?? 0,
         level: calcLevel(entry.total_points),
         companyName: entry.usuario?.empresa?.nome ?? null,

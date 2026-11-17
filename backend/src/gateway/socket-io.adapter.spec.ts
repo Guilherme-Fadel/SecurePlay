@@ -85,6 +85,14 @@ describe('SocketIoAdapter — limites do handshake (B7)', () => {
     expect(statuses).toEqual([200, 200, 200, 403, 403]);
   });
 
+  it('sid vazio conta como handshake novo e respeita o limite', async () => {
+    for (let i = 0; i < 3; i++) {
+      expect((await handshake(port)).status).toBe(200);
+    }
+    const vazio = await call(port, '/socket.io/?EIO=4&transport=polling&sid=');
+    expect(vazio.status).toBe(403);
+  });
+
   it('libera a vaga após desconexão', async () => {
     const opened: Array<{ status: number; body: string }> = [];
     for (let i = 0; i < 3; i++) opened.push(await handshake(port));

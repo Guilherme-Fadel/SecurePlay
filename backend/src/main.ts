@@ -16,6 +16,7 @@ import {
 import { trustProxyFromEnv } from './config/trust-proxy';
 import { registerSecurityHeaders } from './common/security/security-headers';
 import { SafeExceptionFilter } from './common/filters/safe-exception.filter';
+import { serializeRequestForLog } from './common/security/request-log';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestFastifyApplication>(
@@ -24,6 +25,7 @@ async function bootstrap() {
       trustProxy: trustProxyFromEnv(),
       logger: {
         redact: ['req.headers.authorization', 'req.body.token'],
+        serializers: { req: serializeRequestForLog },
       },
     }),
   );

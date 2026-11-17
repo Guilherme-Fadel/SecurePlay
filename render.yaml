@@ -55,6 +55,8 @@ services:
         sync: false
       - key: EMAIL_PUBLIC_DAILY_LIMIT
         sync: false
+      - key: EMAIL_RECOVERY_DAILY_LIMIT
+        sync: false
       - key: LOGOUT_REVOKES_ALL_SESSIONS
         sync: false
       - key: S3_BUCKET_NAME

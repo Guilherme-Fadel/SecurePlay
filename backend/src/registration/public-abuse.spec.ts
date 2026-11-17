@@ -5,7 +5,9 @@ import {
 import { EmailService } from './email.service';
 import {
   DEFAULT_PUBLIC_EMAIL_DAILY_LIMIT,
+  DEFAULT_RECOVERY_EMAIL_DAILY_LIMIT,
   publicEmailDailyLimit,
+  recoveryEmailDailyLimit,
   runWithPublicEmailGate,
 } from './public-email-budget';
 import { PublicRegistrationService } from './public-registration.service';
@@ -17,6 +19,7 @@ describe('M3 — abuso de cadastro e e-mail', () => {
     'EMAIL_FROM',
     'PUBLIC_SITE_URL',
     'EMAIL_PUBLIC_DAILY_LIMIT',
+    'EMAIL_RECOVERY_DAILY_LIMIT',
   ] as const;
   const previous = Object.fromEntries(
     keys.map((key) => [key, process.env[key]]),
@@ -56,7 +59,7 @@ describe('M3 — abuso de cadastro e e-mail', () => {
     });
 
     it('conta só os envios e para no limite configurado', async () => {
-      process.env.EMAIL_PUBLIC_DAILY_LIMIT = '2';
+      process.env.EMAIL_RECOVERY_DAILY_LIMIT = '2';
       const counters = new Map<string, number>();
       const redis = {
         incrBy: jest.fn((key: string, amount: number) => {
@@ -82,6 +85,44 @@ describe('M3 — abuso de cadastro e e-mail', () => {
       expect(fetchMock).toHaveBeenCalledTimes(2);
     });
 
+    it('esgotar o cadastro não bloqueia o esqueci senha', async () => {
+      process.env.EMAIL_PUBLIC_DAILY_LIMIT = '1';
+      process.env.EMAIL_RECOVERY_DAILY_LIMIT = '5';
+      const counters = new Map<string, number>();
+      const redis = {
+        incrBy: jest.fn((key: string, amount: number) => {
+          const next = (counters.get(key) ?? 0) + amount;
+          counters.set(key, next);
+          return Promise.resolve(next);
+        }),
+      };
+      const email = new EmailService();
+      const registration = {
+        startTrial: jest.fn(() =>
+          email.sendVerification('novo@example.test', 'tok'),
+        ),
+        requestPasswordReset: jest.fn((address: string) =>
+          email.sendPasswordReset(address, 'tok', 30),
+        ),
+      };
+      const service = new PublicRegistrationService(
+        registration as never,
+        email,
+        redis as never,
+      );
+      await service.startTrial({} as never);
+      await service.startTrial({} as never);
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+
+      service.forgotPassword('a@example.test');
+      service.forgotPassword('b@example.test');
+      await service.settled();
+      expect(fetchMock).toHaveBeenCalledTimes(3);
+      const chaves = [...counters.keys()];
+      expect(chaves.some((key) => key.includes(':cadastro:'))).toBe(true);
+      expect(chaves.some((key) => key.includes(':recuperacao:'))).toBe(true);
+    });
+
     it('Redis indisponível não bloqueia o envio', async () => {
       const service = new PublicRegistrationService(
         {
@@ -95,6 +136,13 @@ describe('M3 — abuso de cadastro e e-mail', () => {
       service.resend('a@example.test');
       await service.settled();
       expect(fetchMock).toHaveBeenCalledTimes(1);
+    });
+
+    it('limite de recuperação inválido usa o padrão', () => {
+      expect(recoveryEmailDailyLimit('abc')).toBe(
+        DEFAULT_RECOVERY_EMAIL_DAILY_LIMIT,
+      );
+      expect(recoveryEmailDailyLimit('150')).toBe(150);
     });
 
     it('limite inválido usa o padrão', () => {
