@@ -18,9 +18,22 @@ import { getRankingSeason, getSeasonXpByUser } from './ranking-season';
 import { Empresa } from '../empresa/empresa.entity';
 import { creditSeasonXp } from '../common/gamification/credit-season-xp';
 import { closeRankingSeason, ensurePendingRankingSeasonsClosed, historicalSeason, loadSeasonPoints, rankingHistoryContext, RankingMode } from './ranking-history';
+/** Participantes do escopo e pontos usados para ordenar o ranking. */
+interface RankingDataset {
+  allStats: UsuarioStats[];
+  seasonPoints: Map<number, number>;
+  historicalCompanies: Map<number, string | null>;
+}
+const RANKING_DATASET_TTL_MS = 30_000;
+const RANKING_DATASET_MAX_KEYS = 500;
+
 @Injectable()
 export class DashboardService implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(DashboardService.name);
+  private readonly rankingDatasets = new Map<
+    string,
+    { expiresAt: number; data: Promise<RankingDataset> }
+  >();
   private closeTimer: NodeJS.Timeout | null = null;
   private closeTask: Promise<void> | null = null;
   private shuttingDown = false;
@@ -161,44 +174,31 @@ export class DashboardService implements OnModuleInit, OnModuleDestroy {
       return query;
     };
     if (mode === 'season' && selectedSeason) await closeRankingSeason(this.dataSource, selectedSeason);
-    // Etapa 2 em paralelo: estatísticas do usuário, contexto histórico e, fora do modo temporada, a lista da classificação.
-    const [currentStats, history, scopedStats] = await Promise.all([
+    // Etapa 2 em paralelo: estatísticas do usuário e contexto histórico.
+    const [currentStats, history] = await Promise.all([
       isManagementUser ? Promise.resolve(null) : this.getOrCreateStats(usuario_id),
       rankingHistoryContext(this.dataSource, mode, selectedSeason),
-      mode === 'season'
-        ? Promise.resolve(null)
-        : applyScope(
-            this.statsRepository
-              .createQueryBuilder('s')
-              .leftJoinAndSelect('s.usuario', 'u')
-              .leftJoinAndSelect('u.empresa', 'e'),
-          ).getMany(),
     ]);
-    let allStats: UsuarioStats[];
-    let seasonPoints: Map<number, number>;
-    const historicalCompanies = new Map<number, string | null>();
-    if (mode === 'season') {
-      const rows = history.dataCompleteness === 'complete'
-        ? await this.dataSource.query(
-            `SELECT * FROM ranking_season_snapshot WHERE season_id = ? AND ${scope === 'company' ? 'empresa_id = ?' : 'global_eligible = 1'}`,
-            scope === 'company' ? [selectedSeason, company?.id ?? -1] : [selectedSeason],
-          ) as Array<{ usuario_id: number; points: number; total_points: number; display_name: string; profile_image_key: string | null; empresa_id: number | null; empresa_nome: string | null }>
-        : [];
-      allStats = rows.map((row) => ({
-        usuario_id: row.usuario_id,
-        total_points: row.total_points,
-        usuario: { nickname: row.display_name, name: row.display_name, profile_image_key: row.profile_image_key },
-      }) as UsuarioStats);
-      rows.forEach((row) => historicalCompanies.set(Number(row.usuario_id), row.empresa_nome));
-      seasonPoints = new Map(rows.map((row) => [Number(row.usuario_id), Number(row.points)]));
-    } else {
-      allStats = scopedStats ?? [];
-      seasonPoints = mode === 'total'
-        ? new Map(allStats.map((entry) => [entry.usuario_id, entry.total_points]))
-        : history.dataCompleteness === 'complete'
-          ? await loadSeasonPoints(this.dataSource, selectedSeason!, allStats.map((entry) => entry.usuario_id))
-          : await getSeasonXpByUser(this.redisService, allStats.map((entry) => entry.usuario_id));
-    }
+    // M1: o conjunto do escopo é compartilhado por 30 s entre requisições (inclusive as
+    // simultâneas) e descartado quando o progresso muda; a posição do aluno segue por requisição.
+    const datasetKey = [
+      mode,
+      scope,
+      scope === 'company' ? (company?.id ?? 0) : 0,
+      selectedSeason ?? '',
+      history.dataCompleteness,
+    ].join('|');
+    const { allStats, seasonPoints, historicalCompanies } =
+      await this.cachedRankingDataset(datasetKey, () =>
+        this.loadRankingDataset({
+          mode,
+          scope,
+          companyId: company?.id ?? -1,
+          selectedSeason,
+          complete: history.dataCompleteness === 'complete',
+          applyScope,
+        }),
+      );
     const leaderboardEntries = [...allStats]
       .sort(
         (a, b) =>
@@ -332,6 +332,98 @@ export class DashboardService implements OnModuleInit, OnModuleDestroy {
     };
   }
 
+  /** Participantes do escopo e pontos de cada um, no modo pedido (carga sem cache). */
+  private async loadRankingDataset(options: {
+    mode: RankingMode;
+    scope: 'global' | 'company';
+    companyId: number;
+    selectedSeason: string | null;
+    complete: boolean;
+    applyScope: (
+      query: SelectQueryBuilder<UsuarioStats>,
+    ) => SelectQueryBuilder<UsuarioStats>;
+  }): Promise<RankingDataset> {
+    if (options.mode === 'season') {
+      const rows = options.complete
+        ? ((await this.dataSource.query(
+            `SELECT * FROM ranking_season_snapshot WHERE season_id = ? AND ${options.scope === 'company' ? 'empresa_id = ?' : 'global_eligible = 1'}`,
+            options.scope === 'company'
+              ? [options.selectedSeason, options.companyId]
+              : [options.selectedSeason],
+          )) as Array<{
+            usuario_id: number;
+            points: number;
+            total_points: number;
+            display_name: string;
+            profile_image_key: string | null;
+            empresa_id: number | null;
+            empresa_nome: string | null;
+          }>)
+        : [];
+      return {
+        allStats: rows.map(
+          (row) =>
+            ({
+              usuario_id: row.usuario_id,
+              total_points: row.total_points,
+              usuario: {
+                nickname: row.display_name,
+                name: row.display_name,
+                profile_image_key: row.profile_image_key,
+              },
+            }) as UsuarioStats,
+        ),
+        seasonPoints: new Map(
+          rows.map((row) => [Number(row.usuario_id), Number(row.points)]),
+        ),
+        historicalCompanies: new Map(
+          rows.map((row) => [Number(row.usuario_id), row.empresa_nome]),
+        ),
+      };
+    }
+    const allStats = await options
+      .applyScope(
+        this.statsRepository
+          .createQueryBuilder('s')
+          .leftJoinAndSelect('s.usuario', 'u')
+          .leftJoinAndSelect('u.empresa', 'e'),
+      )
+      .getMany();
+    const ids = allStats.map((entry) => entry.usuario_id);
+    const seasonPoints =
+      options.mode === 'total'
+        ? new Map(
+            allStats.map((entry) => [entry.usuario_id, entry.total_points]),
+          )
+        : options.complete
+          ? await loadSeasonPoints(
+              this.dataSource,
+              options.selectedSeason!,
+              ids,
+            )
+          : await getSeasonXpByUser(this.redisService, ids);
+    return { allStats, seasonPoints, historicalCompanies: new Map() };
+  }
+
+  /** Conjunto do ranking por modo/escopo/escola/temporada, com cache curto e requisições somadas. */
+  private cachedRankingDataset(
+    key: string,
+    load: () => Promise<RankingDataset>,
+  ): Promise<RankingDataset> {
+    const now = Date.now();
+    const hit = this.rankingDatasets.get(key);
+    if (hit && hit.expiresAt > now) return hit.data;
+    if (this.rankingDatasets.size >= RANKING_DATASET_MAX_KEYS)
+      this.rankingDatasets.clear();
+    const data = load();
+    this.rankingDatasets.set(key, {
+      expiresAt: now + RANKING_DATASET_TTL_MS,
+      data,
+    });
+    data.catch(() => this.rankingDatasets.delete(key));
+    return data;
+  }
+
   private requireRankingParameters(parameters: CompanyParameters) {
     if (!isFeatureEnabled(parameters, 'ranking')) {
       throw new NotFoundException(
@@ -400,6 +492,8 @@ export class DashboardService implements OnModuleInit, OnModuleDestroy {
     skipCheckin?: boolean;
     checkinDay?: string;
   }): Promise<void> {
+    // XP mudou: o próximo ranking deste processo é recalculado.
+    this.rankingDatasets.clear();
     if (payload.skipCheckin) return;
     if (payload.checkinDay) {
       await this.checkins.registerForDay(payload.usuarioId, payload.checkinDay);

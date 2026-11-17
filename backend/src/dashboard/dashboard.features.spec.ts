@@ -276,4 +276,23 @@ describe('DashboardService company parameters', () => {
     );
     expect(repository.createQueryBuilder).not.toHaveBeenCalled();
   });
+
+  it('ranking não recarrega todos os alunos a cada requisição (M1)', async () => {
+    const { service, query } = buildService({ id: 3, nome: 'Escola' });
+    await service.getRanking(7, 'company');
+    await service.getRanking(7, 'company');
+    expect(query.getMany).toHaveBeenCalledTimes(1);
+    // XP mudou: o processo descarta o conjunto e recalcula na próxima leitura.
+    await service.handleProgressChanged({ usuarioId: 7, skipCheckin: true });
+    await service.getRanking(7, 'company');
+    expect(query.getMany).toHaveBeenCalledTimes(2);
+  });
+
+  it('requisições simultâneas somam uma única carga do ranking', async () => {
+    const { service, query } = buildService({ id: 3, nome: 'Escola' });
+    await Promise.all(
+      Array.from({ length: 5 }, () => service.getRanking(7, 'company')),
+    );
+    expect(query.getMany).toHaveBeenCalledTimes(1);
+  });
 });
