@@ -6,6 +6,7 @@ import { EmpresaParametrosAudit } from '../empresa/empresa-parametros-audit.enti
 import { Convite } from './entities/convite.entity';
 import { AdminAuditEvent } from './entities/admin-audit-event.entity';
 import { SchoolPilot } from './entities/school-pilot.entity';
+import { CLAUSULA_ESCAPE_LIKE, padraoLike } from '../common/utils/like';
 
 export function platformPage(
   value: unknown,
@@ -149,8 +150,8 @@ export class PlatformRecordsService {
     const search = filters.search?.trim().slice(0, 100);
     if (search)
       query.andWhere(
-        `(${[...searchFields, 'company.nome'].map((field) => `${field} LIKE :search`).join(' OR ')})`,
-        { search: `%${search}%` },
+        `(${[...searchFields, 'company.nome'].map((field) => `${field} LIKE :search ${CLAUSULA_ESCAPE_LIKE}`).join(' OR ')})`,
+        { search: padraoLike(search) },
       );
     const namedSort = filters.sort === 'asc' || filters.sort === 'desc';
     const sortField = namedSort

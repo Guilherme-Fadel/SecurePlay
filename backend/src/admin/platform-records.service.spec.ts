@@ -90,6 +90,19 @@ describe('Platform paginated records', () => {
     expect(query.offset).toHaveBeenCalledWith(50);
   });
 
+  it('busca por % na plataforma não lista todos: curinga é escapado', async () => {
+    const { service, query } = setup();
+    await service.list('audit-events', { search: '%' });
+    const chamada = query.andWhere.mock.calls.find(([sql]) =>
+      String(sql).includes('LIKE :search'),
+    ) as [string, { search: string }];
+    expect(chamada[1]).toEqual({ search: '%\\%%' });
+    expect(chamada[0]).toContain("ESCAPE '\\\\'");
+    expect(chamada[0].match(/LIKE :search/g)).toHaveLength(
+      chamada[0].match(/ESCAPE/g)?.length ?? -1,
+    );
+  });
+
   it('caps each response at 100 records', async () => {
     const { service, query } = setup();
     await expect(

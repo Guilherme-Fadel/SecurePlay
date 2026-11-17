@@ -5,6 +5,7 @@ import { Turma } from './entities/turma.entity';
 import { TurmaProfessor } from './entities/turma-professor.entity';
 import { TurmaAluno } from './entities/turma-aluno.entity';
 import { TurmaAulaAbertura } from './entities/turma-aula-abertura.entity';
+import { padraoLike } from '../common/utils/like';
 
 export interface TurmaResumo {
   id: number;
@@ -54,10 +55,6 @@ export function normalizarPaginacao(filtros: FiltrosPaginacao) {
       : 25,
     busca: filtros.busca?.trim().slice(0, 100) || undefined,
   };
-}
-
-export function padraoLike(texto: string): string {
-  return `%${texto.replace(/[\\%_]/g, (char) => `\\${char}`)}%`;
 }
 
 function paginado<T>(
