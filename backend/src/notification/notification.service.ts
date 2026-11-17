@@ -6,7 +6,10 @@ import {
 } from '@nestjs/common';
 import { Repository } from 'typeorm';
 import { Notification } from './notification.entity';
-import { CreateNotificationDto } from './dto/notification.dto';
+import {
+  CreateNotificationDto,
+  NotificationResponseDto,
+} from './dto/notification.dto';
 import { ResultadoDto } from 'src/resultado.dto';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { UsuarioService } from '../usuario/usuario.service';
@@ -30,7 +33,14 @@ export class NotificationService {
   }
 
   async insertNotification(data: CreateNotificationDto): Promise<ResultadoDto> {
-    const notification = await this.notificationRepository.save(data);
+    // `readed` nunca vem do cliente: toda notificação nasce não lida.
+    const notification = await this.notificationRepository.save({
+      usuario_id: data.usuario_id,
+      title: data.title,
+      message: data.message,
+      type: data.type,
+      readed: false,
+    });
 
     this.eventEmitter.emit('notification.created', {
       id: notification.id,
@@ -115,7 +125,9 @@ export class NotificationService {
     };
   }
 
-  async getNotification(usuario_id?: number): Promise<CreateNotificationDto[]> {
+  async getNotification(
+    usuario_id?: number,
+  ): Promise<NotificationResponseDto[]> {
     if (usuario_id) {
       const result = await this.getNotificationByUserId(usuario_id);
 
@@ -150,7 +162,7 @@ export class NotificationService {
   async getNotificationForActor(
     usuario_id: number,
     requestingUserId: number,
-  ): Promise<CreateNotificationDto[]> {
+  ): Promise<NotificationResponseDto[]> {
     await this.ensureCanAccessUser(requestingUserId, usuario_id);
     return this.getNotification(usuario_id);
   }
@@ -169,21 +181,30 @@ export class NotificationService {
   ): Promise<void> {
     if (requestingUserId === targetUserId) return;
 
-    const [requestingUser, targetUser] = await Promise.all([
-      this.usuarioService.getUsuarioById(requestingUserId),
-      this.usuarioService.getUsuarioById(targetUserId),
-    ]);
-
+    // Autoriza o papel antes de consultar o alvo, para não revelar por
+    // 404/403 se um ID existe.
+    const requestingUser =
+      await this.usuarioService.getUsuarioById(requestingUserId);
     if (!requestingUser) {
       throw new ForbiddenException('Solicitante não encontrado');
     }
-    if (!targetUser) {
-      throw new NotFoundException('Usuário não encontrado');
+    if (
+      requestingUser.role !== Role.ADMIN &&
+      requestingUser.role !== Role.PLATFORM_ADMIN
+    ) {
+      throw new ForbiddenException('Acesso negado para este usuário');
     }
-    if (requestingUser.role === Role.PLATFORM_ADMIN) return;
 
+    const targetUser = await this.usuarioService.getUsuarioById(targetUserId);
+
+    if (requestingUser.role === Role.PLATFORM_ADMIN) {
+      if (!targetUser) throw new NotFoundException('Usuário não encontrado');
+      return;
+    }
+
+    // Admin: alvo inexistente e alvo de outra escola recebem a mesma resposta.
     const sameCompany =
-      requestingUser.role === Role.ADMIN &&
+      !!targetUser &&
       !!requestingUser.empresa_id &&
       requestingUser.empresa_id === targetUser.empresa_id;
 

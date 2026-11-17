@@ -12,7 +12,10 @@ import {
 } from '@nestjs/common';
 import { ResultadoDto } from 'src/resultado.dto';
 import { NotificationService } from './notification.service';
-import { CreateNotificationDto } from './dto/notification.dto';
+import {
+  CreateNotificationDto,
+  NotificationResponseDto,
+} from './dto/notification.dto';
 import { Roles } from 'src/auth/roles.decorator';
 import { Role } from 'src/auth/roles.enum';
 
@@ -33,7 +36,7 @@ export class NotificationController {
   async buscarNotification(
     @Query('id') id: string,
     @Request() req: any,
-  ): Promise<CreateNotificationDto[]> {
+  ): Promise<NotificationResponseDto[]> {
     const usuarioId = Number(id);
 
     if (!id || isNaN(usuarioId)) {
