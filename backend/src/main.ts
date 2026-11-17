@@ -1,4 +1,4 @@
-import { NestFactory } from '@nestjs/core';
+import { HttpAdapterHost, NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import {
   FastifyAdapter,
@@ -15,6 +15,7 @@ import {
 } from './config/origins';
 import { trustProxyFromEnv } from './config/trust-proxy';
 import { registerSecurityHeaders } from './common/security/security-headers';
+import { SafeExceptionFilter } from './common/filters/safe-exception.filter';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestFastifyApplication>(
@@ -31,6 +32,9 @@ async function bootstrap() {
   registerSecurityHeaders(app.getHttpAdapter().getInstance());
 
   app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
+  app.useGlobalFilters(
+    new SafeExceptionFilter(app.get(HttpAdapterHost).httpAdapter),
+  );
 
   const allowedOrigins = getAllowedOrigins();
   const allowLocalDev = isDevEnvironment();
