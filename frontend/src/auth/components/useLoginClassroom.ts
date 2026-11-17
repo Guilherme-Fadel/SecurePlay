@@ -4,6 +4,7 @@ import { initialAuthenticatedPath } from '@/components/admin/console/consoleNavi
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { loginService } from '@/services/login/login';
 import type { LoginFailureReason, LoginOutcome } from '@/services/login/types';
+import { useMfaActions, type MfaStage } from './useLoginMfa';
 
 export type LoginFocus = 'none' | 'identifier' | 'password';
 export type LoginNoticeKind = 'email_verification' | 'password_setup';
@@ -83,7 +84,7 @@ function useLoginFields() {
 type LoginFields = ReturnType<typeof useLoginFields>;
 
 /** Envio, resposta do serviço e transição para a área logada. */
-function useLoginSubmit(fields: LoginFields, onReaction: () => void) {
+function useLoginSubmit(fields: LoginFields, onReaction: () => void, onMfa: (stage: MfaStage) => void) {
   const [feedback, setFeedback] = useState<LoginFeedback | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const inFlight = useRef(false);
@@ -128,11 +129,14 @@ function useLoginSubmit(fields: LoginFields, onReaction: () => void) {
       finishSuccess(outcome);
     } else if (outcome.status === 'error') {
       showError(outcome.reason, outcome.message);
+    } else if (outcome.status === 'mfa') {
+      setPassword('');
+      onMfa({ setupRequired: outcome.setupRequired, message: outcome.message });
     } else {
       setPassword('');
       setFeedback({ kind: outcome.status, email: outcome.email || identifier.trim(), message: outcome.message });
     }
-  }, [finishSuccess, showError, identifier, setPassword]);
+  }, [finishSuccess, showError, onMfa, identifier, setPassword]);
 
   const validate = useCallback(() => {
     const errors = { identifier: !identifier.trim(), password: !password };
@@ -159,7 +163,7 @@ function useLoginSubmit(fields: LoginFields, onReaction: () => void) {
     }
   }, [applyOutcome, showError, validate, feedback, identifier, password]);
 
-  return { feedback, submitting, handleSubmit };
+  return { feedback, submitting, handleSubmit, finishSuccess, showError };
 }
 
 /** Estado completo da tela de login "Sala da turma". */
@@ -168,8 +172,12 @@ export function useLoginClassroom() {
   const [startled, setStartled] = useState(false);
   const [helpOpen, setHelpOpen] = useState(false);
   const startle = useCallback(() => setStartled(true), []);
-  const submit = useLoginSubmit(fields, startle);
-  const { changeIdentifier, changePassword } = fields;
+  const [mfa, setMfa] = useState<MfaStage | null>(null);
+  const submit = useLoginSubmit(fields, startle, setMfa);
+  const { changeIdentifier, changePassword, setPendingFocus } = fields;
+  const { finishSuccess, showError } = submit;
+  const focusPassword = useCallback(() => setPendingFocus({ field: 'password' }), [setPendingFocus]);
+  const mfaActions = useMfaActions(setMfa, { finishSuccess, showError, focusPassword });
 
   const onIdentifierChange = useCallback((value: string) => {
     setStartled(false);
@@ -186,6 +194,8 @@ export function useLoginClassroom() {
   return {
     ...fields,
     ...submit,
+    ...mfaActions,
+    mfa,
     startled,
     helpOpen,
     toggleHelp,

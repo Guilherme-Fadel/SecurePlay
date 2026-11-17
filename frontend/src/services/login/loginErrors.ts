@@ -17,6 +17,7 @@ export const LOGIN_ERROR_MESSAGES = {
   server: 'O servidor teve um problema agora. Tente de novo em instantes.',
   session:
     'Não foi possível confirmar sua sessão. Tente novamente. Se o problema continuar, entre em contato com o suporte.',
+  mfa_expired: 'Sua verificação expirou. Entre de novo.',
 } as const satisfies Record<LoginFailureReason, string>;
 
 function failure(reason: LoginFailureReason, message: string = LOGIN_ERROR_MESSAGES[reason]): LoginFailure {

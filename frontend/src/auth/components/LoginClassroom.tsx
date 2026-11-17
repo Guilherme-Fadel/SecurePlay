@@ -4,6 +4,7 @@ import { ArrowRight } from 'lucide-react';
 import { BrandMark } from '@/components/shared/BrandMark';
 import { ForgotPasswordDialog } from './ForgotPasswordDialog';
 import { LoginCrew } from './LoginCrew';
+import { LoginMfaStep } from './LoginMfaStep';
 import { IdentifierField, PasswordField } from './LoginFields';
 import { HELP_PANEL_ID, LoginFeedbackRegions, LoginHelpPanel } from './LoginNotices';
 import { useLoginClassroom, type LoginClassroomState } from './useLoginClassroom';
@@ -79,6 +80,24 @@ function LoginForm({ state }: { state: LoginClassroomState }) {
   );
 }
 
+/** Cabeçalho, avisos e formulário de entrada (a etapa de MFA toma o lugar deste bloco). */
+function LoginSignInPane({ state }: { state: LoginClassroomState }) {
+  return (
+    <>
+      <div className="lgc-heading">
+        <h1 id="login-title" className="sp-display lgc-title">Que bom te ver <em>de novo!</em></h1>
+        <p className="lgc-lead">Entre com os dados da sua escola ou organização para continuar.</p>
+      </div>
+      <LoginFeedbackRegions feedback={state.feedback} />
+      <LoginForm state={state} />
+      <div className="lgc-invite">
+        <strong>Ainda não tem convite?</strong>
+        <span>Peça ajuda a um responsável, educador ou administrador da sua turma.</span>
+      </div>
+    </>
+  );
+}
+
 export function LoginClassroom() {
   const state = useLoginClassroom();
   return (
@@ -92,16 +111,17 @@ export function LoginClassroom() {
       <main className="lgc-stage">
         <section className="lgc-panel" aria-labelledby="login-title">
           <div className="lgc-form-col">
-            <div className="lgc-heading">
-              <h1 id="login-title" className="sp-display lgc-title">Que bom te ver <em>de novo!</em></h1>
-              <p className="lgc-lead">Entre com os dados da sua escola ou organização para continuar.</p>
-            </div>
-            <LoginFeedbackRegions feedback={state.feedback} />
-            <LoginForm state={state} />
-            <div className="lgc-invite">
-              <strong>Ainda não tem convite?</strong>
-              <span>Peça ajuda a um responsável, educador ou administrador da sua turma.</span>
-            </div>
+            {state.mfa ? (
+              <LoginMfaStep
+                stage={state.mfa}
+                feedback={state.feedback}
+                onVerified={state.completeMfa}
+                onExpired={state.expireMfa}
+                onBack={state.leaveMfa}
+              />
+            ) : (
+              <LoginSignInPane state={state} />
+            )}
           </div>
           <LoginCrew feedback={state.feedback} submitting={state.submitting} startled={state.startled} focus={state.focus} />
         </section>

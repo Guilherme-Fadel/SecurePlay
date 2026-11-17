@@ -9,11 +9,13 @@ export type LoginFailureReason =
   | 'forbidden'
   | 'network'
   | 'server'
-  | 'session';
+  | 'session'
+  | 'mfa_expired';
 
 /** Resultado do envio do formulário de login (contrato entre serviço e tela). */
 export type LoginOutcome =
   | { status: 'success'; user: CurrentUser; nome?: string; message: string }
   | { status: 'email_verification'; email: string; message: string }
   | { status: 'password_setup'; email: string; message: string }
+  | { status: 'mfa'; setupRequired: boolean; message: string }
   | { status: 'error'; reason: LoginFailureReason; message: string };

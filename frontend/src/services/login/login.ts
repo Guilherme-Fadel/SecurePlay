@@ -7,6 +7,7 @@ const DEFAULT_MESSAGES = {
   success: 'Login realizado',
   email_verification: 'Confira seu e-mail para confirmar o acesso.',
   password_setup: 'Defina sua senha pelo link enviado ao seu e-mail antes de entrar.',
+  mfa: 'Confirme seu acesso com o código do app autenticador.',
 } as const;
 
 function asRecord(data: unknown): Record<string, unknown> {
@@ -16,6 +17,22 @@ function asRecord(data: unknown): Record<string, unknown> {
 function readString(record: Record<string, unknown>, key: string): string | undefined {
   const value = record[key];
   return typeof value === 'string' && value.trim() ? value : undefined;
+}
+
+/** Etapas que adiam a sessão: confirmar e-mail, definir senha ou verificar o app autenticador. */
+function pendingStep(data: Record<string, unknown>, fallbackEmail: string): LoginOutcome | null {
+  const message = readString(data, 'message');
+  const email = readString(data, 'email') ?? fallbackEmail;
+  if (data.requiresEmailVerification === true) {
+    return { status: 'email_verification', email, message: message ?? DEFAULT_MESSAGES.email_verification };
+  }
+  if (data.requiresPasswordSetup === true) {
+    return { status: 'password_setup', email, message: message ?? DEFAULT_MESSAGES.password_setup };
+  }
+  if (data.requiresMfa === true) {
+    return { status: 'mfa', setupRequired: data.mfaSetupRequired === true, message: message ?? DEFAULT_MESSAGES.mfa };
+  }
+  return null;
 }
 
 export async function loginService(identifier: string, password: string): Promise<LoginOutcome> {
@@ -33,15 +50,8 @@ export async function loginService(identifier: string, password: string): Promis
     return { status: 'error', ...classifyLoginError(error) };
   }
 
-  const message = readString(data, 'message');
-  const email = readString(data, 'email') ?? trimmedIdentifier;
-
-  if (data.requiresEmailVerification === true) {
-    return { status: 'email_verification', email, message: message ?? DEFAULT_MESSAGES.email_verification };
-  }
-  if (data.requiresPasswordSetup === true) {
-    return { status: 'password_setup', email, message: message ?? DEFAULT_MESSAGES.password_setup };
-  }
+  const pending = pendingStep(data, trimmedIdentifier);
+  if (pending) return pending;
 
   let user: CurrentUser;
   try {
@@ -54,6 +64,6 @@ export async function loginService(identifier: string, password: string): Promis
     status: 'success',
     user,
     nome: readString(data, 'nome'),
-    message: message ?? DEFAULT_MESSAGES.success,
+    message: readString(data, 'message') ?? DEFAULT_MESSAGES.success,
   };
 }
