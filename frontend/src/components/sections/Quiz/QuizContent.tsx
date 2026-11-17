@@ -6,6 +6,7 @@ import { AppButton } from '@/components/ui/buttons/AppButton';
 import { BrandCharacter, type BrandCharacterProps } from '@/components/shared/BrandCharacter';
 import { LessonCheckpoint } from '@/components/sections/HomePage/Conteudos/LessonCheckpoint';
 import { LessonQuestion } from '@/components/sections/HomePage/Conteudos/LessonQuestion';
+import { nextUnansweredIndex } from '@/lib/quizResume';
 import '@/styles/lesson.css';
 
 interface Props {
@@ -83,6 +84,8 @@ export function QuizContent({ challengeId, onComplete, onClose }: Props) {
         question={s.questions[s.index]}
         index={s.index}
         total={s.questions.length}
+        previouslyAnswered={s.answeredIds.length}
+        last={nextUnansweredIndex(s.questions, s.answeredIds, s.index) === -1}
         selected={s.selected}
         saving={phase === 'saving'}
         onSelect={select}
@@ -125,20 +128,26 @@ function QuizOutcome({ result, questions, headingRef, onRetry, onComplete, onClo
   );
 }
 
-function QuizPlaying({ question, index, total, selected, saving, onSelect, onAdvance, onClose }: {
+function QuizPlaying({ question, index, total, previouslyAnswered, last, selected, saving, onSelect, onAdvance, onClose }: {
   question: QuestionResponse;
   index: number;
   total: number;
+  previouslyAnswered: number;
+  last: boolean;
   selected: number | null;
   saving: boolean;
   onSelect: (index: number) => void;
   onAdvance: () => void;
   onClose?: () => void;
 }) {
-  const last = index >= total - 1;
   return (
     <>
       <div className="lesson-page lesson-quiz">
+        {previouslyAnswered > 0 && (
+          <p className="lesson-note" role="status">
+            Você já respondeu {previouslyAnswered} {previouslyAnswered === 1 ? 'pergunta' : 'perguntas'} antes; {previouslyAnswered === 1 ? 'ela continua valendo' : 'elas continuam valendo'}.
+          </p>
+        )}
         <LessonQuestion
           question={question}
           index={index}

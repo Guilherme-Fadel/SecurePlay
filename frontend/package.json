@@ -29,6 +29,7 @@
     "test:page-loading": "node --test scripts/test-page-loading.cjs",
     "test:ranking-model": "node --test scripts/test-ranking-model.cjs",
     "test:login-mfa": "node --test scripts/test-login-mfa.cjs",
+    "test:quiz-resume": "node --test scripts/test-quiz-resume.cjs",
     "dev": "vite"
   },
   "dependencies": {

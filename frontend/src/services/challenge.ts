@@ -18,6 +18,8 @@ export interface ChallengeQuestionsResponse {
     image?: string | null;
   };
   questions: QuestionResponse[];
+  /** IDs já respondidos na tentativa aberta (sem acerto nem alternativa). Ausente em servidor antigo. */
+  answeredQuestionIds?: number[];
 }
 
 export interface AnswerPayload {

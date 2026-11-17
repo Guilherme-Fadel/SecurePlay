@@ -10,6 +10,7 @@ import {
 } from '@/services/challenge';
 import { invalidate } from '@/lib/queryCache';
 import { invalidateProgress } from '@/lib/progressCache';
+import { buildSubmitAnswers, nextUnansweredIndex, resumeIndex, validAnsweredIds } from '@/lib/quizResume';
 
 type Phase = 'idle' | 'loading' | 'playing' | 'saving' | 'submitting' | 'result' | 'error' | 'already_completed';
 
@@ -18,6 +19,8 @@ interface State {
   questions: QuestionResponse[];
   index: number;
   answers: AnswerPayload[];
+  /** Questões com resposta já gravada no servidor em sessões anteriores. */
+  answeredIds: number[];
   selected: number | null;
   result: SubmitResult | null;
   error: string | null;
@@ -28,6 +31,7 @@ const INITIAL: State = {
   questions: [],
   index: 0,
   answers: [],
+  answeredIds: [],
   selected: null,
   result: null,
   error: null,
@@ -47,14 +51,15 @@ export function useQuiz(challengeId: number) {
         return;
       }
 
-      const { questions } = await getChallengeQuestions(challengeId);
+      const { questions, answeredQuestionIds } = await getChallengeQuestions(challengeId);
 
       if (!questions?.length) {
         set(prev => ({ ...prev, phase: 'error', error: 'Nenhuma pergunta cadastrada para este desafio.' }));
         return;
       }
 
-      set(prev => ({ ...prev, phase: 'playing', questions }));
+      const answeredIds = validAnsweredIds(questions, answeredQuestionIds);
+      set(prev => ({ ...prev, phase: 'playing', questions, answeredIds, index: resumeIndex(questions, answeredIds) }));
     } catch (err: any) {
       set(prev => ({ ...prev, phase: 'error', error: err?.response?.data?.message || 'Falha ao carregar quiz.' }));
     }
@@ -69,12 +74,15 @@ export function useQuiz(challengeId: number) {
 
     const answer = { questionId: s.questions[s.index].id, selectedIndex: s.selected };
     const updatedAnswers = [...s.answers, answer];
-    const last = s.index >= s.questions.length - 1;
+    const nextIndex = nextUnansweredIndex(s.questions, s.answeredIds, s.index);
+    const last = nextIndex === -1;
 
     if (last) {
       // A submissão final já persiste a tentativa. Evita que um PATCH atrasado
       // sobrescreva o registro concluído com um estado parcial.
-      set(prev => ({ ...prev, answers: updatedAnswers, selected: null, phase: 'submitting' }));
+      // O corpo precisa ter uma resposta por questão; as já gravadas completam o envio.
+      const body = buildSubmitAnswers(s.questions, updatedAnswers, s.answeredIds);
+      set(prev => ({ ...prev, answers: body, selected: null, phase: 'submitting' }));
       return;
     }
 
@@ -82,7 +90,7 @@ export function useQuiz(challengeId: number) {
     try {
       await saveChallengeProgress(challengeId, answer.questionId, answer.selectedIndex);
       invalidate(`challenge-status:${challengeId}`);
-      set(prev => ({ ...prev, answers: updatedAnswers, index: prev.index + 1, selected: null, phase: 'playing' }));
+      set(prev => ({ ...prev, answers: updatedAnswers, index: nextIndex, selected: null, phase: 'playing' }));
     } catch (err: any) {
       set(prev => ({ ...prev, phase: 'error', error: err?.response?.data?.message || 'Falha ao salvar o progresso.' }));
     }

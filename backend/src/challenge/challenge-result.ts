@@ -1,5 +1,6 @@
 import { NotFoundException } from '@nestjs/common';
 import { Question } from '../question/question.entity';
+import { Challenge } from './challenge.entity';
 import { AnswerDto } from './dto/challenge.dto';
 import { validateAnswers } from '../common/gamification/validate-answers';
 
@@ -99,4 +100,54 @@ export function mergeRecordedAnswers(
       ? { questionId: answer.questionId, selectedIndex: saved }
       : answer;
   });
+}
+
+/**
+ * IDs das questões da tentativa ABERTA que já têm resposta gravada (só IDs, nunca se acertou
+ * nem qual alternativa, para não virar oráculo do gabarito). Só `selected_answers` conta:
+ * em tentativa aberta antes do registro (`selected_answers` nulo), `answered_question_ids`
+ * guardava só as ACERTADAS, então nada é exposto e o corpo do envio vale, como antes.
+ * Tentativa concluída ou inexistente também não expõe nada.
+ */
+export function recordedQuestionIds(
+  record:
+    | {
+        completed: boolean;
+        selected_answers: Record<string, number> | null;
+      }
+    | null
+    | undefined,
+  questions: Array<{ id: number }>,
+): number[] {
+  if (!record || record.completed || !record.selected_answers) return [];
+  const recorded = record.selected_answers;
+  return questions
+    .filter((question) => Number.isInteger(recorded[String(question.id)]))
+    .map((question) => question.id);
+}
+
+/** Corpo de `getQuestions`: sem `correct_index`; só IDs já respondidos na tentativa aberta. */
+export function buildQuestionsPayload(
+  challenge: Challenge,
+  questions: Question[],
+  record: Parameters<typeof recordedQuestionIds>[0],
+) {
+  return {
+    challenge: {
+      id: challenge.id,
+      title: challenge.title,
+      description: challenge.description,
+      difficulty: challenge.difficulty,
+      duration: challenge.duration,
+      points: challenge.points,
+      image: challenge.image,
+    },
+    questions: questions.map((q) => ({
+      id: q.id,
+      text: q.text,
+      options: q.options,
+      order: q.order,
+    })),
+    answeredQuestionIds: recordedQuestionIds(record, questions),
+  };
 }

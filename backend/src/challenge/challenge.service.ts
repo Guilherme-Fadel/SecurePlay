@@ -24,6 +24,7 @@ import {
   assertSubmittable,
   mergeRecordedAnswers,
   recordFirstAnswer,
+  buildQuestionsPayload,
 } from './challenge-result';
 
 @Injectable()
@@ -251,24 +252,11 @@ export class ChallengeService {
       where: { challenge_id: challengeId },
       order: { order: 'ASC' },
     });
+    const record = await this.usuarioChallengeRepository.findOne({
+      where: { usuario_id, challenge_id: challengeId },
+    });
 
-    return {
-      challenge: {
-        id: challenge.id,
-        title: challenge.title,
-        description: challenge.description,
-        difficulty: challenge.difficulty,
-        duration: challenge.duration,
-        points: challenge.points,
-        image: challenge.image,
-      },
-      questions: questions.map((q) => ({
-        id: q.id,
-        text: q.text,
-        options: q.options,
-        order: q.order,
-      })),
-    };
+    return buildQuestionsPayload(challenge, questions, record);
   }
 
   async submitChallenge(

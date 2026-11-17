@@ -148,4 +148,61 @@ describe('ChallengeService daily authorization', () => {
       },
     );
   });
+
+  describe('getQuestions: questões já respondidas', () => {
+    const prepare = (record: unknown) => {
+      const internals = buildService();
+      jest
+        .spyOn(internals.service, 'getDailyChallenge')
+        .mockResolvedValue({ id: 5 } as never);
+      internals.challengeRepository.findOne.mockResolvedValue({ id: 5 });
+      internals.questionRepository.find.mockResolvedValue([
+        { id: 101, text: 'a', options: ['x', 'y'], order: 1, correct_index: 1 },
+        { id: 102, text: 'b', options: ['x', 'y'], order: 2, correct_index: 0 },
+        { id: 103, text: 'c', options: ['x', 'y'], order: 3, correct_index: 0 },
+      ]);
+      internals.usuarioChallengeRepository.findOne.mockResolvedValue(record);
+      return internals.service;
+    };
+
+    it('lista as questões já respondidas sem revelar acerto', async () => {
+      const service = prepare({
+        completed: false,
+        selected_answers: { '101': 1, '103': 1, '999': 0 },
+        answered_question_ids: [101],
+      });
+      const payload = await service.getQuestions(5, 11);
+      // Só IDs: 101 acertada e 103 errada aparecem igual; id alheio ao desafio é ignorado.
+      expect(payload.answeredQuestionIds).toEqual([101, 103]);
+      expect(JSON.stringify(payload)).not.toContain('correct');
+      expect(JSON.stringify(payload)).not.toContain('selected');
+    });
+
+    it('tentativa concluída ou sem registro não lista nada', async () => {
+      const concluida = prepare({
+        completed: true,
+        selected_answers: { '101': 1 },
+        answered_question_ids: [101],
+      });
+      expect((await concluida.getQuestions(5, 11)).answeredQuestionIds).toEqual(
+        [],
+      );
+      const semRegistro = prepare(null);
+      expect(
+        (await semRegistro.getQuestions(5, 11)).answeredQuestionIds,
+      ).toEqual([]);
+    });
+
+    it('tentativa antiga com selected_answers nulo não expõe nada', async () => {
+      // Na regra antiga answered_question_ids guardava só as acertadas: expor revelaria acerto.
+      const service = prepare({
+        completed: false,
+        selected_answers: null,
+        answered_question_ids: [101, 102],
+      });
+      expect((await service.getQuestions(5, 11)).answeredQuestionIds).toEqual(
+        [],
+      );
+    });
+  });
 });
