@@ -105,16 +105,17 @@ describe('Administrative user editing', () => {
         (work: (value: typeof manager) => Promise<unknown>) => work(manager),
       ),
     };
+    const events = { emit: jest.fn() };
     const service = new ConvitesService(
       {} as never,
       repository as never,
       {} as never,
       {} as never,
       {} as never,
-      {} as never,
+      events as never,
       dataSource as never,
     );
-    return { service, target, manager };
+    return { service, target, manager, events };
   }
   it('aceita o papel de professor no DTO', () => {
     expect(
@@ -171,7 +172,7 @@ describe('Administrative user editing', () => {
     ).rejects.toThrow('A empresa precisa manter ao menos um administrador ativo');
   });
   it('updates editable fields and audits field names without returning secrets', async () => {
-    const { service, manager } = setup();
+    const { service, manager, events } = setup();
     const result = await service.atualizarUsuario(1, 2, {
       name: ' Novo nome ',
       email: 'novo@example.com',
@@ -190,6 +191,10 @@ describe('Administrative user editing', () => {
       (manager.save.mock.calls[1][1] as { detalhes: unknown }).detalhes,
     ).toEqual({
       campos: ['name', 'email', 'nickname', 'level'],
+    });
+    // I6: o cache de conta do processo é descartado após a edição.
+    expect(events.emit).toHaveBeenCalledWith('auth.account.changed', {
+      userId: 2,
     });
   });
   it('blocks an administrator editing their own account', async () => {
