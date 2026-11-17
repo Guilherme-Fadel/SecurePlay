@@ -102,9 +102,10 @@ export class ChallengeService {
       : null;
   }
 
+  /** Só desafios concluídos; tentativa aberta não conta (I2). */
   async countCompleted(usuario_id: number): Promise<number> {
     return this.usuarioChallengeRepository.count({
-      where: { usuario_id },
+      where: { usuario_id, completed: true },
     });
   }
 
