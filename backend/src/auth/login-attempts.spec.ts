@@ -1,43 +1,14 @@
-import { HttpStatus } from '@nestjs/common';
+import { HttpStatus, Logger } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
 import { AuthService } from './auth.service';
 import { Role } from './roles.enum';
+import { MemoryRedis } from './login-attempts-test-support';
 import {
   LOGIN_FAILURE_WINDOW_SECONDS,
   LoginAttemptsService,
   lockDurationMs,
   loginSubject,
 } from './login-attempts.service';
-
-/** Redis em memória com as operações usadas pelo contador de login. */
-class MemoryRedis {
-  readonly values = new Map<string, string>();
-  readonly ttls = new Map<string, number>();
-  get(key: string) {
-    return Promise.resolve(this.values.get(key) ?? null);
-  }
-  set(key: string, value: string, ttlSeconds: number) {
-    this.values.set(key, value);
-    this.ttls.set(key, ttlSeconds);
-    return Promise.resolve();
-  }
-  incrBy(key: string, amount: number, ttlSeconds?: number) {
-    const next = Number(this.values.get(key) ?? 0) + amount;
-    this.values.set(key, String(next));
-    if (ttlSeconds !== undefined && !this.ttls.has(key))
-      this.ttls.set(key, ttlSeconds);
-    return Promise.resolve(next);
-  }
-  expire(key: string, ttlSeconds: number) {
-    this.ttls.set(key, ttlSeconds);
-    return Promise.resolve();
-  }
-  del(key: string) {
-    const existed = this.values.delete(key);
-    this.ttls.delete(key);
-    return Promise.resolve(existed ? 1 : 0);
-  }
-}
 
 const PASSWORD = 'senha-certa-123';
 
@@ -111,6 +82,18 @@ describe('loginSubject', () => {
     expect(subject).toMatch(/^i:[a-f0-9]{64}$/);
     expect(subject).not.toContain('naoexiste');
   });
+
+  it('conta inexistente: variações com acento e maiúsculas geram o mesmo sujeito', () => {
+    expect(loginSubject('maria@example.test')).toBe(
+      loginSubject('mária@example.test'),
+    );
+    expect(loginSubject(' MÁRIA@Example.test ')).toBe(
+      loginSubject('maria@example.test'),
+    );
+    expect(loginSubject('maria@example.test')).not.toBe(
+      loginSubject('mario@example.test'),
+    );
+  });
 });
 
 describe('AuthService.signIn — bloqueio por conta', () => {
@@ -169,17 +152,30 @@ describe('AuthService.signIn — bloqueio por conta', () => {
     expect(redis.ttls.get('login-lock:u:7')).toBe(15 * 60);
   });
 
-  it('Redis indisponível não impede o login', async () => {
+  it('40 tentativas erradas simultâneas: no máximo 5 avaliam a senha (só estas dão 401), as demais recebem 429', async () => {
+    const { login } = await setup();
+    const results = await Promise.all(
+      Array.from({ length: 40 }, (_, i) =>
+        login('aluno@example.test', `errada-${i}`).then(
+          () => 200,
+          (error: { getStatus?: () => number }) => error.getStatus?.() ?? 500,
+        ),
+      ),
+    );
+    expect(results.filter((s) => s === 401)).toHaveLength(5);
+    expect(results.filter((s) => s === 429)).toHaveLength(35);
+  });
+
+  it('Redis indisponível não impede o login e avisa no log', async () => {
     const down = () => Promise.reject(new Error('redis fora'));
-    const broken = {
-      get: down,
-      set: down,
-      incrBy: down,
-      expire: down,
-      del: down,
-    };
+    const broken = { eval: down, del: down };
+    const warn = jest
+      .spyOn(Logger.prototype, 'warn')
+      .mockImplementation(() => undefined);
     const { status } = await setup(broken);
     expect(await status('aluno@example.test', 'errada')).toBe(401);
     expect(await status('aluno@example.test', PASSWORD)).toBe(200);
+    expect(warn).toHaveBeenCalled();
+    warn.mockRestore();
   });
 });

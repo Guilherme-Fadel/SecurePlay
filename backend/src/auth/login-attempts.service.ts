@@ -20,20 +20,51 @@ export function lockDurationMs(failures: number): number {
 }
 
 /**
+ * Reserva atômica de uma tentativa: com bloqueio ativo recusa (retorna 0); senão
+ * soma 1 ao contador (renovando a janela) e, se o total atingir o limiar, grava o
+ * bloqueio. A escala é a mesma de `lockDurationMs`.
+ * KEYS: [bloqueio, contador]. ARGV: [janela s, falhas livres, base ms, teto ms].
+ */
+export const RESERVE_ATTEMPT_SCRIPT = `
+if redis.call('EXISTS', KEYS[1]) == 1 then return 0 end
+local total = redis.call('INCR', KEYS[2])
+redis.call('EXPIRE', KEYS[2], tonumber(ARGV[1]))
+local free = tonumber(ARGV[2])
+if total > free then
+  local exponent = math.min(total - free - 1, 10)
+  local ms = math.min(tonumber(ARGV[3]) * 2 ^ exponent, tonumber(ARGV[4]))
+  redis.call('SET', KEYS[1], '1', 'PX', math.ceil(ms))
+end
+return 1
+`;
+
+/** Minúsculas e sem diacríticos, como a collation do MySQL compara o e-mail. */
+function foldIdentifier(identifier: string): string {
+  return identifier
+    .trim()
+    .normalize('NFD')
+    .replace(/\p{M}/gu, '')
+    .toLowerCase();
+}
+
+/**
  * Chave do contador. Conta existente usa o id: o banco compara e-mail sem
  * diferenciar maiúsculas ou acentos, então variações do texto não podem ganhar
- * contador próprio. Identificador sem conta usa um hash, sem dado pessoal no Redis.
+ * contador próprio. Identificador sem conta usa um hash do texto normalizado do
+ * mesmo jeito (sem acento e minúsculas), sem dado pessoal no Redis.
  */
 export function loginSubject(identifier: string, userId?: number): string {
   if (userId !== undefined) return `u:${userId}`;
-  const normalized = identifier.trim().toLowerCase();
-  return `i:${createHash('sha256').update(normalized).digest('hex')}`;
+  return `i:${createHash('sha256').update(foldIdentifier(identifier)).digest('hex')}`;
 }
 
 /**
  * Bloqueio de login por conta, independente do IP (o limite por IP sozinho não
  * segura tentativas distribuídas). Com o Redis indisponível, o login segue sem
  * esta camada e o limite por IP continua valendo.
+ *
+ * Contrato: `reserveAttempt` ANTES de conferir senha ou código (conta a tentativa
+ * e recusa com 429 se houver bloqueio); `reset` só quando uma sessão é emitida.
  */
 @Injectable()
 export class LoginAttemptsService {
@@ -41,35 +72,28 @@ export class LoginAttemptsService {
 
   constructor(private readonly redis: RedisService) {}
 
-  async assertNotLocked(subject: string): Promise<void> {
-    let locked = false;
+  async reserveAttempt(subject: string): Promise<void> {
+    let allowed = true;
     try {
-      locked = (await this.redis.get(lockKey(subject))) !== null;
+      const result = await this.redis.eval(
+        RESERVE_ATTEMPT_SCRIPT,
+        [lockKey(subject), failKey(subject)],
+        [
+          LOGIN_FAILURE_WINDOW_SECONDS,
+          FREE_FAILURES,
+          BASE_LOCK_MS,
+          MAX_LOCK_MS,
+        ],
+      );
+      allowed = Number(result) === 1;
     } catch {
       this.warnUnavailable();
     }
-    if (locked)
+    if (!allowed)
       throw new HttpException(
         LOGIN_LOCKED_MESSAGE,
         HttpStatus.TOO_MANY_REQUESTS,
       );
-  }
-
-  async registerFailure(subject: string): Promise<void> {
-    try {
-      const key = failKey(subject);
-      const failures = await this.redis.incrBy(
-        key,
-        1,
-        LOGIN_FAILURE_WINDOW_SECONDS,
-      );
-      await this.redis.expire(key, LOGIN_FAILURE_WINDOW_SECONDS);
-      const lockMs = lockDurationMs(failures);
-      if (lockMs > 0)
-        await this.redis.set(lockKey(subject), '1', Math.ceil(lockMs / 1000));
-    } catch {
-      this.warnUnavailable();
-    }
   }
 
   async reset(subject: string): Promise<void> {

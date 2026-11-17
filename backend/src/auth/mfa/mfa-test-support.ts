@@ -36,9 +36,14 @@ export class FakeMfaStore {
     return Promise.resolve(true);
   }
 
-  activate(id: number, hashes: string[]) {
+  activate(id: number, hashes: string[], segredoUsado: string) {
     const conta = this.contas.get(id);
-    if (!conta || conta.mfa_enabled_at) return Promise.resolve(false);
+    if (
+      !conta ||
+      conta.mfa_enabled_at ||
+      conta.mfa_secret_encrypted !== segredoUsado
+    )
+      return Promise.resolve(false);
     conta.mfa_enabled_at = new Date();
     conta.mfa_recovery_codes = hashes;
     return Promise.resolve(true);
@@ -69,16 +74,11 @@ export class FakeRedis {
 }
 
 export class FakeAttempts {
-  readonly falhas: string[] = [];
+  readonly reservas: string[] = [];
   readonly zerados: string[] = [];
-  readonly consultados: string[] = [];
 
-  assertNotLocked = jest.fn((subject: string) => {
-    this.consultados.push(subject);
-    return Promise.resolve();
-  });
-  registerFailure = jest.fn((subject: string) => {
-    this.falhas.push(subject);
+  reserveAttempt = jest.fn((subject: string) => {
+    this.reservas.push(subject);
     return Promise.resolve();
   });
   reset = jest.fn((subject: string) => {

@@ -1,9 +1,10 @@
+import { Logger } from '@nestjs/common';
 import { Role } from '../roles.enum';
 import { MFA_CHALLENGE_COOKIE } from './mfa-challenge';
 import { CenarioMfa, criarCenarioMfa } from './mfa-http-fixture';
 import { hashRecoveryCode } from './recovery-codes';
 
-const CHAVE_MFA = 'chave-mfa-de-teste';
+const CHAVE_MFA = 'chave-mfa-de-teste-com-mais-de-32-caracteres';
 
 describe('HTTP: MFA por TOTP para gestão', () => {
   let c: CenarioMfa;
@@ -133,8 +134,9 @@ describe('HTTP: MFA por TOTP para gestão', () => {
       code: 'mfa_code_invalid',
     });
     expect(c.cookieDe(res, 'token')).toBeUndefined();
-    expect(c.attempts.consultados).toContain('u:7');
-    expect(c.attempts.falhas).toEqual(['u:7']);
+    // Uma reserva no login e outra no verify; nenhuma sessão emitida, então nada zerado.
+    expect(c.attempts.reservas).toEqual(['u:7', 'u:7']);
+    expect(c.attempts.zerados).toHaveLength(0);
     expect(c.contas.get(7)!.mfa_enabled_at).toBeNull();
   });
 
@@ -148,12 +150,13 @@ describe('HTTP: MFA por TOTP para gestão', () => {
     expect(primeira.json()).not.toHaveProperty('recoveryCodes');
     expect(c.contas.get(7)!.mfa_recovery_codes).toHaveLength(7);
 
+    const zeradosAntes = c.attempts.zerados.length;
     const repetida = await c.post('/auth/mfa/verify', await c.desafioDe(), {
       recoveryCode: recoveryCodes[0],
     });
     expect(repetida.statusCode).toBe(401);
     expect(repetida.json()).toMatchObject({ code: 'mfa_code_invalid' });
-    expect(c.attempts.falhas).toEqual(['u:7']);
+    expect(c.attempts.zerados).toHaveLength(zeradosAntes);
   });
 
   it('replay do mesmo passo TOTP é recusado; o passo seguinte entra', async () => {
@@ -207,5 +210,66 @@ describe('HTTP: MFA por TOTP para gestão', () => {
     const setup = await c.post('/auth/mfa/setup', desafio);
     expect(setup.statusCode).toBe(401);
     expect(setup.json()).toMatchObject({ code: 'mfa_challenge_invalid' });
+  });
+
+  it.each([
+    ['ausente', undefined],
+    ['com 31 caracteres', 'a'.repeat(31)],
+  ])(
+    'conta de gestão com MFA ativo e chave %s não entra só com a senha: 503',
+    async (_caso, chave) => {
+      await c.cadastrar();
+      const erro = jest
+        .spyOn(Logger.prototype, 'error')
+        .mockImplementation(() => undefined);
+      if (chave === undefined) delete process.env.MFA_ENCRYPTION_KEY;
+      else process.env.MFA_ENCRYPTION_KEY = chave;
+      const zeradosAntes = c.attempts.zerados.length;
+
+      const res = await c.entrar();
+      expect(res.statusCode).toBe(503);
+      expect(res.json()).toMatchObject({
+        message: expect.stringContaining('indisponível') as string,
+      });
+      expect(c.cookieDe(res, 'token')).toBeUndefined();
+      expect(c.cookieDe(res, MFA_CHALLENGE_COOKIE)).toBeUndefined();
+      expect(c.attempts.zerados).toHaveLength(zeradosAntes);
+      expect(erro).toHaveBeenCalledTimes(1);
+      expect(JSON.stringify(erro.mock.calls)).not.toContain('gestao@');
+      erro.mockRestore();
+    },
+  );
+
+  it('chave curta com a conta sem MFA ativo ou aluno: login como hoje', async () => {
+    process.env.MFA_ENCRYPTION_KEY = 'a'.repeat(31);
+    const gestao = await c.entrar();
+    expect(gestao.statusCode).toBe(200);
+    expect(c.cookieDe(gestao, 'token')?.value).toBeTruthy();
+    const aluno = await c.entrar('aluno@example.test');
+    expect(aluno.statusCode).toBe(200);
+    expect(c.cookieDe(aluno, 'token')?.value).toBeTruthy();
+  });
+
+  it('se o setup trocar o segredo entre a validação e a ativação, a conta não é ativada', async () => {
+    const desafio = await c.desafioDe();
+    const { secret } = (await c.post('/auth/mfa/setup', desafio)).json<{
+      secret: string;
+    }>();
+    // Simula o setup concorrente: o segredo gravado muda depois de o código ser validado.
+    const original = c.store.activate.bind(c.store) as (
+      id: number,
+      hashes: string[],
+      usado: string,
+    ) => Promise<boolean>;
+    jest.spyOn(c.store, 'activate').mockImplementation((id, hashes, usado) => {
+      c.contas.get(7)!.mfa_secret_encrypted = 'segredo-trocado-pelo-setup';
+      return original(id, hashes, usado);
+    });
+    const res = await c.post('/auth/mfa/verify', desafio, {
+      code: c.codigoAtual(secret),
+    });
+    expect(res.statusCode).toBe(409);
+    expect(c.cookieDe(res, 'token')).toBeUndefined();
+    expect(c.contas.get(7)!.mfa_enabled_at).toBeNull();
   });
 });

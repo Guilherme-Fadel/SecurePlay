@@ -21,8 +21,11 @@ export class SocketSessionService {
       sub: number;
       sessionVersion?: number;
       exp: number;
+      purpose?: unknown;
     }>(token);
+    // Só token de sessão: qualquer `purpose` (como o desafio de MFA) é recusado, como no JwtStrategy.
     if (
+      payload.purpose !== undefined ||
       !Number.isSafeInteger(payload.sub) ||
       payload.sub <= 0 ||
       !Number.isSafeInteger(payload.exp)

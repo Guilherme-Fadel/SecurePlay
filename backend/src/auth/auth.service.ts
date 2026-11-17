@@ -70,14 +70,16 @@ export class AuthService {
   }
 
   /**
-   * Confere identificador e senha com bloqueio por conta: durante o bloqueio,
-   * nem a senha certa entra. Identificador sem conta segue a mesma regra.
+   * Confere identificador e senha com bloqueio por conta: a tentativa é reservada
+   * (contada) antes do bcrypt, então rajadas paralelas não furam o limite e, durante
+   * o bloqueio, nem a senha certa entra. Identificador sem conta segue a mesma regra.
+   * O contador só é zerado quando uma sessão é emitida (`signIn` ou `mfa/verify`).
    */
   private async verifyCredentials(identifier: string, password: string) {
     const user =
       await this.usuarioService.getUsuarioByLoginIdentifier(identifier);
     const attemptSubject = loginSubject(identifier, user?.id);
-    await this.loginAttempts.assertNotLocked(attemptSubject);
+    await this.loginAttempts.reserveAttempt(attemptSubject);
 
     // Conta inexistente ou inativa também paga um bcrypt, para o tempo não revelar qual é o caso.
     const usable = !!user?.active;
@@ -86,12 +88,9 @@ export class AuthService {
       usable ? user.password : TIMING_DUMMY_HASH,
     );
     const valid = usable && matches;
-    if (!user || !valid) {
-      await this.loginAttempts.registerFailure(attemptSubject);
+    if (!user || !valid)
       throw new UnauthorizedException('Usuário ou senha inválidos');
-    }
-    await this.loginAttempts.reset(attemptSubject);
-    return user;
+    return { user, attemptSubject };
   }
 
   async signIn(dto: LoginDto) {
@@ -102,13 +101,12 @@ export class AuthService {
       throw new UnauthorizedException('Identificador ou senha não fornecidos');
     }
 
-    const user = await this.verifyCredentials(identifier, password);
+    const { user, attemptSubject } = await this.verifyCredentials(
+      identifier,
+      password,
+    );
 
-    if (
-      user.role === Role.PLATFORM_ADMIN &&
-      user.email_verification_required &&
-      !user.email_verified_at
-    ) {
+    if (this.pendingEmailVerification(user)) {
       await this.registrationService.startPlatformAdminVerification(user);
       return {
         requiresEmailVerification: true,
@@ -126,6 +124,8 @@ export class AuthService {
       };
     }
 
+    this.mfa?.assertAvailableFor(user);
+
     if (this.mfa?.appliesTo(user)) {
       return {
         requiresMfa: true,
@@ -138,6 +138,7 @@ export class AuthService {
     }
 
     const token = this.createSessionToken(user);
+    await this.loginAttempts.reset(attemptSubject);
 
     return {
       token,
@@ -145,6 +146,15 @@ export class AuthService {
       nome: user.name,
       message: 'Login realizado com sucesso',
     };
+  }
+
+  /** Conta de platform_admin que ainda precisa confirmar o e-mail. */
+  private pendingEmailVerification(user: Usuario): boolean {
+    return (
+      user.role === Role.PLATFORM_ADMIN &&
+      !!user.email_verification_required &&
+      !user.email_verified_at
+    );
   }
 
   /** Sessão emitida no login, na confirmação do MFA e na troca de senha. */

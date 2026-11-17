@@ -31,10 +31,21 @@ export class MfaStore {
     return (result.affected ?? 0) > 0;
   }
 
-  /** Ativa o MFA e grava os hashes dos códigos de recuperação. */
-  async activate(id: number, recoveryHashes: string[]): Promise<boolean> {
+  /**
+   * Ativa o MFA e grava os hashes dos códigos de recuperação, só se o segredo cifrado
+   * gravado ainda for o mesmo que validou o código (`usedEncryptedSecret`).
+   */
+  async activate(
+    id: number,
+    recoveryHashes: string[],
+    usedEncryptedSecret: string,
+  ): Promise<boolean> {
     const result = await this.usuarios.update(
-      { id, mfa_enabled_at: IsNull() },
+      {
+        id,
+        mfa_enabled_at: IsNull(),
+        mfa_secret_encrypted: usedEncryptedSecret,
+      },
       { mfa_enabled_at: new Date(), mfa_recovery_codes: recoveryHashes },
     );
     return (result.affected ?? 0) > 0;

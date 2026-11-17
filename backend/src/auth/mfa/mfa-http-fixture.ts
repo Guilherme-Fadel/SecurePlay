@@ -47,6 +47,7 @@ type Resposta = { cookies: { name: string; value: string }[] };
 
 async function montarApp(
   contas: Map<number, Usuario>,
+  store: FakeMfaStore,
   redis: FakeRedis,
   attempts: FakeAttempts,
 ) {
@@ -74,7 +75,7 @@ async function montarApp(
       AuthService,
       MfaService,
       JwtStrategy,
-      { provide: MfaStore, useValue: new FakeMfaStore(contas) },
+      { provide: MfaStore, useValue: store },
       { provide: RedisService, useValue: redis },
       { provide: LoginAttemptsService, useValue: attempts },
       { provide: UsuarioService, useValue: usuarioService },
@@ -104,7 +105,8 @@ async function montarApp(
 export async function criarCenarioMfa() {
   const ambiente = { ...process.env };
   process.env.JWT_SECRET = JWT_SECRET;
-  process.env.MFA_ENCRYPTION_KEY = 'chave-mfa-de-teste';
+  process.env.MFA_ENCRYPTION_KEY =
+    'chave-mfa-de-teste-com-mais-de-32-caracteres';
   process.env.AUTH_USER_CACHE_TTL_MS = '0';
   let deslocamentoMs = 0;
   const relogio = jest
@@ -126,7 +128,8 @@ export async function criarCenarioMfa() {
   ]);
   const redis = new FakeRedis();
   const attempts = new FakeAttempts();
-  const app = await montarApp(contas, redis, attempts);
+  const store = new FakeMfaStore(contas);
+  const app = await montarApp(contas, store, redis, attempts);
 
   const entrar = (email = 'gestao@example.test') =>
     app.inject({
@@ -167,6 +170,7 @@ export async function criarCenarioMfa() {
   return {
     app,
     contas,
+    store,
     redis,
     attempts,
     jwt: app.get(JwtService),

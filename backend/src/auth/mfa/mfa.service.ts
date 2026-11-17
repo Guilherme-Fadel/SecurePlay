@@ -3,6 +3,7 @@ import {
   ConflictException,
   Injectable,
   Logger,
+  ServiceUnavailableException,
   UnauthorizedException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
@@ -41,9 +42,16 @@ const CODE_INVALID = {
   code: 'mfa_code_invalid',
 } as const;
 
-/** Chave de cifra do MFA; sem ela o MFA fica desligado e o login não muda. */
+/** Tamanho mínimo da chave de cifra do MFA. */
+export const MFA_KEY_MIN_LENGTH = 32;
+
+const MFA_UNAVAILABLE_MESSAGE =
+  'Verificação em duas etapas indisponível no momento. Avise o suporte.';
+
+/** Chave de cifra do MFA; ausente ou curta (< 32 caracteres) vale como sem chave. */
 export function mfaEncryptionKey(): string | undefined {
-  return process.env.MFA_ENCRYPTION_KEY?.trim() || undefined;
+  const key = process.env.MFA_ENCRYPTION_KEY?.trim();
+  return key && key.length >= MFA_KEY_MIN_LENGTH ? key : undefined;
 }
 
 @Injectable()
@@ -63,6 +71,20 @@ export class MfaService {
       !!mfaEncryptionKey() &&
       (user.role === Role.ADMIN || user.role === Role.PLATFORM_ADMIN)
     );
+  }
+
+  /**
+   * Gestão que já ativou o MFA não entra só com a senha se a chave estiver ausente ou
+   * inválida: responde 503 e registra o erro (sem dados da conta). Quem não tem MFA
+   * ativo e os alunos seguem como antes.
+   */
+  assertAvailableFor(user: Pick<Usuario, 'role' | 'mfa_enabled_at'>): void {
+    if (mfaEncryptionKey() || !user.mfa_enabled_at) return;
+    if (user.role !== Role.ADMIN && user.role !== Role.PLATFORM_ADMIN) return;
+    this.logger.error(
+      'MFA_ENCRYPTION_KEY ausente ou com menos de 32 caracteres: login de conta com MFA ativo recusado',
+    );
+    throw new ServiceUnavailableException(MFA_UNAVAILABLE_MESSAGE);
   }
 
   issueChallenge(user: Pick<Usuario, 'id' | 'session_version'>): string {
@@ -108,16 +130,14 @@ export class MfaService {
       );
     const account = await this.resolveAccount(challengeToken);
     const subject = loginSubject('', account.id);
-    await this.attempts.assertNotLocked(subject);
+    await this.attempts.reserveAttempt(subject);
 
     const outcome: { ok: boolean; recoveryCodes?: string[] } =
       account.mfa_enabled_at
         ? await this.checkActive(account, code, recoveryCode)
         : await this.checkEnrollment(account, code, recoveryCode);
-    if (!outcome.ok) {
-      await this.attempts.registerFailure(subject);
-      throw new UnauthorizedException({ ...CODE_INVALID });
-    }
+    // A tentativa já foi contada na reserva; só a sessão emitida zera o contador.
+    if (!outcome.ok) throw new UnauthorizedException({ ...CODE_INVALID });
     await this.attempts.reset(subject);
     return { user: account, recoveryCodes: outcome.recoveryCodes };
   }
@@ -168,17 +188,20 @@ export class MfaService {
       throw new ConflictException(
         'Gere o segredo antes de confirmar o código.',
       );
+    const usedSecret = account.mfa_secret_encrypted;
     const step = this.totpStepFor(account, code);
     if (step === null || !(await this.acceptStep(account.id, step)))
       return { ok: false };
     const recoveryCodes = generateRecoveryCodes();
+    // Só ativa se o segredo gravado ainda for o que validou o código (o setup pode ter trocado).
     const activated = await this.store.activate(
       account.id,
       recoveryCodes.map((item) => hashRecoveryCode(item, this.key())),
+      usedSecret,
     );
     if (!activated)
       throw new ConflictException(
-        'A verificação em duas etapas já está ativa.',
+        'Não foi possível ativar a verificação em duas etapas. Gere o segredo novamente.',
       );
     return { ok: true, recoveryCodes };
   }

@@ -109,6 +109,7 @@ describe('HTTP: isolamento e validade do desafio de MFA', () => {
     expect(ambos.statusCode).toBe(400);
     const curto = await c.post('/auth/mfa/verify', desafio, { code: '12' });
     expect(curto.statusCode).toBe(400);
-    expect(c.attempts.falhas).toHaveLength(0);
+    // Só a reserva do login do desafio: formato inválido não gasta tentativa no verify.
+    expect(c.attempts.reservas).toHaveLength(1);
   });
 });

@@ -31,8 +31,7 @@ describe('AuthService.signIn — confirmação e senha obrigatória', () => {
       registrationService as never,
       {} as never,
       {
-        assertNotLocked: jest.fn().mockResolvedValue(undefined),
-        registerFailure: jest.fn().mockResolvedValue(undefined),
+        reserveAttempt: jest.fn().mockResolvedValue(undefined),
         reset: jest.fn().mockResolvedValue(undefined),
       } as never,
     );
