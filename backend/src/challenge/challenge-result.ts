@@ -22,11 +22,7 @@ export function gradeChallenge(
   questions: Question[],
   answers: AnswerDto[],
 ): ChallengeResult {
-  if (!questions.length)
-    throw new NotFoundException(
-      'Nenhuma pergunta encontrada para este desafio',
-    );
-  validateAnswers(questions, answers);
+  assertSubmittable(questions, answers);
   const byId = new Map(questions.map((question) => [question.id, question]));
   let correctCount = 0;
   const corrections = answers.map((answer) => {
@@ -55,4 +51,52 @@ export function gradeChallenge(
     completed: true,
     corrections,
   };
+}
+
+/** Formato do envio: desafio com perguntas e cada pergunta respondida uma vez. */
+export function assertSubmittable(
+  questions: Question[],
+  answers: AnswerDto[],
+): void {
+  if (!questions.length)
+    throw new NotFoundException(
+      'Nenhuma pergunta encontrada para este desafio',
+    );
+  validateAnswers(questions, answers);
+}
+
+/** Grava só a primeira resposta da questão e a marca como respondida (certa ou errada). */
+export function recordFirstAnswer(
+  record: {
+    selected_answers: Record<string, number> | null;
+    answered_question_ids: number[];
+  },
+  questionId: number,
+  selectedIndex: number,
+): void {
+  const selected = { ...(record.selected_answers ?? {}) };
+  const key = String(questionId);
+  if (!(key in selected)) selected[key] = selectedIndex;
+  record.selected_answers = selected;
+  record.answered_question_ids = Array.from(
+    new Set([...(record.answered_question_ids ?? []), questionId]),
+  );
+}
+
+/**
+ * A primeira resposta gravada pelo PATCH de progresso prevalece sobre a do envio final; o
+ * corpo só completa as questões sem registro (como a última, que a UI não salva por PATCH).
+ * Tentativa aberta antes do registro (`recorded` nulo) usa o corpo, como antes.
+ */
+export function mergeRecordedAnswers(
+  answers: AnswerDto[],
+  recorded: Record<string, number> | null | undefined,
+): AnswerDto[] {
+  if (!recorded) return answers;
+  return answers.map((answer) => {
+    const saved = recorded[String(answer.questionId)];
+    return Number.isInteger(saved)
+      ? { questionId: answer.questionId, selectedIndex: saved }
+      : answer;
+  });
 }

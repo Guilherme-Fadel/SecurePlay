@@ -50,7 +50,6 @@ export interface ChallengeStatus {
 }
 
 export interface SaveProgressResult {
-  correct: boolean;
   answeredCount: number;
   totalQuestions: number;
   progress: number;

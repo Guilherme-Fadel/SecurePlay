@@ -12,7 +12,13 @@ import { RedisService } from '../redis/redis.service';
 import { getLocalDateKey, ttlUntilEndOfDay } from '../common/utils/date.utils';
 import { SubmitChallengeDto } from './dto/challenge.dto';
 import { ActivityCompletionService } from '../common/gamification/activity-completion.service';
-import { ChallengeResult, gradeChallenge } from './challenge-result';
+import {
+  ChallengeResult,
+  gradeChallenge,
+  assertSubmittable,
+  mergeRecordedAnswers,
+  recordFirstAnswer,
+} from './challenge-result';
 
 @Injectable()
 export class ChallengeService {
@@ -183,17 +189,12 @@ export class ChallengeService {
           progress: 0,
           completed: false,
           answered_question_ids: [],
+          selected_answers: {},
         });
       }
 
-      const answered = new Set(record.answered_question_ids ?? []);
-
-      const isCorrect = selectedIndex === question.correct_index;
-      if (isCorrect) {
-        answered.add(questionId);
-      }
-
-      record.answered_question_ids = Array.from(answered);
+      // Só a primeira resposta conta e o retorno não diz se acertou (sem oráculo).
+      recordFirstAnswer(record, questionId, selectedIndex);
 
       const totalQuestions = await manager.getRepository(Question).count({
         where: { challenge_id: challengeId },
@@ -212,6 +213,7 @@ export class ChallengeService {
           { id: record.id, completed: false },
           {
             answered_question_ids: record.answered_question_ids,
+            selected_answers: record.selected_answers,
             progress: record.progress,
           },
         );
@@ -223,7 +225,6 @@ export class ChallengeService {
       }
 
       return {
-        correct: isCorrect,
         answeredCount: record.answered_question_ids.length,
         totalQuestions,
         progress: record.progress,
@@ -291,8 +292,9 @@ export class ChallengeService {
     const questions = await this.questionRepository.find({
       where: { challenge_id: challengeId },
     });
+    // Formato do corpo validado antes da transação; a nota usa as respostas gravadas.
+    assertSubmittable(questions, dto.answers);
 
-    const result = gradeChallenge(challenge.points, questions, dto.answers);
     return this.completions.complete(
       usuario_id,
       'challenge',
@@ -305,6 +307,11 @@ export class ChallengeService {
         // Legado sem resultado: não inventar correções nem conceder XP retroativo.
         if (existing?.completed)
           throw new BadRequestException('Você já realizou este desafio');
+        const result = gradeChallenge(
+          challenge.points,
+          questions,
+          mergeRecordedAnswers(dto.answers, existing?.selected_answers),
+        );
         await repository.save(
           repository.create({
             ...existing,

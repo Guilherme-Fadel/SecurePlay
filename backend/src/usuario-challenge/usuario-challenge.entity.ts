@@ -39,8 +39,16 @@ export class UsuarioChallenge {
   @Column({ default: false })
   completed: boolean;
 
+  /** Questões já respondidas (certas ou erradas) na tentativa. */
   @Column('json', { nullable: true })
   answered_question_ids: number[];
+
+  /**
+   * Primeira alternativa escolhida em cada questão (`{ [questionId]: selectedIndex }`).
+   * Nulo em tentativas abertas antes de 2026-11 (o envio usa o corpo, como antes).
+   */
+  @Column('json', { nullable: true })
+  selected_answers: Record<string, number> | null;
 
   @CreateDateColumn()
   started_at: Date;

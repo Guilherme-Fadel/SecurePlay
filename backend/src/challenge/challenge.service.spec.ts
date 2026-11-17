@@ -104,7 +104,11 @@ describe('ChallengeService daily authorization', () => {
     );
     expect(internals.usuarioChallengeRepository.update).toHaveBeenCalledWith(
       { id: 77, completed: false },
-      { answered_question_ids: [101], progress: 100 },
+      {
+        answered_question_ids: [101],
+        selected_answers: { '101': 0 },
+        progress: 100,
+      },
     );
     expect(internals.usuarioChallengeRepository.save).not.toHaveBeenCalled();
   });
@@ -130,7 +134,6 @@ describe('ChallengeService daily authorization', () => {
     });
 
     await expect(service.saveProgress(5, 11, 101, 0)).resolves.toMatchObject({
-      correct: true,
       answeredCount: 1,
       totalQuestions: 2,
       progress: 50,
@@ -138,7 +141,11 @@ describe('ChallengeService daily authorization', () => {
     });
     expect(internals.usuarioChallengeRepository.update).toHaveBeenCalledWith(
       { id: 77, completed: false },
-      { answered_question_ids: [101], progress: 50 },
+      {
+        answered_question_ids: [101],
+        selected_answers: { '101': 0 },
+        progress: 50,
+      },
     );
   });
 });
