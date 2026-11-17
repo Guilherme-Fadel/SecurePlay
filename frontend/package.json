@@ -11,7 +11,7 @@
     "test:assets-fallback": "node --test scripts/test-assets-fallback.mjs",
     "build": "vite build",
     "prebuild": "npm run check:assets && npm run typecheck",
-    "check:assets": "node scripts/check-assets.cjs",
+    "check:assets": "node scripts/check-assets.cjs && node scripts/check-csp-hash.cjs",
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
