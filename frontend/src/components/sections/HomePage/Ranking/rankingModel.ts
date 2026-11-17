@@ -130,7 +130,7 @@ export function viewerOf(ranking: RankingData): RankingEntry | null {
 }
 
 export function isViewerEntry(entry: RankingEntry, viewer: RankingEntry | null): boolean {
-  return !!viewer && (entry.isCurrentUser === true || entry.id === viewer.id);
+  return !!viewer && (entry.isCurrentUser === true || entry.rankKey === viewer.rankKey);
 }
 
 export interface PodiumSlot {

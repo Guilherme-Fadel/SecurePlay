@@ -6,7 +6,7 @@ const model = load('src/components/sections/HomePage/Ranking/rankingModel.ts', {
 const avatar = load('src/components/sections/HomePage/Ranking/rankingAvatarTone.ts', {});
 const plain = (value) => JSON.parse(JSON.stringify(value));
 
-const entry = (id, position, points, extra = {}) => ({ id, position, name: `Aluno ${id}`, points, level: 1, ...extra });
+const entry = (key, position, points, extra = {}) => ({ rankKey: `k${key}`, position, name: `Aluno ${key}`, points, level: 1, ...extra });
 
 function ranking(overrides = {}) {
   return {
@@ -64,10 +64,10 @@ test('corrida: você ±2 da lista recebida e "faltam X XP para passar" só quand
   const data = ranking({ leaderboard: list, totalParticipants: 7, currentUser: me, viewerParticipates: true, summary: { leaderPoints: 1000, pointsBehindLeader: 300, pointsToNextPosition: 101, percentile: 50 } });
   const race = model.raceModel(data);
   assert.deepEqual(race.lanes.map((lane) => lane.entry.position), [2, 3, 4, 5, 6]);
-  assert.equal(race.lanes.find((lane) => lane.me).entry.id, me.id);
+  assert.equal(race.lanes.find((lane) => lane.me).entry.rankKey, me.rankKey);
   assert.equal(race.chase.kind, 'neighbor');
   assert.equal(race.chase.gap, 101);
-  assert.equal(race.chase.neighbor.id, 3);
+  assert.equal(race.chase.neighbor.rankKey, 'k3');
   const mismatch = model.raceModel({ ...data, summary: { ...data.summary, pointsToNextPosition: 40 } });
   assert.equal(mismatch.chase.kind, 'gap');
   const first = model.raceModel({ ...data, currentUser: { ...list[0], isCurrentUser: true }, leaderboard: list.map((item, index) => ({ ...item, isCurrentUser: index === 0 })), summary: { ...data.summary, pointsToNextPosition: 0 } });
@@ -80,7 +80,7 @@ test('abaixo da 50ª: sua linha depois de "· · ·", corrida só com o resumo e
   const me = entry(999, 73, 120, { isCurrentUser: true });
   const data = ranking({ leaderboard: list, top: list.slice(0, 3), totalParticipants: 140, currentUser: me, viewerParticipates: true, summary: { leaderPoints: 5000, pointsBehindLeader: 4880, pointsToNextPosition: 6, percentile: 48 } });
   const rows = model.boardModel(data);
-  assert.equal(rows.viewerOutside.id, 999);
+  assert.equal(rows.viewerOutside.rankKey, 'k999');
   assert.equal(rows.rows.length, 47);
   assert.equal(rows.truncated, true);
   assert.ok(rows.rows.every((row) => !row.me));
@@ -125,11 +125,11 @@ test('temporada encerrada e começo da temporada têm mensagens próprias; falas
   assert.ok(speech.lines.every((line) => !/jog/i.test(line)));
 });
 
-test('avatar sem foto: cor fixa pelo id e amarelo para você', () => {
-  assert.deepEqual(avatar.avatarTone(12, false), avatar.avatarTone(12, false));
-  assert.notDeepEqual(avatar.avatarTone(12, false), avatar.avatarTone(13, false));
-  assert.equal(avatar.avatarTone(12, true).background, 'var(--sp-yellow)');
-  assert.equal(avatar.avatarTone(12, true).color, 'var(--sp-black)');
+test('avatar sem foto: cor fixa pela rankKey e amarelo para você', () => {
+  assert.deepEqual(avatar.avatarTone('k12', false), avatar.avatarTone('k12', false));
+  assert.notDeepEqual(avatar.avatarTone('k12', false), avatar.avatarTone('k13', false));
+  assert.equal(avatar.avatarTone('k12', true).background, 'var(--sp-yellow)');
+  assert.equal(avatar.avatarTone('k12', true).color, 'var(--sp-black)');
 });
 
 test('sua foto do perfil completa só as suas linhas sem foto, sem mudar posição nem XP', () => {

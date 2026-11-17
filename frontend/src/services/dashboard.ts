@@ -46,7 +46,8 @@ export async function getWeeklyStreak(): Promise<WeeklyStreak> {
 }
 
 export interface RankingEntry {
-  id: number;
+  /** Chave opaca do aluno no ranking (o id interno não é exposto). */
+  rankKey: string;
   position: number;
   name: string;
   points: number;

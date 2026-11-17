@@ -16,7 +16,7 @@ export function RankingPodium({ slots, metric, showCompany }: RankingPodiumProps
         {slots.map(({ entry, step, order, me }) => {
           const sub = [`Nível ${entry.level}`, showCompany && entry.companyName ? entry.companyName : null].filter(Boolean).join(' · ');
           return (
-            <li key={entry.id} className={`rk-pd is-step-${step}${me ? ' is-me' : ''}`} style={{ order }}>
+            <li key={entry.rankKey} className={`rk-pd is-step-${step}${me ? ' is-me' : ''}`} style={{ order }}>
               <div className="rk-pd-who">
                 {step === 1 && (
                   <svg className="rk-pd-crown" width="40" height="28" viewBox="0 0 34 24" aria-hidden="true">

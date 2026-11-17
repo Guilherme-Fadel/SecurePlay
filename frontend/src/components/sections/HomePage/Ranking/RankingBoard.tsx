@@ -40,7 +40,7 @@ export function RankingBoard({ board, subtitle, showTrend, weeklyAvailable, show
         ? <p className="rk-muted rk-board-empty">Todos os participantes desta classificação estão no pódio.</p>
         : (
           <ol className={`rk-rows${showTrend ? '' : ' no-trend'}`} aria-label="Classificação a partir do quarto colocado">
-            {board.rows.map(({ entry, me }) => <BoardRow key={entry.id} entry={entry} me={me} {...rowProps} />)}
+            {board.rows.map(({ entry, me }) => <BoardRow key={entry.rankKey} entry={entry} me={me} {...rowProps} />)}
             {board.viewerOutside && (
               <>
                 <li className="rk-skip"><span aria-hidden="true">· · ·</span><span className="rk-sr">Posições intermediárias omitidas</span></li>

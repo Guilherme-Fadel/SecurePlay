@@ -4,6 +4,7 @@ import {
   S3Client,
   PutObjectCommand,
   GetObjectCommand,
+  HeadObjectCommand,
 } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { createPresignedPost } from '@aws-sdk/s3-presigned-post';
@@ -115,6 +116,30 @@ export class S3Service {
         ['content-length-range', 1, maxBytes],
       ],
     });
+  }
+
+  /**
+   * Metadados do objeto no bucket; null quando ele não existe (404). Outras falhas sobem,
+   * para quem chama decidir (ex.: recusar salvar uma foto que não pôde ser conferida).
+   */
+  async headObject(
+    key: string,
+  ): Promise<{ contentLength: number; contentType: string } | null> {
+    try {
+      const head = await this.s3Client.send(
+        new HeadObjectCommand({ Bucket: this.bucketName, Key: key }),
+      );
+      return {
+        contentLength: head.ContentLength ?? 0,
+        contentType: head.ContentType ?? '',
+      };
+    } catch (error: unknown) {
+      const status = (error as { $metadata?: { httpStatusCode?: number } })
+        .$metadata?.httpStatusCode;
+      if (status === 404 || (error as { name?: string }).name === 'NotFound')
+        return null;
+      throw error;
+    }
   }
 
   async generatePresignedGetUrl(

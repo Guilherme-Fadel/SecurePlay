@@ -43,22 +43,22 @@ export function rankingRows(ranking: RankingData): { rows: BoardRow[]; neighbor:
   const me = ranking.viewerParticipates ? ranking.currentUser : null;
   const top = ranking.top.slice(0, 3);
   if (!me) {
-    const rows = ranking.leaderboard.slice(0, 5).map((entry) => ({ kind: 'row' as const, key: `r${entry.id}`, entry, me: false }));
+    const rows = ranking.leaderboard.slice(0, 5).map((entry) => ({ kind: 'row' as const, key: `r${entry.rankKey}`, entry, me: false }));
     return { rows, neighbor: null };
   }
-  const isMe = (entry: RankingEntry) => entry.id === me.id || !!entry.isCurrentUser;
-  const rows: BoardRow[] = top.map((entry) => ({ kind: 'row', key: `r${entry.id}`, entry, me: isMe(entry) }));
+  const isMe = (entry: RankingEntry) => entry.rankKey === me.rankKey || !!entry.isCurrentUser;
+  const rows: BoardRow[] = top.map((entry) => ({ kind: 'row', key: `r${entry.rankKey}`, entry, me: isMe(entry) }));
   const neighbor = neighborAbove(ranking, me, isMe);
   if (top.some(isMe)) return { rows, neighbor };
-  const shownIds = new Set(top.map((entry) => entry.id));
+  const shownIds = new Set(top.map((entry) => entry.rankKey));
   const tail: RankingEntry[] = [];
-  if (neighbor && !shownIds.has(neighbor.id)) tail.push(neighbor);
+  if (neighbor && !shownIds.has(neighbor.rankKey)) tail.push(neighbor);
   tail.push(ranking.leaderboard.find(isMe) ?? me);
   let previousPosition = top[top.length - 1]?.position ?? 0;
   tail.forEach((entry) => {
     // Separador sempre que houver posições omitidas entre duas linhas.
-    if (entry.position > previousPosition + 1) rows.push({ kind: 'gap', key: `gap-${entry.id}` });
-    rows.push({ kind: 'row', key: `r${entry.id}`, entry, me: isMe(entry) });
+    if (entry.position > previousPosition + 1) rows.push({ kind: 'gap', key: `gap-${entry.rankKey}` });
+    rows.push({ kind: 'row', key: `r${entry.rankKey}`, entry, me: isMe(entry) });
     previousPosition = entry.position;
   });
   return { rows, neighbor };

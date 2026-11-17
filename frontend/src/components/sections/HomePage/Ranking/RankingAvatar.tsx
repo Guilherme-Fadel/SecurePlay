@@ -4,7 +4,7 @@ import type { RankingEntry } from '@/services/dashboard';
 import { avatarTone } from './rankingAvatarTone';
 
 interface RankingAvatarProps {
-  entry: Pick<RankingEntry, 'id' | 'name' | 'profileImageUrl'>;
+  entry: Pick<RankingEntry, 'rankKey' | 'name' | 'profileImageUrl'>;
   me?: boolean;
   /** Listas longas (classificação, corrida): a foto só carrega perto da área visível. */
   lazy?: boolean;
@@ -20,7 +20,7 @@ interface RankingAvatarProps {
 export function RankingAvatar({ entry, me = false, lazy = false, className = '' }: RankingAvatarProps) {
   const [failed, setFailed] = useState<string | null>(null);
   const image = entry.profileImageUrl && failed !== entry.profileImageUrl ? entry.profileImageUrl : null;
-  const tone = avatarTone(entry.id, me);
+  const tone = avatarTone(entry.rankKey, me);
   return (
     <span
       className={`rk-avatar${image ? ' has-photo' : ''}${me ? ' is-me' : ''} ${className}`.trim()}

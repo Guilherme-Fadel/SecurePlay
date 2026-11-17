@@ -3,6 +3,7 @@ import {
   Injectable,
   Inject,
   NotFoundException,
+  ServiceUnavailableException,
   UnauthorizedException,
 } from '@nestjs/common';
 import { Repository } from 'typeorm';
@@ -14,6 +15,7 @@ import { ChangePasswordDto } from '../auth/dto/change-password.dto';
 import { S3Service } from '../conteudo/s3/s3.service';
 import {
   extensionForLogo,
+  LOGO_CONTENT_TYPES,
   MAX_UPLOAD_BYTES,
 } from '../conteudo/s3/upload-policy';
 import { randomUUID } from 'crypto';
@@ -261,6 +263,26 @@ export class UsuarioService {
     return { uploadUrl, fields, key };
   }
 
+  /** B8/M5: a foto precisa existir no bucket, com tipo de imagem e tamanho do envio permitido. */
+  private async assertUploadedProfileImage(key: string): Promise<void> {
+    let head: { contentLength: number; contentType: string } | null;
+    try {
+      head = await this.s3Service.headObject(key);
+    } catch {
+      throw new ServiceUnavailableException(
+        'Não foi possível conferir a foto agora. Tente de novo em instantes.',
+      );
+    }
+    if (!head) throw new BadRequestException('Envie a foto antes de salvá-la.');
+    const allowedType = (LOGO_CONTENT_TYPES as readonly string[]).includes(
+      head.contentType,
+    );
+    if (!allowedType || head.contentLength > MAX_UPLOAD_BYTES.logo)
+      throw new BadRequestException(
+        'Foto inválida: use PNG, JPEG ou WebP de até 2 MB.',
+      );
+  }
+
   async saveProfileImage(userId: number, key: string) {
     const validPrefix = `profiles/${userId}/`;
     if (!key.startsWith(validPrefix)) {
@@ -269,6 +291,7 @@ export class UsuarioService {
 
     const usuario = await this.getUsuarioById(userId);
     if (!usuario) throw new NotFoundException('Usuário não encontrado');
+    await this.assertUploadedProfileImage(key);
     await ensurePendingRankingSeasonsClosed(
       this.usuarioRepository.manager.connection,
     );

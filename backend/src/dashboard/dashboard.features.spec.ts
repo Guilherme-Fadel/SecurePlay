@@ -1,4 +1,5 @@
 import { DashboardService } from './dashboard.service';
+import { rankKey } from './rank-key';
 import { NotFoundException } from '@nestjs/common';
 import { Role } from '../auth/roles.enum';
 import { getRankingWeekStart } from './ranking-season';
@@ -196,9 +197,13 @@ describe('DashboardService company parameters', () => {
     );
 
     const ranking = await service.getRanking(7, 'company');
-    expect(ranking.top[0]).toMatchObject({ id: 7, position: 1, points: 100 });
+    expect(ranking.top[0]).toMatchObject({
+      rankKey: rankKey(7),
+      position: 1,
+      points: 100,
+    });
     expect(ranking.currentUser.points).toBe(100);
-    expect(ranking.top[1]).toMatchObject({ id: 1, points: 0 });
+    expect(ranking.top[1]).toMatchObject({ rankKey: rankKey(1), points: 0 });
   });
 
   it('orders total mode by lifetime XP', async () => {
@@ -209,7 +214,11 @@ describe('DashboardService company parameters', () => {
     ]);
     const ranking = await service.getRanking(7, 'company', false, { mode: 'total' });
     expect(ranking).toMatchObject({ mode: 'total', metric: 'totalXp', selectedSeason: null, dataCompleteness: 'complete' });
-    expect(ranking.top[0]).toMatchObject({ id: 1, position: 1, points: 5000 });
+    expect(ranking.top[0]).toMatchObject({
+      rankKey: rankKey(1),
+      position: 1,
+      points: 5000,
+    });
     expect(ranking.currentUser?.points).toBe(100);
   });
 
@@ -239,7 +248,8 @@ describe('DashboardService company parameters', () => {
 
     const ranking = await service.getRanking(7, 'global', false, { mode: 'season', selectedSeason: '2026-09' });
     expect(ranking).toMatchObject({ mode: 'season', scope: 'global', dataCompleteness: 'complete', totalParticipants: 3 });
-    expect(ranking.top.map((entry) => [entry.id, entry.position])).toEqual([[1, 1], [2, 1], [7, 3]]);
+    const keys = ranking.top.map((entry) => [entry.rankKey, entry.position]);
+    expect(keys).toEqual([[rankKey(1), 1], [rankKey(2), 1], [rankKey(7), 3]]);
     expect(ranking.currentUser).toMatchObject({ name: 'Eu antes', companyName: 'Escola antiga', position: 3 });
     expect(ranking.top[0]).toMatchObject({ name: 'Nome antigo 1', companyName: 'Escola antiga' });
     expect(dataSource.query).toHaveBeenCalledWith(expect.stringContaining('global_eligible = 1'), ['2026-09']);
@@ -294,5 +304,44 @@ describe('DashboardService company parameters', () => {
       Array.from({ length: 5 }, () => service.getRanking(7, 'company')),
     );
     expect(query.getMany).toHaveBeenCalledTimes(1);
+  });
+
+  it('ranking global não expõe foto de outra escola nem usuario_id (M5/B8)', async () => {
+    const school = { id: 3, nome: 'Escola' };
+    const parameters = { globalRankingEnabled: true };
+    const { service, query } = buildService(school, parameters);
+    query.getMany.mockResolvedValue([
+      {
+        usuario_id: 1,
+        total_points: 900,
+        usuario: {
+          nickname: 'Outra',
+          empresa_id: 4,
+          profile_image_key: 'fotos/1.png',
+        },
+      },
+      {
+        usuario_id: 2,
+        total_points: 800,
+        usuario: {
+          nickname: 'Colega',
+          empresa_id: 3,
+          profile_image_key: 'fotos/2.png',
+        },
+      },
+    ]);
+    Object.assign(service as unknown as Record<string, unknown>, {
+      s3Service: {
+        generatePresignedGetUrl: (key: string) =>
+          Promise.resolve(`https://bucket.test/${key}`),
+      },
+    });
+    const ranking = await service.getRanking(7, 'global', false);
+    const outra = ranking.leaderboard.find((entry) => entry.name === 'Outra');
+    const colega = ranking.leaderboard.find((entry) => entry.name === 'Colega');
+    expect(outra).not.toHaveProperty('id');
+    expect(outra?.rankKey).toMatch(/^[0-9a-f]{16}$/);
+    expect(outra?.profileImageUrl).toBeNull();
+    expect(colega?.profileImageUrl).not.toBeNull();
   });
 });

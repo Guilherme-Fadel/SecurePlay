@@ -2,6 +2,7 @@ import type { UsuarioStats } from '../usuario-stats/usuario-stats.entity';
 import type { RedisService } from '../redis/redis.service';
 import { calcLevel } from '../common/utils/xp.utils';
 import { getRankingWeekStart } from './ranking-season';
+import { rankKey } from './rank-key';
 
 export interface WeeklyRankingCandidate {
   id: number;
@@ -20,7 +21,7 @@ export interface RankingWeekData {
     kind: 'streak' | 'xp' | 'challenges';
     label: string;
     user: {
-      id: number;
+      rankKey: string;
       position: number;
       name: string;
       points: number;
@@ -105,6 +106,8 @@ export async function loadRankingWeek(options: {
   resolveProfileImageUrl: (
     key: string | null | undefined,
   ) => Promise<string | null>;
+  /** M5: foto só quando quem consulta pode vê-la (mesma escola no ranking global). */
+  showPhoto?: (entry: UsuarioStats) => boolean;
 }): Promise<RankingWeekData> {
   const week = getRankingWeekStart();
 
@@ -154,7 +157,7 @@ export async function loadRankingWeek(options: {
       value,
       unit,
       user: {
-        id: entry.usuario_id,
+        rankKey: rankKey(entry.usuario_id),
         position:
           allStats.filter(
             (item) =>
@@ -170,9 +173,12 @@ export async function loadRankingWeek(options: {
         level: calcLevel(entry.total_points),
         companyName: entry.usuario?.empresa?.nome ?? null,
         isCurrentUser: entry.usuario_id === options.currentUserId,
-        profileImageUrl: await options.resolveProfileImageUrl(
-          entry.usuario?.profile_image_key,
-        ),
+        profileImageUrl:
+          options.showPhoto?.(entry) === false
+            ? null
+            : await options.resolveProfileImageUrl(
+                entry.usuario?.profile_image_key,
+              ),
       },
     });
   }

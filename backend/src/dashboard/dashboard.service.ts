@@ -15,6 +15,7 @@ import { CompanyFeaturesService } from '../common/features/company-features.serv
 import { Role } from '../auth/roles.enum';
 import { loadRankingWeek, unavailableRankingWeek } from './ranking-weekly';
 import { getRankingSeason, getSeasonXpByUser } from './ranking-season';
+import { rankKey } from './rank-key';
 import { Empresa } from '../empresa/empresa.entity';
 import { creditSeasonXp } from '../common/gamification/credit-season-xp';
 import { closeRankingSeason, ensurePendingRankingSeasonsClosed, historicalSeason, loadSeasonPoints, rankingHistoryContext, RankingMode } from './ranking-history';
@@ -210,6 +211,11 @@ export class DashboardService implements OnModuleInit, OnModuleDestroy {
     const historicalCurrentEntry = mode === 'season' ? allStats.find((entry) => entry.usuario_id === usuario_id) : null;
     let previousPoints: number | null = null;
     let previousPosition = 0;
+    // M5: no ranking global, foto só de alunos da mesma escola de quem consulta.
+    const showPhoto = (entry: UsuarioStats) =>
+      scope === 'company' ||
+      entry.usuario_id === usuario_id ||
+      (!!company && entry.usuario?.empresa_id === company.id);
     const leaderboard = includeEntries
       ? await Promise.all(
           leaderboardEntries.map(async (entry, index) => {
@@ -219,7 +225,8 @@ export class DashboardService implements OnModuleInit, OnModuleDestroy {
               previousPoints = points;
             }
             return {
-              id: entry.usuario_id,
+              usuarioId: entry.usuario_id,
+              rankKey: rankKey(entry.usuario_id),
               position: previousPosition,
               name:
                 mode === 'season'
@@ -234,11 +241,12 @@ export class DashboardService implements OnModuleInit, OnModuleDestroy {
               level: calcLevel(entry.total_points),
               companyName: mode === 'season' ? historicalCompanies.get(entry.usuario_id) ?? null : null,
               isCurrentUser: entry.usuario_id === usuario_id,
-              profileImageUrl: includeImages
-                ? await this.resolveProfileImageUrl(
-                    entry.usuario?.profile_image_key,
-                  )
-                : null,
+              profileImageUrl:
+                includeImages && showPhoto(entry)
+                  ? await this.resolveProfileImageUrl(
+                      entry.usuario?.profile_image_key,
+                    )
+                  : null,
             };
           }),
         )
@@ -268,7 +276,7 @@ export class DashboardService implements OnModuleInit, OnModuleDestroy {
             ),
           );
     const currentUser = isManagementUser || (mode === 'season' && !viewerInRanking) ? null : {
-      id: usuario_id,
+      rankKey: rankKey(usuario_id),
       position: currentPosition,
       name: mode === 'season' ? historicalCurrentEntry?.usuario?.nickname ?? 'Você' :
         currentEntry?.usuario?.nickname ?? currentEntry?.usuario?.name ?? 'Você',
@@ -291,6 +299,7 @@ export class DashboardService implements OnModuleInit, OnModuleDestroy {
           seasonPoints,
       currentUserId: isManagementUser ? 0 : usuario_id,
           resolveProfileImageUrl: (key) => this.resolveProfileImageUrl(key),
+          showPhoto,
         });
       } catch (error) {
         this.logger.warn(
@@ -310,13 +319,13 @@ export class DashboardService implements OnModuleInit, OnModuleDestroy {
       selectedSeason,
       availableSeasons: history.availableSeasons,
       dataCompleteness: history.dataCompleteness,
-      top: top.map((entry) => ({
+      top: top.map(({ usuarioId, ...entry }) => ({
         ...entry,
-        weeklyChange: weekly.changes?.get(entry.id) ?? null,
+        weeklyChange: weekly.changes?.get(usuarioId) ?? null,
       })),
-      leaderboard: leaderboard.map((entry) => ({
+      leaderboard: leaderboard.map(({ usuarioId, ...entry }) => ({
         ...entry,
-        weeklyChange: weekly.changes?.get(entry.id) ?? null,
+        weeklyChange: weekly.changes?.get(usuarioId) ?? null,
       })),
       currentUser,
       viewerParticipates: !isManagementUser && (mode !== 'season' || viewerInRanking),
@@ -370,6 +379,7 @@ export class DashboardService implements OnModuleInit, OnModuleDestroy {
                 nickname: row.display_name,
                 name: row.display_name,
                 profile_image_key: row.profile_image_key,
+                empresa_id: row.empresa_id,
               },
             }) as UsuarioStats,
         ),

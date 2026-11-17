@@ -20,16 +20,17 @@ const AVATAR_TONES: AvatarTone[] = [
 ];
 const MY_TONE: AvatarTone = { background: 'var(--sp-yellow)', color: 'var(--sp-black)' };
 
-/** Cor determinística pelo id do usuário: o mesmo aluno tem sempre a mesma cor. */
-export function avatarTone(id: number, me: boolean): AvatarTone {
+/** Cor determinística pela chave do ranking: o mesmo aluno tem sempre a mesma cor. */
+export function avatarTone(rankKey: string, me: boolean): AvatarTone {
   if (me) return MY_TONE;
-  const index = Math.abs(Math.trunc(Number.isFinite(id) ? id : 0)) % AVATAR_TONES.length;
-  return AVATAR_TONES[index] ?? MY_TONE;
+  let hash = 0;
+  for (const char of rankKey) hash = (hash * 31 + char.charCodeAt(0)) >>> 0;
+  return AVATAR_TONES[hash % AVATAR_TONES.length] ?? MY_TONE;
 }
 
-function fillPhoto(entry: RankingEntry, viewerId: number | null, photo: string): RankingEntry {
+function fillPhoto(entry: RankingEntry, viewerKey: string | null, photo: string): RankingEntry {
   if (entry.profileImageUrl) return entry;
-  const mine = entry.isCurrentUser === true || (viewerId !== null && entry.id === viewerId);
+  const mine = entry.isCurrentUser === true || (viewerKey !== null && entry.rankKey === viewerKey);
   return mine ? { ...entry, profileImageUrl: photo } : entry;
 }
 
@@ -40,8 +41,8 @@ function fillPhoto(entry: RankingEntry, viewerId: number | null, photo: string):
 export function withViewerPhoto(ranking: RankingData, photo: string | null | undefined): RankingData {
   const url = photo?.trim();
   if (!url) return ranking;
-  const viewerId = ranking.currentUser?.id ?? null;
-  const fill = (entry: RankingEntry) => fillPhoto(entry, viewerId, url);
+  const viewerKey = ranking.currentUser?.rankKey ?? null;
+  const fill = (entry: RankingEntry) => fillPhoto(entry, viewerKey, url);
   return {
     ...ranking,
     top: ranking.top.map(fill),

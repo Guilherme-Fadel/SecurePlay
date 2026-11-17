@@ -42,7 +42,7 @@ export function RankingRace({ race, seasonName, weeklyChange, showActions, showP
           {race.lanes.map((lane) => {
             const name = lane.me ? 'Você' : lane.entry.name;
             return (
-              <li key={lane.entry.id} className={`rk-lane${lane.me ? ' is-me' : ''}`}>
+              <li key={lane.entry.rankKey} className={`rk-lane${lane.me ? ' is-me' : ''}`}>
                 <span className="rk-lane-pos">{ordinal(lane.entry.position)}</span>
                 <span className="rk-lane-track" aria-hidden="true">
                   <span className={`rk-lane-run is-label-${lane.labelSide}`} style={{ left: `${lane.x}%` }}>
