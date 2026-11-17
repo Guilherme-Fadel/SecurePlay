@@ -1,5 +1,5 @@
 import fastify from 'fastify';
-import { trustProxyFromEnv } from './trust-proxy';
+import { forwardedClientIp, trustProxyFromEnv } from './trust-proxy';
 
 async function ipFor(
   setting: ReturnType<typeof trustProxyFromEnv>,
@@ -42,4 +42,34 @@ describe('trustProxyFromEnv — contagem de saltos no Fastify 5.12+', () => {
       );
     },
   );
+});
+
+describe('forwardedClientIp — mesma regra do Fastify para requisição crua', () => {
+  const cases: Array<[string | undefined, string | undefined]> = [
+    ['1', undefined],
+    ['1', '203.0.113.9'],
+    ['1', '198.51.100.7, 203.0.113.9'],
+    ['2', '198.51.100.7, 203.0.113.9'],
+    ['2', '203.0.113.9'],
+    ['3', '192.0.2.1, 198.51.100.7, 203.0.113.9'],
+    [undefined, '198.51.100.7'],
+    ['0', '198.51.100.7'],
+  ];
+
+  it.each(cases)('TRUST_PROXY=%s, XFF=%s', async (raw, forwardedFor) => {
+    const setting = trustProxyFromEnv(raw);
+    expect(forwardedClientIp('10.0.0.1', forwardedFor, setting)).toBe(
+      await ipFor(setting, forwardedFor),
+    );
+  });
+
+  it('aceita o cabeçalho repetido como lista', () => {
+    expect(
+      forwardedClientIp(
+        '10.0.0.1',
+        ['198.51.100.7', '203.0.113.9'],
+        trustProxyFromEnv('1'),
+      ),
+    ).toBe('203.0.113.9');
+  });
 });
