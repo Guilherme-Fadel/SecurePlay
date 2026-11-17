@@ -30,14 +30,17 @@ export class ArcadeRunStore {
     private readonly classify: DataClassifyHandler,
   ) {}
   /**
-   * Devolve a partida aberta do mesmo jogo (não enviada e não expirada) ou sorteia outra,
+   * Devolve a partida aberta do mesmo jogo (não enviada e não expirada) ou grava a sorteada,
    * serializado pela trava do aluno: starts simultâneos não abrem partidas extras (M2).
+   * O sorteio (`build`) roda ANTES da transação: ele consulta pelo pool e, dentro da trava,
+   * pediria uma segunda conexão com a primeira já retida, esgotando o pool sob concorrência.
    */
   async openOrCreate(
     user: number,
     game: ArcadeGame,
     build: () => Promise<GameRun>,
   ): Promise<OpenedRun> {
+    const run = await build();
     return this.completions.updateProgress(user, async (manager) => {
       const repository = manager.getRepository(ArcadeRun);
       const open = await repository
@@ -50,8 +53,8 @@ export class ArcadeRunStore {
         .andWhere('run.payload IS NOT NULL')
         .orderBy('run.created_at', 'DESC')
         .getOne();
+      // Já existe partida aberta: a rodada sorteada é descartada.
       if (open) return { runId: open.run_id, payload: open.payload };
-      const run = await build();
       const runId = randomUUID();
       await repository.save({
         run_id: runId,
