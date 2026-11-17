@@ -38,7 +38,12 @@ export function AulaTexto({ aulaId, moduloId, onBack, onSelectAula }: AulaTextoP
   const pages = aula?.pages ?? [];
   const lesson = useMemo(() => buildLessonSteps(aula?.pages), [aula?.pages]);
   const hasQuiz = (aula?.quiz?.length ?? 0) > 0;
-  const openQuiz = useCallback(() => setShowQuiz(true), []);
+  const loadedId = aula?.id;
+  // O servidor só aceita concluir (ou o quiz) depois de registrar a última página (A2).
+  const saveLastPage = useCallback(() => (loadedId && pages.length
+    ? salvarProgresso(loadedId, { progress_percent: 99, last_page: pages.length - 1 })
+    : Promise.resolve(null)), [loadedId, pages.length, salvarProgresso]);
+  const openQuiz = useCallback(() => { void saveLastPage().finally(() => setShowQuiz(true)); }, [saveLastPage]);
   const { currentPage, isLastPage, goNext, goPrev, goTo } = usePageNavigation({
     totalPages: pages.length,
     enabled: !showQuiz,
@@ -73,6 +78,7 @@ export function AulaTexto({ aulaId, moduloId, onBack, onSelectAula }: AulaTextoP
   };
 
   const handleComplete = async () => {
+    await saveLastPage();
     const result = await concluir(aulaId);
     if (!result) return;
     setXpGanho(result.xp_ganho);

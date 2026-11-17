@@ -19,6 +19,11 @@ import {
 import { SubmitQuizDto } from '../aula-quiz/dto/aula-quiz.dto';
 import { Notification } from '../../notification/notification.entity';
 import { sortAulasByModuleSequence } from './aula-order';
+import {
+  cappedProgress,
+  consumptionError,
+  maxProgressGain,
+} from './lesson-consumption';
 import { ActivityCompletionService } from '../../common/gamification/activity-completion.service';
 import {
   ActivityCompletion,
@@ -78,13 +83,11 @@ export class AulaService {
       where: { usuario_id, aula_id: id },
     });
 
-    let quiz: AulaQuiz[] = [];
-    if (aula.type === AulaType.QUADRINHO || aula.type === AulaType.TEXTO) {
-      quiz = await this.aulaQuizRepository.find({
-        where: { aula_id: id },
-        order: { order: 'ASC' },
-      });
-    }
+    // Vídeo com quiz também conclui pelo quiz (D1).
+    const quiz: AulaQuiz[] = await this.aulaQuizRepository.find({
+      where: { aula_id: id },
+      order: { order: 'ASC' },
+    });
 
     return {
       id: aula.id,
@@ -198,6 +201,7 @@ export class AulaService {
       });
       const now = new Date();
 
+      const firstRecord = !progress;
       if (!progress) {
         progress = repository.create({
           usuario_id,
@@ -209,12 +213,15 @@ export class AulaService {
       }
 
       progress.started_at ??= now;
+      const since = progress.last_accessed_at ?? progress.started_at;
       progress.last_accessed_at = now;
 
       if (!progress.completed && dto.progress_percent !== undefined) {
-        progress.progress_percent = Math.max(
+        // O servidor limita o avanço pelo tempo real desde o último registro (A2).
+        progress.progress_percent = cappedProgress(
           progress.progress_percent ?? 0,
           dto.progress_percent,
+          maxProgressGain(aula, now.getTime() - since.getTime(), firstRecord),
         );
       }
       if (dto.last_video_second !== undefined) {
@@ -247,22 +254,18 @@ export class AulaService {
       where: { id: aulaId, active: true },
     });
     if (!aula) throw new NotFoundException('Aula não encontrada');
-    if (aula.type === AulaType.QUADRINHO || aula.type === AulaType.TEXTO) {
-      const count = await this.aulaQuizRepository.count({
-        where: { aula_id: aulaId },
-      });
-      if (count > 0)
-        throw new BadRequestException(
-          'Responda ao quiz para concluir esta aula',
-        );
-    }
+    const quizCount = await this.aulaQuizRepository.count({
+      where: { aula_id: aulaId },
+    });
+    if (quizCount > 0)
+      throw new BadRequestException('Responda ao quiz para concluir esta aula');
     return this.completions.complete(
       usuario_id,
       'lesson',
       aulaId,
       async (manager) => {
         await this.verificarDesbloqueio(aula, usuario_id, manager);
-        await this.markCompleted(manager, aulaId, usuario_id);
+        await this.markCompleted(manager, aula, usuario_id);
         const bonus = await this.completeModule(
           manager,
           aula.modulo_id,
@@ -296,9 +299,6 @@ export class AulaService {
       where: { id: aulaId, active: true },
     });
     if (!aula) throw new NotFoundException('Aula não encontrada');
-    if (aula.type !== AulaType.QUADRINHO && aula.type !== AulaType.TEXTO) {
-      throw new BadRequestException('Esta aula não possui quiz');
-    }
     const questions = await this.aulaQuizRepository.find({
       where: { aula_id: aulaId },
     });
@@ -327,7 +327,7 @@ export class AulaService {
       aulaId,
       async (manager) => {
         await this.verificarDesbloqueio(aula, usuario_id, manager);
-        await this.markCompleted(manager, aulaId, usuario_id);
+        await this.markCompleted(manager, aula, usuario_id);
         const bonus = await this.completeModule(
           manager,
           aula.modulo_id,
@@ -350,15 +350,19 @@ export class AulaService {
 
   private async markCompleted(
     manager: EntityManager,
-    aulaId: number,
+    aula: Aula,
     usuarioId: number,
   ): Promise<void> {
+    const aulaId = aula.id;
     const repository = manager.getRepository(UsuarioAula);
     const existing = await repository.findOne({
       where: { usuario_id: usuarioId, aula_id: aulaId },
     });
     if (existing?.completed)
       throw new BadRequestException('Aula já foi concluída');
+    // Conclusão (direta ou pelo quiz) exige o consumo registrado pelo servidor (A2).
+    const notConsumed = consumptionError(aula, existing?.progress_percent);
+    if (notConsumed) throw new BadRequestException(notConsumed);
     const now = new Date();
     await repository.save(
       repository.create({

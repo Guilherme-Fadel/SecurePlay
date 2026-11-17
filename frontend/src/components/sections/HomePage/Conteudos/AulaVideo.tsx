@@ -1,11 +1,12 @@
 import { ContentLoading } from '@/components/shared/ContentLoading';
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { ArrowRight, CheckCircle2, PlayCircle, RotateCcw } from 'lucide-react';
 import { AppButton } from '@/components/ui/buttons/AppButton';
 import { useAula } from '@/hooks/useAula';
 import { useAulaProgress } from '@/hooks/useAulaProgress';
 import { useModulo } from '@/hooks/useModulo';
 import { LearningShell } from './LearningShell';
+import { AulaQuiz } from './AulaQuiz';
 import { LessonCheckpoint } from './LessonCheckpoint';
 import { LessonNavigator } from './LessonNavigator';
 import { LessonState } from './LessonState';
@@ -13,6 +14,72 @@ import { LessonStepper } from './LessonStepper';
 import { formatClock } from './lessonContext';
 import { ProgressSaveStatus } from './ProgressSaveStatus';
 import { useCanonicalLearnPath } from './useCanonicalLearnPath';
+
+/** Mesmo limite do servidor: o vídeo conclui com 90% assistido (o servidor confere o tempo real). */
+const VIDEO_COMPLETE_PERCENT = 90;
+
+/** Percentual que o servidor aceitou (ele limita o avanço pelo tempo real). */
+function confirmedPercent(saved: unknown): number | null {
+  const percent = (saved as { percent?: unknown } | null)?.percent;
+  return typeof percent === 'number' ? percent : null;
+}
+
+/** Progresso exibido, maior percentual aceito pelo servidor e etapa de quiz da aula de vídeo. */
+function useVideoGate() {
+  const [videoProgress, setVideoProgress] = useState(0);
+  const [serverPercent, setServerPercent] = useState(0);
+  const [showQuiz, setShowQuiz] = useState(false);
+  const track = useCallback((saved: unknown) => {
+    const percent = confirmedPercent(saved);
+    if (percent !== null) setServerPercent((current) => Math.max(current, percent));
+  }, []);
+  const reset = useCallback((shown: number, confirmed: number) => {
+    setVideoProgress(shown);
+    setServerPercent(confirmed);
+  }, []);
+  return { videoProgress, setVideoProgress, serverPercent, track, reset, showQuiz, setShowQuiz };
+}
+
+/** Retoma do ponto salvo, se ele ainda cabe no vídeo carregado. */
+function seekToSaved(player: HTMLVideoElement | null, lastVideoSecond: number): HTMLVideoElement | null {
+  if (player && lastVideoSecond > 0 && lastVideoSecond < player.duration) player.currentTime = lastVideoSecond;
+  return player;
+}
+
+interface VideoFinishProps {
+  completed: boolean;
+  videoProgress: number;
+  progressError: string | null;
+  hasQuiz: boolean;
+  canFinish: boolean;
+  concluding: boolean;
+  onQuiz: () => void;
+  onConcluir: () => void;
+}
+
+/** Rodapé da aula: conclusão direta ou quiz, liberados só com 90% confirmado pelo servidor. */
+function VideoFinish({ completed, videoProgress, progressError, hasQuiz, canFinish, concluding, onQuiz, onConcluir }: VideoFinishProps) {
+  if (completed) {
+    return (
+      <nav className="lesson-nav" aria-label="Conclusão do vídeo">
+        <span><CheckCircle2 size={16} aria-hidden="true" /> Aula concluída</span>
+      </nav>
+    );
+  }
+  const label = concluding ? 'Registrando...' : progressError ? 'Tentar concluir novamente' : 'Concluir aula';
+  return (
+    <nav className="lesson-nav" aria-label="Conclusão do vídeo">
+      <span>{videoProgress}% assistido</span>
+      {progressError && <p className="lesson-error" role="alert">{progressError} Tente concluir novamente.</p>}
+      {!canFinish && (
+        <p className="lesson-hint" role="status">Assista a pelo menos 90% do vídeo para {hasQuiz ? 'liberar o quiz' : 'concluir a aula'}.</p>
+      )}
+      {hasQuiz
+        ? <AppButton variant="chunky" tone="blue" onClick={onQuiz} disabled={!canFinish}>Responder quiz</AppButton>
+        : <AppButton variant="chunky" tone="blue" onClick={onConcluir} disabled={concluding || !canFinish}>{label}</AppButton>}
+    </nav>
+  );
+}
 
 interface AulaVideoProps {
   aulaId: number;
@@ -28,8 +95,8 @@ export function AulaVideo({ aulaId, moduloId, onBack, onSelectAula, onTypeResolv
   useCanonicalLearnPath(modulo, aula && { id: aula.id, title: aula.title, moduloId: aula.modulo_id });
   const { concluir, salvarProgresso, retryProgress, saveStatus, loading: concluding, error: progressError } = useAulaProgress();
   const [xpGanho, setXpGanho] = useState<number | null>(null);
-  const [videoProgress, setVideoProgress] = useState(0);
   const [started, setStarted] = useState(false);
+  const { videoProgress, setVideoProgress, serverPercent, track: trackServerPercent, reset, showQuiz, setShowQuiz } = useVideoGate();
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const lastPersistedSecond = useRef(0);
 
@@ -39,14 +106,14 @@ export function AulaVideo({ aulaId, moduloId, onBack, onSelectAula, onTypeResolv
       onTypeResolved(aula.type);
       return;
     }
-    setVideoProgress(aula.completed ? 100 : Math.max(1, aula.progress.percent));
+    reset(aula.completed ? 100 : Math.max(1, aula.progress.percent), aula.completed ? 100 : aula.progress.percent);
     lastPersistedSecond.current = aula.progress.lastVideoSecond;
     if (aula.completed) return;
     void salvarProgresso(aula.id, {
       progress_percent: aula.completed ? 100 : Math.max(1, aula.progress.percent),
       last_video_second: aula.progress.lastVideoSecond,
-    });
-  }, [aula?.id, onTypeResolved, salvarProgresso]);
+    }).then(trackServerPercent);
+  }, [aula?.id, onTypeResolved, salvarProgresso, trackServerPercent, reset]);
 
   const persistVideoPosition = (force = false) => {
     const player = videoRef.current;
@@ -56,34 +123,20 @@ export function AulaVideo({ aulaId, moduloId, onBack, onSelectAula, onTypeResolv
     const percent = Math.min(99, Math.max(1, Math.round((second / player.duration) * 100)));
     lastPersistedSecond.current = second;
     setVideoProgress(percent);
-    void salvarProgresso(aula.id, { progress_percent: percent, last_video_second: second });
+    void salvarProgresso(aula.id, { progress_percent: percent, last_video_second: second }).then(trackServerPercent);
   };
 
-  const handleLoadedMetadata = () => {
-    const player = videoRef.current;
-    if (!player || !aula || aula.completed) return;
-    if (aula.progress.lastVideoSecond > 0 && aula.progress.lastVideoSecond < player.duration) {
-      player.currentTime = aula.progress.lastVideoSecond;
-    }
-  };
-
-  const handleResume = () => {
-    const player = videoRef.current;
-    if (!player || !aula) return;
-    if (aula.progress.lastVideoSecond > 0 && aula.progress.lastVideoSecond < player.duration) {
-      player.currentTime = aula.progress.lastVideoSecond;
-    }
-    void player.play().catch(() => undefined);
-    player.focus();
+  const markCompleted = () => {
+    reset(100, 100);
+    setAula((previous) => previous ? { ...previous, completed: true, progress: { ...previous.progress, percent: 100 } } : previous);
+    void refetchModulo();
   };
 
   const handleConcluir = async () => {
     const result = await concluir(aulaId);
     if (result) {
       setXpGanho(result.xp_ganho);
-      setVideoProgress(100);
-      setAula((previous) => previous ? { ...previous, completed: true, progress: { ...previous.progress, percent: 100 } } : previous);
-      void refetchModulo();
+      markCompleted();
     }
   };
 
@@ -95,6 +148,7 @@ export function AulaVideo({ aulaId, moduloId, onBack, onSelectAula, onTypeResolv
 
   const resumeAt = !aula.completed && !started && aula.content_url && aula.progress.lastVideoSecond > 0
     ? formatClock(aula.progress.lastVideoSecond) : null;
+  const hasQuiz = aula.quiz.length > 0;
 
   return (
     <LearningShell
@@ -108,7 +162,8 @@ export function AulaVideo({ aulaId, moduloId, onBack, onSelectAula, onTypeResolv
       progress={videoProgress}
       progressLabel={aula.completed ? 'Aula concluída' : `${videoProgress}% assistido`}
       steps={<LessonStepper steps={[
-        { key: 'watch', label: 'Assistir', status: aula.completed ? 'done' : 'current' },
+        { key: 'watch', label: 'Assistir', status: aula.completed || showQuiz ? 'done' : 'current' },
+        ...(hasQuiz ? [{ key: 'quiz', label: 'Quiz', status: aula.completed ? 'done' as const : showQuiz ? 'current' as const : 'next' as const }] : []),
         { key: 'done', label: 'Concluir', status: aula.completed ? 'done' : 'next' },
       ]} />}
       aside={<LessonNavigator modulo={modulo} activeAulaId={aulaId} onSelectAula={onSelectAula} />}
@@ -123,10 +178,11 @@ export function AulaVideo({ aulaId, moduloId, onBack, onSelectAula, onTypeResolv
               preload="metadata"
               src={aula.content_url}
               aria-label={`Vídeo: ${aula.title}`}
-              onLoadedMetadata={handleLoadedMetadata}
+              onLoadedMetadata={() => { if (!aula.completed) seekToSaved(videoRef.current, aula.progress.lastVideoSecond); }}
               onPlay={() => setStarted(true)}
               onTimeUpdate={() => persistVideoPosition()}
               onPause={() => persistVideoPosition(true)}
+              onEnded={() => persistVideoPosition(true)}
             >
               Seu navegador não suporta vídeo.
             </video>
@@ -141,7 +197,11 @@ export function AulaVideo({ aulaId, moduloId, onBack, onSelectAula, onTypeResolv
 
         {resumeAt && (
           <div className="lesson-resume">
-            <button type="button" onClick={handleResume}>
+            <button type="button" onClick={() => {
+              const player = seekToSaved(videoRef.current, aula.progress.lastVideoSecond);
+              void player?.play().catch(() => undefined);
+              player?.focus();
+            }}>
               <RotateCcw size={16} aria-hidden="true" />Continuar de {resumeAt}
             </button>
           </div>
@@ -152,17 +212,12 @@ export function AulaVideo({ aulaId, moduloId, onBack, onSelectAula, onTypeResolv
             actions={<AppButton variant="chunky" tone="blue" icon={<ArrowRight size={18} aria-hidden="true" />} onClick={onBack}>Seguir na trilha</AppButton>} />
         )}
 
-        <nav className="lesson-nav" aria-label="Conclusão do vídeo">
-          <span>{aula.completed
-            ? <><CheckCircle2 size={16} aria-hidden="true" /> Aula concluída</>
-            : `${videoProgress}% assistido`}</span>
-          {progressError && <p className="lesson-error" role="alert">{progressError} Tente concluir novamente.</p>}
-          {!aula.completed && (
-            <AppButton variant="chunky" tone="blue" onClick={handleConcluir} disabled={concluding}>
-              {concluding ? 'Registrando...' : progressError ? 'Tentar concluir novamente' : 'Concluir aula'}
-            </AppButton>
-          )}
-        </nav>
+        {showQuiz ? (
+          <AulaQuiz aula={aula} onBack={() => setShowQuiz(false)} onComplete={onBack} onReread={() => setShowQuiz(false)} onResult={markCompleted} />
+        ) : (
+          <VideoFinish completed={aula.completed} videoProgress={videoProgress} progressError={progressError} hasQuiz={hasQuiz}
+            canFinish={aula.completed || !aula.content_url || serverPercent >= VIDEO_COMPLETE_PERCENT} concluding={concluding} onQuiz={() => setShowQuiz(true)} onConcluir={() => void handleConcluir()} />
+        )}
 
         {aula.description && <div className="lesson-brief"><strong>O que você vai aprender</strong>{aula.description}</div>}
       </section>
