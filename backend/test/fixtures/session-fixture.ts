@@ -17,6 +17,7 @@ import { JwtStrategy } from '../../src/auth/jwt.strategy';
 import { JwtAuthGuard } from '../../src/auth/auth.guard';
 import { CsrfGuard } from '../../src/auth/csrf.guard';
 import { SocketSessionService } from '../../src/auth/socket-session.service';
+import { LoginAttemptsService } from '../../src/auth/login-attempts.service';
 import { UsuarioService } from '../../src/usuario/usuario.service';
 import { Usuario } from '../../src/usuario/usuario.entity';
 import { AppGateway } from '../../src/gateway/app.gateway';
@@ -81,6 +82,7 @@ export async function sessionApplication(
             new ConfigService({ NODE_ENV: 'test' }),
             {} as never,
             events,
+            new LoginAttemptsService(f.redis),
           ),
       },
       AppGateway,

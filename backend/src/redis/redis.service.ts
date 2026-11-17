@@ -165,6 +165,11 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
       ],
     );
   }
+  async expire(key: string, ttlSeconds: number): Promise<void> {
+    if (!Number.isSafeInteger(ttlSeconds) || ttlSeconds <= 0)
+      throw new Error('TTL inválido');
+    await this.client.expire(key, ttlSeconds);
+  }
   async del(key: string): Promise<number> {
     return this.client.del(key);
   }

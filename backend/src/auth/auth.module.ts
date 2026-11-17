@@ -10,6 +10,7 @@ import { ConfigService } from '@nestjs/config';
 import { RedisModule } from 'src/redis/redis.module';
 import { RegistrationModule } from '../registration/registration.module';
 import { SocketSessionService } from './socket-session.service';
+import { LoginAttemptsService } from './login-attempts.service';
 
 @Module({
   imports: [
@@ -35,7 +36,13 @@ import { SocketSessionService } from './socket-session.service';
       },
     }),
   ],
-  providers: [AuthService, JwtStrategy, JwtAuthGuard, SocketSessionService],
+  providers: [
+    AuthService,
+    JwtStrategy,
+    JwtAuthGuard,
+    SocketSessionService,
+    LoginAttemptsService,
+  ],
   controllers: [AuthController],
   exports: [AuthService, JwtAuthGuard, JwtModule, SocketSessionService],
 })

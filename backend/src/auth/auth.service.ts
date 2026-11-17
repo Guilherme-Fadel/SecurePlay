@@ -11,6 +11,7 @@ import { Role } from './roles.enum';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { ChangePasswordDto } from './dto/change-password.dto';
 import { sessionPayload, sessionTokenHash } from './session';
+import { LoginAttemptsService, loginSubject } from './login-attempts.service';
 
 @Injectable()
 export class AuthService {
@@ -21,6 +22,7 @@ export class AuthService {
     private readonly configService: ConfigService,
     private readonly registrationService: RegistrationService,
     private readonly events: EventEmitter2,
+    private readonly loginAttempts: LoginAttemptsService,
   ) {}
 
   get cookieOptions() {
@@ -54,6 +56,26 @@ export class AuthService {
     return { ...this.cookieOptions, maxAge: undefined };
   }
 
+  /**
+   * Confere identificador e senha com bloqueio por conta: durante o bloqueio,
+   * nem a senha certa entra. Identificador sem conta segue a mesma regra.
+   */
+  private async verifyCredentials(identifier: string, password: string) {
+    const user =
+      await this.usuarioService.getUsuarioByLoginIdentifier(identifier);
+    const attemptSubject = loginSubject(identifier, user?.id);
+    await this.loginAttempts.assertNotLocked(attemptSubject);
+
+    const valid =
+      !!user?.active && (await bcrypt.compare(password, user.password));
+    if (!user || !valid) {
+      await this.loginAttempts.registerFailure(attemptSubject);
+      throw new UnauthorizedException('Usuário ou senha inválidos');
+    }
+    await this.loginAttempts.reset(attemptSubject);
+    return user;
+  }
+
   async signIn(dto: LoginDto) {
     const identifier = dto.identifier ?? dto.email ?? '';
     const { password } = dto;
@@ -62,18 +84,7 @@ export class AuthService {
       throw new UnauthorizedException('Identificador ou senha não fornecidos');
     }
 
-    const user =
-      await this.usuarioService.getUsuarioByLoginIdentifier(identifier);
-
-    if (!user || !user.active) {
-      throw new UnauthorizedException('Usuário ou senha inválidos');
-    }
-
-    const senhaValida = await bcrypt.compare(password, user.password);
-
-    if (!senhaValida) {
-      throw new UnauthorizedException('Usuário ou senha inválidos');
-    }
+    const user = await this.verifyCredentials(identifier, password);
 
     if (
       user.role === Role.PLATFORM_ADMIN &&

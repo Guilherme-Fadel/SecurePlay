@@ -10,7 +10,8 @@ export const LOGIN_ERROR_MESSAGES = {
   missing_fields: 'Preencha o usuário ou e-mail e a senha para entrar.',
   invalid_credentials: 'Usuário ou senha inválidos',
   invalid_input: 'Confira o usuário ou e-mail e a senha e tente de novo.',
-  rate_limited: 'Muitas tentativas seguidas. Espere um minuto e tente de novo.',
+  // 429 vem do limite por IP (1 min) ou do bloqueio por conta (até 15 min).
+  rate_limited: 'Muitas tentativas seguidas. Espere alguns minutos e tente de novo.',
   forbidden: 'Não foi possível validar este acesso. Atualize a página e tente de novo.',
   network: 'Não conseguimos falar com o servidor. Verifique sua conexão e tente de novo.',
   server: 'O servidor teve um problema agora. Tente de novo em instantes.',
