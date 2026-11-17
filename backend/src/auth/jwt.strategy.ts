@@ -1,11 +1,12 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { OnEvent } from '@nestjs/event-emitter';
 import { PassportStrategy } from '@nestjs/passport';
 import { Strategy } from 'passport-jwt';
 import { Request } from 'express';
 import { UsuarioService } from '../usuario/usuario.service';
 import { Usuario } from '../usuario/usuario.entity';
 import { extractRequestToken } from '../common/utils/token.utils';
-import { activeAccountSession } from './session';
+import { ACCOUNT_CHANGED_EVENT, activeAccountSession } from './session';
 
 function extractFromCookieOrHeader(req: Request): string | null {
   return extractRequestToken(req);
@@ -44,6 +45,19 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       ignoreExpiration: false,
       secretOrKey: secret,
     });
+  }
+
+  /**
+   * Troca de senha, inativação, mudança de papel ou reset pela gestão valem na hora neste
+   * processo. Entre processos diferentes continua valendo o TTL curto do cache.
+   */
+  @OnEvent('auth.sessions.revoked')
+  @OnEvent('usuario.inativado')
+  @OnEvent('usuario.reativado')
+  @OnEvent(ACCOUNT_CHANGED_EVENT)
+  forgetAccount(payload: { userId?: number }): void {
+    if (typeof payload?.userId === 'number')
+      this.accountCache.delete(payload.userId);
   }
 
   async validate(payload: {

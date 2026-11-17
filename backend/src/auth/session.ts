@@ -50,3 +50,6 @@ export interface AuthenticatedRequest {
   cookies?: { token?: string };
   headers: { authorization?: string };
 }
+
+/** Conta mudou fora do login (papel, e-mail, reset pela gestão): o cache de conta deve ser descartado. */
+export const ACCOUNT_CHANGED_EVENT = 'auth.account.changed';

@@ -587,6 +587,7 @@ describe('ConvitesService.emitirLinkRedefinicaoAluno', () => {
           return Promise.resolve(value);
         }),
       };
+      const events = { emit: jest.fn() };
       const service = new ConvitesService(
         {} as never,
         {
@@ -595,7 +596,7 @@ describe('ConvitesService.emitirLinkRedefinicaoAluno', () => {
         { findOne: jest.fn().mockResolvedValue({ id: 8 }) } as never,
         {} as never,
         {} as never,
-        {} as never,
+        events as never,
         {
           transaction: (callback: (value: unknown) => unknown) =>
             callback(manager),
@@ -603,6 +604,9 @@ describe('ConvitesService.emitirLinkRedefinicaoAluno', () => {
       );
 
       const result = await service.emitirLinkRedefinicaoAluno(2, 32);
+      expect(events.emit).toHaveBeenCalledWith('auth.account.changed', {
+        userId: 32,
+      });
 
       expect(result.reset_token).toMatch(/^[A-Za-z0-9_-]{43}$/);
       expect(manager.findOne).toHaveBeenCalledWith(Usuario, {

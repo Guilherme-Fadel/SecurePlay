@@ -27,6 +27,7 @@ import { ensurePendingRankingSeasonsClosed } from '../dashboard/ranking-history'
 import { AdminAuditEvent } from './entities/admin-audit-event.entity';
 import { UpdateAdminUserDto } from './dto/update-admin-user.dto';
 import { getLocalDateKey } from '../common/utils/date.utils';
+import { ACCOUNT_CHANGED_EVENT } from '../auth/session';
 
 type ConviteFiltros = {
   page?: number;
@@ -242,6 +243,8 @@ export class ConvitesService {
           });
         return this.toUsuarioResumo(target);
       });
+      // Papel ou e-mail mudou: o cache curto de conta deste processo não pode segurar o antigo.
+      this.eventEmitter.emit(ACCOUNT_CHANGED_EVENT, { userId: usuarioId });
       return result;
     } catch (error) {
       if ((error as { code?: string }).code === 'ER_DUP_ENTRY')
@@ -761,7 +764,7 @@ export class ConvitesService {
 
   async emitirLinkRedefinicaoAluno(atorId: number, usuarioId: number) {
     const empresa = await this.getEmpresaDoAdministrador(atorId);
-    return this.dataSource.transaction(async (manager) => {
+    const link = await this.dataSource.transaction(async (manager) => {
       const usuario = await manager.findOne(Usuario, {
         where: { id: usuarioId, empresa_id: empresa.id, role: Role.USER },
         lock: { mode: 'pessimistic_write' },
@@ -793,6 +796,8 @@ export class ConvitesService {
         expires_at: usuario.password_reset_expires_at,
       };
     });
+    this.eventEmitter.emit(ACCOUNT_CHANGED_EVENT, { userId: usuarioId });
+    return link;
   }
 
   async inativarUsuarioDaEmpresa(
