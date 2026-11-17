@@ -123,6 +123,16 @@ export class UsuarioService {
     }
     return usuario ?? undefined;
   }
+  /** Encerra todas as sessões da conta (o JWT carrega a versão); devolve a versão nova. */
+  async revokeAllSessions(id: number): Promise<number | null> {
+    await this.usuarioRepository.increment({ id }, 'session_version', 1);
+    const user = await this.usuarioRepository.findOne({
+      where: { id },
+      select: ['id', 'session_version'],
+    });
+    return user?.session_version ?? null;
+  }
+
   async getUsuarioById(id: number): Promise<Usuario | undefined> {
     const usuario = await this.usuarioRepository.findOne({ where: { id } });
     return usuario ?? undefined;

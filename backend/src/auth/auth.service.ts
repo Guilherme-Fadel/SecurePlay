@@ -132,7 +132,10 @@ export class AuthService {
       return { message: 'Logout realizado com sucesso' };
     }
 
-    const decoded = await this.jwtService.verifyAsync<{ exp: number }>(token);
+    const decoded = await this.jwtService.verifyAsync<{
+      exp: number;
+      sub?: number;
+    }>(token);
     if (!Number.isSafeInteger(decoded.exp))
       throw new UnauthorizedException('Sessão inválida');
     const ttl = calcTokenTtl(decoded.exp);
@@ -149,8 +152,22 @@ export class AuthService {
     this.events.emit('auth.session.revoked', {
       tokenHash: sessionTokenHash(token),
     });
+    await this.revokeEverywhereIfConfigured(decoded.sub);
 
     return { message: 'Logout realizado com sucesso' };
+  }
+
+  /**
+   * D5: com LOGOUT_REVOKES_ALL_SESSIONS=true, o logout também incrementa session_version,
+   * encerrando todas as sessões da conta. Assim a revogação vale mesmo se o Redis perder os
+   * dados. Sem a variável, o logout encerra só a sessão atual (Redis), como antes.
+   */
+  private async revokeEverywhereIfConfigured(userId: number | undefined) {
+    if (process.env.LOGOUT_REVOKES_ALL_SESSIONS?.trim() !== 'true') return;
+    if (!Number.isSafeInteger(userId)) return;
+    const sessionVersion = await this.usuarioService.revokeAllSessions(userId!);
+    if (sessionVersion === null) return;
+    this.events.emit('auth.sessions.revoked', { userId, sessionVersion });
   }
 
   async changePassword(

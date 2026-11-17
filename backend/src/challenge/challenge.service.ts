@@ -8,6 +8,7 @@ import { Repository } from 'typeorm';
 import { Challenge } from './challenge.entity';
 import { Question } from '../question/question.entity';
 import { UsuarioChallenge } from '../usuario-challenge/usuario-challenge.entity';
+import { DailyChallengeAssignment } from './daily-challenge-assignment.entity';
 import { RedisService } from '../redis/redis.service';
 import { getLocalDateKey, ttlUntilEndOfDay } from '../common/utils/date.utils';
 import { SubmitChallengeDto } from './dto/challenge.dto';
@@ -53,6 +54,11 @@ export class ChallengeService {
       };
     }
 
+    // M6: a atribuição do dia é durável em SQL; o Redis acima é só cache.
+    const day = getLocalDateKey();
+    const assigned = await this.findAssignedChallenge(usuario_id, day);
+    if (assigned) return assigned;
+
     const records = await this.usuarioChallengeRepository.find({
       where: { usuario_id },
       select: ['challenge_id', 'completed', 'started_at'],
@@ -89,6 +95,13 @@ export class ChallengeService {
     );
     const selectedId =
       partial?.challenge_id ?? availableIds[hash % availableIds.length];
+    // INSERT IGNORE resolve a corrida: requisições simultâneas ficam com a mesma escolha.
+    await this.usuarioChallengeRepository.manager.query(
+      'INSERT IGNORE INTO daily_challenge_assignment (usuario_id, day, challenge_id) VALUES (?, ?, ?)',
+      [usuario_id, day, selectedId],
+    );
+    const winner = await this.findAssignedChallenge(usuario_id, day);
+    if (winner) return winner;
     const challenge = await this.challengeRepository.findOne({
       where: { id: selectedId, active: true },
     });
@@ -115,12 +128,35 @@ export class ChallengeService {
     });
   }
 
+  /** Desafio já atribuído ao aluno no dia (SQL), repondo o cache do Redis. */
+  private async findAssignedChallenge(
+    usuario_id: number,
+    day: string,
+  ): Promise<Challenge | null> {
+    const assignment = await this.usuarioChallengeRepository.manager.findOne(
+      DailyChallengeAssignment,
+      { where: { usuario_id, day } },
+    );
+    if (!assignment) return null;
+    const challenge = await this.challengeRepository.findOne({
+      where: { id: assignment.challenge_id },
+    });
+    if (!challenge) return null;
+    await this.setRedisDailyChallenge(usuario_id, challenge);
+    return { ...challenge, image: this.localImageReference(challenge.image) };
+  }
+
   private async getRedisDailyChallenge(
     usuario_id: number,
   ): Promise<Challenge | null> {
     const cacheKey = `daily-challenge:${usuario_id}`;
-    const cached = await this.redisService.get(cacheKey);
-    return cached ? (JSON.parse(cached) as Challenge) : null;
+    try {
+      const cached = await this.redisService.get(cacheKey);
+      return cached ? (JSON.parse(cached) as Challenge) : null;
+    } catch {
+      // Redis fora do ar: a atribuição vem do SQL.
+      return null;
+    }
   }
 
   private async setRedisDailyChallenge(
@@ -129,7 +165,9 @@ export class ChallengeService {
   ): Promise<void> {
     const cacheKey = `daily-challenge:${usuario_id}`;
     const ttl = ttlUntilEndOfDay();
-    await this.redisService.set(cacheKey, JSON.stringify(challenge), ttl);
+    await this.redisService
+      .set(cacheKey, JSON.stringify(challenge), ttl)
+      .catch(() => undefined);
   }
 
   async getStatus(challengeId: number, usuario_id: number) {
