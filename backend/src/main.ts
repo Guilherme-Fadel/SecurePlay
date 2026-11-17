@@ -14,6 +14,7 @@ import {
   isLocalOrigin,
 } from './config/origins';
 import { trustProxyFromEnv } from './config/trust-proxy';
+import { registerSecurityHeaders } from './common/security/security-headers';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestFastifyApplication>(
@@ -27,6 +28,7 @@ async function bootstrap() {
   );
 
   await app.register(fastifyCookie);
+  registerSecurityHeaders(app.getHttpAdapter().getInstance());
 
   app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
 
