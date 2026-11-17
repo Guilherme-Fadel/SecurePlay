@@ -1,6 +1,7 @@
 import {
   IsDateString,
   IsEmail,
+  IsOptional,
   IsString,
   MaxLength,
   MinLength,
@@ -19,4 +20,10 @@ export class TrialRegisterDto extends RegistrationContactDto {
   @IsEmail()
   @MaxLength(100)
   email: string;
+
+  /** Token do Cloudflare Turnstile; exigido só quando TURNSTILE_SECRET_KEY existe. */
+  @IsOptional()
+  @IsString()
+  @MaxLength(2048)
+  turnstile_token?: string;
 }

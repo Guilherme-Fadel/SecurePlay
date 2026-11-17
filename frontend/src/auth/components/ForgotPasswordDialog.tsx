@@ -2,8 +2,17 @@ import { useEffect, useRef, useState } from 'react';
 import { isAxiosError } from 'axios';
 import { ArrowRight, KeyRound, Mail, MailCheck, X } from 'lucide-react';
 import { requestPasswordReset } from '@/services/registration';
+import { useTurnstile } from '@/components/shared/TurnstileField';
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+function forgotPasswordError(error: unknown): string {
+  if (!isAxiosError(error)) return 'Não foi possível enviar agora. Tente novamente em instantes.';
+  if (error.response?.status === 429) return 'Muitas tentativas. Aguarde um minuto e tente de novo.';
+  const data = error.response?.data as { code?: unknown; message?: unknown } | undefined;
+  if (data?.code === 'turnstile_failed' && typeof data.message === 'string') return data.message;
+  return 'Não foi possível enviar agora. Tente novamente em instantes.';
+}
 
 interface ForgotPasswordDialogProps {
   initialEmail: string;
@@ -17,6 +26,7 @@ export function ForgotPasswordDialog({ initialEmail, onClose }: ForgotPasswordDi
   const [sending, setSending] = useState(false);
   const [sentMessage, setSentMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const turnstile = useTurnstile();
 
   useEffect(() => {
     const dialog = dialogRef.current;
@@ -35,13 +45,10 @@ export function ForgotPasswordDialog({ initialEmail, onClose }: ForgotPasswordDi
     setError(null);
     setSending(true);
     try {
-      setSentMessage(await requestPasswordReset(email.trim()));
+      setSentMessage(await requestPasswordReset(email.trim(), turnstile.token));
     } catch (requestError) {
-      setError(
-        isAxiosError(requestError) && requestError.response?.status === 429
-          ? 'Muitas tentativas. Aguarde um minuto e tente de novo.'
-          : 'Não foi possível enviar agora. Tente novamente em instantes.',
-      );
+      setError(forgotPasswordError(requestError));
+      turnstile.reset();
     } finally {
       setSending(false);
     }
@@ -98,11 +105,12 @@ export function ForgotPasswordDialog({ initialEmail, onClose }: ForgotPasswordDi
                 />
               </div>
             </label>
+            {turnstile.widget}
             {error && <p className="forgot-dialog-error" role="alert">{error}</p>}
 
             <div className="forgot-dialog-actions">
               <button type="button" className="forgot-dialog-cancel" onClick={close}>Cancelar</button>
-              <button type="submit" className="lgc-submit" disabled={sending}>
+              <button type="submit" className="lgc-submit" disabled={sending || !turnstile.ready}>
                 {sending ? 'Enviando...' : 'Enviar link'}
                 {!sending && <ArrowRight size={18} aria-hidden="true" />}
               </button>

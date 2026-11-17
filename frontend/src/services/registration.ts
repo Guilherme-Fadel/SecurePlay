@@ -1,6 +1,6 @@
 import { api } from './api';
 
-export async function startTrial(data: { name: string; email: string; birth_date: string; username?: string; phone?: string }) {
+export async function startTrial(data: { name: string; email: string; birth_date: string; username?: string; phone?: string; turnstile_token?: string }) {
   await api.post('/registration/trial', data);
 }
 
@@ -13,13 +13,13 @@ export async function setPassword(token: string, password: string) {
   await api.post('/registration/set-password', { token, password });
 }
 
-export async function resendEmail(email: string): Promise<string> {
-  const response = await api.post('/registration/resend', { email });
+export async function resendEmail(email: string, turnstileToken?: string): Promise<string> {
+  const response = await api.post('/registration/resend', { email, turnstile_token: turnstileToken });
   return response.data.mensagem as string;
 }
 
-export async function requestPasswordReset(email: string): Promise<string> {
-  const response = await api.post('/registration/forgot-password', { email });
+export async function requestPasswordReset(email: string, turnstileToken?: string): Promise<string> {
+  const response = await api.post('/registration/forgot-password', { email, turnstile_token: turnstileToken });
   return response.data.mensagem as string;
 }
 

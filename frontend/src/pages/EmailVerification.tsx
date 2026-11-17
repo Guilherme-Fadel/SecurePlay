@@ -4,6 +4,8 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { PublicAccountShell, type AccountCharacter } from '@/components/shared/PublicAccountShell';
 import { AccountInput, AccountLoading, AccountMessage, AccountPasswordInput, AccountSubmit, type AccountFeedback } from '@/components/shared/PublicAccountUi';
 import { resendEmail } from '@/services/registration';
+import { useTurnstile } from '@/components/shared/TurnstileField';
+import { backendCode, backendMessage } from '@/components/shared/publicAccountMessages';
 import { confirmEmailView, useConfirmEmail, type ConfirmEmailState, type ConfirmEmailView } from './useConfirmEmail';
 
 export function CheckEmail() {
@@ -12,13 +14,16 @@ export function CheckEmail() {
   const [email, setEmail] = useState(params.get('email') ?? '');
   const [sending, setSending] = useState(false);
   const [feedback, setFeedback] = useState<AccountFeedback | null>(null);
+  const turnstile = useTurnstile();
   const resend = async () => {
     setSending(true);
     try {
-      setFeedback({ tone: 'info', message: await resendEmail(email) });
-    } catch {
-      setFeedback({ tone: 'error', message: 'Não foi possível reenviar agora. Tente novamente mais tarde.' });
+      setFeedback({ tone: 'info', message: await resendEmail(email, turnstile.token) });
+    } catch (error: unknown) {
+      setFeedback({ tone: 'error', message: backendCode(error) === 'turnstile_failed' ? backendMessage(error, '') : 'Não foi possível reenviar agora. Tente novamente mais tarde.' });
     } finally {
+      // O token do Turnstile vale para um único envio.
+      turnstile.reset();
       setSending(false);
     }
   };
@@ -34,7 +39,8 @@ export function CheckEmail() {
     >
       <div className="pas-form">
         <AccountInput label="E-mail" type="email" value={email} onChange={(event) => setEmail(event.target.value)} required autoComplete="email" />
-        <AccountSubmit type="button" busy={sending} busyLabel="Enviando..." disabled={!email} onClick={() => void resend()}>
+        {turnstile.widget}
+        <AccountSubmit type="button" busy={sending} busyLabel="Enviando..." disabled={!email || !turnstile.ready} onClick={() => void resend()}>
           {passwordSetup ? 'Enviar instruções de acesso' : 'Reenviar confirmação'}
         </AccountSubmit>
       </div>

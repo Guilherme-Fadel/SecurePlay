@@ -1,7 +1,15 @@
-import { Body, Controller, Post } from '@nestjs/common';
+import { Body, Controller, Post, Req } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
-import { IsEmail, IsString, Matches } from 'class-validator';
+import {
+  IsEmail,
+  IsOptional,
+  IsString,
+  Matches,
+  MaxLength,
+} from 'class-validator';
 import { Public } from '../auth/public.decorator';
+import { clientIp } from '../common/security/app-throttler.guard';
+import { assertTurnstile } from './turnstile';
 import { TrialRegisterDto } from './dto/trial-register.dto';
 import { RegistrationService } from './registration.service';
 import { PublicRegistrationService } from './public-registration.service';
@@ -26,7 +34,14 @@ class SetPasswordDto {
 class ResendEmailDto {
   @IsEmail()
   email: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(2048)
+  turnstile_token?: string;
 }
+
+type ClientRequest = { headers?: Record<string, unknown>; ip?: string };
 
 class ForgotPasswordDto extends ResendEmailDto {}
 
@@ -49,7 +64,11 @@ export class RegistrationController {
   @Public()
   @Post('trial')
   @Throttle({ short: { limit: 3, ttl: 60000 } })
-  startTrial(@Body() dto: TrialRegisterDto) {
+  async startTrial(
+    @Body() dto: TrialRegisterDto,
+    @Req() request: ClientRequest,
+  ) {
+    await assertTurnstile(dto.turnstile_token, clientIp(request));
     return this.publicRegistration.startTrial(dto);
   }
 
@@ -70,14 +89,19 @@ export class RegistrationController {
   @Public()
   @Post('resend')
   @Throttle({ short: { limit: 3, ttl: 60000 } })
-  resend(@Body() dto: ResendEmailDto) {
+  async resend(@Body() dto: ResendEmailDto, @Req() request: ClientRequest) {
+    await assertTurnstile(dto.turnstile_token, clientIp(request));
     return this.publicRegistration.resend(dto.email);
   }
 
   @Public()
   @Post('forgot-password')
   @Throttle({ short: { limit: 3, ttl: 60000 } })
-  forgotPassword(@Body() dto: ForgotPasswordDto) {
+  async forgotPassword(
+    @Body() dto: ForgotPasswordDto,
+    @Req() request: ClientRequest,
+  ) {
+    await assertTurnstile(dto.turnstile_token, clientIp(request));
     return this.publicRegistration.forgotPassword(dto.email);
   }
 

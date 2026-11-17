@@ -9,6 +9,13 @@ import { RedisService } from '../redis/redis.service';
 import { EmailService } from './email.service';
 import { RegistrationService } from './registration.service';
 import { TrialRegisterDto } from './dto/trial-register.dto';
+import { getLocalDateKey } from '../common/utils/date.utils';
+import {
+  publicEmailDailyLimit,
+  runWithPublicEmailGate,
+} from './public-email-budget';
+
+const PUBLIC_EMAIL_BUDGET_TTL_SECONDS = 2 * 24 * 60 * 60;
 
 export const PUBLIC_REGISTRATION_RESPONSE = {
   sucesso: true,
@@ -71,7 +78,7 @@ export class PublicRegistrationService implements OnApplicationShutdown {
     action: () => Promise<unknown>,
     response: { sucesso: boolean; mensagem: string },
   ) {
-    const task: Promise<void> = action()
+    const task: Promise<void> = this.withEmailBudget(action)
       .then(() => undefined)
       .catch((error: unknown) => {
         const name = error instanceof Error ? error.name : 'erro';
@@ -89,7 +96,7 @@ export class PublicRegistrationService implements OnApplicationShutdown {
     response = PUBLIC_REGISTRATION_RESPONSE,
   ) {
     try {
-      await action();
+      await this.withEmailBudget(action);
     } catch (error: unknown) {
       if (!(error instanceof ServiceUnavailableException)) throw error;
       // Falha de entrega não pode revelar qual ramo de conta foi encontrado.
@@ -98,6 +105,26 @@ export class PublicRegistrationService implements OnApplicationShutdown {
       );
     }
     return { ...response };
+  }
+
+  /** Cada e-mail enviado dentro do fluxo consome o orçamento diário dos fluxos públicos. */
+  private withEmailBudget<T>(action: () => Promise<T>): Promise<T> {
+    return runWithPublicEmailGate(() => this.consumeEmailBudget(), action);
+  }
+
+  private async consumeEmailBudget(): Promise<boolean> {
+    try {
+      const used = await this.redis.incrBy(
+        `public-email:budget:${getLocalDateKey()}`,
+        1,
+        PUBLIC_EMAIL_BUDGET_TTL_SECONDS,
+      );
+      return used <= publicEmailDailyLimit();
+    } catch {
+      // Sem Redis o orçamento não é medido; os cooldowns por destinatário continuam valendo.
+      this.logger.warn('Orçamento de e-mails públicos indisponível (Redis).');
+      return true;
+    }
   }
 
   private async existingAccountGuidance(address: string) {

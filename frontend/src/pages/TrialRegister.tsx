@@ -5,6 +5,7 @@ import { PublicAccountShell, type AccountCharacter } from '@/components/shared/P
 import { AccountInput, AccountSubmit, type AccountFeedback } from '@/components/shared/PublicAccountUi';
 import { backendMessage } from '@/components/shared/publicAccountMessages';
 import { startTrial } from '@/services/registration';
+import { useTurnstile } from '@/components/shared/TurnstileField';
 import { RegistrationContactFields } from '@/components/shared/RegistrationContactFields';
 import { RegistrationLegalNotice } from '@/components/shared/RegistrationLegalNotice';
 
@@ -22,16 +23,18 @@ export default function TrialRegister() {
   const [birthDate, setBirthDate] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [feedback, setFeedback] = useState<AccountFeedback | null>(null);
+  const turnstile = useTurnstile();
 
   const submit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setFeedback(null);
     setSubmitting(true);
     try {
-      await startTrial({ name, email, birth_date: birthDate, username: username.trim() || undefined, phone: phone.trim() || undefined });
+      await startTrial({ name, email, birth_date: birthDate, username: username.trim() || undefined, phone: phone.trim() || undefined, turnstile_token: turnstile.token });
       void navigate('/verifique-email?email=' + encodeURIComponent(email), { replace: true });
     } catch (error: unknown) {
       setFeedback({ tone: 'error', message: backendMessage(error, 'Não foi possível iniciar o teste.') });
+      turnstile.reset();
     } finally {
       setSubmitting(false);
     }
@@ -51,7 +54,8 @@ export default function TrialRegister() {
         <AccountInput label="Seu e-mail" type="email" value={email} onChange={(event) => setEmail(event.target.value)} required autoComplete="email" />
         <RegistrationContactFields username={username} phone={phone} setUsername={setUsername} setPhone={setPhone} disabled={submitting} />
         <BirthDateField value={birthDate} onChange={setBirthDate} />
-        <AccountSubmit busy={submitting} busyLabel="Enviando confirmação...">Começar teste gratuito</AccountSubmit>
+        {turnstile.widget}
+        <AccountSubmit busy={submitting} busyLabel="Enviando confirmação..." disabled={!turnstile.ready}>Começar teste gratuito</AccountSubmit>
       </form>
       <RegistrationLegalNotice />
       <div className="pas-foot">

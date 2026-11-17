@@ -49,6 +49,10 @@ services:
         sync: false
       - key: CLIENT_IP_HEADER
         sync: false
+      - key: TURNSTILE_SECRET_KEY
+        sync: false
+      - key: EMAIL_PUBLIC_DAILY_LIMIT
+        sync: false
       - key: S3_BUCKET_NAME
         sync: false
       - key: AWS_REGION

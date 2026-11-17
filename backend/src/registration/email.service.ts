@@ -5,6 +5,7 @@ import {
 } from '@nestjs/common';
 import { createHash } from 'crypto';
 import { EmailContent, renderEmailHtml } from './email-layout';
+import { currentPublicEmailGate } from './public-email-budget';
 
 const EMAIL_ASSETS_VERSION = '2';
 
@@ -195,6 +196,13 @@ export class EmailService {
     const from = process.env.EMAIL_FROM?.trim();
     if (!apiKey || !from)
       throw new ServiceUnavailableException('Envio de e-mail indisponível');
+    const publicGate = currentPublicEmailGate();
+    if (publicGate && !(await publicGate())) {
+      this.logger.warn(
+        'Orçamento diário de e-mails públicos esgotado; envio não realizado.',
+      );
+      throw new ServiceUnavailableException('Envio de e-mail indisponível');
+    }
     try {
       const response = await fetch('https://api.resend.com/emails', {
         method: 'POST',
