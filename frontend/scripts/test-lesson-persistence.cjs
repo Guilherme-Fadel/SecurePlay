@@ -143,8 +143,12 @@ test('empty listener sets are released without removing live subscribers or a re
   assert.equal(maps[1].size, 0);
 });
 
+// Subcomponentes locais sem hooks são expandidos para que os testes vejam os botões deles.
+const PURE_LOCAL_COMPONENTS = new Set(['VideoFinish']);
+
 function nodes(node) {
   if (!node || typeof node !== 'object') return [];
+  if (typeof node.type === 'function' && PURE_LOCAL_COMPONENTS.has(node.type.name)) return nodes(node.type(node.props));
   return [node, ...React.Children.toArray(node.props?.children).flatMap(nodes), ...nodes(node.props?.footer)];
 }
 

@@ -54,7 +54,7 @@ interface VideoFinishProps {
   canFinish: boolean;
   concluding: boolean;
   onQuiz: () => void;
-  onConcluir: () => void;
+  onConcluir: () => Promise<void>;
 }
 
 /** Rodapé da aula: conclusão direta ou quiz, liberados só com 90% confirmado pelo servidor. */
@@ -148,7 +148,7 @@ export function AulaVideo({ aulaId, moduloId, onBack, onSelectAula, onTypeResolv
 
   const resumeAt = !aula.completed && !started && aula.content_url && aula.progress.lastVideoSecond > 0
     ? formatClock(aula.progress.lastVideoSecond) : null;
-  const hasQuiz = aula.quiz.length > 0;
+  const hasQuiz = (aula.quiz?.length ?? 0) > 0;
 
   return (
     <LearningShell
@@ -216,7 +216,7 @@ export function AulaVideo({ aulaId, moduloId, onBack, onSelectAula, onTypeResolv
           <AulaQuiz aula={aula} onBack={() => setShowQuiz(false)} onComplete={onBack} onReread={() => setShowQuiz(false)} onResult={markCompleted} />
         ) : (
           <VideoFinish completed={aula.completed} videoProgress={videoProgress} progressError={progressError} hasQuiz={hasQuiz}
-            canFinish={aula.completed || !aula.content_url || serverPercent >= VIDEO_COMPLETE_PERCENT} concluding={concluding} onQuiz={() => setShowQuiz(true)} onConcluir={() => void handleConcluir()} />
+            canFinish={aula.completed || !aula.content_url || serverPercent >= VIDEO_COMPLETE_PERCENT} concluding={concluding} onQuiz={() => setShowQuiz(true)} onConcluir={handleConcluir} />
         )}
 
         {aula.description && <div className="lesson-brief"><strong>O que você vai aprender</strong>{aula.description}</div>}
