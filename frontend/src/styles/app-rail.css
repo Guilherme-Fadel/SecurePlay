@@ -455,6 +455,11 @@
   line-height: 1.4;
 }
 
+.sp-trial-banner { display: flex; align-items: center; gap: 8px; padding-right: 6px; }
+.sp-trial-banner > p { flex: 1; min-width: 0; margin: 0; }
+.sp-trial-banner-close { display: grid; flex: none; place-items: center; width: 36px; height: 36px; padding: 0; border: 0; border-radius: 10px; background: transparent; color: inherit; cursor: pointer; }
+.sp-trial-banner-close:hover { background: rgba(0, 0, 0, .1); }
+.sp-trial-banner-close:focus-visible { outline: 3px solid var(--sp-black); outline-offset: 1px; }
 .sp-trial-banner a { color: inherit; font-weight: 800; text-decoration: underline; text-underline-offset: 2px; }
 .sp-trial-banner a:focus-visible { outline: 3px solid var(--sp-black); outline-offset: 2px; border-radius: 4px; }
 

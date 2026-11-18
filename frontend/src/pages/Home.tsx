@@ -3,9 +3,9 @@ import { PageLoading } from '@/components/shared/PageLoading';
 import { usePageLoading } from '@/contexts/PageLoadingContext';
 import { NicknameWelcomeDialog } from '@/components/shared/NicknameWelcomeDialog';
 import { AppRail } from '@/components/shared/AppRail';
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, X } from "lucide-react";
 import { Dashboard, Awards, Challenges, Ranking, Conteudos, Perfil } from '@/components/sections/HomePage/index';
-import { lazy, Suspense, useCallback, useEffect, useMemo, useRef } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Toaster } from 'sonner';
 import { SectionContext, type ContentTarget } from '@/contexts/SectionContext';
@@ -199,12 +199,31 @@ function HomeContent() {
 /** Topo da área de conteúdo: faixa do teste gratuito e o Voltar do conteúdo. */
 function ContentTop({ user, showBack, onBack }: { user: CurrentUser | null; showBack: boolean; onBack: () => void }) {
     const trialEndsAt = user?.trial_ends_at;
+    const [trialDismissed, dismissTrial] = useTrialBannerDismissal(user?.userId, trialEndsAt);
     return (<>
-        {trialEndsAt && <div role="status" className="sp-trial-banner">Teste gratuito de aluno até {new Date(trialEndsAt).toLocaleDateString('pt-BR')}. Para continuar depois, <a href="mailto:contato@secureplay.com?subject=Planos%20SecurePlay">fale com a SecurePlay</a>.</div>}
+        {trialEndsAt && !trialDismissed && <div role="status" className="sp-trial-banner">
+            <p>Teste gratuito de aluno até {new Date(trialEndsAt).toLocaleDateString('pt-BR')}. Para continuar depois, <a href="mailto:contato@secureplay.com?subject=Planos%20SecurePlay">fale com a SecurePlay</a>.</p>
+            <button type="button" className="sp-trial-banner-close" aria-label="Fechar aviso do teste gratuito" title="Fechar aviso" onClick={dismissTrial}><X size={18} aria-hidden="true" /></button>
+        </div>}
         {showBack && (<AppButton onClick={onBack} variant="ghost" size="sm" icon={<ArrowLeft size={16}/>} className="sp-content-back">
             Voltar
           </AppButton>)}
     </>);
+}
+/** Lembra, neste navegador, que o aviso deste trial foi fechado; um novo prazo volta a mostrar o aviso. */
+function useTrialBannerDismissal(userId: number | undefined, trialEndsAt: string | null | undefined): [boolean, () => void] {
+    const key = userId && trialEndsAt ? `sp-trial-banner-fechado:${userId}:${trialEndsAt}` : null;
+    const [dismissed, setDismissed] = useState(() => readDismissal(key));
+    useEffect(() => { setDismissed(readDismissal(key)); }, [key]);
+    const dismiss = useCallback(() => {
+        setDismissed(true);
+        try { if (key) localStorage.setItem(key, '1'); } catch { /* sem armazenamento: fecha só nesta visita */ }
+    }, [key]);
+    return [dismissed, dismiss];
+}
+function readDismissal(key: string | null): boolean {
+    if (!key) return false;
+    try { return localStorage.getItem(key) === '1'; } catch { return false; }
 }
 export default function Home() {
     const { user } = useCurrentUser();
