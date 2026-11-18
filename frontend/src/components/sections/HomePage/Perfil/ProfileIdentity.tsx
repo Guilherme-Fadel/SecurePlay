@@ -176,7 +176,7 @@ function NicknameForm({ user }: { user: CurrentUser | null }) {
           onChange={(event) => setNicknameDraft(event.target.value)}
           minLength={3}
           maxLength={24}
-          pattern="[A-Za-zÀ-ÿ0-9 _-]+"
+          pattern="[\p{L}\p{N} _\-]+"
           disabled={nicknameSaving || pending}
           placeholder="Ex.: Guardião Solar"
           aria-describedby={describedBy}
