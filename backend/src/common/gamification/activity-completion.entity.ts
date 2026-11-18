@@ -22,6 +22,7 @@ export interface CompletionNotification {
   title: string;
   message: string;
   type: string;
+  link?: string | null;
   created_at: Date | string;
 }
 

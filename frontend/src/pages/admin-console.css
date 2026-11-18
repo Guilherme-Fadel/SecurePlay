@@ -81,6 +81,14 @@ html[data-admin-console='true'] body { min-width: 320px; overflow: hidden; }
 .admin-console-icon-button, .admin-console-signout { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-width: 36px; height: 36px; padding: 0 9px; color: var(--admin-console-text); border: 1px solid var(--admin-console-border); border-radius: 8px; background: transparent; cursor: pointer; }
 .admin-console-icon-button:focus-visible, .admin-console-signout:focus-visible, .admin-console-nav-link:focus-visible { outline: 2px solid var(--primary, #818cf8); outline-offset: 2px; }
 .admin-console-signout { color: var(--admin-console-muted); font-size: 12px; }
+.admin-console-bell { position: relative; }
+.admin-console-bell[aria-expanded='true'] { background: var(--admin-console-soft); }
+.admin-console-bell-badge { position: absolute; top: -6px; right: -6px; display: grid; min-width: 18px; height: 18px; padding: 0 4px; place-items: center; border: 2px solid var(--dashboard-bg, #0b1220); border-radius: 999px; background: #dc2626; color: #fff; font-size: 10px; font-weight: 800; line-height: 1; }
+/* Painel das notificações no console: ancorado sob a barra do topo, à direita (o portal fica fora de .admin-console). */
+.sp-rail-popover.notification-popover.is-console { position: fixed; z-index: 81; top: 60px; right: 12px; bottom: auto; left: auto; width: min(380px, calc(100vw - 24px)); max-height: calc(100dvh - 72px); overflow: auto; border: 1px solid var(--dashboard-border); border-radius: 12px; background: var(--dashboard-surface); box-shadow: 0 18px 40px rgba(5, 12, 27, .35); color: var(--dashboard-text); }
+.sp-rail-popover.notification-popover.is-console:focus-visible { outline: 2px solid var(--primary, #818cf8); outline-offset: 2px; }
+.sp-rail-popover.notification-popover.is-console .notification-list { max-height: none; }
+.sp-rail-backdrop { position: fixed; inset: 0; z-index: 80; }
 .admin-console-signout:hover, .admin-console-icon-button:hover { background: var(--admin-console-soft); }
 .admin-console-content { flex: 1; min-width: 0; min-height: 0; overflow: auto; scrollbar-gutter: stable; padding: 16px 28px; }
 .admin-console-content.is-list-page { display: flex; flex-direction: column; overflow: hidden; gap: 8px; }

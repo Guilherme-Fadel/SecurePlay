@@ -1,6 +1,7 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { Building2, ChevronRight, LogOut, Moon, Sun, Users, Settings, Plus, ArrowLeft, Menu, X, GraduationCap } from 'lucide-react';
+import { NotificationsMenu } from '@/components/shared/layout/header/NotificationsMenu';
 import { PageTransition } from '@/components/shared/PageTransition';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
@@ -252,10 +253,13 @@ function CompanyPeoplePage({ empresaId }: { empresaId?: number }) {
 function AdminConsoleAccount({ name, onSignOut }: { name: string; onSignOut: () => Promise<void> }) {
   const { theme, toggleTheme } = useTheme();
   const requestAction = useAdminGuardedAction();
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const closeNotifications = useCallback(() => setNotificationsOpen(false), []);
   return (
     <div className="admin-console-account">
       <span className="admin-console-account-name">{name}</span>
       <Link className="admin-console-learning-link" to={paths.inicio()} aria-label="Abrir ambiente de aprendizagem" title="Abrir ambiente de aprendizagem"><GraduationCap size={17} aria-hidden="true" /><span>Home do aluno</span></Link>
+      <NotificationsMenu variant="console" open={notificationsOpen} onToggle={() => setNotificationsOpen((value) => !value)} onClose={closeNotifications} />
       <button type="button" className="admin-console-icon-button" onClick={toggleTheme} aria-label={theme === 'dark' ? 'Ativar tema claro' : 'Ativar tema escuro'} title={theme === 'dark' ? 'Ativar tema claro' : 'Ativar tema escuro'}>
         {theme === 'dark' ? <Sun size={17} aria-hidden="true" /> : <Moon size={17} aria-hidden="true" />}
       </button>

@@ -2,21 +2,13 @@ import {
   IsIn,
   IsNotEmpty,
   IsNumber,
+  IsOptional,
   IsString,
   MaxLength,
 } from 'class-validator';
 
-// Tipos realmente usados: 'achievement' é gravado pelo backend (conclusão de
-// módulo) e os demais são os que o ícone do frontend (NotificationsMenu)
-// reconhece; qualquer outro valor cairia no ícone genérico.
-export const NOTIFICATION_TYPES = [
-  'achievement',
-  'info',
-  'alert',
-  'reward',
-  'conquista',
-  'seguranca',
-] as const;
+/** Tipos que o endpoint manual aceita; os demais só nascem de eventos do sistema. */
+export const MANUAL_NOTIFICATION_TYPES = ['aviso', 'gestao'] as const;
 
 export class CreateNotificationDto {
   @IsNotEmpty()
@@ -33,10 +25,16 @@ export class CreateNotificationDto {
   @MaxLength(250)
   message: string;
 
-  @IsNotEmpty()
+  @IsOptional()
   @IsString()
-  @IsIn(NOTIFICATION_TYPES)
-  type: string;
+  @IsIn(MANUAL_NOTIFICATION_TYPES)
+  type?: string = 'aviso';
+
+  // Sanitizado no service: só rotas internas permitidas, senão fica sem link.
+  @IsOptional()
+  @IsString()
+  @MaxLength(200)
+  link?: string | null;
 }
 
 export interface NotificationResponseDto {
@@ -45,6 +43,7 @@ export interface NotificationResponseDto {
   title: string;
   message: string;
   type: string;
+  link: string | null;
   readed: boolean;
   created_at: Date;
 }

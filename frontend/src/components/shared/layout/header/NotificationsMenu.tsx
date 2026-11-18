@@ -1,6 +1,19 @@
-import { Bell, BellRing, CheckCheck, Info, ShieldAlert, Sparkles } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import {
+  Bell,
+  BellRing,
+  CheckCheck,
+  ClipboardList,
+  Info,
+  ShieldAlert,
+  Sparkles,
+  TrendingUp,
+  Trophy,
+  Users,
+  type LucideIcon,
+} from 'lucide-react';
 import { useNotification } from '@/hooks/useNotification';
-import { timeAgo } from '@/services/notification';
+import { timeAgo, type Notification } from '@/services/notification';
 import { RailPopover } from './RailPopover';
 
 const PANEL_ID = 'sp-rail-notifications';
@@ -9,9 +22,37 @@ interface NotificationsMenuProps {
   open: boolean;
   onToggle: () => void;
   onClose: () => void;
+  /** `rail`: trilho do aluno (padrão). `console`: barra do topo do console administrativo. */
+  variant?: 'rail' | 'console';
 }
 
-export function NotificationsMenu({ open, onToggle, onClose }: NotificationsMenuProps) {
+const TYPE_ICONS: Record<string, LucideIcon> = {
+  conquista: Sparkles,
+  progresso: TrendingUp,
+  ranking: Trophy,
+  turma: Users,
+  gestao: ClipboardList,
+  seguranca: ShieldAlert,
+  aviso: Info,
+};
+
+function getNotificationIcon(type: string): LucideIcon {
+  const normalizedType = type.toLowerCase();
+  if (TYPE_ICONS[normalizedType]) return TYPE_ICONS[normalizedType];
+
+  // Valores antigos gravados antes dos tipos fechados.
+  if (normalizedType.includes('alert') || normalizedType.includes('seguran')) return ShieldAlert;
+  if (normalizedType.includes('conquista') || normalizedType.includes('reward')) return Sparkles;
+  return Info;
+}
+
+// O backend já valida o link; aqui só se aceita rota interna do app.
+function internalLink(link: Notification['link']): string | null {
+  return typeof link === 'string' && link.startsWith('/') && !link.startsWith('//') ? link : null;
+}
+
+export function NotificationsMenu({ open, onToggle, onClose, variant = 'rail' }: NotificationsMenuProps) {
+  const isConsole = variant === 'console';
   const {
     notification,
     loading,
@@ -20,6 +61,7 @@ export function NotificationsMenu({ open, onToggle, onClose }: NotificationsMenu
     markAsRead,
     markAllAsRead,
   } = useNotification();
+  const navigate = useNavigate();
 
   const handleMarkAllAsRead = async () => {
     try {
@@ -29,18 +71,19 @@ export function NotificationsMenu({ open, onToggle, onClose }: NotificationsMenu
     }
   };
 
-  const getNotificationIcon = (type: string) => {
-    const normalizedType = type.toLowerCase();
-
-    if (normalizedType.includes('alert') || normalizedType.includes('seguran')) {
-      return ShieldAlert;
+  const handleOpenItem = async (item: Notification) => {
+    const target = internalLink(item.link);
+    if (!item.readed) {
+      try {
+        await markAsRead(item.id);
+      } catch {
+        // Falha ao marcar como lida não impede a navegação.
+      }
     }
-
-    if (normalizedType.includes('conquista') || normalizedType.includes('reward')) {
-      return Sparkles;
+    if (target) {
+      onClose();
+      navigate(target);
     }
-
-    return Info;
   };
 
   return (
@@ -48,7 +91,7 @@ export function NotificationsMenu({ open, onToggle, onClose }: NotificationsMenu
       <button
         type="button"
         onClick={onToggle}
-        className="sp-rail-account-button"
+        className={isConsole ? 'admin-console-icon-button admin-console-bell' : 'sp-rail-account-button'}
         aria-label={hasUnread ? `Abrir notificações, ${unreadCount} não lidas` : 'Abrir notificações'}
         aria-haspopup="dialog"
         aria-expanded={open}
@@ -57,14 +100,14 @@ export function NotificationsMenu({ open, onToggle, onClose }: NotificationsMenu
       >
         <Bell size={20} aria-hidden="true" />
         {hasUnread && (
-          <span className="sp-rail-badge" aria-hidden="true">
+          <span className={isConsole ? 'admin-console-bell-badge' : 'sp-rail-badge'} aria-hidden="true">
             {unreadCount > 9 ? '9+' : unreadCount}
           </span>
         )}
       </button>
 
       {open && (
-        <RailPopover id={PANEL_ID} label="Notificações" className="notification-popover" onClose={onClose}>
+        <RailPopover id={PANEL_ID} label="Notificações" className={isConsole ? 'notification-popover is-console' : 'notification-popover'} onClose={onClose}>
           <div className="notification-popover-header">
             <div className="notification-popover-title">
               <span className="notification-heading-icon"><BellRing size={17} /></span>
@@ -102,7 +145,7 @@ export function NotificationsMenu({ open, onToggle, onClose }: NotificationsMenu
               <button
                 type="button"
                 key={item.id}
-                onClick={() => { if (!item.readed) void markAsRead(item.id); }}
+                onClick={() => void handleOpenItem(item)}
                 className={`notification-item ${!item.readed ? 'is-unread' : ''}`}
               >
                 <span className="notification-item-icon"><Icon size={16} /></span>

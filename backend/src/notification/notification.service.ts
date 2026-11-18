@@ -1,10 +1,12 @@
 import {
   Injectable,
   Inject,
+  Logger,
   NotFoundException,
   ForbiddenException,
+  BadRequestException,
 } from '@nestjs/common';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import { Notification } from './notification.entity';
 import {
   CreateNotificationDto,
@@ -14,9 +16,31 @@ import { ResultadoDto } from 'src/resultado.dto';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { UsuarioService } from '../usuario/usuario.service';
 import { Role } from '../auth/roles.enum';
+import {
+  NotificationType,
+  sanitizeNotificationLink,
+} from './notification-types';
+import { gravarAgrupadas, ModoGravacao } from './notification-sql';
+
+export interface NotificationInput {
+  usuarioId: number;
+  type: NotificationType;
+  title: string;
+  message: string;
+  link?: string | null;
+  groupKey?: string | null;
+  /** `resumo`: texto começa com contagem; só reabre quando ela aumenta. */
+  mode?: ModoGravacao;
+}
+
+const LOTE_NOTIFICACOES = 500;
+const LIMITE_LISTAGEM = 50;
+const DIAS_PROTECAO_SEGURANCA = 30;
 
 @Injectable()
 export class NotificationService {
+  private readonly logger = new Logger(NotificationService.name);
+
   constructor(
     @Inject('NOTIFICATION_REPOSITORY')
     private notificationRepository: Repository<Notification>,
@@ -38,7 +62,8 @@ export class NotificationService {
       usuario_id: data.usuario_id,
       title: data.title,
       message: data.message,
-      type: data.type,
+      type: data.type ?? 'aviso',
+      link: sanitizeNotificationLink(data.link),
       readed: false,
     });
 
@@ -48,6 +73,7 @@ export class NotificationService {
       title: notification.title,
       message: notification.message,
       type: notification.type,
+      link: notification.link ?? null,
       created_at: notification.created_at,
     });
 
@@ -55,6 +81,78 @@ export class NotificationService {
       sucesso: true,
       mensagem: 'Inclusão de registro realizada com sucesso',
     };
+  }
+
+  /**
+   * Grava notificações geradas pelo sistema e as publica no socket.
+   * Sem `groupKey`: insere sempre. Com `groupKey`: `once` (padrão) ignora se já
+   * existir para o usuário; `replace` atualiza texto, zera a leitura e renova a data;
+   * `resumo` só reabre quando a contagem no início do texto aumenta. Grupos vão
+   * em consultas multi-linha. Retorna quantas linhas foram publicadas (novas ou reabertas).
+   */
+  async notify(inputs: NotificationInput[]): Promise<number> {
+    let total = 0;
+    for (let i = 0; i < inputs.length; i += LOTE_NOTIFICACOES) {
+      const lote = inputs.slice(i, i + LOTE_NOTIFICACOES).map((input) => ({
+        usuarioId: input.usuarioId,
+        type: input.type,
+        title: String(input.title ?? '').slice(0, 100),
+        message: String(input.message ?? '').slice(0, 250),
+        link: sanitizeNotificationLink(input.link),
+        groupKey: input.groupKey ? input.groupKey.slice(0, 120) : null,
+        mode: input.mode ?? 'once',
+      }));
+      const ids: number[] = [];
+
+      const semGrupo = lote.filter((item) => !item.groupKey);
+      if (semGrupo.length) {
+        const salvas = await this.notificationRepository.save(
+          semGrupo.map((item) => ({
+            usuario_id: item.usuarioId,
+            title: item.title,
+            message: item.message,
+            type: item.type,
+            link: item.link,
+            readed: false,
+          })),
+        );
+        for (const salva of salvas) ids.push(salva.id);
+      }
+
+      const comGrupo = lote.filter((entry) => entry.groupKey);
+      if (comGrupo.length) {
+        ids.push(
+          ...(await gravarAgrupadas(this.notificationRepository, comGrupo)),
+        );
+      }
+
+      total += ids.length;
+      await this.publicar(ids);
+    }
+    return total;
+  }
+
+  private async publicar(ids: number[]): Promise<void> {
+    if (!ids.length) return;
+    try {
+      const linhas = await this.notificationRepository.find({
+        where: { id: In(ids) },
+      });
+      for (const linha of linhas) {
+        this.eventEmitter.emit('notification.created', {
+          id: linha.id,
+          usuario_id: linha.usuario_id,
+          title: linha.title,
+          message: linha.message,
+          type: linha.type,
+          link: linha.link ?? null,
+          created_at: linha.created_at,
+        });
+      }
+    } catch {
+      // A gravação já foi feita; o sino atualiza na próxima consulta.
+      this.logger.warn('Falha ao publicar notificações no socket');
+    }
   }
 
   async markAllAsRead(usuario_id: number): Promise<ResultadoDto> {
@@ -117,6 +215,15 @@ export class NotificationService {
       throw new ForbiddenException('Acesso negado');
     }
 
+    if (notification.type === 'seguranca') {
+      const idade = Date.now() - new Date(notification.created_at).getTime();
+      if (idade < DIAS_PROTECAO_SEGURANCA * 24 * 60 * 60 * 1000) {
+        throw new BadRequestException(
+          'Avisos de segurança não podem ser apagados nos primeiros 30 dias',
+        );
+      }
+    }
+
     await this.notificationRepository.delete(id);
 
     return {
@@ -141,12 +248,16 @@ export class NotificationService {
         title: item.title,
         message: item.message,
         type: item.type,
+        link: item.link ?? null,
         readed: item.readed,
         created_at: item.created_at,
       }));
     }
 
-    const data = await this.notificationRepository.find();
+    const data = await this.notificationRepository.find({
+      order: { created_at: 'DESC', id: 'DESC' },
+      take: LIMITE_LISTAGEM,
+    });
 
     return data.map((item) => ({
       id: item.id,
@@ -154,6 +265,7 @@ export class NotificationService {
       title: item.title,
       message: item.message,
       type: item.type,
+      link: item.link ?? null,
       readed: item.readed,
       created_at: item.created_at,
     }));
@@ -170,7 +282,8 @@ export class NotificationService {
   async getNotificationByUserId(usuario_id: number): Promise<Notification[]> {
     const result = await this.notificationRepository.find({
       where: { usuario_id },
-      order: { created_at: 'DESC' },
+      order: { created_at: 'DESC', id: 'DESC' },
+      take: LIMITE_LISTAGEM,
     });
     return result ?? undefined;
   }

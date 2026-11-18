@@ -258,6 +258,7 @@ export class AppGateway
     title: string;
     message: string;
     type: string;
+    link?: string | null;
     created_at: Date;
   }): Promise<void> {
     // Não usa broadcast: cada sessão precisa continuar autorizada no envio.

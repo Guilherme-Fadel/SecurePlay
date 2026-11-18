@@ -53,7 +53,7 @@ describe('ranking season closure lifecycle', () => {
   it('closes a full previous season during startup', async () => {
     jest.useFakeTimers().setSystemTime(new Date('2026-11-03T12:00:00-03:00'));
     const { service, closed } = buildService();
-    await service.onModuleInit();
+    await service.onApplicationBootstrap();
     expect(closed.has('2026-10')).toBe(true);
     await service.onModuleDestroy();
     expect(jest.getTimerCount()).toBe(0);
@@ -62,7 +62,7 @@ describe('ranking season closure lifecycle', () => {
   it('rearms across the boundary and closes before the next month is served', async () => {
     jest.useFakeTimers().setSystemTime(new Date('2026-10-31T23:59:50-03:00'));
     const { service, closed } = buildService();
-    await service.onModuleInit();
+    await service.onApplicationBootstrap();
     expect(closed.has('2026-10')).toBe(false);
     await jest.advanceTimersByTimeAsync(11_500);
     expect(closed.has('2026-10')).toBe(true);

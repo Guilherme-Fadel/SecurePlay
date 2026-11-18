@@ -49,7 +49,7 @@ describe('DashboardService — entrega de progresso/check-in', () => {
   it('Nest propaga a falha do listener para manter o outbox do produtor pendente', async () => {
     const { service, checkins } = build();
     checkins.register.mockRejectedValue(new Error('SQL indisponível'));
-    jest.spyOn(service, 'onModuleInit').mockResolvedValue();
+    jest.spyOn(service, 'onApplicationBootstrap').mockResolvedValue();
     const module = await Test.createTestingModule({
       imports: [EventEmitterModule.forRoot()],
       providers: [{ provide: DashboardService, useValue: service }],

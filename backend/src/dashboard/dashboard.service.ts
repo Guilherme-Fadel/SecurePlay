@@ -1,4 +1,4 @@
-import { Injectable, Inject, Logger, NotFoundException, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
+import { Injectable, Inject, Logger, NotFoundException, OnApplicationBootstrap, OnModuleDestroy } from '@nestjs/common';
 import { DataSource, Repository, SelectQueryBuilder } from 'typeorm';
 import { UsuarioStats } from '../usuario-stats/usuario-stats.entity';
 import { Usuario } from '../usuario/usuario.entity';
@@ -18,6 +18,8 @@ import { getRankingSeason, getSeasonXpByUser } from './ranking-season';
 import { rankDisplayName, rankKey } from './rank-key';
 import { Empresa } from '../empresa/empresa.entity';
 import { creditSeasonXp } from '../common/gamification/credit-season-xp';
+import { registrarEmissorTemporada } from './ranking-temporada-evento';
+import { NOTIFICATION_EVENTS } from '../notification/notification-events';
 import { closeRankingSeason, ensurePendingRankingSeasonsClosed, historicalSeason, loadSeasonPoints, rankingHistoryContext, RankingMode } from './ranking-history';
 /** Participantes do escopo e pontos usados para ordenar o ranking. */
 interface RankingDataset {
@@ -29,7 +31,7 @@ const RANKING_DATASET_TTL_MS = 30_000;
 const RANKING_DATASET_MAX_KEYS = 500;
 
 @Injectable()
-export class DashboardService implements OnModuleInit, OnModuleDestroy {
+export class DashboardService implements OnApplicationBootstrap, OnModuleDestroy {
   private readonly logger = new Logger(DashboardService.name);
   private readonly rankingDatasets = new Map<
     string,
@@ -50,8 +52,15 @@ export class DashboardService implements OnModuleInit, OnModuleDestroy {
     private s3Service: S3Service,
     private moduloService: ModuloService,
     private readonly companyFeatures: CompanyFeaturesService,
-  ) {}
-  async onModuleInit(): Promise<void> {
+  ) {
+    registrarEmissorTemporada(this.dataSource, (payload) => {
+      this.eventEmitter.emit(NOTIFICATION_EVENTS.temporadaFechada, payload);
+    });
+  }
+  // onApplicationBootstrap (e não onModuleInit): o EventEmitterModule é global e
+  // registra os @OnEvent no bootstrap, antes dos módulos comuns. Fechar a
+  // temporada no boot em onModuleInit emitiria o aviso sem ouvintes.
+  async onApplicationBootstrap(): Promise<void> {
     // Conclui temporadas pendentes antes que a aplicação aceite requests.
     await ensurePendingRankingSeasonsClosed(this.dataSource);
     this.scheduleNextClose();

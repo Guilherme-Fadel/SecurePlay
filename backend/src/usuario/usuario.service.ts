@@ -3,9 +3,11 @@ import {
   Injectable,
   Inject,
   NotFoundException,
+  Optional,
   ServiceUnavailableException,
   UnauthorizedException,
 } from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { Repository } from 'typeorm';
 import { Usuario } from './usuario.entity';
 import { UsuarioCadastrarDto } from './dto/usuario.cadastrar.dto';
@@ -22,6 +24,7 @@ import { randomUUID } from 'crypto';
 import { Role } from '../auth/roles.enum';
 import { ensurePendingRankingSeasonsClosed } from '../dashboard/ranking-history';
 import { activeAccountSession } from '../auth/session';
+import { NOTIFICATION_EVENTS } from '../notification/notification-events';
 import {
   noCompanyParameters,
   platformAdminParameters,
@@ -33,6 +36,7 @@ export class UsuarioService {
     @Inject('USUARIO_REPOSITORY')
     private usuarioRepository: Repository<Usuario>,
     private readonly s3Service: S3Service,
+    @Optional() private readonly events?: EventEmitter2,
   ) {}
   async getUsuarioDados(id: number) {
     let usuario: Usuario | null = null;
@@ -224,6 +228,9 @@ export class UsuarioService {
       nickname_pending: usuario.nickname_pending,
       nickname_request_status: usuario.nickname_request_status,
       nickname_onboarding_pending: false,
+    });
+    this.events?.emit(NOTIFICATION_EVENTS.apelidoSolicitado, {
+      empresaId: usuario.empresa_id,
     });
 
     return {

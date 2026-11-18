@@ -1,5 +1,6 @@
 import { DataSource } from 'typeorm';
 import { getLocalDateKey } from '../common/utils/date.utils';
+import { anunciarTemporadaFechada } from './ranking-temporada-evento';
 
 export type RankingMode = 'current' | 'season' | 'total';
 export type RankingCompleteness = 'complete' | 'partial' | 'unavailable';
@@ -155,7 +156,7 @@ export async function closeRankingSeason(
   );
   if (!hasFullSeasonCoverage(started[0]?.start_local_at, seasonId))
     return false;
-  return dataSource.transaction(async (manager) => {
+  const fechouAgora = await dataSource.transaction(async (manager) => {
     await manager.query(
       'SELECT id FROM ranking_tracking WHERE id = 1 FOR UPDATE',
     );
@@ -163,7 +164,7 @@ export async function closeRankingSeason(
       'SELECT season_id FROM ranking_season_close WHERE season_id = ?',
       [seasonId],
     );
-    if (closed.length) return true;
+    if (closed.length) return false;
     await manager.query(
       `INSERT INTO ranking_season_snapshot
       (season_id, usuario_id, points, total_points, display_name, profile_image_key, empresa_id, empresa_nome, global_eligible)
@@ -188,6 +189,10 @@ export async function closeRankingSeason(
     );
     return true;
   });
+  // Só quem de fato fechou a temporada avisa; reexecução e corrida não duplicam.
+  if (fechouAgora)
+    await anunciarTemporadaFechada(dataSource, seasonId, seasonName(seasonId));
+  return true;
 }
 
 const completedMonthByDataSource = new WeakMap<DataSource, string>();

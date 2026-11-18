@@ -14,6 +14,7 @@ import { sessionPayload, sessionTokenHash } from './session';
 import { LoginAttemptsService, loginSubject } from './login-attempts.service';
 import { MfaService } from './mfa/mfa.service';
 import type { Usuario } from '../usuario/usuario.entity';
+import { NOTIFICATION_EVENTS } from '../notification/notification-events';
 
 /** Hash bcrypt (custo 10, igual ao das contas) de um texto aleatório descartado. */
 export const TIMING_DUMMY_HASH =
@@ -224,6 +225,10 @@ export class AuthService {
     this.events.emit('auth.sessions.revoked', {
       userId,
       sessionVersion: user.session_version,
+    });
+    this.events.emit(NOTIFICATION_EVENTS.senhaAlterada, {
+      usuarioId: userId,
+      origem: 'perfil',
     });
     return {
       token: this.jwtService.sign(sessionPayload(user)),

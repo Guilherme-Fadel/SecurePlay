@@ -1,11 +1,16 @@
 import { api } from "@/services/api";
 
+export const NOTIFICATION_TYPES = ['conquista', 'progresso', 'ranking', 'turma', 'gestao', 'seguranca', 'aviso'] as const;
+export type NotificationType = typeof NOTIFICATION_TYPES[number];
+
 export interface Notification{
     id: number;
     usuario_id: number;
     title: string;
     message: string;
-    type: string;
+    /** Tipo fechado do backend; valores antigos ou desconhecidos chegam como string e caem no ícone padrão. */
+    type: NotificationType | (string & {});
+    link?: string | null;
     readed: boolean;
     created_at: Date
 }

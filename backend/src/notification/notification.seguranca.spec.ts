@@ -83,7 +83,7 @@ describe('CreateNotificationDto: limites (B3)', () => {
     usuario_id: 2,
     title: 'Título',
     message: 'Mensagem',
-    type: 'achievement',
+    type: 'aviso',
   };
 
   it('aceita corpo válido sem readed', async () => {
@@ -114,6 +114,23 @@ describe('CreateNotificationDto: limites (B3)', () => {
   it('recusa tipo fora da lista', async () => {
     const erros = await validar({ ...valido, type: 'qualquer-coisa' });
     expect(erros.map((e) => e.property)).toContain('type');
+  });
+
+  it.each(['conquista', 'progresso', 'ranking', 'turma', 'seguranca'])(
+    'o endpoint manual não forja o tipo %s',
+    async (tipo) => {
+      const erros = await validar({ ...valido, type: tipo });
+      expect(erros.map((e) => e.property)).toContain('type');
+    },
+  );
+
+  it('aceita aviso e gestao; sem tipo vira aviso', async () => {
+    expect(await validar({ ...valido, type: 'gestao' })).toHaveLength(0);
+    const { type: _omitido, ...semTipo } = valido;
+    void _omitido;
+    const dto = plainToInstance(CreateNotificationDto, semTipo);
+    expect(await validate(dto)).toHaveLength(0);
+    expect(dto.type).toBe('aviso');
   });
 });
 

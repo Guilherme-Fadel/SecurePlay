@@ -3,7 +3,10 @@ import {
   Inject,
   NotFoundException,
   BadRequestException,
+  Optional,
 } from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
+import { NOTIFICATION_EVENTS } from '../../notification/notification-events';
 import { EntityManager, Not, Repository } from 'typeorm';
 import { Aula, AulaType } from './aula.entity';
 import { AulaQuiz } from '../aula-quiz/aula-quiz.entity';
@@ -66,6 +69,7 @@ export class AulaService {
     private s3Service: S3Service,
     private moduloService: ModuloService,
     private readonly completions: ActivityCompletionService,
+    @Optional() private readonly events?: EventEmitter2,
   ) {}
 
   async findOne(id: number, usuario_id: number) {
@@ -151,7 +155,37 @@ export class AulaService {
     await this.assertOrderAvailable(dto.modulo_id, dto.order ?? 0);
 
     const aula = this.aulaRepository.create(dto);
-    return this.aulaRepository.save(aula);
+    const salva = await this.aulaRepository.save(aula);
+    if (salva.active !== false) this.anunciarModulo(modulo);
+    return salva;
+  }
+
+  /**
+   * Módulo ativo ganhou aula ativa: pode ser a primeira (o aviso de módulo novo
+   * só sai com conteúdo). A dedupe `modulo:<id>` do listener garante um aviso só.
+   * Best-effort, depois do save: falha aqui nunca desfaz a aula.
+   */
+  private anunciarModulo(modulo: Pick<Modulo, 'id' | 'title' | 'active'>) {
+    try {
+      if (!modulo.active) return;
+      this.events?.emit(NOTIFICATION_EVENTS.moduloPublicado, {
+        moduloId: modulo.id,
+        titulo: modulo.title,
+      });
+    } catch {
+      // best-effort
+    }
+  }
+
+  private async anunciarModuloDaAula(moduloId: number) {
+    try {
+      const modulo = await this.moduloRepository.findOne({
+        where: { id: moduloId },
+      });
+      if (modulo) this.anunciarModulo(modulo);
+    } catch {
+      // best-effort
+    }
   }
 
   async update(id: number, dto: UpdateAulaDto): Promise<Aula> {
@@ -165,8 +199,14 @@ export class AulaService {
       await this.assertOrderAvailable(aula.modulo_id, dto.order, aula.id);
     }
 
+    const estavaAtiva = aula.active;
     Object.assign(aula, dto);
-    return this.aulaRepository.save(aula);
+    const salva = await this.aulaRepository.save(aula);
+    // Só a virada de inativa para ativa conta como conteúdo novo.
+    if (!estavaAtiva && salva.active) {
+      await this.anunciarModuloDaAula(salva.modulo_id);
+    }
+    return salva;
   }
 
   async delete(id: number): Promise<void> {
@@ -493,7 +533,9 @@ export class AulaService {
       usuario_id: usuarioId,
       title: 'Módulo Concluído!',
       message: `Parabéns! Você completou o módulo "${modulo.title}" e ganhou ${xp} XP bônus!`,
-      type: 'achievement',
+      type: 'progresso',
+      link: '/aprender',
+      group_key: `modulo-concluido:${moduloId}`,
       readed: false,
     });
     return {
@@ -505,6 +547,7 @@ export class AulaService {
           title: notification.title,
           message: notification.message,
           type: notification.type,
+          link: notification.link,
           created_at: notification.created_at,
         },
       ],

@@ -44,7 +44,8 @@ describe('NotificationService tenant authorization', () => {
     await expect(service.getNotificationForActor(2, 1)).resolves.toEqual([]);
     expect(repository.find).toHaveBeenCalledWith({
       where: { usuario_id: 2 },
-      order: { created_at: 'DESC' },
+      order: { created_at: 'DESC', id: 'DESC' },
+      take: 50,
     });
   });
 

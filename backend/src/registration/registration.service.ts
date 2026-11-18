@@ -4,9 +4,11 @@ import {
   Inject,
   Injectable,
   NotFoundException,
+  Optional,
 } from '@nestjs/common';
 import { createHash, randomBytes } from 'crypto';
 import * as bcrypt from 'bcrypt';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { DataSource, EntityManager } from 'typeorm';
 import { Convite } from '../admin/entities/convite.entity';
 import { CompleteCadastroConviteDto } from '../admin/dto/complete-cadastro-convite.dto';
@@ -18,6 +20,8 @@ import { TrialRegisterDto } from './dto/trial-register.dto';
 import { EmailService } from './email.service';
 import { PendingRegistration } from './pending-registration.entity';
 import { vincularAlunoPorConvite } from '../turma/turma-vinculos';
+import { ConviteTurma } from '../turma/entities/convite-turma.entity';
+import { NOTIFICATION_EVENTS } from '../notification/notification-events';
 import { ensurePendingRankingSeasonsClosed } from '../dashboard/ranking-history';
 import {
   normalizePhone,
@@ -47,6 +51,7 @@ export class RegistrationService {
   constructor(
     @Inject('DATA_SOURCE') private readonly dataSource: DataSource,
     private readonly emailService: EmailService,
+    @Optional() private readonly events?: EventEmitter2,
   ) {}
 
   async startTrial(
@@ -128,7 +133,8 @@ export class RegistrationService {
         'Escolha um usuário para entrar sem e-mail',
       );
     await ensurePendingRankingSeasonsClosed(this.dataSource);
-    return this.dataSource
+    let entrada: { turmaId: number; usuarioId: number } | null = null;
+    const resultado = await this.dataSource
       .transaction(async (manager) => {
         const invite = await manager
           .getRepository(Convite)
@@ -171,6 +177,7 @@ export class RegistrationService {
         });
         await users.save(user);
         await vincularAlunoPorConvite(manager, invite.id, user);
+        entrada = await this.entradaNaTurma(manager, invite.id, user.id);
         invite.uses += 1;
         await manager.getRepository(Convite).save(invite);
 
@@ -181,6 +188,22 @@ export class RegistrationService {
         };
       })
       .catch(registrationConflict);
+    // Depois do commit: a notificação nunca derruba o cadastro.
+    if (entrada)
+      this.events?.emit(NOTIFICATION_EVENTS.alunoEntrouTurma, entrada);
+    return resultado;
+  }
+
+  /** Turma a que o convite levou o aluno (já vinculado na transação), se houver. */
+  private async entradaNaTurma(
+    manager: EntityManager,
+    conviteId: number,
+    usuarioId: number,
+  ): Promise<{ turmaId: number; usuarioId: number } | null> {
+    const ligacao = await manager
+      .getRepository(ConviteTurma)
+      .findOne({ where: { convite_id: conviteId } });
+    return ligacao ? { turmaId: ligacao.turma_id, usuarioId } : null;
   }
 
   private async createPending(
@@ -343,7 +366,8 @@ export class RegistrationService {
 
   async confirm(token: string, alternativeUsername?: string) {
     await ensurePendingRankingSeasonsClosed(this.dataSource);
-    return this.dataSource
+    let entrada: { turmaId: number; usuarioId: number } | null = null;
+    const resultado = await this.dataSource
       .transaction(async (manager) => {
         const pending = await manager
           .getRepository(PendingRegistration)
@@ -443,6 +467,16 @@ export class RegistrationService {
         await manager.getRepository(Usuario).save(user);
         if (pending.kind === 'invite' && pending.invite_id)
           await vincularAlunoPorConvite(manager, pending.invite_id, user);
+        if (
+          pending.kind === 'invite' &&
+          pending.invite_id &&
+          role === Role.USER
+        )
+          entrada = await this.entradaNaTurma(
+            manager,
+            pending.invite_id,
+            user.id,
+          );
         await manager.getRepository(PendingRegistration).remove(pending);
         return {
           sucesso: true,
@@ -451,6 +485,10 @@ export class RegistrationService {
         };
       })
       .catch(registrationConflict);
+    // Depois do commit: a notificação nunca derruba o cadastro.
+    if (entrada)
+      this.events?.emit(NOTIFICATION_EVENTS.alunoEntrouTurma, entrada);
+    return resultado;
   }
 
   async setPassword(token: string, password: string) {
@@ -484,7 +522,8 @@ export class RegistrationService {
   }
 
   async resetPassword(token: string, password: string) {
-    return this.dataSource.transaction(async (manager) => {
+    let usuarioId: number | null = null;
+    const resultado = await this.dataSource.transaction(async (manager) => {
       const user = await manager
         .getRepository(Usuario)
         .createQueryBuilder('user')
@@ -503,6 +542,7 @@ export class RegistrationService {
       user.password_change_required = false;
       user.session_version = (user.session_version ?? 0) + 1;
       await manager.getRepository(Usuario).save(user);
+      usuarioId = user.id;
       return {
         sucesso: true,
         mensagem: user.email
@@ -513,6 +553,12 @@ export class RegistrationService {
         login_code: user.login_code,
       };
     });
+    if (usuarioId !== null)
+      this.events?.emit(NOTIFICATION_EVENTS.senhaAlterada, {
+        usuarioId,
+        origem: 'recuperacao',
+      });
+    return resultado;
   }
 
   // Conta com e-mail precisa tê-lo verificado; sem e-mail, só alunos com usuário ou código.

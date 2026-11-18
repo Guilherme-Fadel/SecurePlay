@@ -3,6 +3,7 @@ import {
   Inject,
   Injectable,
   NotFoundException,
+  Optional,
 } from '@nestjs/common';
 import { DataSource, EntityManager, Repository } from 'typeorm';
 import { Achievement } from './entities/achievement.entity';
@@ -18,7 +19,11 @@ import { UsuarioStats } from '../usuario-stats/usuario-stats.entity';
 import { UsuarioChallenge } from '../usuario-challenge/usuario-challenge.entity';
 import { UsuarioAula } from '../conteudo/usuario-aula/usuario-aula.entity';
 import { UsuarioArcadeStats } from '../arcade/entities/usuario-arcade-stats.entity';
-import { OnEvent } from '@nestjs/event-emitter';
+import { EventEmitter2, OnEvent } from '@nestjs/event-emitter';
+import {
+  emitirNovidades,
+  novidadesVazias,
+} from './achievement-events';
 import {
   AchievementMetrics,
   AchievementTrailNode,
@@ -47,6 +52,7 @@ export class AchievementsService {
     private usuarioCosmeticRepository: Repository<UsuarioCosmetic>,
     @Inject('DATA_SOURCE')
     private dataSource: DataSource,
+    @Optional() private readonly events?: EventEmitter2,
   ) {}
 
   @OnEvent('progress.changed', { suppressErrors: false })
@@ -120,9 +126,10 @@ export class AchievementsService {
     wallet: PrestigeWallet,
     level: number,
     knownKeys?: Set<string>,
-  ): Promise<void> {
+  ): Promise<number[]> {
+    const concedidos: number[] = [];
     for (let currentLevel = 1; currentLevel <= level; currentLevel += 1) {
-      await this.addTransaction(
+      const concedido = await this.addTransaction(
         manager,
         wallet,
         1,
@@ -132,7 +139,10 @@ export class AchievementsService {
         `Chaves Digitais recebidas ao alcançar o nível ${currentLevel}`,
         knownKeys,
       );
+      // O nível inicial (1) não é uma conquista para anunciar.
+      if (concedido && currentLevel > 1) concedidos.push(currentLevel);
     }
+    return concedidos;
   }
 
   /**
@@ -207,7 +217,8 @@ export class AchievementsService {
   async getTrail(usuario_id: number): Promise<AchievementTrailResponse> {
     const fast = await this.getTrailReadOnly(usuario_id);
     if (fast) return fast;
-    return this.dataSource.transaction(async (manager) => {
+    const novidades = novidadesVazias();
+    const trail = await this.dataSource.transaction(async (manager) => {
       const wallet = await lockPrestigeWallet(manager, usuario_id);
       const userAchievements = manager.getRepository(UsuarioAchievement);
       const [definitions, metrics] = await Promise.all([
@@ -226,7 +237,14 @@ export class AchievementsService {
       ]);
       // Uma consulta traz todas as chaves já lançadas; sem isso eram ~1 SELECT por conquista e por nível.
       const knownKeys = new Set((ledger ?? []).map((entry) => entry.source_key));
-      await this.grantLevelPrestige(manager, wallet, metrics.level, knownKeys);
+      // Em retry da transação o que sobrou da tentativa anterior não vale.
+      novidades.conquistas.length = 0;
+      novidades.niveis = await this.grantLevelPrestige(
+        manager,
+        wallet,
+        metrics.level,
+        knownKeys,
+      );
       const recordsByAchievement = new Map(
         records.map((record) => [record.achievement_id, record]),
       );
@@ -244,6 +262,7 @@ export class AchievementsService {
         const shouldUnlock =
           prerequisiteMet && metric >= definition.requirement_value;
         let changed = false;
+        const wasUnlocked = record?.unlocked ?? false;
         if (!record) {
           changed = true;
           record = userAchievements.create({
@@ -266,6 +285,11 @@ export class AchievementsService {
         }
         // Só grava o que mudou: a leitura da trilha não deve reescrever 20 linhas a cada abertura.
         if (changed) await userAchievements.save(record);
+        if (shouldUnlock && changed && record.unlocked && !wasUnlocked)
+          novidades.conquistas.push({
+            id: definition.id,
+            titulo: definition.name,
+          });
         if (record.unlocked) unlockedSlugs.add(definition.slug);
         // Um unlock legado sem lançamento também pode completar sua recompensa.
         if (record.unlocked) {
@@ -300,6 +324,9 @@ export class AchievementsService {
         nodes,
       };
     });
+    // Só depois do commit: se a transação desfez, nada é anunciado.
+    emitirNovidades(this.events, usuario_id, novidades);
+    return trail;
   }
 
   async getRecent(usuario_id: number, limit = 3) {

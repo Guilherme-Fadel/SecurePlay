@@ -29,6 +29,7 @@ import { UpdateAdminUserDto } from './dto/update-admin-user.dto';
 import { getLocalDateKey } from '../common/utils/date.utils';
 import { CLAUSULA_ESCAPE_LIKE, padraoLike } from '../common/utils/like';
 import { ACCOUNT_CHANGED_EVENT } from '../auth/session';
+import { NOTIFICATION_EVENTS } from '../notification/notification-events';
 
 type ConviteFiltros = {
   page?: number;
@@ -114,6 +115,7 @@ export class ConvitesService {
       throw new ForbiddenException(
         'Somente o administrador da plataforma pode editar os próprios dados',
       );
+    let empresaDoApelido: number | null = null;
     try {
       const result = await this.dataSource.transaction(async (manager) => {
         if (
@@ -213,6 +215,7 @@ export class ConvitesService {
           target.nickname = dto.nickname?.trim() || null;
           target.nickname_pending = null;
           target.nickname_request_status = 'none';
+          empresaDoApelido = target.empresa_id;
           fields.push('nickname');
         }
         if (dto.level !== undefined) {
@@ -246,6 +249,11 @@ export class ConvitesService {
       });
       // Papel ou e-mail mudou: o cache curto de conta deste processo não pode segurar o antigo.
       this.eventEmitter.emit(ACCOUNT_CHANGED_EVENT, { userId: usuarioId });
+      // Apelido definido pela gestão encerra o pedido pendente: atualiza o resumo dos admins.
+      if (empresaDoApelido)
+        this.eventEmitter.emit(NOTIFICATION_EVENTS.apelidoSolicitado, {
+          empresaId: empresaDoApelido,
+        });
       return result;
     } catch (error) {
       if ((error as { code?: string }).code === 'ER_DUP_ENTRY')
@@ -713,6 +721,7 @@ export class ConvitesService {
         alvoId: usuario.id,
         detalhes: { apelido },
       });
+    this.notificarApelidoDecidido(empresaId, usuarioId, true, apelido);
     return this.toUsuarioResumo(usuario);
   }
 
@@ -752,7 +761,25 @@ export class ConvitesService {
         alvoId: usuario.id,
         detalhes: { apelido },
       });
+    this.notificarApelidoDecidido(empresaId, usuarioId, false, apelido);
     return this.toUsuarioResumo(usuario);
+  }
+
+  /** Avisa o aluno da decisão e atualiza o resumo de pendentes dos admins (best-effort, após salvar). */
+  private notificarApelidoDecidido(
+    empresaId: number,
+    usuarioId: number,
+    aprovado: boolean,
+    apelido: string,
+  ) {
+    this.eventEmitter.emit(NOTIFICATION_EVENTS.apelidoDecidido, {
+      usuarioId,
+      aprovado,
+      apelido,
+    });
+    this.eventEmitter.emit(NOTIFICATION_EVENTS.apelidoSolicitado, {
+      empresaId,
+    });
   }
 
   async inativarUsuario(userId: number, usuarioId: number, motivo: string) {

@@ -3,12 +3,15 @@ import {
   ConflictException,
   Injectable,
   Logger,
+  Optional,
   ServiceUnavailableException,
   UnauthorizedException,
 } from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { JwtService } from '@nestjs/jwt';
 import { RedisService } from '../../redis/redis.service';
 import { Usuario } from '../../usuario/usuario.entity';
+import { NOTIFICATION_EVENTS } from '../../notification/notification-events';
 import { LoginAttemptsService, loginSubject } from '../login-attempts.service';
 import { Role } from '../roles.enum';
 import { activeAccountSession } from '../session';
@@ -65,6 +68,7 @@ export class MfaService {
     private readonly jwt: JwtService,
     private readonly redis: RedisService,
     private readonly attempts: LoginAttemptsService,
+    @Optional() private readonly events?: EventEmitter2,
   ) {}
 
   /** O MFA vale para gestão e só com a chave configurada. */
@@ -235,6 +239,10 @@ export class MfaService {
       throw new ConflictException(
         'Não foi possível ativar a verificação em duas etapas. Gere o segredo novamente.',
       );
+    this.events?.emit(NOTIFICATION_EVENTS.mfaAlterado, {
+      usuarioId: account.id,
+      ativado: true,
+    });
     return { ok: true, recoveryCodes };
   }
 

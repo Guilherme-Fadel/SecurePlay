@@ -4,7 +4,10 @@ import {
   NotFoundException,
   ForbiddenException,
   BadRequestException,
+  Optional,
 } from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
+import { NOTIFICATION_EVENTS } from '../../notification/notification-events';
 import { EntityManager, Repository } from 'typeorm';
 import { Modulo } from './modulo.entity';
 import { Aula } from '../aula/aula.entity';
@@ -39,6 +42,8 @@ export class ModuloService {
     private usuarioAulaRepository: Repository<UsuarioAula>,
 
     private jornadaTurma: JornadaTurmaService,
+
+    @Optional() private readonly events?: EventEmitter2,
   ) {}
 
   private async carregar(
@@ -258,7 +263,9 @@ export class ModuloService {
 
   async create(dto: CreateModuloDto): Promise<Modulo> {
     const modulo = this.moduloRepository.create(dto);
-    return this.moduloRepository.save(modulo);
+    const salvo = await this.moduloRepository.save(modulo);
+    if (salvo.active !== false) this.anunciarPublicacao(salvo);
+    return salvo;
   }
 
   async update(id: number, dto: UpdateModuloDto): Promise<Modulo> {
@@ -268,8 +275,24 @@ export class ModuloService {
       throw new NotFoundException('Módulo não encontrado');
     }
 
+    const estavaAtivo = modulo.active;
     Object.assign(modulo, dto);
-    return this.moduloRepository.save(modulo);
+    const salvo = await this.moduloRepository.save(modulo);
+    // Só a virada de inativo para ativo conta como publicação.
+    if (!estavaAtivo && salvo.active) this.anunciarPublicacao(salvo);
+    return salvo;
+  }
+
+  /** Depois do save: falha ao avisar nunca desfaz a criação/ativação do módulo. */
+  private anunciarPublicacao(modulo: Pick<Modulo, 'id' | 'title'>): void {
+    try {
+      this.events?.emit(NOTIFICATION_EVENTS.moduloPublicado, {
+        moduloId: modulo.id,
+        titulo: modulo.title,
+      });
+    } catch {
+      // best-effort
+    }
   }
 
   async delete(id: number): Promise<void> {
