@@ -157,3 +157,21 @@ test('professor é gestão no Perfil: nome do cadastro e rótulo próprio, sem a
   assert.equal(roleLabel('teacher'), 'Professor');
   assert.equal(isManagementRole('user'), false);
 });
+
+test('formulário do aviso da turma espelha os limites do backend', () => {
+  const { validarAviso, resumoDoEnvio } = load('src/components/admin/turmas/avisoTurma.ts');
+  const ok = validarAviso('  Prova amanhã  ', ' Tragam o material. ');
+  assert.equal(ok.valido, true);
+  assert.equal(ok.titulo, 'Prova amanhã');
+  assert.equal(ok.mensagem, 'Tragam o material.');
+  assert.equal(validarAviso('ab', 'Mensagem').valido, false);
+  assert.match(validarAviso('ab', 'Mensagem').erroTitulo, /ao menos 3/);
+  assert.equal(validarAviso('  a  ', 'Mensagem').valido, false);
+  assert.equal(validarAviso('x'.repeat(101), 'Mensagem').valido, false);
+  assert.equal(validarAviso('x'.repeat(100), 'x'.repeat(250)).valido, true);
+  assert.match(validarAviso('Aviso', 'x'.repeat(251)).erroMensagem, /no máximo 250/);
+  assert.equal(validarAviso('Aviso', '   ').valido, false);
+  assert.equal(resumoDoEnvio(1), 'Aviso enviado para 1 aluno.');
+  assert.equal(resumoDoEnvio(12), 'Aviso enviado para 12 alunos.');
+  assert.match(resumoDoEnvio(0), /Nenhum aluno ativo/);
+});

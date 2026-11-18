@@ -1,5 +1,5 @@
 import { useDeferredValue, useState } from 'react';
-import { UserPlus } from 'lucide-react';
+import { Megaphone, UserPlus } from 'lucide-react';
 import { AppButton } from '@/components/ui/buttons/AppButton';
 import { AppSearchInput } from '@/components/ui/forms/AppSearchInput';
 import { AppSelect } from '@/components/ui/forms/AppSelect';
@@ -12,6 +12,7 @@ import { adminQueryKey } from '@/lib/adminCache';
 import { listarUsuarios } from '@/services/convites';
 import { adicionarAlunosTurma, listarAlunosDaJornada, listarAlunosTurma, removerAlunoTurma, type AlunoDaTurma } from '@/services/turmas';
 import { mensagemDeErro, type EscopoTurmas } from './turmaUi';
+import { AvisoTurmaDialog } from './AvisoTurmaDialog';
 import { AdminFeedback } from '@/components/admin/console/AdminFeedback';
 
 function dataCurta(iso: string) {
@@ -74,12 +75,13 @@ function AdicionarAlunos({ escopo, turmaId, onClose, onAdicionados }: { escopo: 
 }
 
 /** Alunos da turma: gestão adiciona, move e retira; professor só consulta. */
-export function TurmaAlunosTab({ escopo, turmaId, ativa }: { escopo: EscopoTurmas; turmaId: number; ativa: boolean }) {
+export function TurmaAlunosTab({ escopo, turmaId, turmaNome, ativa }: { escopo: EscopoTurmas; turmaId: number; turmaNome?: string; ativa: boolean }) {
   const [busca, setBusca] = useState('');
   const buscaAdiada = useDeferredValue(busca);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(25);
   const [adicionando, setAdicionando] = useState(false);
+  const [avisando, setAvisando] = useState(false);
   const [retirar, setRetirar] = useState<AlunoDaTurma | null>(null);
   const [aviso, setAviso] = useState<string | null>(null);
   const [erro, setErro] = useState<string | null>(null);
@@ -116,11 +118,15 @@ export function TurmaAlunosTab({ escopo, turmaId, ativa }: { escopo: EscopoTurma
         error={query.error ? 'Não foi possível carregar os alunos.' : undefined}
         onRetry={query.refetch}
         empty={busca ? 'Nenhum aluno corresponde à busca.' : 'Nenhum aluno nesta turma ainda.'}
-        toolbar={<AdminListToolbar actions={escopo.gestao && ativa ? <AppButton size="control" icon={<UserPlus size={15} aria-hidden="true" />} onClick={() => setAdicionando(true)}>Adicionar alunos</AppButton> : undefined}>
+        toolbar={<AdminListToolbar actions={escopo.gestao ? <>
+          <AppButton variant="secondary" size="control" icon={<Megaphone size={15} aria-hidden="true" />} disabled={!ativa} title={ativa ? undefined : 'Turma arquivada: reative para enviar avisos'} onClick={() => setAvisando(true)}>Enviar aviso</AppButton>
+          {ativa && <AppButton size="control" icon={<UserPlus size={15} aria-hidden="true" />} onClick={() => setAdicionando(true)}>Adicionar alunos</AppButton>}
+        </> : undefined}>
           <AppSearchInput label="Buscar alunos da turma" value={busca} onChange={(event) => { setBusca(event.target.value); setPage(1); }} placeholder="Buscar pelo nome ou apelido" />
         </AdminListToolbar>}
         footer={!query.loading && !query.error ? <AdminGridPagination page={page} pageSize={pageSize} total={resultado.total} totalPages={resultado.totalPages} ariaLabel="Paginação de alunos da turma" onPageChange={setPage} onPageSizeChange={(size) => { setPageSize(size); setPage(1); }} /> : null}
       />
+      {avisando && <AvisoTurmaDialog escopo={escopo} turmaId={turmaId} turmaNome={turmaNome} onClose={() => setAvisando(false)} onEnviado={(resumo) => { setAvisando(false); setAviso(resumo); setErro(null); }} />}
       {adicionando && <AdicionarAlunos escopo={escopo} turmaId={turmaId} onClose={() => setAdicionando(false)} onAdicionados={(resumo) => { setAdicionando(false); setAviso(resumo); query.refetch(); }} />}
       <Modal open={retirar !== null} onClose={() => setRetirar(null)} title="Retirar aluno da turma?" maxWidth="440px">
         <p>{retirar?.name} volta à jornada geral da escola. O progresso, o XP e as conquistas continuam.</p>

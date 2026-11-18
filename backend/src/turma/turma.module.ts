@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { DatabaseModule } from '../database/database.molule';
+import { NotificationModule } from '../notification/notification.module';
 import { AdminAuditService } from '../admin/admin-audit.service';
 import { turmaProviders } from './turma.providers';
 import { JornadaTurmaService } from './jornada-turma.service';
@@ -12,14 +13,21 @@ import {
 } from './turma-platform.controller';
 import { JornadaController } from './jornada.controller';
 import { JornadaEdicaoService } from './jornada-edicao.service';
+import { TurmaAvisosService } from './turma-avisos.service';
+import {
+  TurmaAvisosAdminController,
+  TurmaAvisosPlatformController,
+} from './turma-avisos.controller';
 
 @Module({
-  imports: [DatabaseModule],
+  imports: [DatabaseModule, NotificationModule],
   controllers: [
     TurmaAdminController,
     TurmaPlatformController,
     TurmaPlatformGlobalController,
     JornadaController,
+    TurmaAvisosAdminController,
+    TurmaAvisosPlatformController,
   ],
   providers: [
     ...turmaProviders,
@@ -28,6 +36,7 @@ import { JornadaEdicaoService } from './jornada-edicao.service';
     JornadaTurmaService,
     TurmaAcessoService,
     TurmaService,
+    TurmaAvisosService,
     JornadaEdicaoService,
   ],
   exports: [...turmaProviders, JornadaTurmaService, TurmaAcessoService],

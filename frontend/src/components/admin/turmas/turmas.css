@@ -147,3 +147,8 @@
   .turma-aula-acoes .app-button { flex: 1 1 auto; min-height: 40px; }
   .turma-add-toolbar { grid-template-columns: 1fr; }
 }
+
+.turma-aviso-field { max-width: none; }
+.turma-aviso-field small { color: var(--admin-console-muted); }
+.turma-aviso-field small.turma-aviso-erro { color: var(--danger); font-weight: 600; }
+.turma-aviso-texto { height: auto; padding: 9px 12px; resize: vertical; line-height: 1.4; }

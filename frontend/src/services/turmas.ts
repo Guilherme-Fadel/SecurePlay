@@ -134,6 +134,11 @@ export async function removerAlunoTurma(turmaId: number, usuarioId: number, empr
   mudou(empresaId);
 }
 
+/** Aviso manual da gestão para os alunos ativos da turma; o link do sino é fixado pelo servidor. */
+export async function enviarAvisoTurma(turmaId: number, aviso: { title: string; message: string }, empresaId?: number): Promise<{ enviados: number }> {
+  return (await api.post(`${turmaAdminPath(empresaId)}/${turmaId}/avisos`, aviso)).data;
+}
+
 export async function minhasTurmas(): Promise<TurmaResumo[]> {
   return (await api.get('/turmas/minhas')).data;
 }
