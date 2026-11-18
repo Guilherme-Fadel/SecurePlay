@@ -316,6 +316,10 @@ describe('ConvitesService.listarApelidosPendentesDaEmpresa', () => {
     expect(query.andWhere).toHaveBeenCalledWith('usuario.role = :role', {
       role: Role.USER,
     });
+    expect(query.andWhere).toHaveBeenCalledWith(
+      "(usuario.name LIKE :search ESCAPE '\\\\' OR usuario.email LIKE :search ESCAPE '\\\\' OR usuario.nickname_pending LIKE :search ESCAPE '\\\\')",
+      { search: '%Ana%' },
+    );
     expect(query.orderBy).toHaveBeenCalledWith('usuario.id', 'DESC');
     expect(query.skip).toHaveBeenCalledWith(25);
     expect(query.take).toHaveBeenCalledWith(25);
@@ -421,12 +425,42 @@ describe('ConvitesService.listarPaginadosDaEmpresa', () => {
       'convite.empresa_id = :empresaId',
       { empresaId: 8 },
     );
-    expect(query.andWhere).toHaveBeenCalledWith('convite.email LIKE :search', {
-      search: '%ana@%',
-    });
+    expect(query.andWhere).toHaveBeenCalledWith(
+      "convite.email LIKE :search ESCAPE '\\\\'",
+      { search: '%ana@%' },
+    );
     expect(query.orderBy).toHaveBeenCalledWith('convite.created_at', 'ASC');
     expect(query.skip).toHaveBeenCalledWith(10);
     expect(query.take).toHaveBeenCalledWith(10);
+  });
+
+  it('escapa %, _ e barra invertida na busca de convites para não virarem curinga', async () => {
+    const query = {
+      where: jest.fn().mockReturnThis(),
+      andWhere: jest.fn().mockReturnThis(),
+      orderBy: jest.fn().mockReturnThis(),
+      skip: jest.fn().mockReturnThis(),
+      take: jest.fn().mockReturnThis(),
+      addOrderBy: jest.fn().mockReturnThis(),
+      getManyAndCount: jest.fn().mockResolvedValue([[], 0]),
+    };
+    const service = new ConvitesService(
+      { createQueryBuilder: jest.fn().mockReturnValue(query) } as never,
+      {} as never,
+      {} as never,
+      {} as never,
+      {} as never,
+      { registrar: jest.fn() } as never,
+      { emit: jest.fn() } as never,
+      {} as never,
+    );
+
+    await service.listarPaginadosDaEmpresa(8, { search: 'a_b%' });
+
+    expect(query.andWhere).toHaveBeenCalledWith(
+      "convite.email LIKE :search ESCAPE '\\\\'",
+      { search: '%a\\_b\\%%' },
+    );
   });
 
   it('aplica paginação padrão e desc para sort ausente ou inválido', async () => {
@@ -436,6 +470,7 @@ describe('ConvitesService.listarPaginadosDaEmpresa', () => {
       addOrderBy: jest.fn().mockReturnThis(),
       skip: jest.fn().mockReturnThis(),
       take: jest.fn().mockReturnThis(),
+      addOrderBy: jest.fn().mockReturnThis(),
       getManyAndCount: jest.fn().mockResolvedValue([[], 0]),
     };
     const service = new ConvitesService(

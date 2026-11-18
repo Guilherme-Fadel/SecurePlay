@@ -94,10 +94,19 @@ describe('School pilot bounded queries', () => {
       role: Role.ADMIN,
     });
     expect(query.andWhere).toHaveBeenCalledWith(
-      '(LOWER(contact.name) LIKE :search OR LOWER(contact.email) LIKE :search)',
+      "(LOWER(contact.name) LIKE :search ESCAPE '\\\\' OR LOWER(contact.email) LIKE :search ESCAPE '\\\\')",
       { search: '%escola%' },
     );
     expect(query.skip).toHaveBeenCalledWith(25);
     expect(query.take).toHaveBeenCalledWith(25);
+  });
+
+  it('escapa %, _ e barra invertida na busca de contatos para não virarem curinga', async () => {
+    const { service, query } = harness();
+    await service.contacts(20, 'A_b%', 1);
+    expect(query.andWhere).toHaveBeenCalledWith(
+      expect.stringContaining("ESCAPE '\\\\'"),
+      { search: '%a\\_b\\%%' },
+    );
   });
 });

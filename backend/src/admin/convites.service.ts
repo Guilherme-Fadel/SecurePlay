@@ -27,6 +27,7 @@ import { ensurePendingRankingSeasonsClosed } from '../dashboard/ranking-history'
 import { AdminAuditEvent } from './entities/admin-audit-event.entity';
 import { UpdateAdminUserDto } from './dto/update-admin-user.dto';
 import { getLocalDateKey } from '../common/utils/date.utils';
+import { CLAUSULA_ESCAPE_LIKE, padraoLike } from '../common/utils/like';
 import { ACCOUNT_CHANGED_EVENT } from '../auth/session';
 
 type ConviteFiltros = {
@@ -288,8 +289,8 @@ export class ConvitesService {
 
     if (search) {
       query.andWhere(
-        '(usuario.name LIKE :search OR usuario.email LIKE :search OR usuario.nickname LIKE :search OR usuario.username LIKE :search)',
-        { search: `%${search}%` },
+        `(usuario.name LIKE :search ${CLAUSULA_ESCAPE_LIKE} OR usuario.email LIKE :search ${CLAUSULA_ESCAPE_LIKE} OR usuario.nickname LIKE :search ${CLAUSULA_ESCAPE_LIKE} OR usuario.username LIKE :search ${CLAUSULA_ESCAPE_LIKE})`,
+        { search: padraoLike(search) },
       );
     }
     filtrarPorTurma(query, filtros);
@@ -448,8 +449,8 @@ export class ConvitesService {
 
     if (search) {
       query.andWhere(
-        '(usuario.name LIKE :search OR usuario.email LIKE :search OR usuario.nickname_pending LIKE :search)',
-        { search: `%${search}%` },
+        `(usuario.name LIKE :search ${CLAUSULA_ESCAPE_LIKE} OR usuario.email LIKE :search ${CLAUSULA_ESCAPE_LIKE} OR usuario.nickname_pending LIKE :search ${CLAUSULA_ESCAPE_LIKE})`,
+        { search: padraoLike(search) },
       );
     }
 
@@ -606,7 +607,9 @@ export class ConvitesService {
       .createQueryBuilder('convite')
       .where('convite.empresa_id = :empresaId', { empresaId });
     if (search)
-      query.andWhere('convite.email LIKE :search', { search: `%${search}%` });
+      query.andWhere(`convite.email LIKE :search ${CLAUSULA_ESCAPE_LIKE}`, {
+        search: padraoLike(search),
+      });
     const [convites, total] = await query
       .orderBy('convite.created_at', direction)
       .addOrderBy('convite.id', direction)

@@ -11,6 +11,7 @@ import { Usuario } from '../usuario/usuario.entity';
 import { AdminAuditEvent } from './entities/admin-audit-event.entity';
 import { SchoolPilot, SchoolPilotStatus } from './entities/school-pilot.entity';
 import { SaveSchoolPilotDto } from './dto/school-pilot.dto';
+import { CLAUSULA_ESCAPE_LIKE, padraoLike } from '../common/utils/like';
 
 type SchoolPilotView = {
   id: number;
@@ -81,10 +82,11 @@ export class SchoolPilotService {
       .select(['contact.id', 'contact.name', 'contact.email', 'contact.active'])
       .where('contact.empresa_id = :empresaId', { empresaId })
       .andWhere('contact.role = :role', { role: Role.ADMIN });
-    if (search.trim())
+    const term = search.trim().slice(0, 150).toLowerCase();
+    if (term)
       query.andWhere(
-        '(LOWER(contact.name) LIKE :search OR LOWER(contact.email) LIKE :search)',
-        { search: `%${search.trim().slice(0, 150).toLowerCase()}%` },
+        `(LOWER(contact.name) LIKE :search ${CLAUSULA_ESCAPE_LIKE} OR LOWER(contact.email) LIKE :search ${CLAUSULA_ESCAPE_LIKE})`,
+        { search: padraoLike(term) },
       );
     const [items, total] = await query
       .orderBy('contact.name', 'ASC')
