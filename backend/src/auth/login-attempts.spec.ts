@@ -179,3 +179,30 @@ describe('AuthService.signIn — bloqueio por conta', () => {
     warn.mockRestore();
   });
 });
+
+describe('LoginAttemptsService.refund', () => {
+  it('devolve uma tentativa sem passar de 0 e sem mexer no bloqueio nem no prazo', async () => {
+    const redis = new MemoryRedis();
+    const attempts = new LoginAttemptsService(redis as never);
+    await attempts.reserveAttempt('u:9');
+    await attempts.reserveAttempt('u:9');
+    await attempts.refund('u:9');
+    expect(redis.values.get('login-fail:u:9')).toBe('1');
+    expect(redis.ttls.get('login-fail:u:9')).toBe(LOGIN_FAILURE_WINDOW_SECONDS);
+    await attempts.refund('u:9');
+    await attempts.refund('u:9');
+    expect(redis.values.get('login-fail:u:9')).toBe('0');
+    await attempts.refund('u:sem-contador');
+    expect(redis.values.has('login-fail:u:sem-contador')).toBe(false);
+  });
+
+  it('com o Redis fora, só avisa e não lança', async () => {
+    const warn = jest.spyOn(Logger.prototype, 'warn').mockImplementation();
+    const attempts = new LoginAttemptsService({
+      eval: () => Promise.reject(new Error('redis fora')),
+    } as never);
+    await expect(attempts.refund('u:9')).resolves.toBeUndefined();
+    expect(warn).toHaveBeenCalled();
+    warn.mockRestore();
+  });
+});

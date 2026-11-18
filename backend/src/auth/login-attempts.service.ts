@@ -38,6 +38,17 @@ end
 return 1
 `;
 
+/**
+ * Devolve uma tentativa já reservada: decrementa o contador sem passar de 0. Não
+ * mexe no bloqueio nem no prazo do contador.
+ * KEYS: [contador].
+ */
+export const REFUND_ATTEMPT_SCRIPT = `
+local total = tonumber(redis.call('GET', KEYS[1]))
+if total and total > 0 then redis.call('DECR', KEYS[1]) end
+return 1
+`;
+
 /** Minúsculas e sem diacríticos, como a collation do MySQL compara o e-mail. */
 function foldIdentifier(identifier: string): string {
   return identifier
@@ -65,6 +76,9 @@ export function loginSubject(identifier: string, userId?: number): string {
  *
  * Contrato: `reserveAttempt` ANTES de conferir senha ou código (conta a tentativa
  * e recusa com 429 se houver bloqueio); `reset` só quando uma sessão é emitida.
+ * `refund` devolve a tentativa da senha certa quando o login segue para o MFA: o
+ * login neutro no contador, enquanto cada código errado continua contando. Não
+ * zera o contador nem o bloqueio.
  */
 @Injectable()
 export class LoginAttemptsService {
@@ -100,6 +114,14 @@ export class LoginAttemptsService {
     try {
       await this.redis.del(failKey(subject));
       await this.redis.del(lockKey(subject));
+    } catch {
+      this.warnUnavailable();
+    }
+  }
+
+  async refund(subject: string): Promise<void> {
+    try {
+      await this.redis.eval(REFUND_ATTEMPT_SCRIPT, [failKey(subject)], []);
     } catch {
       this.warnUnavailable();
     }

@@ -131,7 +131,7 @@ function useLoginSubmit(fields: LoginFields, onReaction: () => void, onMfa: (sta
       showError(outcome.reason, outcome.message);
     } else if (outcome.status === 'mfa') {
       setPassword('');
-      onMfa({ setupRequired: outcome.setupRequired, message: outcome.message });
+      onMfa({ identifier: identifier.trim(), setupRequired: outcome.setupRequired, message: outcome.message });
     } else {
       setPassword('');
       setFeedback({ kind: outcome.status, email: outcome.email || identifier.trim(), message: outcome.message });

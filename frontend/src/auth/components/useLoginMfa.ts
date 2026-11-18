@@ -1,11 +1,14 @@
 import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react';
 import { getMe } from '@/services/me';
 import { LOGIN_ERROR_MESSAGES } from '@/services/login/loginErrors';
-import { groupSecret, startMfaSetup, verifyMfa, type MfaFailure, type MfaVerifyInput } from '@/services/login/mfa';
+import { loginService } from '@/services/login/login';
+import { groupSecret, mfaFailureAction, startMfaSetup, verifyMfa, type MfaFailure, type MfaVerifyInput } from '@/services/login/mfa';
 import type { LoginFailureReason, LoginOutcome } from '@/services/login/types';
 
 /** O que a tela de login sabe quando o servidor pede a segunda etapa. */
 export interface MfaStage {
+  /** Identificador já digitado no login, para pedir só a senha se o desafio expirar. */
+  identifier: string;
   setupRequired: boolean;
   message: string;
 }
@@ -20,7 +23,7 @@ const COPY_RESET_MS = 3000;
 const EMPTY_CODE_MESSAGE = 'Digite os 6 números que aparecem no app autenticador.';
 const EMPTY_RECOVERY_MESSAGE = 'Digite um dos seus códigos de recuperação.';
 
-/** Ponte com a tela de login: transforma o fim da etapa em sucesso, volta ao formulário ou expira. */
+/** Ponte com a tela de login: transforma o fim da etapa em sucesso ou volta ao formulário. */
 export function useMfaActions(
   setMfa: (stage: MfaStage | null) => void,
   bridge: {
@@ -41,17 +44,12 @@ export function useMfaActions(
     }
   }, [finishSuccess, setMfa, showError]);
 
-  const expireMfa = useCallback(() => {
-    setMfa(null);
-    showError('mfa_expired', LOGIN_ERROR_MESSAGES.mfa_expired);
-  }, [setMfa, showError]);
-
   const leaveMfa = useCallback(() => {
     setMfa(null);
     focusPassword();
   }, [setMfa, focusPassword]);
 
-  return { completeMfa, expireMfa, leaveMfa };
+  return { completeMfa, leaveMfa };
 }
 
 function useMounted() {
@@ -67,6 +65,7 @@ function useMounted() {
 
 export type MfaSetupState =
   | { status: 'loading' }
+  | { status: 'expired' }
   | { status: 'ready'; groups: string[]; secret: string; otpauthUrl: string }
   | { status: 'error'; message: string };
 
@@ -82,7 +81,8 @@ function useMfaSetup(enabled: boolean, onExpired: () => void, onAlreadyActive: (
     if (!mounted.current) return;
     if (result.status === 'success') {
       setSetup({ status: 'ready', groups: groupSecret(result.secret), secret: result.secret, otpauthUrl: result.otpauthUrl });
-    } else if (result.reason === 'challenge_invalid') {
+    } else if (mfaFailureAction(result.reason) === 'reauth') {
+      setSetup({ status: 'expired' });
       onExpired();
     } else if (result.alreadyActive) {
       onAlreadyActive();
@@ -145,7 +145,7 @@ function useMfaEntry(phase: MfaPhase, { onExpired, onVerified, onCodes }: EntryH
   }, [refocus]);
 
   const fail = useCallback((failure: MfaFailure) => {
-    if (failure.reason === 'challenge_invalid') {
+    if (mfaFailureAction(failure.reason) === 'reauth') {
       onExpired();
       return;
     }
@@ -180,7 +180,7 @@ function useMfaEntry(phase: MfaPhase, { onExpired, onVerified, onCodes }: EntryH
     }
   }, [phase, value, fail, mounted, onCodes, onVerified]);
 
-  return { value, error, submitting, inputRef, change, reset, submit };
+  return { value, error, submitting, inputRef, change, reset, refocus, submit };
 }
 
 export type CopyStatus = 'idle' | 'copied' | 'failed';
@@ -209,7 +209,6 @@ export function useCopy() {
 
 interface MfaHandlers {
   onVerified: EntryHandlers['onVerified'];
-  onExpired: () => void;
 }
 
 interface IssuedCodes {
@@ -218,12 +217,57 @@ interface IssuedCodes {
   message: string;
 }
 
+const REAUTH_UNEXPECTED = 'Não foi possível continuar agora. Volte ao login e entre de novo.';
+
+/** Desafio expirado: pede só a senha (o identificador veio do login) e renova o desafio sem sair da etapa. */
+function useMfaReauth(
+  identifier: string,
+  onVerified: EntryHandlers['onVerified'],
+  onRenewed: (setupRequired: boolean) => void,
+) {
+  const [error, setError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+  const inFlight = useRef(false);
+  const mounted = useMounted();
+
+  const submit = useCallback(async (password: string) => {
+    if (inFlight.current) return;
+    if (!password) {
+      setError(LOGIN_ERROR_MESSAGES.missing_fields);
+      return;
+    }
+    inFlight.current = true;
+    setSubmitting(true);
+    setError(null);
+    let outcome: LoginOutcome | null = null;
+    try {
+      outcome = await loginService(identifier, password);
+    } catch {
+      outcome = null;
+    }
+    inFlight.current = false;
+    if (!mounted.current) return;
+    setSubmitting(false);
+    if (outcome?.status === 'mfa') {
+      onRenewed(outcome.setupRequired);
+    } else if (outcome?.status === 'success') {
+      await onVerified(outcome.nome, outcome.message);
+    } else {
+      setError(outcome ? outcome.message : REAUTH_UNEXPECTED);
+    }
+  }, [identifier, mounted, onRenewed, onVerified]);
+
+  return { error, submitting, submit };
+}
+
 /** Estado completo da etapa de MFA: fase, chave de cadastro, campo e códigos de recuperação. */
-export function useLoginMfa(stage: MfaStage, { onVerified, onExpired }: MfaHandlers) {
+export function useLoginMfa(stage: MfaStage, { onVerified }: MfaHandlers) {
   const [phase, setPhase] = useState<MfaPhase>(stage.setupRequired ? 'setup' : 'code');
   const [issued, setIssued] = useState<IssuedCodes | null>(null);
   const [finishing, setFinishing] = useState(false);
+  const [expired, setExpired] = useState(false);
   const mounted = useMounted();
+  const markExpired = useCallback(() => setExpired(true), []);
 
   const alreadyActive = useCallback(() => setPhase('code'), []);
   const onCodes = useCallback((codes: string[], nome: string | undefined, message: string) => {
@@ -231,9 +275,9 @@ export function useLoginMfa(stage: MfaStage, { onVerified, onExpired }: MfaHandl
     setPhase('codes');
   }, []);
 
-  const { setup, retrySetup } = useMfaSetup(phase === 'setup', onExpired, alreadyActive);
-  const entry = useMfaEntry(phase, { onExpired, onVerified, onCodes });
-  const { reset } = entry;
+  const { setup, retrySetup } = useMfaSetup(phase === 'setup', markExpired, alreadyActive);
+  const entry = useMfaEntry(phase, { onExpired: markExpired, onVerified, onCodes });
+  const { reset, refocus } = entry;
 
   const switchPhase = useCallback((next: MfaPhase) => {
     setPhase(next);
@@ -248,7 +292,16 @@ export function useLoginMfa(stage: MfaStage, { onVerified, onExpired }: MfaHandl
     if (mounted.current) setFinishing(false);
   }, [issued, onVerified, mounted]);
 
-  return { phase, setup, retrySetup, entry, codes: issued?.codes ?? [], finishing, switchPhase, confirmSaved };
+  // Desafio renovado: a chave pendente volta igual (o QR continua valendo) e o código digitado fica.
+  const renewed = useCallback((setupRequired: boolean) => {
+    setExpired(false);
+    if (phase === 'setup' && !setupRequired) setPhase('code');
+    else if (phase === 'setup') void retrySetup();
+    refocus();
+  }, [phase, retrySetup, refocus]);
+  const reauth = useMfaReauth(stage.identifier, onVerified, renewed);
+
+  return { phase, setup, retrySetup, entry, expired, reauth, codes: issued?.codes ?? [], finishing, switchPhase, confirmSaved };
 }
 
 export type LoginMfaState = ReturnType<typeof useLoginMfa>;

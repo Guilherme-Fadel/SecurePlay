@@ -30,7 +30,7 @@ describe('HTTP: MFA por TOTP para gestão', () => {
       (item) => item.name === MFA_CHALLENGE_COOKIE,
     ) as { httpOnly?: boolean; maxAge?: number };
     expect(desafio.httpOnly).toBe(true);
-    expect(desafio.maxAge).toBe(300);
+    expect(desafio.maxAge).toBe(1800);
     expect(res.headers['cache-control']).toBe('private, no-store');
   });
 
@@ -91,20 +91,75 @@ describe('HTTP: MFA por TOTP para gestão', () => {
     expect(sessao.statusCode).toBe(200);
   });
 
-  it('chamar o setup de novo antes de confirmar gera outro segredo', async () => {
+  it('setup repetido enquanto pendente devolve o mesmo segredo e o código continua valendo', async () => {
     const desafio = await c.desafioDe();
     const primeiro = (await c.post('/auth/mfa/setup', desafio)).json<{
       secret: string;
+      otpauthUrl: string;
     }>();
     const segundo = (await c.post('/auth/mfa/setup', desafio)).json<{
       secret: string;
+      otpauthUrl: string;
     }>();
-    expect(segundo.secret).not.toBe(primeiro.secret);
-    // O código do segredo antigo já não confirma o cadastro.
+    expect(segundo.secret).toBe(primeiro.secret);
+    expect(segundo.otpauthUrl).toBe(primeiro.otpauthUrl);
     const res = await c.post('/auth/mfa/verify', desafio, {
       code: c.codigoAtual(primeiro.secret),
     });
-    expect(res.statusCode).toBe(401);
+    expect(res.statusCode).toBe(200);
+  });
+
+  it('segredo pendente ilegível é substituído por um novo', async () => {
+    const desafio = await c.desafioDe();
+    c.contas.get(7)!.mfa_secret_encrypted = 'v1:lixo:lixo:lixo';
+    const res = await c.post('/auth/mfa/setup', desafio);
+    expect(res.statusCode).toBe(200);
+    const { secret } = res.json<{ secret: string }>();
+    expect(secret).toEqual(expect.any(String));
+    expect(c.contas.get(7)!.mfa_secret_encrypted).not.toBe('v1:lixo:lixo:lixo');
+  });
+
+  it('o desafio de cadastro vale 30 min e o de conta já protegida 5 min', async () => {
+    const cadastro = (await c.entrar()).cookies.find(
+      (item) => item.name === MFA_CHALLENGE_COOKIE,
+    ) as { value: string; maxAge?: number };
+    expect(cadastro.maxAge).toBe(1800);
+    const pc = c.jwt.decode<{ iat: number; exp: number }>(cadastro.value);
+    expect(pc.exp - pc.iat).toBe(1800);
+
+    await c.cadastrar();
+    const ativo = (await c.entrar()).cookies.find(
+      (item) => item.name === MFA_CHALLENGE_COOKIE,
+    ) as { value: string; maxAge?: number };
+    expect(ativo.maxAge).toBe(300);
+    const pa = c.jwt.decode<{ iat: number; exp: number }>(ativo.value);
+    expect(pa.exp - pa.iat).toBe(300);
+  });
+
+  it('o setup regrava o cookie do desafio com o prazo do cadastro e sem token no corpo', async () => {
+    const desafio = await c.desafioDe();
+    c.avancar(20 * 60);
+    const res = await c.post('/auth/mfa/setup', desafio);
+    expect(res.statusCode).toBe(200);
+    expect(Object.keys(res.json<object>()).sort()).toEqual([
+      'otpauthUrl',
+      'secret',
+    ]);
+    const novo = res.cookies.find(
+      (item) => item.name === MFA_CHALLENGE_COOKIE,
+    ) as { value: string; maxAge?: number; httpOnly?: boolean };
+    expect(novo.httpOnly).toBe(true);
+    expect(novo.maxAge).toBe(1800);
+    expect(novo.value).not.toBe(desafio);
+    // O desafio antigo teria expirado 10 min depois; o novo ainda vale.
+    c.avancar(15 * 60);
+    expect((await c.post('/auth/mfa/setup', desafio)).statusCode).toBe(401);
+    expect((await c.post('/auth/mfa/setup', novo.value)).statusCode).toBe(200);
+  });
+
+  it('login de conta com MFA devolve a tentativa da senha certa', async () => {
+    await c.entrar();
+    expect(c.attempts.devolvidas).toEqual(['u:7']);
   });
 
   it('setup com o MFA já ativo responde 409', async () => {

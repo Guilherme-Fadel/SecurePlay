@@ -149,3 +149,47 @@ test('groupSecret separa a chave em blocos de 4 caracteres', () => {
   assert.deepEqual([...mfa.groupSecret('ABCDEF GHI')], ['ABCD', 'EFGH', 'I']);
   assert.deepEqual([...mfa.groupSecret('')], []);
 });
+
+test('desafio expirado pede a senha na própria etapa; bloqueio e demais erros ficam na tela', () => {
+  const { mfa } = setup();
+  const action = (error) => mfa.mfaFailureAction(mfa.classifyMfaError(error).reason);
+  assert.equal(action(httpError(401, { code: 'mfa_challenge_invalid' })), 'reauth');
+  assert.equal(action(httpError(401, undefined)), 'reauth');
+  assert.equal(action(httpError(429, {})), 'stay');
+  assert.equal(action(httpError(401, { code: 'mfa_code_invalid' })), 'stay');
+  assert.equal(action(networkError()), 'stay');
+  assert.equal(action(httpError(500, {})), 'stay');
+});
+
+test('mensagem do 429 pede para aguardar sem mandar entrar de novo', () => {
+  const { mfa } = setup();
+  assert.equal(mfa.MFA_ERROR_MESSAGES.rate_limited, 'Muitas tentativas. Aguarde alguns instantes e tente de novo.');
+  assert.doesNotMatch(mfa.MFA_ERROR_MESSAGES.rate_limited, /entre de novo/i);
+});
+
+test('reautenticação: mesmo identificador e senha nova renovam o desafio e a chave pendente volta igual', async () => {
+  const secret = { data: { secret: 'JBSWY3DPEHPK3PXP', otpauthUrl: 'otpauth://totp/SecurePlay:a?secret=JBSWY3DPEHPK3PXP' } };
+  const { login, mfa, calls } = setup({
+    post: async (url) => (url === '/auth/login' ? { data: { requiresMfa: true, mfaSetupRequired: true } } : secret),
+  });
+  const first = await mfa.startMfaSetup();
+  const outcome = await login.loginService(' gestor@escola.com ', 'senha-nova');
+  const again = await mfa.startMfaSetup();
+  assert.equal(outcome.status, 'mfa');
+  assert.equal(outcome.setupRequired, true);
+  assert.deepEqual({ ...calls[1].body }, { identifier: 'gestor@escola.com', password: 'senha-nova' });
+  assert.equal(again.secret, first.secret);
+  assert.equal(again.otpauthUrl, first.otpauthUrl);
+});
+
+test('reautenticação com senha errada ou bloqueio devolve erro com mensagem para o bloco', async () => {
+  const errors = [httpError(401, {}), httpError(429, {})];
+  const { login, loginErrors } = setup({ post: async () => { throw errors.shift(); } });
+  const wrong = await login.loginService('gestor', 'errada');
+  assert.equal(wrong.status, 'error');
+  assert.equal(wrong.message, loginErrors.LOGIN_ERROR_MESSAGES.invalid_credentials);
+  const blocked = await login.loginService('gestor', 'errada');
+  assert.equal(blocked.status, 'error');
+  assert.equal(blocked.reason, 'rate_limited');
+  assert.ok(blocked.message.length > 10);
+});

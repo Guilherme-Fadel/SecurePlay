@@ -68,27 +68,45 @@ describe('bloqueio por conta com MFA', () => {
     process.env = { ...ambiente };
   });
 
-  it('senha certa entre erros de MFA não zera o bloqueio', async () => {
+  it('login com a senha certa é neutro no contador: vários logins e o código certo não dão 429', async () => {
+    const { entrar, codigoCerto } = await montar();
+    let desafio = await entrar();
+    for (let i = 0; i < 8; i++) desafio = await entrar();
+    const { user } = await codigoCerto(desafio);
+    expect(user.id).toBe(7);
+  });
+
+  it('senha certa entre erros de MFA não zera o contador nem o bloqueio', async () => {
     const { entrar, codigoErrado } = await montar();
-    let desafio = await entrar(); // tentativa 1
-    for (let i = 0; i < 2; i++) expect(await codigoErrado(desafio)).toBe(401); // 2 e 3
-    // Login com a senha certa (tentativa 4): conta como tentativa e NÃO zera nada.
-    desafio = await entrar();
-    expect(await codigoErrado(desafio)).toBe(401); // tentativa 5, liga o bloqueio
+    let desafio = await entrar();
+    for (let i = 0; i < 2; i++) expect(await codigoErrado(desafio)).toBe(401); // 1 e 2
+    desafio = await entrar(); // neutro: não conta e não zera
+    for (let i = 0; i < 2; i++) expect(await codigoErrado(desafio)).toBe(401); // 3 e 4
+    expect(await codigoErrado(desafio)).toBe(401); // 5ª, liga o bloqueio
     expect(await codigoErrado(desafio)).toBe(429);
   });
 
-  it('login com a senha certa após 4 tentativas liga o bloqueio e a conta trava', async () => {
+  it('5 códigos errados bloqueiam e, durante o bloqueio, nem a senha certa entra', async () => {
     const { entrar, codigoErrado, status, auth } = await montar();
-    const desafio = await entrar(); // tentativa 1
-    for (let i = 0; i < 3; i++) expect(await codigoErrado(desafio)).toBe(401);
-    await entrar(); // 5ª tentativa: avaliada, liga o bloqueio sem zerar
+    const desafio = await entrar();
+    for (let i = 0; i < 5; i++) expect(await codigoErrado(desafio)).toBe(401);
     expect(await codigoErrado(desafio)).toBe(429);
     expect(
       await status(
         auth.signIn({ email: 'gestao@example.test', password: SENHA }),
       ),
     ).toBe(429);
+    // A senha certa recusada não zerou o bloqueio.
+    expect(await codigoErrado(desafio)).toBe(429);
+  });
+
+  it('senha errada continua contando e bloqueia na 5ª', async () => {
+    const { status, auth } = await montar();
+    const errada = () =>
+      status(auth.signIn({ email: 'gestao@example.test', password: 'x' }));
+    const resultados: number[] = [];
+    for (let i = 0; i < 6; i++) resultados.push(await errada());
+    expect(resultados).toEqual([401, 401, 401, 401, 401, 429]);
   });
 
   it('mfa/verify com sucesso zera o contador', async () => {

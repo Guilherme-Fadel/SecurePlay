@@ -15,6 +15,8 @@ import { activeAccountSession } from '../session';
 import { decryptMfaSecret, encryptMfaSecret } from './mfa-crypto';
 import {
   MFA_CHALLENGE_INVALID,
+  MFA_CHALLENGE_TTL_SECONDS,
+  MFA_ENROLLMENT_TTL_SECONDS,
   readChallenge,
   signChallenge,
 } from './mfa-challenge';
@@ -87,36 +89,66 @@ export class MfaService {
     throw new ServiceUnavailableException(MFA_UNAVAILABLE_MESSAGE);
   }
 
-  issueChallenge(user: Pick<Usuario, 'id' | 'session_version'>): string {
-    return signChallenge(this.jwt, {
-      sub: user.id,
-      sessionVersion: user.session_version ?? 0,
-    });
+  /** Desafio de 5 min para quem já tem MFA; 30 min no primeiro cadastro. */
+  issueChallenge(
+    user: Pick<Usuario, 'id' | 'session_version' | 'mfa_enabled_at'>,
+  ): { token: string; ttlSeconds: number } {
+    const ttlSeconds = user.mfa_enabled_at
+      ? MFA_CHALLENGE_TTL_SECONDS
+      : MFA_ENROLLMENT_TTL_SECONDS;
+    const token = signChallenge(
+      this.jwt,
+      { sub: user.id, sessionVersion: user.session_version ?? 0 },
+      ttlSeconds,
+    );
+    return { token, ttlSeconds };
   }
 
-  /** Gera um segredo novo (ainda pendente) para o aplicativo autenticador. */
+  /**
+   * Segredo pendente para o aplicativo autenticador. Enquanto houver um pendente
+   * legível, ele é reaproveitado (o QR já escaneado continua valendo); só gera novo
+   * quando não há, ou quando não dá para decifrar. Devolve também um desafio novo,
+   * para o prazo do cadastro contar a partir da exibição do QR (não vai no JSON).
+   */
   async setup(challengeToken: unknown) {
     const account = await this.resolveAccount(challengeToken);
     if (account.mfa_enabled_at)
       throw new ConflictException(
         'A verificação em duas etapas já está ativa.',
       );
-    const secret = generateTotpSecret();
-    const saved = await this.store.savePendingSecret(
-      account.id,
-      encryptMfaSecret(secret, this.key()),
-    );
-    if (!saved)
-      throw new ConflictException(
-        'A verificação em duas etapas já está ativa.',
+    let secret = this.pendingSecret(account);
+    if (!secret) {
+      secret = generateTotpSecret();
+      const saved = await this.store.savePendingSecret(
+        account.id,
+        encryptMfaSecret(secret, this.key()),
       );
+      if (!saved)
+        throw new ConflictException(
+          'A verificação em duas etapas já está ativa.',
+        );
+    }
     return {
       secret,
       otpauthUrl: otpauthUrl(
         account.email ?? account.username ?? String(account.id),
         secret,
       ),
+      challenge: this.issueChallenge(account),
     };
+  }
+
+  /** Segredo pendente decifrado, ou null se não há ou está ilegível. */
+  private pendingSecret(account: Usuario): string | null {
+    if (!account.mfa_secret_encrypted) return null;
+    try {
+      return decryptMfaSecret(account.mfa_secret_encrypted, this.key());
+    } catch {
+      this.logger.warn(
+        `Segredo MFA pendente ilegível para a conta ${account.id}`,
+      );
+      return null;
+    }
   }
 
   async verify(

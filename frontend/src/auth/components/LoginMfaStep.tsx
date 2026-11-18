@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { LoginFeedbackRegions } from './LoginNotices';
-import { MfaCodeForm, MfaRecoveryCodes, MfaSetupSteps } from './LoginMfaParts';
+import { MfaCodeForm, MfaReauthForm, MfaRecoveryCodes, MfaSetupSteps } from './LoginMfaParts';
 import { useLoginMfa, type MfaPhase, type MfaStage } from './useLoginMfa';
 import type { LoginFeedback } from './useLoginClassroom';
 
@@ -29,13 +29,12 @@ interface LoginMfaStepProps {
   stage: MfaStage;
   feedback: LoginFeedback | null;
   onVerified: (nome: string | undefined, message: string) => Promise<void>;
-  onExpired: () => void;
   onBack: () => void;
 }
 
 /** Segunda etapa do login de gestão: cadastro do app autenticador, código e recuperação. */
-export function LoginMfaStep({ stage, feedback, onVerified, onExpired, onBack }: LoginMfaStepProps) {
-  const mfa = useLoginMfa(stage, { onVerified, onExpired });
+export function LoginMfaStep({ stage, feedback, onVerified, onBack }: LoginMfaStepProps) {
+  const mfa = useLoginMfa(stage, { onVerified });
   const titleRef = useRef<HTMLHeadingElement>(null);
   const { phase, entry } = mfa;
   const showingCodes = phase === 'codes';
@@ -58,8 +57,12 @@ export function LoginMfaStep({ stage, feedback, onVerified, onExpired, onBack }:
         <MfaRecoveryCodes codes={mfa.codes} busy={mfa.finishing || busy} onSaved={() => void mfa.confirmSaved()} />
       ) : phase === 'setup' ? (
         <MfaSetupSteps setup={mfa.setup} onRetry={() => void mfa.retrySetup()}>
-          <MfaCodeForm phase={phase} entry={entry} busy={busy} blocked={mfa.setup.status !== 'ready'} onSwitch={mfa.switchPhase} />
+          {mfa.expired
+            ? <MfaReauthForm reauth={mfa.reauth} />
+            : <MfaCodeForm phase={phase} entry={entry} busy={busy} blocked={mfa.setup.status !== 'ready'} onSwitch={mfa.switchPhase} />}
         </MfaSetupSteps>
+      ) : mfa.expired ? (
+        <MfaReauthForm reauth={mfa.reauth} />
       ) : (
         <MfaCodeForm phase={phase} entry={entry} busy={busy} blocked={false} onSwitch={mfa.switchPhase} />
       )}

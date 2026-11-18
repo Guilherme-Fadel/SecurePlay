@@ -47,7 +47,7 @@ export class AuthController {
       res.setCookie(
         MFA_CHALLENGE_COOKIE,
         result.challengeToken,
-        this.authService.challengeCookieOptions,
+        this.authService.challengeCookieOptions(result.challengeTtlSeconds),
       );
       res.header('Cache-Control', 'private, no-store');
       return {

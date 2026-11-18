@@ -5,6 +5,14 @@ import { LOGIN_ERROR_MESSAGES } from './loginErrors';
 /** Por que a etapa de verificação em duas etapas não avançou. */
 export type MfaFailureReason = 'code_invalid' | 'challenge_invalid' | 'rate_limited' | 'network' | 'server';
 
+/** O que a tela faz com a falha: `reauth` pede a senha de novo na própria etapa; `stay` só mostra a mensagem. */
+export type MfaFailureAction = 'reauth' | 'stay';
+
+/** Só o desafio expirado exige senha nova; o bloqueio (429) e os demais erros nunca tiram a pessoa da etapa. */
+export function mfaFailureAction(reason: MfaFailureReason): MfaFailureAction {
+  return reason === 'challenge_invalid' ? 'reauth' : 'stay';
+}
+
 export interface MfaFailure {
   reason: MfaFailureReason;
   message: string;
@@ -15,7 +23,7 @@ export interface MfaFailure {
 export const MFA_ERROR_MESSAGES = {
   code_invalid: 'Código inválido. Confira e tente de novo.',
   challenge_invalid: LOGIN_ERROR_MESSAGES.mfa_expired,
-  rate_limited: 'Muitas tentativas seguidas. Espere alguns minutos e tente de novo.',
+  rate_limited: 'Muitas tentativas. Aguarde alguns instantes e tente de novo.',
   network: LOGIN_ERROR_MESSAGES.network,
   server: LOGIN_ERROR_MESSAGES.server,
 } as const satisfies Record<MfaFailureReason, string>;

@@ -73,10 +73,23 @@ describe('HTTP: isolamento e validade do desafio de MFA', () => {
       expect(res.json()).toMatchObject(corpoInvalido);
     });
 
-    it('expirado (5 minutos)', async () => {
+    it('de cadastro expira em 30 minutos, não antes', async () => {
+      const desafio = await c.desafioDe();
+      c.avancar(29 * 60);
+      expect((await c.post('/auth/mfa/setup', desafio)).statusCode).toBe(200);
+      c.avancar(31 * 60);
+      const res = await c.post('/auth/mfa/setup', desafio);
+      expect(res.statusCode).toBe(401);
+      expect(res.json()).toMatchObject(corpoInvalido);
+    });
+
+    it('de conta já protegida expira em 5 minutos', async () => {
+      const { secret } = await c.cadastrar();
       const desafio = await c.desafioDe();
       c.avancar(5 * 60 + 5);
-      const res = await c.post('/auth/mfa/setup', desafio);
+      const res = await c.post('/auth/mfa/verify', desafio, {
+        code: c.codigoAtual(secret),
+      });
       expect(res.statusCode).toBe(401);
       expect(res.json()).toMatchObject(corpoInvalido);
     });

@@ -3,7 +3,10 @@ import { UnauthorizedException } from '@nestjs/common';
 import type { JwtService } from '@nestjs/jwt';
 
 export const MFA_CHALLENGE_COOKIE = 'mfa_challenge';
+/** Conta que já tem MFA: o desafio dura pouco. */
 export const MFA_CHALLENGE_TTL_SECONDS = 5 * 60;
+/** Primeiro cadastro: dá tempo de instalar o app e escanear o QR. */
+export const MFA_ENROLLMENT_TTL_SECONDS = 30 * 60;
 export const MFA_CHALLENGE_PURPOSE = 'mfa';
 
 export const MFA_CHALLENGE_INVALID = {
@@ -23,7 +26,11 @@ export function challengeSecret(): string {
   return createHmac('sha256', base).update('mfa-challenge').digest('hex');
 }
 
-export function signChallenge(jwt: JwtService, challenge: MfaChallenge) {
+export function signChallenge(
+  jwt: JwtService,
+  challenge: MfaChallenge,
+  ttlSeconds: number = MFA_CHALLENGE_TTL_SECONDS,
+) {
   return jwt.sign(
     {
       sub: challenge.sub,
@@ -33,7 +40,7 @@ export function signChallenge(jwt: JwtService, challenge: MfaChallenge) {
     {
       secret: challengeSecret(),
       algorithm: 'HS256',
-      expiresIn: MFA_CHALLENGE_TTL_SECONDS,
+      expiresIn: ttlSeconds,
     },
   );
 }

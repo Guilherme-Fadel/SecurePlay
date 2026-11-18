@@ -12,7 +12,6 @@ import { EventEmitter2 } from '@nestjs/event-emitter';
 import { ChangePasswordDto } from './dto/change-password.dto';
 import { sessionPayload, sessionTokenHash } from './session';
 import { LoginAttemptsService, loginSubject } from './login-attempts.service';
-import { MFA_CHALLENGE_TTL_SECONDS } from './mfa/mfa-challenge';
 import { MfaService } from './mfa/mfa.service';
 import type { Usuario } from '../usuario/usuario.entity';
 
@@ -60,9 +59,9 @@ export class AuthService {
     } as const;
   }
 
-  /** Mesmas opções do cookie de sessão, com a validade curta do desafio de MFA. */
-  get challengeCookieOptions() {
-    return { ...this.cookieOptions, maxAge: MFA_CHALLENGE_TTL_SECONDS };
+  /** Mesmas opções do cookie de sessão, com a validade do desafio de MFA (em segundos). */
+  challengeCookieOptions(ttlSeconds: number) {
+    return { ...this.cookieOptions, maxAge: ttlSeconds };
   }
 
   get cookieClearOptions() {
@@ -127,10 +126,15 @@ export class AuthService {
     this.mfa?.assertAvailableFor(user);
 
     if (this.mfa?.appliesTo(user)) {
+      // A senha certa não deve gastar tentativa: o que conta é o código do MFA, que
+      // continua reservando no mesmo contador. Não zera nada (nem o bloqueio).
+      await this.loginAttempts.refund(attemptSubject);
+      const challenge = this.mfa.issueChallenge(user);
       return {
         requiresMfa: true,
         mfaSetupRequired: !user.mfa_enabled_at,
-        challengeToken: this.mfa.issueChallenge(user),
+        challengeToken: challenge.token,
+        challengeTtlSeconds: challenge.ttlSeconds,
         message: user.mfa_enabled_at
           ? 'Informe o código do aplicativo autenticador para entrar.'
           : 'Cadastre o aplicativo autenticador para concluir o acesso.',

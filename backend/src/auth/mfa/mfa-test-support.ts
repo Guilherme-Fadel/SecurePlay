@@ -76,9 +76,14 @@ export class FakeRedis {
 export class FakeAttempts {
   readonly reservas: string[] = [];
   readonly zerados: string[] = [];
+  readonly devolvidas: string[] = [];
 
   reserveAttempt = jest.fn((subject: string) => {
     this.reservas.push(subject);
+    return Promise.resolve();
+  });
+  refund = jest.fn((subject: string) => {
+    this.devolvidas.push(subject);
     return Promise.resolve();
   });
   reset = jest.fn((subject: string) => {

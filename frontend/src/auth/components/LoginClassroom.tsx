@@ -116,7 +116,6 @@ export function LoginClassroom() {
                 stage={state.mfa}
                 feedback={state.feedback}
                 onVerified={state.completeMfa}
-                onExpired={state.expireMfa}
                 onBack={state.leaveMfa}
               />
             ) : (

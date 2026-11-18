@@ -1,5 +1,5 @@
-import { Fragment, type ReactNode } from 'react';
-import { ArrowRight, Check, Copy, ShieldCheck, TriangleAlert } from 'lucide-react';
+import { Fragment, useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react';
+import { ArrowRight, Check, Copy, Lock, ShieldCheck, TriangleAlert } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import { useCopy, type LoginMfaState, type MfaPhase } from './useLoginMfa';
 
@@ -31,6 +31,9 @@ function SetupKey({ state, onRetry }: { state: LoginMfaState['setup']; onRetry: 
         Gerando sua chave…
       </p>
     );
+  }
+  if (state.status === 'expired') {
+    return <p className="lgc-mfa-wait">A chave aparece de novo assim que você digitar sua senha, logo abaixo.</p>;
   }
   if (state.status === 'error') {
     return (
@@ -160,6 +163,56 @@ export function MfaCodeForm({ phase, entry, busy, blocked, onSwitch }: CodeFormP
           {recovery ? 'Usar o código do app autenticador' : 'Usar um código de recuperação'}
         </button>
       )}
+    </form>
+  );
+}
+
+const REAUTH_MESSAGE = 'Sua verificação expirou. Digite sua senha de novo para continuar.';
+
+/** Desafio expirado: pede só a senha, sem sair da etapa. A senha vive apenas neste campo. */
+export function MfaReauthForm({ reauth }: { reauth: LoginMfaState['reauth'] }) {
+  const [password, setPassword] = useState('');
+  const inputRef = useRef<HTMLInputElement>(null);
+  const { error, submitting } = reauth;
+  const describedBy = error ? 'mfa-reauth-message mfa-reauth-error' : 'mfa-reauth-message';
+
+  useEffect(() => {
+    inputRef.current?.focus();
+  }, []);
+
+  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    void reauth.submit(password).then(() => setPassword(''));
+  };
+
+  return (
+    <form className="lgc-form" method="post" noValidate onSubmit={handleSubmit}>
+      <p className="lgc-mfa-reauth-message" id="mfa-reauth-message" role="alert">{REAUTH_MESSAGE}</p>
+      <div className="lgc-field">
+        <label className="lgc-label" htmlFor="mfa-reauth-password">Senha</label>
+        <div className={error ? 'lgc-box is-invalid' : 'lgc-box'}>
+          <Lock {...ICON} />
+          <input
+            ref={inputRef}
+            id="mfa-reauth-password"
+            className="lgc-input"
+            type="password"
+            name="password"
+            autoComplete="current-password"
+            value={password}
+            disabled={submitting}
+            aria-invalid={error !== null}
+            aria-describedby={describedBy}
+            onChange={(event) => setPassword(event.target.value)}
+          />
+        </div>
+        {error && <p className="lgc-field-error" id="mfa-reauth-error" role="alert">{error}</p>}
+      </div>
+      <button type="submit" className="lgc-submit" disabled={submitting} aria-busy={submitting}>
+        {submitting && <span className="lgc-spinner" aria-hidden="true" />}
+        {submitting ? 'Continuando…' : 'Continuar'}
+        {!submitting && <ArrowRight size={20} strokeWidth={2.6} aria-hidden="true" />}
+      </button>
     </form>
   );
 }

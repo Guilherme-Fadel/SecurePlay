@@ -1,4 +1,7 @@
-import { lockDurationMs } from './login-attempts.service';
+import {
+  REFUND_ATTEMPT_SCRIPT,
+  lockDurationMs,
+} from './login-attempts.service';
 
 /**
  * Redis em memória para o contador de login. `eval` emula o script de reserva
@@ -9,7 +12,12 @@ export class MemoryRedis {
   readonly ttls = new Map<string, number>();
   scripts = 0;
 
-  eval(_script: string, keys: string[], args: (string | number)[]) {
+  eval(script: string, keys: string[], args: (string | number)[]) {
+    if (script === REFUND_ATTEMPT_SCRIPT) {
+      const total = Number(this.values.get(keys[0]) ?? 0);
+      if (total > 0) this.values.set(keys[0], String(total - 1));
+      return Promise.resolve(1);
+    }
     this.scripts++;
     const [lock, fail] = keys;
     if (this.values.has(lock)) return Promise.resolve(0);

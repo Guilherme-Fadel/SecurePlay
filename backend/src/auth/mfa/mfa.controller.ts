@@ -39,7 +39,16 @@ export class MfaController {
     @Response({ passthrough: true }) res: FastifyReply,
   ) {
     res.header('Cache-Control', 'private, no-store');
-    return this.mfa.setup(req.cookies?.[MFA_CHALLENGE_COOKIE]);
+    const { secret, otpauthUrl, challenge } = await this.mfa.setup(
+      req.cookies?.[MFA_CHALLENGE_COOKIE],
+    );
+    // Renova o desafio: o prazo do cadastro conta a partir da exibição do QR.
+    res.setCookie(
+      MFA_CHALLENGE_COOKIE,
+      challenge.token,
+      this.authService.challengeCookieOptions(challenge.ttlSeconds),
+    );
+    return { secret, otpauthUrl };
   }
 
   @Public()
