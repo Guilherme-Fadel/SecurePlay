@@ -20,6 +20,9 @@
 .lgc-mfa-keybox { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; align-self: stretch; padding: 14px 16px; border-radius: 16px; background: var(--lgc-surface-2); box-shadow: inset 0 0 0 2px var(--lgc-rule); }
 .lgc-mfa-key { display: block; max-width: 100%; color: var(--lgc-text); font-family: var(--font-family-mono, monospace); font-size: 18px; font-weight: 700; letter-spacing: .08em; line-height: 1.7; overflow-wrap: anywhere; user-select: all; }
 .lgc-mfa-key span { display: inline-block; }
+.lgc-mfa-qr { display: grid; place-items: center; align-self: center; padding: 8px; border-radius: 12px; background: #fff; }
+.lgc-mfa-qr svg { display: block; }
+.lgc-mfa-keyhint { color: var(--lgc-muted); font-size: 13px; font-weight: 700; }
 .lgc-mfa-keyactions { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; }
 .lgc-mfa-copy-status { color: var(--lgc-muted); font-size: 13px; font-weight: 700; }
 .lgc-mfa-copy-status:empty { display: none; }

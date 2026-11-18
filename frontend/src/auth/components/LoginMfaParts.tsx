@@ -1,5 +1,6 @@
 import { Fragment, type ReactNode } from 'react';
 import { ArrowRight, Check, Copy, ShieldCheck, TriangleAlert } from 'lucide-react';
+import { QRCodeSVG } from 'qrcode.react';
 import { useCopy, type LoginMfaState, type MfaPhase } from './useLoginMfa';
 
 const ICON = { size: 20, strokeWidth: 2.2, 'aria-hidden': true } as const;
@@ -41,6 +42,10 @@ function SetupKey({ state, onRetry }: { state: LoginMfaState['setup']; onRetry: 
   }
   return (
     <div className="lgc-mfa-keybox">
+      <div className="lgc-mfa-qr">
+        <QRCodeSVG value={state.otpauthUrl} size={176} level="M" marginSize={2} title="QR code da chave do SecurePlay" />
+      </div>
+      <span className="lgc-mfa-keyhint">Sem câmera? Digite a chave abaixo:</span>
       <code className="lgc-mfa-key">
         {state.groups.map((group, index) => (
           <Fragment key={`${index}-${group}`}>
@@ -69,10 +74,10 @@ export function MfaSetupSteps({ setup, onRetry, children }: SetupPanelProps) {
     <ol className="lgc-mfa-steps">
       <li>
         <strong>Abra o app autenticador</strong>
-        <span>No celular, escolha adicionar uma conta nova.</span>
+        <span>No celular, escolha adicionar uma conta nova. Se já adicionou o SecurePlay antes, apague a entrada antiga: a chave muda a cada cadastro.</span>
       </li>
       <li>
-        <strong>Digite esta chave no app</strong>
+        <strong>Escaneie o QR code no app</strong>
         <SetupKey state={setup} onRetry={onRetry} />
       </li>
       <li>
