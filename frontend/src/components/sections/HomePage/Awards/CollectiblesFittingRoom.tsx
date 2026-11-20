@@ -10,6 +10,7 @@ import { cn } from '@/lib/utils';
 import type { CurrentUser } from '@/services/me';
 import type { CosmeticItem } from '@/services/achievements';
 import { CosmeticArt } from './CollectiblesArt';
+import { FeedbackRegions, type Feedback } from './CollectiblesFeedback';
 import {
   COSMETIC_TYPES,
   itemState,
@@ -21,11 +22,6 @@ import {
   type Look,
   type RequirementInfo,
 } from './collectiblesModel';
-
-export interface Feedback {
-  kind: 'success' | 'error';
-  text: string;
-}
 
 interface FittingRoomProps {
   user: CurrentUser | null;
@@ -58,9 +54,7 @@ export function CollectiblesFittingRoom(props: FittingRoomProps) {
       <WornList look={look} />
       <p className="sr-only" aria-live="polite">{selected ? `Prévia no provador: ${selected.name}.` : ''}</p>
       <div className="cole-act">
-        {/* Regiões vivas sempre montadas: o texto muda dentro delas e é anunciado. */}
-        <p className="cole-feedback" role="status">{feedback?.kind === 'success' ? feedback.text : ''}</p>
-        <p className="cole-feedback is-error" role="alert">{feedback?.kind === 'error' ? feedback.text : ''}</p>
+        <FeedbackRegions feedback={feedback} />
         {selected ? <ItemPanel {...props} selected={selected} /> : <EmptyPanel balance={props.balance} onShowEarn={props.onShowEarn} />}
       </div>
     </section>

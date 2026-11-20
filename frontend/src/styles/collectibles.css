@@ -491,7 +491,7 @@
 
 .cole-pill--equipped { background: var(--sp-yellow); color: var(--sp-black); }
 .cole-pill--own { background: var(--cole-blue-soft); color: var(--cole-blue-ink); }
-.cole-pill--lock { background: var(--dashboard-bg); color: var(--cole-muted); }
+.cole-pill--lock { max-width: 190px; padding-block: 4px; background: var(--dashboard-bg); color: var(--cole-muted); line-height: 1.2; text-align: left; white-space: normal; }
 
 .cole-price { display: inline-flex; align-items: center; gap: 6px; font-size: 16px; font-weight: 800; }
 .cole-price .digital-key-icon,

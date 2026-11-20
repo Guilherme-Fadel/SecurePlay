@@ -2,15 +2,15 @@ import type { ReactElement } from 'react';
 import './brand-character.css';
 
 /** Corpo e coroa do símbolo SecurePlay, os mesmos traços dos SVGs da marca. */
-const SYMBOL_TRANSFORM = 'matrix(1 0 0 -1 114.2315 100.4042)';
-const BODY_PATH = 'M24.992 80.248C12.298 93.583-8.017 100.251-35.968 100.251-63.903 100.251-83.901 93.733-95.972 80.727-108.026 67.703-114.074 50.396-114.074 28.817-114.074 7.221-108.026-10.236-95.972-23.571-83.901-36.906-63.903-43.574-35.968-43.574-8.017-43.574 12.298-36.906 24.992-23.571 37.704-10.236 44.042 7.221 44.042 28.817 44.042 49.772 37.704 66.913 24.992 80.248';
-const FACE_PATH = 'M0 0C-7.494-6.648-24.607-7.544-31.769-7.616L-31.767-7.618H-31.98C-32.62-7.623-33.176-7.622-33.629-7.618H-36.402C-36.855-7.622-37.412-7.623-38.051-7.618H-38.075C-45.12-7.559-62.47-6.708-70.032 0-79.638 8.522-85.525 39.664-76.539 45.242-67.553 50.819-58.001 34.241-58.001 34.241-58.001 34.241-47.566 64.299-35.016 64.299-22.466 64.299-12.03 34.241-12.03 34.241-12.03 34.241-2.479 50.819 6.507 45.242 15.494 39.664 9.606 8.522 0 0';
+export const SYMBOL_TRANSFORM = 'matrix(1 0 0 -1 114.2315 100.4042)';
+export const BODY_PATH = 'M24.992 80.248C12.298 93.583-8.017 100.251-35.968 100.251-63.903 100.251-83.901 93.733-95.972 80.727-108.026 67.703-114.074 50.396-114.074 28.817-114.074 7.221-108.026-10.236-95.972-23.571-83.901-36.906-63.903-43.574-35.968-43.574-8.017-43.574 12.298-36.906 24.992-23.571 37.704-10.236 44.042 7.221 44.042 28.817 44.042 49.772 37.704 66.913 24.992 80.248';
+export const FACE_PATH = 'M0 0C-7.494-6.648-24.607-7.544-31.769-7.616L-31.767-7.618H-31.98C-32.62-7.623-33.176-7.622-33.629-7.618H-36.402C-36.855-7.622-37.412-7.623-38.051-7.618H-38.075C-45.12-7.559-62.47-6.708-70.032 0-79.638 8.522-85.525 39.664-76.539 45.242-67.553 50.819-58.001 34.241-58.001 34.241-58.001 34.241-47.566 64.299-35.016 64.299-22.466 64.299-12.03 34.241-12.03 34.241-12.03 34.241-2.479 50.819 6.507 45.242 15.494 39.664 9.606 8.522 0 0';
 
 /** Centro de rotação da coroa e dos olhos dentro do viewBox 159 × 144. */
-const FACE_CENTER = '79.5 72';
-const LEFT_EYE_X = 68.5;
-const RIGHT_EYE_X = 89.9;
-const EYE_Y = 83;
+export const FACE_CENTER = '79.5 72';
+export const LEFT_EYE_X = 68.5;
+export const RIGHT_EYE_X = 89.9;
+export const EYE_Y = 83;
 
 export type BrandCharacterExpression =
   | 'open'
@@ -49,7 +49,7 @@ export interface BrandCharacterProps {
   className?: string;
 }
 
-interface EyeProps { color: string; lx: number; rx: number; y: number }
+export interface EyeProps { color: string; lx: number; rx: number; y: number }
 
 const strokeStyle = (color: string) => ({ fill: 'none', stroke: color, strokeWidth: 7, strokeLinecap: 'round' as const });
 const happyArc = (x: number, y: number) => `M${x - 6.5} ${y + 5} Q${x} ${y - 8} ${x + 6.5} ${y + 5}`;
@@ -61,7 +61,7 @@ const OpenEyes = ({ color, lx, rx, y }: EyeProps) => (
 );
 
 /** Um desenho de olhos por expressão; mesma geometria para todos os personagens. */
-const EYES: Record<BrandCharacterExpression, (props: EyeProps) => ReactElement> = {
+export const EYES: Record<BrandCharacterExpression, (props: EyeProps) => ReactElement> = {
   open: OpenEyes,
   happy: ({ color, lx, rx, y }) => <path d={`${happyArc(lx, y)} ${happyArc(rx, y)}`} {...strokeStyle(color)} />,
   closed: ({ color, lx, rx, y }) => (
@@ -97,9 +97,12 @@ const EYES: Record<BrandCharacterExpression, (props: EyeProps) => ReactElement> 
   ),
 };
 
+/** Cor padrão do corpo do personagem (também a do personagem montável, sem cor própria do aluno). */
+export const BRAND_CHARACTER_BODY = 'var(--sp-blue)';
+
 /** O símbolo da marca como personagem: só os olhos e as cores mudam. */
 const DEFAULTS = {
-  body: 'var(--sp-blue)',
+  body: BRAND_CHARACTER_BODY,
   face: 'var(--sp-cream)',
   expression: 'open',
   look: 0,

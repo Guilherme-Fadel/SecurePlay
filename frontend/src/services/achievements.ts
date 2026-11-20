@@ -1,4 +1,5 @@
 import { api } from './api';
+import type { LookPiece } from './dashboard';
 
 export type AchievementCategory = 'sentinel' | 'specialist' | 'investigator' | 'consistency' | 'elite';
 export type AchievementRarity = 'common' | 'uncommon' | 'rare' | 'epic' | 'legendary';
@@ -52,7 +53,36 @@ export interface RecentAchievements {
   nodes: AchievementNode[];
 }
 
-export type CosmeticType = 'frame' | 'background' | 'title' | 'badge' | 'effect';
+/** Encaixes do personagem (skin a card) vêm ao lado dos tipos antigos; o backend é quem os cataloga. */
+export type CosmeticType =
+  | 'frame' | 'background' | 'title' | 'badge' | 'effect'
+  | 'skin' | 'head' | 'face' | 'neck' | 'card';
+
+/** `festive` só existe em colecionáveis (não em conquistas). */
+export type CosmeticRarity = AchievementRarity | 'festive';
+
+export type UnlockMetric = 'xp_season' | 'xp_total' | 'rank' | 'access_days' | 'streak' | 'achievement';
+
+/** Progresso de uma exigência. Em `rank`, `current = 0` significa sem posição (use `met` e `target`). */
+export interface UnlockCondition {
+  metric: UnlockMetric;
+  label: string;
+  current: number | boolean;
+  /** Meta numérica; em `achievement`, o identificador da conquista. */
+  target: number | string;
+  met: boolean;
+  /** Escopo da colocação; só em `rank`. */
+  scope?: 'empresa' | 'global';
+  /** Conquista legada do item: sempre obrigatória, mesmo no modo `any`. */
+  required?: true;
+}
+
+export interface UnlockState {
+  met: boolean;
+  conditions: UnlockCondition[];
+  /** Como as exigências da regra principal se combinam (`all` sem regra). */
+  mode: 'all' | 'any';
+}
 
 export interface CosmeticItem {
   id: number;
@@ -60,20 +90,60 @@ export interface CosmeticItem {
   name: string;
   description: string;
   type: CosmeticType;
-  rarity: AchievementRarity;
+  rarity: CosmeticRarity;
   price: number;
   visualValue: string;
+  artUrl: string | null;
+  adjust: LookPiece['adjust'];
+  layer: LookPiece['layer'];
+  recolorable: boolean;
+  festiveEvent: string | null;
+  availableUntil: string | null;
   requiredAchievementSlug: string | null;
   requirementMet: boolean;
   owned: boolean;
   equipped: boolean;
+  /** Cor escolhida (#rrggbb) em item recolorível ou no fundo personalizado. */
+  color: string | null;
   affordable: boolean;
+  unlock: UnlockState;
 }
+
+/** Peça de um kit à venda; só vira item da coleção depois da compra do kit. */
+export interface CosmeticKitPiece {
+  id: number;
+  type: CosmeticType;
+  name: string;
+  visualValue: string;
+  artUrl: string | null;
+  adjust: LookPiece['adjust'];
+  layer: LookPiece['layer'];
+  recolorable: boolean;
+}
+
+export interface CosmeticKit {
+  id: number;
+  slug: string;
+  name: string;
+  description: string;
+  rarity: CosmeticRarity;
+  price: number;
+  festiveEvent: string | null;
+  availableUntil: string | null;
+  owned: boolean;
+  affordable: boolean;
+  unlock: UnlockState;
+  pieces: CosmeticKitPiece[];
+}
+
+/** Peça equipada: o suficiente para desenhar (mesmo formato do visual do ranking). */
+export type EquippedCosmetic = LookPiece & { type: CosmeticType; slug: string };
 
 export interface AchievementShop {
   prestigeBalance: number;
-  equipped: Array<{ type: CosmeticType; slug: string; visualValue: string }>;
+  equipped: EquippedCosmetic[];
   items: CosmeticItem[];
+  kits: CosmeticKit[];
 }
 
 export async function getAchievementTrail(): Promise<AchievementTrail> {
@@ -96,8 +166,14 @@ export async function purchaseCosmetic(itemId: number): Promise<AchievementShop>
   return response.data as AchievementShop;
 }
 
-export async function equipCosmetic(itemId: number): Promise<AchievementShop> {
-  const response = await api.post(`/achievements/shop/${itemId}/equip`);
+export async function purchaseCosmeticKit(kitId: number): Promise<AchievementShop> {
+  const response = await api.post(`/achievements/shop/kits/${kitId}/purchase`);
+  return response.data as AchievementShop;
+}
+
+/** Equipa o item; `color` (#rrggbb) só vale para item recolorível ou fundo personalizado. */
+export async function equipCosmetic(itemId: number, color?: string): Promise<AchievementShop> {
+  const response = await api.post(`/achievements/shop/${itemId}/equip`, color ? { color } : undefined);
   return response.data as AchievementShop;
 }
 

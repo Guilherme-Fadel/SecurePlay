@@ -23,6 +23,8 @@ const cosmeticArtwork: Record<string, string> = {
   'efeito-ascensao': efeitoAscensaoArtwork,
 };
 
+export const hasCosmeticArtwork = (slug: string) => slug in cosmeticArtwork;
+
 /**
  * Arte do item em pixel art (sem suavização). Item novo sem arte no front
  * mostra a inicial do nome, como o ShopView fazia.

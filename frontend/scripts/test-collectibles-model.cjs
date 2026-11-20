@@ -5,6 +5,10 @@ const { load } = require('./helpers/react-hooks.cjs');
 const model = load('src/components/sections/HomePage/Awards/collectiblesModel.ts', {
   './albumModel': load('src/components/sections/HomePage/Awards/albumModel.ts', {}),
 });
+const character = load('src/components/sections/HomePage/Awards/characterModel.ts', {
+  './collectiblesModel': model,
+  '@/components/shared/Character/characterLook': load('src/components/shared/Character/characterLook.ts', {}),
+});
 const plain = (value) => JSON.parse(JSON.stringify(value));
 
 const item = (id, type, extra = {}) => ({
@@ -111,4 +115,28 @@ test('mensagem de erro do backend com string ou lista; formatos estranhos caem n
   assert.equal(model.extractErrorMessage(new Error('rede')), undefined);
   assert.equal(model.extractErrorMessage(null), undefined);
   assert.equal(model.extractErrorMessage({ response: { data: { message: 42 } } }), undefined);
+});
+
+test('rótulo do item bloqueado na prateleira mostra a exigência real que falta, não só "Conquista"', () => {
+  const missing = (metric, current, target, extra = {}) => ({ metric, label: 'x', current, target, met: false, ...extra });
+  const done = (metric, current, target) => ({ metric, label: 'x', current, target, met: true });
+  assert.equal(character.lockLabel({ mode: 'all', conditions: [missing('xp_season', 40, 100)] }), 'XP na temporada');
+  assert.equal(character.lockLabel({ mode: 'all', conditions: [missing('streak', 1, 5)] }), 'Sequência de acesso');
+  assert.equal(character.lockLabel({ mode: 'all', conditions: [missing('rank', 0, 10, { scope: 'empresa' })] }), 'Top 10 da escola');
+  // Só o que falta conta: a exigência já cumprida não vira rótulo.
+  assert.equal(character.lockLabel({ mode: 'all', conditions: [done('xp_total', 900, 500), missing('access_days', 3, 30)] }), 'Dias de acesso');
+  // Conquista: com a trilha mostra o nome; sem ela não revela o identificador.
+  const achievement = missing('achievement', 0, 1, { target: 'veterano' });
+  assert.equal(character.lockLabel({ mode: 'all', conditions: [achievement] }), 'Conquista do álbum');
+  assert.equal(character.lockLabel({ mode: 'all', conditions: [achievement] }, [{ slug: 'veterano', name: 'Veterano' }]), 'Conquista Veterano');
+  // Várias faltando: "todas" soma o resto; "qualquer uma" avisa que há outra saída.
+  const two = [missing('xp_season', 0, 100), missing('streak', 0, 5)];
+  assert.equal(character.lockLabel({ mode: 'all', conditions: two }), 'XP na temporada +1');
+  assert.equal(character.lockLabel({ mode: 'any', conditions: two }), 'XP na temporada ou outra');
+  assert.equal(character.lockLabel(undefined), 'Exigência');
+  assert.equal(character.lockLabel({ mode: 'all', conditions: [] }), 'Exigência');
+});
+
+test('rótulo acessível de item bloqueado sem conquista não inventa "conquista"', () => {
+  assert.equal(model.itemAriaLabel(item(1, 'frame', { requirementMet: false }), 0, null), 'Item 1, Borda, bloqueado, veja as exigências. Experimentar no provador');
 });

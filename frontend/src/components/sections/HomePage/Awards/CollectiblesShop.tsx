@@ -1,39 +1,39 @@
 import { useRef, type KeyboardEvent } from 'react';
-import { LockKeyhole } from 'lucide-react';
-import { DigitalKeyIcon } from '@/components/ui/visuals/DigitalKeyIcon';
 import { cn } from '@/lib/utils';
-import type { AchievementTrail, CosmeticItem, CosmeticType } from '@/services/achievements';
+import type { AchievementTrail, CosmeticItem } from '@/services/achievements';
 import { CosmeticArt } from './CollectiblesArt';
+import { CollectiblesItemEnd } from './CollectiblesItemEnd';
 import {
   itemAriaLabel,
   itemState,
   itemsOfType,
-  missingLabel,
   rarityLabel,
   requirementInfo,
+  SHELF_TYPES,
   tabCounts,
   tabIndexAfterKey,
   typeTabLabel,
+  type ProfileType,
 } from './collectiblesModel';
 
 export const collectibleItemId = (id: number) => `cole-item-${id}`;
-const tabId = (type: CosmeticType) => `cole-tab-${type}`;
+const tabId = (type: ProfileType) => `cole-tab-${type}`;
 const PANEL_ID = 'cole-tabpanel';
 
 interface ShopProps {
   items: CosmeticItem[];
-  tab: CosmeticType;
-  onTabChange: (type: CosmeticType) => void;
+  tab: ProfileType;
+  onTabChange: (type: ProfileType) => void;
   selectedId: number | null;
   onSelect: (item: CosmeticItem) => void;
   balance: number;
   trail: AchievementTrail | null;
 }
 
-/** Abas por tipo (com contagem) e a lista de itens como botões `aria-pressed`. */
+/** Abas por tipo da prateleira (moldura, título, emblema), com contagem, e a lista de itens como botões `aria-pressed`. */
 export function CollectiblesShop({ items, tab, onTabChange, selectedId, onSelect, balance, trail }: ShopProps) {
-  const tabs = tabCounts(items);
-  const tabRefs = useRef<Partial<Record<CosmeticType, HTMLButtonElement | null>>>({});
+  const tabs = tabCounts(items, SHELF_TYPES);
+  const tabRefs = useRef<Partial<Record<ProfileType, HTMLButtonElement | null>>>({});
   const visible = itemsOfType(items, tab);
 
   const handleKeyDown = (event: KeyboardEvent<HTMLButtonElement>, index: number) => {
@@ -98,13 +98,7 @@ export function CollectiblesShop({ items, tab, onTabChange, selectedId, onSelect
                         {requirement && <small>Libera com {requirement.name}</small>}
                       </span>
                     </span>
-                    <span className="cole-row-end">
-                      {state === 'equipped' && <span className="cole-pill cole-pill--equipped">Equipado</span>}
-                      {state === 'own' && <span className="cole-pill cole-pill--own">Seu</span>}
-                      {state === 'lock' && <span className="cole-pill cole-pill--lock"><LockKeyhole size={14} aria-hidden="true" />Conquista</span>}
-                      {(state === 'buy' || state === 'save') && <span className="cole-price"><DigitalKeyIcon size={20} />{item.price}</span>}
-                      {state === 'save' && <small className="cole-row-miss">{missingLabel(item.price, balance)}</small>}
-                    </span>
+                    <CollectiblesItemEnd item={item} state={state} balance={balance} />
                   </button>
                 </li>
               );

@@ -1,10 +1,10 @@
 import { RARITY_LABELS } from './albumModel';
 import type {
   AchievementNode,
-  AchievementRarity,
   AchievementShop,
   AchievementTrail,
   CosmeticItem,
+  CosmeticRarity,
   CosmeticType,
 } from '@/services/achievements';
 
@@ -14,7 +14,13 @@ import type {
  * traduz o que veio para a interface (nada de recalcular permissão).
  */
 
-export const COSMETIC_TYPES: readonly CosmeticType[] = ['frame', 'background', 'title', 'badge', 'effect'];
+/** Tipos que o provador do perfil (moldura, título, emblema, fundo, efeito) conhece. */
+export type ProfileType = 'frame' | 'background' | 'title' | 'badge' | 'effect';
+
+export const COSMETIC_TYPES: readonly ProfileType[] = ['frame', 'background', 'title', 'badge', 'effect'];
+
+/** Prateleira de Molduras, títulos e emblemas; fundo e efeito agora ficam em Personagem. */
+export const SHELF_TYPES: readonly ProfileType[] = ['frame', 'title', 'badge'];
 
 export const typeLabel: Record<CosmeticType, string> = {
   frame: 'Borda',
@@ -22,9 +28,18 @@ export const typeLabel: Record<CosmeticType, string> = {
   title: 'Título',
   badge: 'Emblema',
   effect: 'Efeito',
+  skin: 'Skin',
+  head: 'Cabeça',
+  face: 'Rosto',
+  neck: 'Pescoço',
+  card: 'Tema do card',
 };
 
-export const typeTabLabel: Record<CosmeticType, string> = {
+export function isProfileType(type: CosmeticType): type is ProfileType {
+  return COSMETIC_TYPES.some((candidate) => candidate === type);
+}
+
+export const typeTabLabel: Record<ProfileType, string> = {
   frame: 'Bordas',
   background: 'Fundos',
   title: 'Títulos',
@@ -33,7 +48,7 @@ export const typeTabLabel: Record<CosmeticType, string> = {
 };
 
 /** Mesmos rótulos do álbum (fonte única em albumModel). */
-export const rarityLabel: Record<AchievementRarity, string> = RARITY_LABELS;
+export const rarityLabel: Record<CosmeticRarity, string> = { ...RARITY_LABELS, festive: 'Comemorativa' };
 
 export type ItemState = 'buy' | 'save' | 'lock' | 'own' | 'equipped';
 
@@ -71,13 +86,13 @@ export function keySegments(price: number, balance: number, max = 20): boolean[]
 }
 
 export interface TabCount {
-  type: CosmeticType;
+  type: ProfileType;
   label: string;
   count: number;
 }
 
-export function tabCounts(items: readonly CosmeticItem[]): TabCount[] {
-  return COSMETIC_TYPES.map((type) => ({
+export function tabCounts(items: readonly CosmeticItem[], types: readonly ProfileType[] = COSMETIC_TYPES): TabCount[] {
+  return types.map((type) => ({
     type,
     label: typeTabLabel[type],
     count: items.filter((item) => item.type === type).length,
@@ -85,8 +100,8 @@ export function tabCounts(items: readonly CosmeticItem[]): TabCount[] {
 }
 
 /** Primeira aba com itens; sem catálogo, a primeira. */
-export function initialTab(items: readonly CosmeticItem[]): CosmeticType {
-  return COSMETIC_TYPES.find((type) => items.some((item) => item.type === type)) ?? COSMETIC_TYPES[0];
+export function initialTab(items: readonly CosmeticItem[], types: readonly ProfileType[] = COSMETIC_TYPES): ProfileType {
+  return types.find((type) => items.some((item) => item.type === type)) ?? types[0];
 }
 
 export function itemsOfType(items: readonly CosmeticItem[], type: CosmeticType): CosmeticItem[] {
@@ -104,7 +119,7 @@ export function tabIndexAfterKey(key: string, current: number, total: number): n
 }
 
 export interface WornPiece {
-  type: CosmeticType;
+  type: ProfileType;
   slug: string;
   name: string;
   visualValue: string;
@@ -112,16 +127,17 @@ export interface WornPiece {
   preview: boolean;
 }
 
-export type Look = Record<CosmeticType, WornPiece | null>;
+export type Look = Record<ProfileType, WornPiece | null>;
 
 /** O que o provador mostra: o equipado (do backend) com a prévia por cima, no tipo dela. */
 export function buildLook(shop: Pick<AchievementShop, 'equipped' | 'items'>, preview: CosmeticItem | null): Look {
   const look: Look = { frame: null, background: null, title: null, badge: null, effect: null };
   for (const piece of shop.equipped) {
+    if (!isProfileType(piece.type)) continue;
     const item = shop.items.find((candidate) => candidate.slug === piece.slug);
     look[piece.type] = { type: piece.type, slug: piece.slug, name: item?.name ?? piece.visualValue, visualValue: piece.visualValue, preview: false };
   }
-  if (preview) {
+  if (preview && isProfileType(preview.type)) {
     look[preview.type] = { type: preview.type, slug: preview.slug, name: preview.name, visualValue: preview.visualValue, preview: true };
   }
   return look;
@@ -172,7 +188,7 @@ export function itemAriaLabel(item: CosmeticItem, balance: number, requirement: 
   const state = itemState(item);
   const detail = state === 'equipped' ? 'equipado'
     : state === 'own' ? 'já é seu'
-      : state === 'lock' ? `precisa da conquista ${requirement?.name ?? ''}`.trim()
+      : state === 'lock' ? (requirement ? `precisa da conquista ${requirement.name}` : 'bloqueado, veja as exigências')
         : state === 'save' ? `custa ${keysLabel(item.price)}, ${missingLabel(item.price, balance).toLowerCase()}`
           : `custa ${keysLabel(item.price)}`;
   return `${item.name}, ${typeLabel[item.type]}, ${detail}. Experimentar no provador`;
@@ -188,4 +204,9 @@ export function extractErrorMessage(error: unknown): string | undefined {
 function readField(value: unknown, key: string): unknown {
   if (typeof value !== 'object' || value === null) return undefined;
   return Object.entries(value).find(([name]) => name === key)?.[1];
+}
+
+/** Nível exibido: o da trilha (backend) ou, sem ela, o do usuário atual. */
+export function profileLevel(trail: Pick<AchievementTrail, 'summary'> | null, user: { level?: number | null } | null): number | null {
+  return trail?.summary.level ?? user?.level ?? null;
 }

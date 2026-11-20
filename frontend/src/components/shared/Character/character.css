@@ -1,0 +1,47 @@
+.character-avatar {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+
+/* Efeitos do personagem: brilhos, estrelas, bolhas e pulsos do canvas aprovado. */
+.character-fx-spark,
+.character-fx-star,
+.character-fx-pulse {
+  transform-box: fill-box;
+  transform-origin: 50% 50%;
+}
+
+.character-fx-spark { animation: character-twinkle 2.4s ease-in-out infinite; }
+.character-fx-star { animation: character-spin 3.2s ease-in-out infinite; }
+.character-fx-pulse { animation: character-pulse 2.8s ease-in-out infinite; }
+.character-fx-bubble { animation: character-rise 3.2s ease-in infinite; }
+
+@keyframes character-twinkle {
+  0%, 100% { transform: scale(.55); opacity: .45; }
+  50% { transform: scale(1); opacity: 1; }
+}
+
+@keyframes character-spin {
+  0%, 100% { transform: rotate(-12deg) scale(.7); opacity: .5; }
+  50% { transform: rotate(12deg) scale(1); opacity: 1; }
+}
+
+@keyframes character-pulse {
+  0%, 100% { transform: scale(.94); opacity: .55; }
+  50% { transform: scale(1.04); opacity: .95; }
+}
+
+@keyframes character-rise {
+  0% { transform: translateY(0); opacity: 0; }
+  15% { opacity: 1; }
+  100% { transform: translateY(-130px); opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .character-fx-spark,
+  .character-fx-star,
+  .character-fx-pulse,
+  .character-fx-bubble { animation: none; }
+}

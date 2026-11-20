@@ -10,6 +10,7 @@ import {
   getAchievementTrail,
   getRecentAchievements,
   purchaseCosmetic,
+  purchaseCosmeticKit,
   unequipCosmetic,
   type AchievementShop,
   type CosmeticType,
@@ -34,6 +35,7 @@ export function useAchievementShop(enabled = true) {
   const shopCacheKey = companyCacheKey(SHOP_KEY, user);
   const query = useCachedQuery(SHOP_KEY, getAchievementShop, { staleTime: 15_000, refetchInterval: 120_000, enabled: enabled && features.achievements });
   const [changingItem, setChangingItem] = useState<number | null>(null);
+  const [changingKit, setChangingKit] = useState<number | null>(null);
 
   const purchase = async (itemId: number) => {
     setChangingItem(itemId);
@@ -47,10 +49,22 @@ export function useAchievementShop(enabled = true) {
     }
   };
 
-  const equip = async (itemId: number) => {
+  const purchaseKit = async (kitId: number) => {
+    setChangingKit(kitId);
+    try {
+      const updated = await purchaseCosmeticKit(kitId);
+      setCache<AchievementShop>(shopCacheKey, updated);
+      invalidate(TRAIL_KEY);
+      return updated;
+    } finally {
+      setChangingKit(null);
+    }
+  };
+
+  const equip = async (itemId: number, color?: string) => {
     setChangingItem(itemId);
     try {
-      const updated = await equipCosmetic(itemId);
+      const updated = await equipCosmetic(itemId, color);
       setCache<AchievementShop>(shopCacheKey, updated);
       return updated;
     } finally {
@@ -69,5 +83,5 @@ export function useAchievementShop(enabled = true) {
     }
   };
 
-  return { ...query, changingItem, purchase, equip, unequip };
+  return { ...query, changingItem, changingKit, purchase, purchaseKit, equip, unequip };
 }

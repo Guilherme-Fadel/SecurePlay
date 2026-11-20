@@ -1,0 +1,52 @@
+import { BRAND_CHARACTER_BODY } from '@/components/shared/BrandCharacter';
+import { CharacterAvatar } from '@/components/shared/Character/CharacterAvatar';
+import type { CharacterLook, LookPiece } from '@/components/shared/Character/characterLook';
+import { cn } from '@/lib/utils';
+import type { CosmeticType } from '@/services/achievements';
+import { CosmeticArt, hasCosmeticArtwork } from './CollectiblesArt';
+import { cardTheme, isCharacterSlot, stageTheme } from './characterModel';
+
+export interface ThumbSource {
+  slug?: string;
+  name: string;
+  type: CosmeticType;
+  visualValue: string;
+  artUrl: string | null;
+  adjust: LookPiece['adjust'];
+  layer: LookPiece['layer'];
+  color?: string | null;
+}
+
+/** A peça da miniatura, com o ajuste e a camada que o backend enviou para ela. */
+function pieceOf(source: ThumbSource): LookPiece {
+  return { visualValue: source.visualValue, artUrl: source.artUrl, color: source.color ?? null, adjust: source.adjust, layer: source.layer };
+}
+
+/**
+ * Miniatura de um item: encaixe do personagem desenhado só com a peça, amostra do
+ * fundo ou do tema do card. Itens antigos do catálogo mantêm a pixel art aprovada.
+ */
+export function CharacterThumb({ source, size = 64 }: { source: ThumbSource; size?: number }) {
+  if (!source.artUrl && source.slug && hasCosmeticArtwork(source.slug)) {
+    return <CosmeticArt slug={source.slug} name={source.name} size={size} />;
+  }
+  const piece = pieceOf(source);
+  if (source.type === 'background') {
+    const theme = stageTheme(piece);
+    return <span className={cn('chr-thumb chr-thumb--swatch', theme.className)} style={theme.style} aria-hidden="true" />;
+  }
+  if (source.type === 'card') {
+    const theme = cardTheme(piece);
+    return <span className={cn('chr-thumb chr-thumb--card', theme.className)} style={theme.style} aria-hidden="true">Você</span>;
+  }
+  if (isCharacterSlot(source.type)) {
+    const look: CharacterLook = {};
+    look[source.type] = piece;
+    return (
+      <span className="chr-thumb chr-thumb--pet" aria-hidden="true">
+        <CharacterAvatar look={look} color={BRAND_CHARACTER_BODY} variant={source.type === 'effect' ? 'full' : 'compact'} />
+      </span>
+    );
+  }
+  return <CosmeticArt slug={source.slug ?? source.visualValue} name={source.name} size={size} />;
+}
