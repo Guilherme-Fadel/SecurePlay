@@ -33,6 +33,16 @@ Referência metodológica: [Geist Design System](https://vercel.com/geist/introd
 - O backend é a autoridade de progresso, XP, bloqueio, posição, fichas e chaves: a tela só exibe e deriva o que vem pronto (ex.: vizinhos do Ranking a partir do top 50, "faltam N" a partir de preço e saldo). Gestão (`admin`, `platform_admin`) vê sem participar onde houver disputa.
 - Movimento: toda animação respeita `useReducedMotion` e a media query; efeitos de ponteiro só com `(pointer: fine)` e sem listeners globais.
 
+## Personagem montável
+
+- Use `CharacterAvatar` (`components/shared/Character`) e nunca redesenhe o personagem. `BrandCharacter` fica para a marca e o mascote; a geometria vem dos exports dele.
+- Camadas, de trás para frente: efeito de fundo, skin, rosto, pescoço, cabeça, efeito da frente. Fundo e tema do card pertencem ao contêiner (palco, card), não ao avatar.
+- Variantes: `full` no palco, no Perfil e no provador; `compact` no placar e em listas, sem efeitos e sem fundo.
+- Arte enviada é sempre `<image>` sobre a prancheta (modelo em `design/personagem/`), nunca SVG inline. Recolorir só vale para arte da biblioteca; o ajuste fino (x, y, escala) é opcional.
+- Sem `label` o avatar é decorativo (`aria-hidden`); com `label` ele é `role="img"`. Efeitos param com movimento reduzido. Os ids internos são únicos por instância, então vários avatares na mesma página são seguros.
+- Tela de Colecionáveis: um botão chunky por bloco; o kit é comprado inteiro, sem "provar conjunto". Exigências (`unlock`) vêm do backend e o cliente nunca as decide.
+- Paletas de ilustração: o metal dos pedestais do Hall da Fama (ouro, prata, bronze, em `styles/hall-stage.css`, classes `.hall-tier--*`) e as cores de raridade dos colecionáveis (`components/admin/collectibles/collectibles.css`, `.collectible-rarity--*`) são arte e podem usar valores fora dos tokens `--sp-*`; não são cores de interface e não seguem a marca da escola. Mantenha o contraste do texto sobre elas nos dois temas.
+
 ## Carregamento de navegação e aprendizagem
 
 - `PageLoading` registra a espera dos fallbacks de rotas e sessão no `PageLoadingProvider`, montado na raiz. A Home registra seu bootstrap no mesmo controlador: uma única `LoadingScreen` acompanha essas etapas, sem reiniciar o progresso. O tema também é fornecido na raiz e aplicado antes da pintura, sem ser removido na troca de página. O CSS da tela é carregado pelo próprio componente para cobrir o primeiro acesso. A tela usa creme/grafite da marca, card com `--app-line` e sombra dura, título condensado em `--app-heading` e sobretítulo em `--app-eyebrow`; barra e pontos seguem a cor da escola.
@@ -99,6 +109,7 @@ Ao criar uma listagem: escolha primeiro as primitivas existentes; use a estrutur
 - **Interação:** busca, filtros, ordenação e ações mantêm o comportamento esperado; estados loading/vazio/erro/acesso negado são exclusivos e não exibem dados obsoletos.
 - **Acessibilidade:** labels e nomes acessíveis, navegação por teclado, foco visível, semântica de tabela/lista, anúncios de estado e contraste coerente com o tema.
 - **Visual:** conferir tema claro/escuro e tema de empresa, desktop e mobile estreito (incluindo 320 px), conteúdo longo e ausência de overflow horizontal.
+- **Personagem:** avatar sempre via `CharacterAvatar` (nada de SVG do personagem copiado); arte enviada como `<image>`, com `label` quando não for decorativo.
 - **Entrega:** remover estilos/JSX órfãos, executar build e checks pertinentes e registrar se a validação foi fixture, navegador autenticado ou somente código.
 
 Este guia evolui junto com as primitivas reais. Atualize-o no mesmo trabalho que mudar um padrão compartilhado; evite documentar componentes ou estados que ainda não existem.
