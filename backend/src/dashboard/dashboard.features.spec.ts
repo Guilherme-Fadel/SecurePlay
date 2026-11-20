@@ -57,7 +57,7 @@ describe('DashboardService company parameters', () => {
       get: jest.fn().mockResolvedValue(null),
       mget: jest.fn((keys: string[]) => Promise.resolve(keys.map(() => null))),
     };
-    const dataSource = { getRepository: jest.fn(), query: jest.fn().mockResolvedValue([]), transaction: jest.fn() };
+    const dataSource = { getRepository: jest.fn().mockReturnValue({ find: jest.fn().mockResolvedValue([]) }), query: jest.fn().mockResolvedValue([]), transaction: jest.fn() };
     const service = new DashboardService(
       repository as never,
       dataSource as never,

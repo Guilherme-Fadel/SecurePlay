@@ -20,6 +20,11 @@ import { Empresa } from '../empresa/empresa.entity';
 import { creditSeasonXp } from '../common/gamification/credit-season-xp';
 import { registrarEmissorTemporada } from './ranking-temporada-evento';
 import { NOTIFICATION_EVENTS } from '../notification/notification-events';
+import { loadLooks, type CharacterLook } from '../achievements/look';
+import { UsuarioCosmetic } from '../achievements/entities/usuario-cosmetic.entity';
+import { buildCategoryRanking } from './ranking-category-response';
+import type { CategoryBoardCache } from './ranking-category-context';
+import { TtlCache, globalEligibleCompanySql, type RankingCategory, type RankingUnit } from './ranking-category';
 import { closeRankingSeason, ensurePendingRankingSeasonsClosed, historicalSeason, loadSeasonPoints, rankingHistoryContext, RankingMode } from './ranking-history';
 /** Participantes do escopo e pontos usados para ordenar o ranking. */
 interface RankingDataset {
@@ -37,6 +42,7 @@ export class DashboardService implements OnApplicationBootstrap, OnModuleDestroy
     string,
     { expiresAt: number; data: Promise<RankingDataset> }
   >();
+  private readonly categoryBoards: CategoryBoardCache = new TtlCache();
   private closeTimer: NodeJS.Timeout | null = null;
   private closeTask: Promise<void> | null = null;
   private shuttingDown = false;
@@ -128,7 +134,7 @@ export class DashboardService implements OnApplicationBootstrap, OnModuleDestroy
     usuario_id: number,
     requestedScope: 'global' | 'company' = 'global',
     includeWeekly = true,
-    options: { includeImages?: boolean; includeEntries?: boolean; companyId?: number; mode?: RankingMode; selectedSeason?: string | null; parameters?: CompanyParameters } = {},
+    options: { includeImages?: boolean; includeEntries?: boolean; companyId?: number; mode?: RankingMode; selectedSeason?: string | null; parameters?: CompanyParameters; category?: RankingCategory; unit?: RankingUnit } = {},
   ) {
     const mode = options.mode ?? 'current';
     const selectedSeason = options.selectedSeason ?? (mode === 'current' ? getRankingSeason().startsAt.slice(0, 7) : null);
@@ -176,8 +182,7 @@ export class DashboardService implements OnApplicationBootstrap, OnModuleDestroy
         query.andWhere(`EXISTS (
           SELECT 1 FROM empresa ranking_empresa
           WHERE ranking_empresa.id = u.empresa_id
-          AND JSON_UNQUOTE(JSON_EXTRACT(ranking_empresa.parametros_funcionalidades, '$.globalRankingEnabled')) = 'true'
-          AND COALESCE(JSON_UNQUOTE(JSON_EXTRACT(ranking_empresa.parametros_funcionalidades, '$.rankingEnabled')), 'true') = 'true'
+          AND ${globalEligibleCompanySql('ranking_empresa')}
           AND u.trial_started_at IS NULL
         )`);
       }
@@ -209,6 +214,37 @@ export class DashboardService implements OnApplicationBootstrap, OnModuleDestroy
           applyScope,
         }),
       );
+    if (options.category !== undefined || options.unit !== undefined) {
+      // Categoria/unidade pedidas: mesmo escopo e conjunto, métrica e unidade novas (ranking-category-response.ts).
+      // `as never` mantém o tipo de retorno legado para quem chama sem esses parâmetros.
+      return buildCategoryRanking({
+        viewerId: usuario_id,
+        isManagementUser,
+        scope,
+        companyAvailable,
+        company,
+        mode,
+        selectedSeason,
+        history,
+        category: options.category ?? 'xp',
+        unit: options.unit ?? 'students',
+        datasetKey,
+        allStats,
+        seasonPoints,
+        historicalCompanies,
+        viewerStats: currentEntry,
+        includeImages,
+        includeWeekly,
+        deps: {
+          dataSource: this.dataSource,
+          redis: this.redisService,
+          cache: this.categoryBoards,
+          looks: (ids, viewerId) => this.rankingLooks(ids, viewerId),
+          photo: (key) => this.resolveProfileImageUrl(key),
+          warn: (message, error) => this.logger.warn(message, error),
+        },
+      }) as never;
+    }
     const leaderboardEntries = [...allStats]
       .sort(
         (a, b) =>
@@ -217,6 +253,12 @@ export class DashboardService implements OnApplicationBootstrap, OnModuleDestroy
           a.usuario_id - b.usuario_id,
       )
       .slice(0, 50);
+    const looks = includeEntries
+      ? await this.rankingLooks(
+          leaderboardEntries.map((entry) => entry.usuario_id),
+          isManagementUser ? null : usuario_id,
+        )
+      : new Map<number, CharacterLook>();
     const historicalCurrentEntry = mode === 'season' ? allStats.find((entry) => entry.usuario_id === usuario_id) : null;
     let previousPoints: number | null = null;
     let previousPosition = 0;
@@ -249,6 +291,7 @@ export class DashboardService implements OnApplicationBootstrap, OnModuleDestroy
               level: calcLevel(entry.total_points),
               companyName: mode === 'season' ? historicalCompanies.get(entry.usuario_id) ?? null : null,
               isCurrentUser: entry.usuario_id === usuario_id,
+              look: looks.get(entry.usuario_id) ?? {},
               profileImageUrl:
                 includeImages && showPhoto(entry)
                   ? await this.resolveProfileImageUrl(
@@ -292,6 +335,7 @@ export class DashboardService implements OnApplicationBootstrap, OnModuleDestroy
       level: calcLevel(mode === 'season' ? historicalCurrentEntry?.total_points ?? 0 : currentStats!.total_points),
       companyName: mode === 'season' ? historicalCompanies.get(usuario_id) ?? null : company?.nome ?? null,
       isCurrentUser: true,
+      look: looks.get(usuario_id),
       profileImageUrl: includeImages
         ? await this.resolveProfileImageUrl(
             mode === 'season' ? historicalCurrentEntry?.usuario?.profile_image_key : currentEntry?.usuario?.profile_image_key,
@@ -347,6 +391,23 @@ export class DashboardService implements OnApplicationBootstrap, OnModuleDestroy
         percentile,
       },
     };
+  }
+
+  /** Visual equipado dos alunos da página (uma consulta por requisição; falha não derruba o ranking). */
+  private async rankingLooks(ids: number[], viewerId: number | null) {
+    try {
+      return await loadLooks(
+        {
+          userItems: this.dataSource.getRepository(UsuarioCosmetic),
+          s3: this.s3Service,
+          logger: this.logger,
+        },
+        viewerId === null ? ids : [...ids, viewerId],
+      );
+    } catch (error) {
+      this.logger.warn('Não foi possível carregar o visual do ranking', error);
+      return new Map<number, CharacterLook>();
+    }
   }
 
   /** Participantes do escopo e pontos de cada um, no modo pedido (carga sem cache). */
@@ -512,6 +573,7 @@ export class DashboardService implements OnApplicationBootstrap, OnModuleDestroy
   }): Promise<void> {
     // XP mudou: o próximo ranking deste processo é recalculado.
     this.rankingDatasets.clear();
+    this.categoryBoards.clear();
     if (payload.skipCheckin) return;
     if (payload.checkinDay) {
       await this.checkins.registerForDay(payload.usuarioId, payload.checkinDay);

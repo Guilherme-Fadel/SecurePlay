@@ -14,6 +14,17 @@ export function rankKey(
     .slice(0, 16);
 }
 
+/** Chave opaca e estável de uma turma no ranking por turmas: o id interno não sai na resposta. */
+export function turmaKey(
+  turmaId: number,
+  secret = process.env.RANKING_KEY_SECRET || process.env.JWT_SECRET || '',
+): string {
+  return createHmac('sha256', secret)
+    .update(`ranking-turma:${turmaId}`)
+    .digest('hex')
+    .slice(0, 16);
+}
+
 /** Prefixo do nome padrão de quem não tem apelido (sem o id interno). */
 export const DEFAULT_RANK_NAME = 'Aventureiro';
 

@@ -62,7 +62,9 @@ describe('nome padrão do ranking sem o id interno', () => {
       mget: jest.fn((keys: string[]) => Promise.resolve(keys.map(() => null))),
     };
     const dataSource = {
-      getRepository: jest.fn(),
+      getRepository: jest.fn().mockReturnValue({
+        find: jest.fn().mockResolvedValue([]),
+      }),
       query: jest.fn().mockResolvedValue([]),
       transaction: jest.fn(),
     };

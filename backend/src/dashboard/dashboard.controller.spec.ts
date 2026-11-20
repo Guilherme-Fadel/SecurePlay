@@ -53,4 +53,50 @@ describe('DashboardController ranking query', () => {
       controller.getRanking(request, ['global', 'company'] as never),
     ).rejects.toThrow(BadRequestException);
   });
+
+  it('repassa category e unit válidos; sem eles não manda nada (resposta legada)', async () => {
+    await controller.getRanking(request, 'company');
+    expect((getRanking.mock.calls[0] as unknown[])[3]).toEqual(
+      expect.objectContaining({ category: undefined, unit: undefined }),
+    );
+    getRanking.mockClear();
+    await controller.getRanking(
+      request,
+      'company',
+      undefined,
+      undefined,
+      undefined,
+      'streak',
+      'turmas',
+    );
+    expect(getRanking).toHaveBeenCalledWith(
+      7,
+      'company',
+      true,
+      expect.objectContaining({ category: 'streak', unit: 'turmas' }),
+    );
+  });
+
+  it.each([
+    ['sequence', undefined],
+    [undefined, 'classes'],
+    [['xp', 'streak'], undefined],
+    [undefined, ['turmas', 'students']],
+  ])(
+    'returns 400 for invalid category/unit (%p, %p)',
+    async (category, unit) => {
+      await expect(
+        controller.getRanking(
+          request,
+          'global',
+          undefined,
+          undefined,
+          undefined,
+          category,
+          unit,
+        ),
+      ).rejects.toThrow(BadRequestException);
+      expect(getRanking).not.toHaveBeenCalled();
+    },
+  );
 });
