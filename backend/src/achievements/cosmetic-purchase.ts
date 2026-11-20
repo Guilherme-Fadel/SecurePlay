@@ -1,5 +1,6 @@
-import { BadRequestException } from '@nestjs/common';
+import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { EntityManager } from 'typeorm';
+import { isOnSale } from './availability';
 import { CosmeticItem } from './entities/cosmetic-item.entity';
 import { UsuarioCosmetic } from './entities/usuario-cosmetic.entity';
 import { PrestigeWallet } from './entities/prestige-wallet.entity';
@@ -10,16 +11,38 @@ import {
 } from './entities/prestige-transaction.entity';
 
 /**
- * Unidade de trabalho da compra de um cosmetico: debita o Prestigio, registra a
- * transacao e equipa o item adquirido substituindo o do mesmo tipo. Roda sempre
- * dentro de uma transacao (recebe o EntityManager de quem a abriu).
+ * Relê o item com o manager da transação, já com a carteira travada: preço,
+ * `active`, janela de venda e `kit_id` valem os de agora, não os lidos antes
+ * de abrir a transação.
+ */
+async function loadFreshItem(manager: EntityManager, itemId: number) {
+  const item = await manager
+    .getRepository(CosmeticItem)
+    .findOne({ where: { id: itemId } });
+  if (!item?.active) {
+    throw new NotFoundException('Item cosmético não encontrado');
+  }
+  // Defesa em profundidade: peça de kit nunca é comprada avulsa.
+  if (item.kit_id) throw new BadRequestException('Esta peça só vem com o kit');
+  if (!isOnSale(item)) {
+    throw new BadRequestException('Este item não está mais à venda');
+  }
+  return item;
+}
+
+/**
+ * Unidade de trabalho da compra de um cosmetico: trava a carteira, relê o item,
+ * debita o Prestigio (o preco relido), registra a transacao e equipa o item
+ * adquirido substituindo o do mesmo tipo. Roda sempre dentro de uma transacao
+ * (recebe o EntityManager de quem a abriu).
  */
 export async function executeCosmeticPurchase(
   manager: EntityManager,
-  params: { usuario_id: number; item: CosmeticItem },
+  params: { usuario_id: number; itemId: number },
 ): Promise<void> {
-  const { usuario_id, item } = params;
+  const { usuario_id, itemId } = params;
   const wallet = await lockPrestigeWallet(manager, usuario_id);
+  const item = await loadFreshItem(manager, itemId);
   const walletRepository = manager.getRepository(PrestigeWallet);
   const userCosmeticRepository = manager.getRepository(UsuarioCosmetic);
   const transactionRepository = manager.getRepository(PrestigeTransaction);

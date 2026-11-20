@@ -1,4 +1,5 @@
 import {
+  Body,
   Controller,
   Get,
   Param,
@@ -9,7 +10,10 @@ import {
 } from '@nestjs/common';
 import { AchievementsService } from './achievements.service';
 import { CosmeticType } from './entities/cosmetic-item.entity';
+import { EquipCosmeticDto } from './dto/equip-cosmetic.dto';
 import { RequiresFeature } from '../common/features/feature.decorator';
+import { Roles } from '../auth/roles.decorator';
+import { Role } from '../auth/roles.enum';
 
 @Controller('achievements')
 @RequiresFeature('achievements')
@@ -31,16 +35,31 @@ export class AchievementsController {
     return this.achievementsService.getShop(req.user.userId);
   }
 
+  // Compra e equipar são do aluno (inclui trial/free tier, que seguem `user`):
+  // gestão nunca compra nem equipa, e a carteira não pode nascer por aqui.
+  @Roles(Role.USER)
   @Post('shop/:id/purchase')
   purchase(@Request() req: any, @Param('id', ParseIntPipe) id: number) {
     return this.achievementsService.purchase(req.user.userId, id);
   }
 
-  @Post('shop/:id/equip')
-  equip(@Request() req: any, @Param('id', ParseIntPipe) id: number) {
-    return this.achievementsService.equip(req.user.userId, id);
+  @Roles(Role.USER)
+  @Post('shop/kits/:id/purchase')
+  purchaseKit(@Request() req: any, @Param('id', ParseIntPipe) id: number) {
+    return this.achievementsService.purchaseKit(req.user.userId, id);
   }
 
+  @Roles(Role.USER)
+  @Post('shop/:id/equip')
+  equip(
+    @Request() req: any,
+    @Param('id', ParseIntPipe) id: number,
+    @Body() body: EquipCosmeticDto,
+  ) {
+    return this.achievementsService.equip(req.user.userId, id, body.color);
+  }
+
+  @Roles(Role.USER)
   @Post('shop/type/:type/unequip')
   unequip(
     @Request() req: any,

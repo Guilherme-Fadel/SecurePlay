@@ -5,6 +5,7 @@ import {
   PutObjectCommand,
   GetObjectCommand,
   HeadObjectCommand,
+  DeleteObjectCommand,
 } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { createPresignedPost } from '@aws-sdk/s3-presigned-post';
@@ -140,6 +141,47 @@ export class S3Service {
         return null;
       throw error;
     }
+  }
+
+  /** Referência `s3://<bucket>/<key>` aceita por `resolveImageUrl`. */
+  toS3Uri(key: string): string {
+    return `s3://${this.bucketName}/${key}`;
+  }
+
+  /** Conteúdo do objeto em memória; só para arquivos pequenos (ex.: arte de colecionável). */
+  async getObjectBuffer(key: string): Promise<Buffer> {
+    const output = await this.s3Client.send(
+      new GetObjectCommand({ Bucket: this.bucketName, Key: key }),
+    );
+    if (!output.Body) throw new Error(`Objeto vazio: ${key}`);
+    return Buffer.from(await output.Body.transformToByteArray());
+  }
+
+  /** Grava o conteúdo já em memória, com o mesmo Cache-Control dos uploads. */
+  async putObject(
+    key: string,
+    body: Buffer,
+    contentType: string,
+    contentDisposition?: string,
+  ): Promise<void> {
+    await this.s3Client.send(
+      new PutObjectCommand({
+        Bucket: this.bucketName,
+        Key: key,
+        Body: body,
+        ContentType: contentType,
+        CacheControl: S3Service.UPLOAD_CACHE_CONTROL,
+        ...(contentDisposition
+          ? { ContentDisposition: contentDisposition }
+          : {}),
+      }),
+    );
+  }
+
+  async deleteObject(key: string): Promise<void> {
+    await this.s3Client.send(
+      new DeleteObjectCommand({ Bucket: this.bucketName, Key: key }),
+    );
   }
 
   async generatePresignedGetUrl(

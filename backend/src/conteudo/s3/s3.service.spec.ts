@@ -43,9 +43,12 @@ describe('S3 image references', () => {
     expect(sign).toHaveBeenCalledWith(ownKey);
     sign.mockClear();
     expect(await service.resolveCompanyLogoUrl(4, otherKey)).toBeNull();
-    expect(await service.resolveCompanyLogoUrl(4, 'empresas/4/other.webp')).toBeNull();
-    expect(await service.resolveCompanyLogoUrl(4, 'https://cdn.example/logo.png'))
-      .toBe('https://cdn.example/logo.png');
+    expect(
+      await service.resolveCompanyLogoUrl(4, 'empresas/4/other.webp'),
+    ).toBeNull();
+    expect(
+      await service.resolveCompanyLogoUrl(4, 'https://cdn.example/logo.png'),
+    ).toBe('https://cdn.example/logo.png');
     expect(sign).not.toHaveBeenCalled();
   });
 });
@@ -97,5 +100,78 @@ describe('S3 signed GET cache', () => {
     await service.generatePresignedGetUrl('ui/image.png', 3600);
 
     expect(signer).toHaveBeenCalledTimes(2);
+  });
+});
+
+const inputOf = (send: jest.Mock) =>
+  (send.mock.calls as [{ input: unknown }][])[0][0].input;
+
+describe('S3 object operations', () => {
+  const setup = () => {
+    const service = new S3Service(
+      new ConfigService({ S3_BUCKET_NAME: 'test-media' }),
+    );
+    const send = jest.fn();
+    (service as unknown as { s3Client: { send: jest.Mock } }).s3Client = {
+      send,
+    };
+    return { service, send };
+  };
+
+  it('reads an object into a Buffer', async () => {
+    const { service, send } = setup();
+    send.mockResolvedValue({
+      Body: {
+        transformToByteArray: () => Promise.resolve(Uint8Array.from([1, 2, 3])),
+      },
+    });
+    const body = await service.getObjectBuffer('collectibles/tmp/a.png');
+    expect(body).toEqual(Buffer.from([1, 2, 3]));
+    expect(inputOf(send)).toEqual({
+      Bucket: 'test-media',
+      Key: 'collectibles/tmp/a.png',
+    });
+  });
+
+  it('writes a Buffer with content type and cache control', async () => {
+    const { service, send } = setup();
+    send.mockResolvedValue({});
+    const body = Buffer.from([1, 2, 3]);
+    await service.putObject('collectibles/a.png', body, 'image/png');
+    expect(inputOf(send)).toEqual({
+      Bucket: 'test-media',
+      Key: 'collectibles/a.png',
+      Body: body,
+      ContentType: 'image/png',
+      CacheControl: 'private, max-age=3600, stale-while-revalidate=86400',
+    });
+  });
+
+  it('putObject sets ContentDisposition only when given', async () => {
+    const { service, send } = setup();
+    send.mockResolvedValue({});
+    await service.putObject(
+      'collectibles/a.svg',
+      Buffer.from([1]),
+      'image/svg+xml',
+      'attachment',
+    );
+    expect(inputOf(send)).toMatchObject({ ContentDisposition: 'attachment' });
+  });
+
+  it('deletes an object', async () => {
+    const { service, send } = setup();
+    send.mockResolvedValue({});
+    await service.deleteObject('collectibles/tmp/a.png');
+    expect(inputOf(send)).toEqual({
+      Bucket: 'test-media',
+      Key: 'collectibles/tmp/a.png',
+    });
+  });
+  it('builds the s3:// reference for the configured bucket', () => {
+    const { service } = setup();
+    expect(service.toS3Uri('collectibles/a.png')).toBe(
+      's3://test-media/collectibles/a.png',
+    );
   });
 });

@@ -47,6 +47,8 @@ import { PrestigeWallet } from '../../src/achievements/entities/prestige-wallet.
 import { PrestigeTransaction } from '../../src/achievements/entities/prestige-transaction.entity';
 import { CosmeticItem } from '../../src/achievements/entities/cosmetic-item.entity';
 import { UsuarioCosmetic } from '../../src/achievements/entities/usuario-cosmetic.entity';
+import { CosmeticKit } from '../../src/achievements/entities/cosmetic-kit.entity';
+import { UsuarioCosmeticKit } from '../../src/achievements/entities/usuario-cosmetic-kit.entity';
 
 /** emitAsync aguarda Promises, embora on use ListenerFn:void nos tipos. */
 export function listenProgress(
@@ -115,6 +117,8 @@ export async function arcadeFixture() {
       PrestigeTransaction,
       CosmeticItem,
       UsuarioCosmetic,
+      CosmeticKit,
+      UsuarioCosmeticKit,
     ],
     timezone: '-03:00',
     synchronize: true,

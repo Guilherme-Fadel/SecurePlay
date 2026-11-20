@@ -7,7 +7,7 @@ import { UsuarioArcadeStats } from '../arcade/entities/usuario-arcade-stats.enti
 import { UsuarioAchievement } from './entities/usuario-achievement.entity';
 import { AchievementRequirement } from './entities/achievement.entity';
 import { AchievementsService } from './achievements.service';
-import { CosmeticType } from './entities/cosmetic-item.entity';
+import { CosmeticItem, CosmeticType } from './entities/cosmetic-item.entity';
 import { PrestigeTransaction } from './entities/prestige-transaction.entity';
 import { PrestigeWallet } from './entities/prestige-wallet.entity';
 import { UsuarioCosmetic } from './entities/usuario-cosmetic.entity';
@@ -257,6 +257,8 @@ describe('AchievementsService', () => {
       getRepository: jest.fn((entity) => {
         if (entity === Usuario)
           return { findOneOrFail: jest.fn().mockResolvedValue({ id: 7 }) };
+        if (entity === CosmeticItem)
+          return { findOne: jest.fn().mockResolvedValue(item) };
         if (entity === PrestigeWallet) return transactionWallets;
         if (entity === UsuarioCosmetic) return transactionCosmetics;
         if (entity === PrestigeTransaction) return transactionEntries;

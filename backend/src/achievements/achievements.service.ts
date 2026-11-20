@@ -2,6 +2,7 @@ import {
   BadRequestException,
   Inject,
   Injectable,
+  Logger,
   NotFoundException,
   Optional,
 } from '@nestjs/common';
@@ -10,6 +11,8 @@ import { Achievement } from './entities/achievement.entity';
 import { UsuarioAchievement } from './entities/usuario-achievement.entity';
 import { CosmeticItem, CosmeticType } from './entities/cosmetic-item.entity';
 import { UsuarioCosmetic } from './entities/usuario-cosmetic.entity';
+import { CosmeticKit } from './entities/cosmetic-kit.entity';
+import { UsuarioCosmeticKit } from './entities/usuario-cosmetic-kit.entity';
 import { PrestigeWallet } from './entities/prestige-wallet.entity';
 import {
   PrestigeTransaction,
@@ -31,9 +34,16 @@ import {
 } from './achievements.types';
 import { buildMetrics, metricValue } from './achievement-metrics';
 import { buildTrailNode, buildTrailSummary } from './achievement-trail.mapper';
-import { buildEquippedList, buildShopItems } from './cosmetic-shop.mapper';
+import { acceptsCosmeticColor } from './cosmetic-shop.mapper';
+import { buildShopView } from './cosmetic-shop.view';
 import { executeCosmeticPurchase } from './cosmetic-purchase';
+import { executeKitPurchase } from './kit-purchase';
 import { lockPrestigeWallet } from './prestige-ledger';
+import { isOnSale } from './availability';
+import { UnlockFactsLoader } from './unlock-evaluator';
+import { assertUnlocked } from './unlock-requirements';
+import { COSMETIC_COLOR_PATTERN } from './dto/equip-cosmetic.dto';
+import { S3Service } from '../conteudo/s3/s3.service';
 
 // A interface publica deste arquivo nao muda: quem importava os tipos daqui
 // continua importando daqui.
@@ -53,7 +63,11 @@ export class AchievementsService {
     @Inject('DATA_SOURCE')
     private dataSource: DataSource,
     @Optional() private readonly events?: EventEmitter2,
+    private readonly unlockFacts?: UnlockFactsLoader,
+    private readonly s3?: S3Service,
   ) {}
+
+  private readonly logger = new Logger(AchievementsService.name);
 
   @OnEvent('progress.changed', { suppressErrors: false })
   async synchronizeProgress(payload: { usuarioId: number }): Promise<void> {
@@ -346,34 +360,17 @@ export class AchievementsService {
 
   async getShop(usuario_id: number) {
     const trail = await this.getTrail(usuario_id);
-    const [items, owned] = await Promise.all([
-      this.cosmeticRepository.find({
-        where: { active: true },
-        order: { type: 'ASC', price: 'ASC' },
-      }),
-      this.usuarioCosmeticRepository.find({
-        where: { usuario_id },
-        relations: ['cosmetic_item'],
-      }),
-    ]);
-    const ownedByItem = new Map(
-      owned.map((item) => [item.cosmetic_item_id, item]),
-    );
-    const unlockedSlugs = new Set(
-      trail.nodes
-        .filter((node) => node.status === 'unlocked')
-        .map((node) => node.slug),
-    );
-    return {
+    return buildShopView({
+      usuario_id,
       prestigeBalance: trail.summary.prestigeBalance,
-      equipped: buildEquippedList(owned),
-      items: buildShopItems({
-        items,
-        ownedByItem,
-        unlockedSlugs,
-        prestigeBalance: trail.summary.prestigeBalance,
-      }),
-    };
+      items: this.cosmeticRepository,
+      userItems: this.usuarioCosmeticRepository,
+      kits: this.dataSource.getRepository(CosmeticKit),
+      userKits: this.dataSource.getRepository(UsuarioCosmeticKit),
+      unlockFacts: this.unlockFacts,
+      s3: this.s3,
+      logger: this.logger,
+    });
   }
 
   async purchase(usuario_id: number, itemId: number) {
@@ -381,26 +378,46 @@ export class AchievementsService {
       where: { id: itemId, active: true },
     });
     if (!item) throw new NotFoundException('Item cosmético não encontrado');
-    const trail = await this.getTrail(usuario_id);
-    if (
-      item.required_achievement_slug &&
-      !trail.nodes.some(
-        (node) =>
-          node.slug === item.required_achievement_slug &&
-          node.status === 'unlocked',
-      )
-    ) {
-      throw new BadRequestException(
-        'A conquista necessária ainda está bloqueada',
-      );
+    if (item.kit_id) {
+      throw new BadRequestException('Esta peça só vem com o kit');
     }
+    if (!isOnSale(item)) {
+      throw new BadRequestException('Este item não está mais à venda');
+    }
+    // Sincroniza as conquistas antes de a regra consultá-las.
+    await this.getTrail(usuario_id);
+    await assertUnlocked(this.unlockFacts, usuario_id, item);
     await this.dataSource.transaction(async (manager) => {
-      await executeCosmeticPurchase(manager, { usuario_id, item });
+      await executeCosmeticPurchase(manager, { usuario_id, itemId: item.id });
     });
     return this.getShop(usuario_id);
   }
 
-  async equip(usuario_id: number, itemId: number) {
+  async purchaseKit(usuario_id: number, kitId: number) {
+    const kit = await this.dataSource.getRepository(CosmeticKit).findOne({
+      where: { id: kitId, active: true },
+      relations: { pieces: true },
+    });
+    if (!kit) throw new NotFoundException('Kit não encontrado');
+    if (!isOnSale(kit)) {
+      throw new BadRequestException('Este kit não está mais à venda');
+    }
+    const pieces = kit.pieces.filter((piece) => piece.active);
+    if (pieces.length === 0) {
+      throw new BadRequestException('Este kit não tem peças disponíveis');
+    }
+    await this.getTrail(usuario_id);
+    await assertUnlocked(this.unlockFacts, usuario_id, kit);
+    await this.dataSource.transaction(async (manager) => {
+      await executeKitPurchase(manager, { usuario_id, kitId: kit.id });
+    });
+    return this.getShop(usuario_id);
+  }
+
+  async equip(usuario_id: number, itemId: number, color?: string | null) {
+    if (typeof color === 'string' && !COSMETIC_COLOR_PATTERN.test(color)) {
+      throw new BadRequestException('A cor deve estar no formato #RRGGBB');
+    }
     const selected = await this.usuarioCosmeticRepository.findOne({
       where: { usuario_id, cosmetic_item_id: itemId },
       relations: ['cosmetic_item'],
@@ -414,7 +431,14 @@ export class AchievementsService {
     const sameType = owned.filter(
       (item) => item.cosmetic_item.type === selected.cosmetic_item.type,
     );
-    for (const item of sameType) item.equipped = item.id === selected.id;
+    for (const item of sameType) {
+      item.equipped = item.id === selected.id;
+      // Sem cor no pedido, mantém a já guardada; item que não aceita cor fica sem ela.
+      if (item.id === selected.id && color !== undefined) {
+        const accepts = acceptsCosmeticColor(selected.cosmetic_item);
+        item.color = accepts ? color : null;
+      }
+    }
     await this.usuarioCosmeticRepository.save(sameType);
     return this.getShop(usuario_id);
   }

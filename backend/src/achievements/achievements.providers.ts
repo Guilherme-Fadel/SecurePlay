@@ -3,6 +3,8 @@ import { Achievement } from './entities/achievement.entity';
 import { UsuarioAchievement } from './entities/usuario-achievement.entity';
 import { CosmeticItem } from './entities/cosmetic-item.entity';
 import { UsuarioCosmetic } from './entities/usuario-cosmetic.entity';
+import { CosmeticKit } from './entities/cosmetic-kit.entity';
+import { UsuarioCosmeticKit } from './entities/usuario-cosmetic-kit.entity';
 import { PrestigeWallet } from './entities/prestige-wallet.entity';
 import { PrestigeTransaction } from './entities/prestige-transaction.entity';
 
@@ -17,6 +19,8 @@ export const achievementsProviders = [
   repositoryProvider('USUARIO_ACHIEVEMENT_REPOSITORY', UsuarioAchievement),
   repositoryProvider('COSMETIC_ITEM_REPOSITORY', CosmeticItem),
   repositoryProvider('USUARIO_COSMETIC_REPOSITORY', UsuarioCosmetic),
+  repositoryProvider('COSMETIC_KIT_REPOSITORY', CosmeticKit),
+  repositoryProvider('USUARIO_COSMETIC_KIT_REPOSITORY', UsuarioCosmeticKit),
   repositoryProvider('PRESTIGE_WALLET_REPOSITORY', PrestigeWallet),
   repositoryProvider('PRESTIGE_TRANSACTION_REPOSITORY', PrestigeTransaction),
 ];

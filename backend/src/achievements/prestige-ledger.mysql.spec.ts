@@ -12,7 +12,11 @@ import {
   PrestigeTransaction,
   PrestigeTransactionType,
 } from './entities/prestige-transaction.entity';
-import { CosmeticItem, CosmeticType } from './entities/cosmetic-item.entity';
+import {
+  CosmeticItem,
+  CosmeticRarity,
+  CosmeticType,
+} from './entities/cosmetic-item.entity';
 import { UsuarioCosmetic } from './entities/usuario-cosmetic.entity';
 import { Usuario } from '../usuario/usuario.entity';
 import { UsuarioStats } from '../usuario-stats/usuario-stats.entity';
@@ -217,7 +221,7 @@ isolated('C08 — ledger, conquistas e carteira transacionais', () => {
       slug: `fixture-${user.id}`,
       name: 'Moldura',
       description: 'Fixture',
-      rarity: AchievementRarity.COMMON,
+      rarity: CosmeticRarity.COMMON,
       visual_value: 'fixture',
       type: CosmeticType.FRAME,
       price: 2,
@@ -244,7 +248,7 @@ isolated('C08 — ledger, conquistas e carteira transacionais', () => {
       slug: `fixture-${user.id}`,
       name: 'Moldura',
       description: 'Fixture',
-      rarity: AchievementRarity.COMMON,
+      rarity: CosmeticRarity.COMMON,
       visual_value: 'fixture',
       type: CosmeticType.FRAME,
       price: 2,
