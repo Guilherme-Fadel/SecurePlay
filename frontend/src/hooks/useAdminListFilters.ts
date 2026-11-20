@@ -1,15 +1,19 @@
 import { useEffect, useState } from 'react';
 
-type Filters = { page: number; pageSize: number; search: string; sort: string; status: string };
+type Filters = { page: number; pageSize: number; search: string; sort: string; status: string; type: string };
+
+const oneOf = (value: unknown, allowed: readonly string[], fallback: string) => (typeof value === 'string' && allowed.includes(value) ? value : fallback);
 
 export function normalizeAdminListFilters(saved: Partial<Filters> | null, defaultSort = ''): Filters {
-  const { page = 1, pageSize = 25, search, sort = '', status = '' } = saved ?? {};
+  const { page = 1, pageSize = 25, search, sort, status, type } = saved ?? {};
   return {
     page: Number.isSafeInteger(page) && page > 0 ? page : 1,
     pageSize: [25, 50, 100].includes(pageSize) ? pageSize : 25,
     search: typeof search === 'string' ? search : '',
-    sort: ['asc', 'desc'].includes(sort) ? sort : defaultSort,
-    status: ['active', 'inactive', 'management'].includes(status) ? status : '',
+    sort: oneOf(sort, ['asc', 'desc'], defaultSort),
+    status: oneOf(status, ['active', 'inactive', 'management'], ''),
+    /** Filtro extra de listagens com abas (ex.: encaixe de colecionável); cada tela valida o valor. */
+    type: typeof type === 'string' ? type.slice(0, 32) : '',
   };
 }
 

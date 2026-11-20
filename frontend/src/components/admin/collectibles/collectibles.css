@@ -1,0 +1,139 @@
+/* Formulário de colecionáveis no console: reutiliza admin-form-grid e os tokens do console (admin-console.css). */
+.collectible-form-page { overflow: hidden; }
+.collectible-form-feedback { flex-shrink: 0; }
+.collectible-form-feedback:empty { display: none; }
+.collectible-form-scroll { flex: 1; min-height: 0; overflow: auto; padding-bottom: 20px; scrollbar-gutter: stable; }
+
+/* Formulário (até 900 px) e prévia ao lado no desktop; a prévia desce abaixo no celular. */
+.collectible-form-layout { display: grid; grid-template-columns: minmax(0, 900px) minmax(240px, 320px); gap: 20px; align-items: start; }
+.collectible-form-fieldset { min-width: 0; margin: 0; padding: 0; border: 0; }
+.collectible-form-main { display: grid; gap: 20px; min-width: 0; }
+.collectible-form-side { position: sticky; top: 0; min-width: 0; }
+@media (max-width: 1100px) {
+  .collectible-form-layout { grid-template-columns: minmax(0, 900px); }
+  .collectible-form-side { position: static; }
+}
+
+.collectible-form-section .admin-heading-title { margin: 0; }
+.collectible-form-kind { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.collectible-form-grid .is-wide { grid-column: 1 / -1; }
+.collectible-form-grid small, .collectible-form-section small { color: var(--admin-console-muted); font-size: 12px; font-weight: 500; line-height: 1.4; }
+.collectible-form-grid .collectible-field-error, .collectible-field-error { color: var(--danger); font-size: 12px; font-weight: 600; }
+.collectible-textarea { height: auto; padding: 9px 12px; resize: vertical; line-height: 1.4; }
+.collectible-period { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; min-width: 0; margin: 0; padding: 0; border: 0; }
+.collectible-period > label { min-width: 0; max-width: none; }
+.collectible-period input[type='date'] { width: 100%; }
+.collectible-period > .is-wide { grid-column: 1 / -1; }
+@media (max-width: 600px) { .collectible-period { grid-template-columns: minmax(0, 1fr); } }
+
+/* Exigências: modo, linhas em grade fixa e resumo. */
+.collectible-req-list { display: grid; gap: 10px; margin: 0; padding: 0; list-style: none; }
+.collectible-req-row { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr) minmax(0, 1fr) var(--app-control-height); gap: 10px; align-items: center; }
+.collectible-req-row > .collectible-req-fixed { grid-column: 1 / 4; color: var(--admin-console-text); font-size: var(--font-label, 13px); font-weight: 600; overflow-wrap: anywhere; }
+.collectible-req-row > .collectible-field-error { grid-column: 1 / -1; }
+@media (max-width: 600px) {
+  .collectible-req-row { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) var(--app-control-height); }
+  .collectible-req-row > :first-child { grid-column: 1 / -1; }
+  .collectible-req-row > .collectible-req-fixed { grid-column: 1 / 3; }
+}
+.collectible-legacy-note { margin: 0; color: var(--admin-console-muted); font-size: 12px; line-height: 1.4; }
+.collectible-rule-summary { margin: 0; padding: 10px 12px; border-radius: var(--app-control-radius); background: var(--admin-console-soft); color: var(--admin-console-text); font-size: var(--font-label, 13px); font-weight: 600; line-height: 1.4; }
+
+/* Botões só com ícone: sempre 40 x 40, centralizados. */
+.app-button.collectible-icon-button { display: inline-grid; flex: 0 0 auto; width: var(--app-control-height); min-width: var(--app-control-height); height: var(--app-control-height); padding: 0; place-items: center; }
+.app-button.collectible-icon-button > span { display: grid; place-items: center; }
+
+/* Arte e peças: uma linha por encaixe, controles da mesma altura. */
+.collectible-art-row, .collectible-piece-row { display: grid; align-items: center; gap: 10px; }
+.collectible-art-row { grid-template-columns: auto minmax(0, 1fr) var(--app-control-height); }
+.collectible-piece-grid { display: grid; gap: 10px; }
+.collectible-piece-row { grid-template-columns: 120px minmax(0, 1fr) 140px minmax(96px, 128px) var(--app-control-height); }
+.collectible-piece-row > .app-button:not(.collectible-icon-button) { width: 100%; }
+.collectible-piece-row.is-head { min-height: 0; color: var(--admin-console-text); font-size: var(--font-label, 13px); font-weight: 600; }
+.collectible-piece-row.is-head > span { font-size: inherit; }
+.collectible-piece-on { display: inline-flex; align-items: center; gap: 8px; min-height: var(--app-control-height); font-size: var(--font-label, 13px); font-weight: 600; }
+.collectible-piece-on input { width: 18px; height: 18px; accent-color: var(--primary); }
+.collectible-piece-row > .collectible-field-error, .collectible-piece-row > .collectible-piece-note, .collectible-piece-row > .collectible-adjust-slot { grid-column: 1 / -1; }
+.collectible-piece-note { margin: 0; color: var(--admin-console-muted); font-size: 12px; line-height: 1.4; }
+.collectible-art-state { display: grid; gap: 4px; min-width: 0; }
+.collectible-art-status { display: inline-flex; align-items: center; gap: 8px; min-height: var(--app-control-height); color: var(--admin-console-muted); font-size: var(--font-label, 13px); }
+.collectible-art-status img { width: var(--app-control-height); height: var(--app-control-height); object-fit: contain; border: 1px solid var(--admin-console-border); border-radius: 8px; background: var(--admin-console-soft); }
+.collectible-art-file { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); opacity: 0; }
+@media (max-width: 720px) {
+  .collectible-piece-row.is-head { display: none; }
+  .collectible-piece-row { grid-template-columns: auto minmax(0, 1fr) var(--app-control-height); padding: 12px; border: 1px solid var(--admin-console-border); border-radius: 10px; }
+  .collectible-piece-row > .collectible-piece-on { grid-column: 1 / -1; }
+  .collectible-piece-row > .app-text-input { grid-column: 1 / -1; }
+  .collectible-art-row { grid-template-columns: auto minmax(0, 1fr) var(--app-control-height); }
+}
+
+/* Ajuste fino: bloco expandido sob a linha. */
+.collectible-adjust { display: grid; gap: 12px; padding: 12px; border: 1px solid var(--admin-console-border); border-radius: 10px; background: var(--admin-console-soft); }
+.collectible-adjust-fields { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 12px; align-items: end; }
+.collectible-adjust-fields > label { min-width: 0; max-width: none; }
+.collectible-adjust-fields input[type='number'] { width: 100%; }
+.collectible-adjust-actions { display: flex; justify-content: flex-end; }
+
+/* Prévia do personagem. */
+.collectible-preview { display: grid; gap: 14px; }
+.collectible-preview-stage { display: grid; place-items: center; padding: 16px; border: 1px solid var(--admin-console-border); border-radius: 12px; background: var(--admin-console-soft); }
+.collectible-preview-stage .character-avatar { width: min(200px, 100%); }
+.collectible-preview-mini { display: flex; align-items: center; justify-content: center; gap: 12px; color: var(--admin-console-muted); font-size: 12px; }
+.collectible-preview-mini .character-avatar { width: 52px; }
+.collectible-preview-mini.has-card { padding: 8px 12px; border-radius: 12px; }
+.collectible-preview-note { margin: 0; color: var(--admin-console-muted); font-size: 12px; line-height: 1.4; text-align: center; }
+
+/* Listagem em cartões, no padrão dos colecionáveis do aluno (borda, sombra dura e cor de raridade). */
+.collectible-toolbar { flex-direction: column; align-items: stretch; gap: 10px; }
+.collectible-filters { display: grid; gap: 8px; min-width: 0; }
+.collectible-chips { display: flex; flex-wrap: wrap; gap: 8px; min-width: 0; }
+.collectible-chip { min-height: 36px; padding: 0 14px; border: 2px solid var(--admin-console-border); border-radius: 999px; background: var(--admin-console-surface); color: var(--admin-console-text); font: inherit; font-size: 13px; font-weight: 700; cursor: pointer; }
+.collectible-chip:hover { border-color: var(--admin-console-text); }
+.collectible-chip.is-active { border-color: var(--admin-console-text); background: var(--admin-console-text); color: var(--admin-console-surface); }
+.collectible-chip:focus-visible, .collectible-card:focus-visible, .collectible-card-toggle:focus-visible { outline: var(--app-focus-ring, 3px solid var(--sp-blue)); outline-offset: 3px; }
+
+.collectible-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 200px), 1fr)); gap: 16px; margin: 0; padding: 14px; list-style: none; }
+.collectible-card-cell { position: relative; display: flex; min-width: 0; }
+.collectible-card { --collectible-rarity: var(--admin-console-border); display: flex; flex: 1; min-width: 0; flex-direction: column; align-items: stretch; gap: 10px; padding: 12px; border: 2px solid var(--collectible-rarity); border-radius: 20px; background: var(--admin-console-surface); box-shadow: var(--app-shadow-hard, 0 4px 0 var(--sp-black)); color: var(--admin-console-text); font: inherit; text-align: left; cursor: pointer; transition: transform .12s ease; }
+.collectible-card:hover { transform: translateY(-2px); }
+.collectible-card.is-rare { --collectible-rarity: var(--sp-blue); }
+.collectible-card.is-epic { --collectible-rarity: var(--sp-blue); }
+.collectible-card.is-legendary { --collectible-rarity: var(--sp-yellow); }
+.collectible-card.is-festive { --collectible-rarity: var(--sp-pink); }
+.collectible-card.is-draft .collectible-card-art { opacity: .7; }
+.collectible-card.is-new { align-items: center; justify-content: center; min-height: 220px; border-style: dashed; box-shadow: none; color: var(--admin-console-muted); text-align: center; }
+.collectible-card.is-new:hover { color: var(--admin-console-text); border-color: var(--admin-console-text); }
+.collectible-card.is-skeleton { min-height: 280px; cursor: default; box-shadow: none; }
+.collectible-card.is-skeleton:hover { transform: none; }
+.collectible-card.is-skeleton i { display: block; border-radius: 12px; background: var(--admin-console-soft); animation: collectible-pulse 1.4s ease-in-out infinite; }
+.collectible-card.is-skeleton i:nth-child(1) { height: 130px; }
+.collectible-card.is-skeleton i:nth-child(2) { height: 18px; width: 70%; }
+.collectible-card.is-skeleton i:nth-child(3) { height: 14px; width: 45%; }
+@keyframes collectible-pulse { 50% { opacity: .5; } }
+@media (prefers-reduced-motion: reduce) { .collectible-card { transition: none; } .collectible-card.is-skeleton i { animation: none; } }
+
+.collectible-card-art { display: grid; place-items: center; height: 130px; border-radius: 14px; background: var(--admin-console-soft); overflow: hidden; }
+.collectible-card-art .chr-thumb { width: 100%; height: 100%; }
+.collectible-card-art.is-kit { padding: 6px 0; }
+.collectible-card-art.is-kit .character-avatar { width: auto; height: 100%; }
+.collectible-card-name { padding-right: 44px; font-size: 16px; font-weight: 800; line-height: 1.2; overflow-wrap: anywhere; }
+.collectible-card-info { display: flex; min-width: 0; flex-direction: column; gap: 6px; }
+.collectible-card-tags, .collectible-card-badges { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.collectible-card-slot { color: var(--admin-console-muted); font-size: 12px; font-weight: 600; line-height: 1.35; overflow-wrap: anywhere; }
+.collectible-card-price { display: inline-flex; align-items: center; gap: 6px; font-size: 15px; font-weight: 800; }
+.collectible-card-price .digital-key-icon { image-rendering: pixelated; }
+.collectible-card-toggle { position: absolute; top: 10px; right: 10px; display: grid; width: 36px; height: 36px; place-items: center; padding: 0; border: 2px solid var(--admin-console-border); border-radius: 12px; background: var(--admin-console-surface); color: var(--admin-console-text); cursor: pointer; }
+.collectible-card-toggle:hover:not(:disabled) { border-color: var(--admin-console-text); }
+.collectible-card-toggle:disabled { opacity: .5; cursor: not-allowed; }
+
+.collectible-rarity, .collectible-state, .collectible-badge { display: inline-flex; padding: 3px 9px; border-radius: 999px; font-size: 11px; font-weight: 800; white-space: nowrap; }
+.collectible-rarity--common, .collectible-rarity--uncommon { background: var(--admin-console-soft); color: var(--admin-console-text); box-shadow: inset 0 0 0 1.5px var(--admin-console-border); }
+.collectible-rarity--rare { background: rgba(38, 98, 231, .22); color: #9DB8FF; }
+:root[data-theme='light'] .collectible-rarity--rare { background: #E7EEFF; color: #1D50C2; }
+.collectible-rarity--epic { background: var(--sp-blue); color: #fff; }
+.collectible-rarity--legendary { background: var(--sp-yellow); color: var(--sp-black); }
+.collectible-rarity--festive { background: var(--sp-pink); color: var(--sp-black); }
+.collectible-state.is-published { background: var(--sp-yellow); color: var(--sp-black); }
+.collectible-state.is-draft { background: var(--admin-console-soft); color: var(--admin-console-muted); box-shadow: inset 0 0 0 1.5px var(--admin-console-border); }
+.collectible-badge { background: var(--admin-console-soft); color: var(--admin-console-text); white-space: normal; }
+.collectible-empty { margin: 0; padding: 4px 14px 18px; color: var(--admin-console-muted); font-size: 13px; text-align: center; }

@@ -42,6 +42,8 @@ async function main() {
   assert.equal(invalidFilters.search, '');
   assert.equal(invalidFilters.sort, 'asc');
   assert.equal(invalidFilters.status, '');
+  assert.equal(invalidFilters.type, '');
+  assert.equal(normalizeAdminListFilters({ type: 'head' }).type, 'head');
   assert.equal(normalizeAdminListFilters(null).page, 1);
   assert.equal(normalizeAdminListFilters({ page: 4, pageSize: 100, search: 'Escola', sort: 'desc', status: 'active' }).pageSize, 100);
   const { resolveConsolePage } = load('src/components/admin/console/consoleNavigation.ts');
@@ -84,6 +86,16 @@ async function main() {
   assert.equal(resolveConsolePage('/admin/turmas/7/jornada').id, 'class-detail');
   assert.equal(resolveConsolePage('/admin/empresas/2/turmas/7/alunos').id, 'class-detail');
   assert.equal(resolveConsolePage('/admin/turmas/7/notas').id, 'unavailable');
+  const { collectiblesKindFromPath, collectiblesPath } = load('src/components/admin/console/consoleNavigation.ts');
+  for (const path of ['/admin/colecionaveis', '/admin/colecionaveis/itens', '/admin/colecionaveis/kits/']) assert.equal(resolveConsolePage(path).id, 'collectibles');
+  assert.equal(resolveConsolePage('/admin/colecionaveis/pecas').id, 'unavailable');
+  assert.equal(resolveConsolePage('/admin/colecionaveis').list, true);
+  assert.equal(collectiblesKindFromPath('/admin/colecionaveis/kits'), 'kits');
+  assert.equal(collectiblesKindFromPath('/admin/colecionaveis/kits/'), 'kits');
+  assert.equal(collectiblesKindFromPath('/admin/colecionaveis'), 'items');
+  assert.equal(collectiblesPath('items'), '/admin/colecionaveis/itens');
+  assert.equal(collectiblesPath('kits'), '/admin/colecionaveis/kits');
+  assert.equal(adminBreadcrumbs('/admin/colecionaveis/kits', true).at(-1).label, 'Colecionáveis');
   assert.equal(navegacao.turmaTabFromPath('/admin/empresas/2/turmas/7/alunos'), 'alunos');
   assert.equal(navegacao.turmaTabFromPath('/admin/turmas/7/professores'), 'professores');
   assert.equal(navegacao.turmaTabFromPath('/admin/turmas/7/dados'), 'dados');

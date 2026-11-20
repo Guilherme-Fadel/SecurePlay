@@ -22,6 +22,7 @@ import { AdminConsoleSettings, type AdminConsoleSettingsKind } from '@/component
 import { hasAdminConsoleAccess, resolveAdminConsoleScope, adminConsolePath, resolveConsolePage, initialAuthenticatedPath } from '@/components/admin/console/consoleNavigation';
 import { TurmasPage } from '@/components/admin/turmas/TurmasPage';
 import { TurmasListPage } from '@/components/admin/turmas/TurmasListPage';
+import { CollectiblesPage } from '@/components/admin/collectibles/CollectiblesPage';
 import { PlatformCompanyFilter } from '@/components/admin/console/PlatformCompanyFilter';
 import { PlatformRecordsTab } from '@/components/admin/console/PlatformRecordsTab';
 import { CompanyRegistryTab } from '@/components/admin/console/CompanyRegistryTab';
@@ -133,6 +134,8 @@ function AdminConsolePage({ isOverview, scope, companyId }: { isOverview: boolea
   const turmaPage = ['classes', 'new-class', 'class-detail'].includes(resolveConsolePage(location.pathname).id);
   // Professor: só as próprias turmas; qualquer outra rota volta para elas.
   if (scope.kind === 'teacher') return turmaPage && !location.pathname.startsWith('/admin/empresas') ? <TurmasPage escopo={{ base: '/admin', gestao: false }} /> : <Navigate to="/admin/turmas" replace />;
+  // Colecionáveis são da plataforma; o backend também exige platform_admin. A própria página abre os formulários de item e de kit.
+  if (resolveConsolePage(location.pathname).id === 'collectibles') return isPlatform && companyId === null && !location.pathname.startsWith('/admin/empresas') ? <CollectiblesPage /> : <section className="admin-console-unavailable" role="alert"><h1>Acesso indisponível</h1><p>Colecionáveis são geridos pela plataforma.</p><Link to="/admin/inicio">Voltar</Link></section>;
   if (turmaPage && scope.kind === 'company' && !location.pathname.startsWith('/admin/empresas')) return <TurmasPage escopo={{ base: '/admin', gestao: true }} />;
   if (turmaPage && isPlatform && companyId === null) return <PlatformTurmas />;
   if (isOverview) return scope.kind === 'company' ? <AdminOverviewTab empresaId={undefined} onNavigate={(tab) => navigate(`/admin/pessoas/${tab === 'usuarios' ? 'usuarios' : tab}`)} /> : <AdminOverviewTab platform onNavigate={(tab) => navigate(`/admin/pessoas/${tab}`)} headerActions={<Link className="admin-console-back-link" to="/admin/empresas"><Building2 size={16} />Instituições</Link>} />;

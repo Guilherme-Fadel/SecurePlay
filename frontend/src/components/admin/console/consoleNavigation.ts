@@ -1,4 +1,5 @@
 import type { CurrentUser } from '@/services/me';
+import type { CollectibleKind } from '@/services/adminCollectibles';
 import { STUDENT_HOME_PATH } from '@/lib/appPaths';
 
 export type AdminConsoleRouteId = 'overview' | 'companies' | 'people' | 'settings' | 'operations' | 'classes';
@@ -39,7 +40,7 @@ export function adminConsolePath(routeId: AdminConsoleRouteId): string {
   return adminConsoleRoutes[routeId].path;
 }
 
-export type ConsolePageId = 'overview' | 'companies' | 'new-company' | 'edit-company' | 'summary' | 'users' | 'edit-user' | 'nicknames' | 'invitations' | 'new-invitation' | 'data' | 'appearance' | 'features' | 'audit-settings' | 'audit-events' | 'pilots' | 'new-pilot' | 'edit-pilot' | 'classes' | 'new-class' | 'class-detail' | 'unavailable';
+export type ConsolePageId = 'overview' | 'companies' | 'new-company' | 'edit-company' | 'summary' | 'users' | 'edit-user' | 'nicknames' | 'invitations' | 'new-invitation' | 'data' | 'appearance' | 'features' | 'audit-settings' | 'audit-events' | 'pilots' | 'new-pilot' | 'edit-pilot' | 'classes' | 'new-class' | 'class-detail' | 'collectibles' | 'unavailable';
 const consolePages: Array<{ pattern: RegExp; id: ConsolePageId; title: string; list?: boolean }> = [
   { pattern: /^\/admin\/(?:inicio|visao-geral)\/?$/, id: 'overview', title: 'Visão geral' },
   { pattern: /^\/admin\/empresas\/?$/, id: 'companies', title: 'Cadastro', list: true },
@@ -59,6 +60,7 @@ const consolePages: Array<{ pattern: RegExp; id: ConsolePageId; title: string; l
   { pattern: /^\/admin\/operacao\/pilotos\/?$/, id: 'pilots', title: 'Pilotos escolares', list: true },
   { pattern: /^\/admin\/operacao\/pilotos\/novo\/?$/, id: 'new-pilot', title: 'Novo piloto' },
   { pattern: /^\/admin\/operacao\/pilotos\/\d+\/editar\/?$/, id: 'edit-pilot', title: 'Editar piloto' },
+  { pattern: /^\/admin\/colecionaveis(?:\/(?:itens|kits))?\/?$/, id: 'collectibles', title: 'Colecionáveis', list: true },
   { pattern: /^\/admin\/turmas\/?$/, id: 'classes', title: 'Turmas', list: true },
   { pattern: /^\/admin\/turmas\/nova\/?$/, id: 'new-class', title: 'Nova turma' },
   { pattern: /^\/admin\/turmas\/[1-9]\d*(?:\/(?:jornada|alunos|professores|dados))?\/?$/, id: 'class-detail', title: 'Turma' },
@@ -75,6 +77,15 @@ export function turmaTabFromPath(pathname: string): TurmaTab {
 export function turmaIdFromPath(pathname: string): number | null {
   const match = pathname.match(/\/turmas\/([1-9]\d*)(?:\/|$)/);
   return match ? Number(match[1]) : null;
+}
+
+/** Aba de Colecionáveis pela rota (`/admin/colecionaveis/kits`); padrão: itens avulsos. */
+export function collectiblesKindFromPath(pathname: string): CollectibleKind {
+  return /^\/admin\/colecionaveis\/kits\/?$/.test(pathname) ? 'kits' : 'items';
+}
+
+export function collectiblesPath(kind: CollectibleKind): string {
+  return kind === 'kits' ? '/admin/colecionaveis/kits' : '/admin/colecionaveis/itens';
 }
 
 export function resolveConsolePage(pathname: string) {

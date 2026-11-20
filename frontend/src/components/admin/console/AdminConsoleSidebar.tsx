@@ -1,7 +1,7 @@
 import { useId, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Link, useLocation } from 'react-router-dom';
-import { BookOpen, Building2, ChevronLeft, ChevronRight, FileText, History, LayoutDashboard, MailPlus, Palette, School, ScrollText, UserRoundPen, Users, type LucideIcon } from 'lucide-react';
+import { BookOpen, Building2, ChevronLeft, ChevronRight, FileText, Gem, History, LayoutDashboard, MailPlus, Palette, School, ScrollText, UserRoundPen, Users, type LucideIcon } from 'lucide-react';
 import { BrandMark } from '@/components/shared/BrandMark';
 import { resolveConsolePage, type AdminConsoleScope } from './consoleNavigation';
 
@@ -30,6 +30,7 @@ export function AdminConsoleSidebar({ scope, collapsed = false, onToggle }: { sc
       ...(!platform ? [{ label: 'Aparência', to: '/admin/configuracoes/aparencia', icon: Palette, active: page === 'appearance' }] : []),
     ] },
     ...(platform ? [
+      { label: 'CATÁLOGO', items: [{ label: 'Colecionáveis', to: '/admin/colecionaveis/itens', icon: Gem, active: page === 'collectibles' }] },
       { label: 'AUDITORIA', items: [
         { label: 'Configurações', to: '/admin/auditoria/configuracoes', icon: History, active: page === 'audit-settings' },
         { label: 'Eventos administrativos', to: '/admin/auditoria/eventos', icon: ScrollText, active: page === 'audit-events' },
