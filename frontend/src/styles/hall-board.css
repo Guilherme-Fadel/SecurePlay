@@ -1,0 +1,296 @@
+/*
+ * Hall da Fama · placar (canvas Hall da Fama aprovado). O cartão traz os filtros (escopo, unidade, categoria,
+ * período), o cabeçalho de colunas e a lista de 8 em 8, cada linha com o personagem compacto (ou o chip da
+ * turma), o nível, o valor e a tendência da semana, e o tema do card equipado (chr-card--*, de
+ * character-fitting.css). A faixa "Seu ranking" é amarelo fixo da marca. Superfícies e texto seguem o tema.
+ * Importado depois de ranking-ui.css para vencer o reset tipográfico escopado de .rank-v.
+ */
+.sb { --sb-row: 54px; --sb-gap: 2px; --sb-cols: 48px 40px minmax(0, 1fr) 54px 104px; display: flex; min-width: 0; flex-direction: column; gap: 16px; }
+.sb-card { padding: 12px 16px 10px; border: var(--app-line); border-radius: 22px; box-shadow: var(--app-shadow-hard); }
+.sb-card .rk-card-head { align-items: center; margin-bottom: 8px; }
+.sb-card .rk-card-head .rk-muted { min-width: 0; flex: 1 1 auto; }
+.sb-card .rk-notice { margin: 10px 0 0; padding: 8px 12px; border-radius: 10px; box-shadow: none; font-size: 13px; }
+.sb-refresh {
+  display: grid;
+  width: 44px;
+  height: 44px;
+  flex: 0 0 44px;
+  place-items: center;
+  margin-left: auto;
+  padding: 0;
+  border: 2px solid var(--app-control-border, var(--dashboard-border));
+  border-radius: 50%;
+  background: var(--rk-card);
+  color: var(--rk-text);
+  cursor: pointer;
+}
+.sb-refresh:hover:not(:disabled) { border-color: var(--app-heading); color: var(--rk-blue-text); }
+.sb-refresh:disabled { cursor: progress; opacity: 0.6; }
+
+/* ---------- Filtros ---------- */
+.sb-filters { display: flex; flex-direction: column; gap: 8px; }
+.sb-row1 { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 10px; }
+.sb-seg { display: inline-flex; max-width: 100%; overflow: hidden; border: 3px solid var(--app-line-color); border-radius: 14px; background: var(--rk-card); }
+.sb-seg button { min-height: 36px; padding: 0 13px; border: 0; background: transparent; color: var(--rk-text); font-size: 13px; font-weight: 800; white-space: nowrap; cursor: pointer; }
+.sb-seg button:hover:not(:disabled):not([aria-pressed='true']) { background: var(--rk-row); }
+.sb-seg button[aria-pressed='true'], .sb-per button[aria-pressed='true'], .sb-tabs button[aria-pressed='true'] { background: var(--rk-text); color: var(--rk-card); }
+.sb-seg button:disabled { cursor: not-allowed; opacity: 0.55; }
+.sb-scope-fixed { display: inline-flex; min-height: 42px; align-items: center; padding: 0 14px; border: 3px solid var(--app-line-color); border-radius: 14px; background: var(--rk-card); font-size: 13px; font-weight: 800; }
+.sb-company { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; color: var(--rk-muted); font-size: 13px; font-weight: 800; }
+.sb-company .app-select-wrap { min-width: 200px; max-width: 320px; flex: 1 1 200px; }
+.sb-row2 { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 8px 10px; border-bottom: 3px solid var(--app-line-color); }
+.sb-tabs { display: flex; gap: 4px; }
+.sb-tabs button {
+  min-height: 44px;
+  margin-bottom: -3px;
+  padding: 0 11px;
+  border: 3px solid var(--app-line-color);
+  border-bottom: 0;
+  border-radius: 12px 12px 0 0;
+  background: var(--rk-row);
+  color: var(--rk-text);
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+}
+.sb-tabs button[aria-pressed='true'] { padding-bottom: 3px; }
+.sb-per { display: flex; gap: 4px; margin-left: auto; padding-bottom: 6px; }
+.sb-per button { min-height: 36px; padding: 0 9px; border: 2px solid var(--app-line-color); border-radius: 999px; background: var(--rk-card); color: var(--rk-text); font-size: 12px; font-weight: 800; cursor: pointer; }
+.sb-per button:disabled { cursor: not-allowed; opacity: 0.55; }
+.sb-seasons { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; color: var(--rk-muted); font-size: 12px; font-weight: 800; }
+.sb-seasons button { min-height: 36px; padding: 0 12px; border: 2px dashed var(--app-line-color); border-radius: 10px; background: transparent; color: var(--rk-text); font-size: 12px; font-weight: 800; cursor: pointer; }
+.sb-seasons button[aria-pressed='true'] { border-style: solid; background: var(--sp-yellow); color: var(--sp-black); }
+.sb-filters button:focus-visible { position: relative; z-index: 1; outline: var(--app-focus-ring); outline-offset: -3px; }
+
+/* ---------- Cabeçalho de colunas e linhas ---------- */
+.sb-head {
+  display: grid;
+  grid-template-columns: var(--sb-cols);
+  gap: 10px;
+  padding: 6px 10px 2px;
+  color: var(--rk-muted);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.sb-head span:last-child { text-align: right; }
+.sb-list { display: flex; flex-direction: column; gap: var(--sb-gap); }
+/* Com várias páginas a lista mantém a altura de 8 linhas: a última página curta não sobe a barra "Seu ranking". */
+.sb-list.has-pages { min-height: calc(8 * var(--sb-row) + 7 * var(--sb-gap)); }
+.sb-skel { height: var(--sb-row); border-radius: 14px; background: var(--rk-row); animation: sb-pulse 1.4s ease-in-out infinite; }
+@keyframes sb-pulse { 50% { opacity: 0.5; } }
+
+.sb-row {
+  display: grid;
+  width: 100%;
+  min-height: var(--sb-row);
+  grid-template-columns: var(--sb-cols);
+  align-items: center;
+  gap: 10px;
+  padding: 2px 10px;
+  border: 3px solid transparent;
+  border-radius: 14px;
+  font-family: inherit;
+  font-weight: 700;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color 0.15s, border-color 0.15s, box-shadow 0.15s;
+}
+.sb-row:not(.is-themed) { background: transparent; color: var(--rk-text); }
+.sb-row:not(.is-themed):hover { background: var(--rk-row); }
+.sb-row:not(.is-themed).is-me { background: var(--rk-me-bg); }
+.sb-row:not(.is-themed).is-on { border-color: var(--app-heading); background: var(--rk-blue-soft); }
+/* Tema do card equipado: a cor e o texto vêm de chr-card--*; o destaque é o contorno e a sombra dura. */
+.sb-row.is-themed:hover { box-shadow: inset 0 0 0 2px color-mix(in srgb, currentColor 35%, transparent); }
+.sb-row.is-themed.is-on { border-color: var(--app-line-color); box-shadow: 3px 3px 0 var(--app-shadow-color, #000); }
+/* Anel de 3 px colado na linha (a folga entre linhas é de 2 px): não cobre a vizinha e continua visível sobre o card amarelo. */
+.sb-row:focus-visible { position: relative; z-index: 1; outline: var(--app-focus-ring); outline-offset: 0; }
+.sb-row.chr-art { color: var(--sp-cream); text-shadow: 0 1px 2px color-mix(in srgb, var(--sp-black) 60%, transparent); }
+
+.sb-pos {
+  display: grid;
+  height: 30px;
+  place-items: center;
+  border: 2px solid transparent;
+  border-radius: 8px;
+  color: var(--rk-blue-text);
+  font-size: 18px;
+  font-stretch: 75%;
+  font-variation-settings: 'wdth' 75;
+  font-variant-numeric: tabular-nums;
+  font-weight: 800;
+}
+.sb-row.is-themed .sb-pos { color: inherit; }
+.sb-row .sb-pos.is-gold, .sb-row .sb-pos.is-silver, .sb-row .sb-pos.is-bronze { border-color: var(--sp-black); color: var(--sp-black); }
+.sb-pos.is-gold { background: var(--sp-yellow); }
+.sb-pos.is-silver { background: color-mix(in srgb, var(--sp-blue) 14%, var(--sp-paper)); }
+.sb-pos.is-bronze { background: color-mix(in srgb, var(--sp-orange) 22%, var(--sp-paper)); }
+
+/* Mini personagem compacto: 35 px de largura, ~41 de altura (cabe na linha de 54 px). */
+.sb-pet { display: block; width: 35px; }
+.sb-pet .character-avatar, .sb-mine-pet .character-avatar { display: block; width: 100%; }
+.sb-tchip {
+  display: grid;
+  width: 32px;
+  height: 32px;
+  flex: 0 0 auto;
+  place-items: center;
+  border: 2px solid var(--sp-black);
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.sb-who { display: flex; min-width: 0; flex-direction: column; }
+.sb-who strong { display: block; min-width: 0; overflow: hidden; font-size: 15px; font-weight: 800; text-overflow: ellipsis; white-space: nowrap; }
+/* Segunda linha: as marcas ("No palco", "Você") e o subtítulo; a linha continua da mesma altura, o nome fica sozinho na primeira. */
+.sb-meta { display: flex; min-width: 0; align-items: center; gap: 6px; }
+.sb-meta small { min-width: 0; overflow: hidden; font-size: 12px; font-weight: 600; text-overflow: ellipsis; white-space: nowrap; opacity: 0.8; }
+.sb-tag {
+  flex: 0 0 auto;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: var(--app-heading);
+  color: var(--sp-black);
+  font-size: 10px;
+  font-style: normal;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+:root[data-theme='light'] .sb-tag { color: var(--sp-paper); }
+.sb-tag.is-me { background: var(--sp-black); color: var(--sp-yellow); }
+
+.sb-lv { font-size: 13px; opacity: 0.8; }
+.sb-val { font-size: 15px; font-variant-numeric: tabular-nums; font-weight: 800; text-align: right; white-space: nowrap; }
+.sb-val small { font-size: 12px; font-weight: 700; opacity: 0.75; }
+.sb-val .sb-trend { display: block; font-size: 11px; font-weight: 800; opacity: 1; }
+.sb-trend.is-up { color: var(--rk-blue-text); }
+.sb-trend.is-down { color: var(--rk-down); }
+.sb-trend.is-plain { font-weight: 700; opacity: 0.75; }
+.sb-row.is-themed .sb-trend { color: inherit; }
+
+/* ---------- Páginas ---------- */
+.sb-pg {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 12px;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 2px solid var(--rk-rule);
+}
+.sb-info { color: var(--rk-muted); font-size: 13px; font-weight: 700; }
+.sb-pg-nav { display: flex; align-items: center; gap: 6px; }
+.sb-pg-label { min-width: 5.5em; color: var(--rk-text); font-size: 13px; font-weight: 800; text-align: center; white-space: nowrap; }
+.sb-pg-nav button {
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+  gap: 2px;
+  padding: 0 10px;
+  border: 2px solid var(--app-control-border, var(--dashboard-border));
+  border-radius: 10px;
+  background: var(--rk-card);
+  color: var(--rk-text);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+}
+.sb-pg-nav button:hover:not([aria-disabled='true']) { border-color: var(--app-heading); color: var(--app-heading); }
+.sb-pg-nav button[aria-disabled='true'] { cursor: not-allowed; opacity: 0.5; }
+
+/* ---------- Seu ranking ---------- */
+.sb-mine {
+  --app-focus-color: var(--sp-black);
+  --app-focus-ring: 3px solid var(--sp-black);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 14px;
+  padding: 12px 14px;
+  border: 3px solid var(--sp-black);
+  border-radius: 18px;
+  background: var(--sp-yellow);
+  box-shadow: 5px 5px 0 var(--sp-black);
+  color: var(--sp-black);
+}
+/* Gestão: superfície do tema (sem o amarelo, que é do aluno participante). */
+.sb-mine.is-manage {
+  --app-focus-color: var(--app-heading);
+  --app-focus-ring: 3px solid var(--app-heading);
+  border-color: var(--app-line-color);
+  background: var(--rk-card);
+  box-shadow: var(--app-shadow-hard);
+  color: var(--rk-text);
+}
+.sb-mine-pos { display: flex; flex-direction: column; }
+.sb-mine-pos small { font-size: 11px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; }
+.sb-mine-pos b { font-size: 40px; }
+.sb-mine-pet { width: 48px; flex: 0 0 auto; }
+.sb-mine-text { min-width: 0; flex: 1 1 180px; font-size: 14px; font-weight: 700; }
+.sb-mine.is-manage .sb-mine-text { color: var(--rk-muted); }
+.sb-mine-act { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+/* Botão fantasma sobre o amarelo fixo: contorno e texto pretos nos dois temas. */
+.sb-mine:not(.is-manage) .app-button.app-button--chunky-ghost {
+  --chunky-text: var(--sp-black);
+  --chunky-border: var(--sp-black);
+  --chunky-bg-hover: color-mix(in srgb, var(--sp-black) 10%, transparent);
+}
+.sb-mine .app-button[aria-disabled='true'] { background: color-mix(in srgb, var(--sp-black) 8%, transparent); cursor: default; }
+
+/* ---------- Telas médias (coluna do placar estreita): abas e período ainda na mesma linha ---------- */
+@container rank-v (max-width: 1100px) {
+  .sb-row2 { column-gap: 6px; }
+  .sb-tabs { gap: 3px; }
+  .sb-tabs button { padding-inline: 7px; font-size: 12px; }
+  .sb-per { gap: 3px; }
+  .sb-per button { padding-inline: 6px; font-size: 11px; }
+}
+
+/* ---------- Celular e telas estreitas ---------- */
+@container rank-v (max-width: 560px) {
+  .sb { --sb-cols: 44px 40px minmax(0, 1fr) 86px; }
+  .sb-card { padding: 14px 12px 12px; }
+  /* Título e atualizar na primeira linha; o subtítulo (escola e contagem) logo abaixo, na largura toda. */
+  .sb-card .rk-card-head .rk-muted { order: 2; flex-basis: 100%; }
+  .sb-card .rk-card-head { gap: 2px 8px; }
+  .sb-row1 .sb-seg, .sb-scope-fixed { flex: 1 1 100%; }
+  .sb-row1 .sb-seg button { flex: 1 1 0; padding: 0 6px; }
+  .sb-row2 { flex-wrap: wrap; }
+  .sb-per { order: -1; width: 100%; margin-left: 0; padding-top: 4px; }
+  .sb-per button { flex: 1 1 0; padding: 0 6px; }
+  .sb-row { gap: 8px; padding: 4px 8px; }
+  .sb-head { gap: 8px; padding-inline: 8px; }
+  .sb-head span:nth-child(4), .sb-lv { display: none; }
+  .sb-pet { width: 40px; }
+  .sb-pos { font-size: 16px; }
+  .sb-pg { flex-direction: column; align-items: stretch; }
+  .sb-info { text-align: center; }
+  .sb-pg-nav { min-width: 0; justify-content: space-between; }
+  .sb-mine-act { width: 100%; }
+  .sb-mine-act .app-button { flex: 1 1 auto; }
+}
+
+/* Em 320 px as colunas encolhem mais e os botões de página ficam só com o ícone (o nome acessível continua "Página anterior/próxima do placar"). */
+@container rank-v (max-width: 420px) {
+  .sb { --sb-cols: 34px 34px minmax(0, 1fr) 66px; }
+  .sb-row { gap: 6px; padding-inline: 6px; }
+  .sb-head { gap: 6px; padding-inline: 6px; }
+  .sb-pet { width: 36px; }
+  .sb-val { font-size: 14px; }
+  .sb-meta { gap: 4px; }
+  /* Em 320 px o nome pode ocupar duas linhas antes de cortar. */
+  .sb-who strong { display: -webkit-box; white-space: normal; overflow-wrap: anywhere; line-height: 1.15; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; }
+  .sb-pg-nav button { min-width: 44px; justify-content: center; }
+  .sb-pg-nav button span { display: none; }
+  .sb-tabs button { padding-inline: 10px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sb-row { transition: none; }
+  .sb-skel { animation: none; }
+}

@@ -1,7 +1,8 @@
 /*
- * Ranking · palco e corrida (canvas Ranking-tela V1).
- * Faixa da temporada segue --primary (card principal, D8); pódio, iniciais dos
- * avatares, coroa, confete e botão amarelo usam a paleta fixa --sp-*. Superfícies e texto
+ * Ranking · faixa da temporada, grade da tela e destaques (canvas Hall da Fama).
+ * Faixa da temporada segue --primary (card principal, D8); iniciais dos avatares,
+ * confete e botão amarelo usam a paleta fixa --sp-*. O palco do Hall da Fama
+ * (palco) vive em hall-stage.css e o placar em hall-board.css. Superfícies e texto
  * seguem o tema (claro com data-theme='light'; grafite sem atributo).
  * Reset tipográfico com escopo porque theme.css define fonte, tamanho e
  * espaçamento em p/span/button/small/h*.
@@ -12,17 +13,11 @@
   --rk-card: var(--dashboard-surface);
   --rk-row: var(--dashboard-surface-soft);
   --rk-rule: var(--app-rule);
-  --rk-line: var(--app-line-color);
-  --rk-heading: var(--app-heading);
   /* Texto azul legível sobre cartão e linha (AA nos dois temas). */
   --rk-blue-text: #9DB8FF;
   --rk-blue-soft: #1E3466;
   --rk-me-bg: rgba(254, 213, 1, 0.14);
-  --rk-me-ring: #B89400;
-  --rk-up: #9DB8FF;
   --rk-down: #FFB27A;
-  --rk-down-soft: rgba(255, 113, 1, 0.16);
-  --rk-spot: rgba(254, 213, 1, 0.12);
   --rk-band: var(--primary);
   /* Texto pequeno sobre a cor da escola: papel (D12). */
   --rk-on-band: var(--app-eyebrow-on-primary, var(--sp-paper));
@@ -42,11 +37,7 @@
   --rk-blue-text: #1D50C2;
   --rk-blue-soft: #E7EEFF;
   --rk-me-bg: #FFF6C2;
-  --rk-me-ring: #F2C200;
-  --rk-up: #1D50C2;
   --rk-down: #A84A00;
-  --rk-down-soft: #FFEBDC;
-  --rk-spot: rgba(254, 213, 1, 0.32);
 }
 
 .rank-v *, .rank-v *::before, .rank-v *::after { box-sizing: border-box; }
@@ -87,11 +78,11 @@
 .rk-band {
   position: relative;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 240px;
+  grid-template-columns: minmax(0, 1fr) 180px;
   align-items: end;
   gap: 16px;
-  margin-bottom: 22px;
-  padding: 30px 32px 26px;
+  margin-bottom: 18px;
+  padding: 20px 28px 18px;
   overflow: hidden;
   border: var(--app-line-width) solid var(--sp-black);
   border-radius: 28px;
@@ -115,15 +106,15 @@
 
 .rk-band-copy { position: relative; grid-column: 1; grid-row: 1; min-width: 0; }
 .rk-band-eyebrow { color: var(--rk-on-band); font-size: 13px; font-weight: 800; letter-spacing: 0.16em; text-transform: uppercase; }
-.rk-band-title { margin-top: 8px; color: var(--sp-cream); font-size: 72px; }
-.rk-band-lead { max-width: 480px; margin-top: 12px; color: var(--rk-on-band); font-size: 17px; font-weight: 600; }
+.rk-band-title { margin-top: 6px; color: var(--sp-cream); font-size: 52px; }
+.rk-band-lead { max-width: 480px; margin-top: 8px; color: var(--rk-on-band); font-size: 15px; font-weight: 600; }
 .rk-band-chip {
   display: inline-flex;
   max-width: 100%;
   align-items: center;
   gap: 8px;
   min-height: 40px;
-  margin-top: 18px;
+  margin-top: 12px;
   padding: 6px 14px;
   border-radius: 999px;
   background: rgba(0, 0, 0, 0.36);
@@ -134,7 +125,7 @@
 .rk-band-chip svg { flex: none; }
 
 /* Pet anfitrião */
-.rk-host { position: relative; z-index: 1; grid-column: 2; grid-row: 1; display: flex; flex-direction: column; align-items: center; padding-top: 82px; }
+.rk-host { position: relative; z-index: 1; grid-column: 2; grid-row: 1; display: flex; flex-direction: column; align-items: center; padding-top: 64px; }
 .rk-say {
   position: absolute;
   top: 0;
@@ -154,10 +145,10 @@
 .rk-host-btn {
   position: relative;
   display: block;
-  width: 170px;
+  width: 120px;
   padding: 0;
   border: 0;
-  border-radius: 48px;
+  border-radius: 36px;
   background: transparent;
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
@@ -196,64 +187,7 @@
 @keyframes rk-burst-a { 0% { opacity: 1; transform: translate(0, 0) scale(0.3); } 75% { opacity: 1; } 100% { opacity: 0; transform: translate(var(--x), var(--y)) rotate(200deg); } }
 @keyframes rk-burst-b { 0% { opacity: 1; transform: translate(0, 0) scale(0.3); } 75% { opacity: 1; } 100% { opacity: 0; transform: translate(var(--x), var(--y)) rotate(200deg); } }
 
-/* ---------- Controles ---------- */
-.rk-controls { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin-bottom: 24px; }
-.rk-seg {
-  display: inline-flex;
-  max-width: 100%;
-  gap: 4px;
-  padding: 4px;
-  border-radius: 999px;
-  background: var(--rk-card);
-  box-shadow: inset 0 0 0 1.5px var(--app-control-border, var(--dashboard-border));
-}
-.rk-seg button {
-  min-height: 44px;
-  padding: 0 18px;
-  border: 0;
-  border-radius: 999px;
-  background: transparent;
-  color: var(--rk-muted);
-  font-size: 14px;
-  font-weight: 700;
-  white-space: nowrap;
-  cursor: pointer;
-}
-.rk-seg button:hover:not(:disabled) { color: var(--rk-text); }
-.rk-seg button[aria-pressed='true'] { background: var(--primary); color: #FFFFFF; }
-.rk-seg button:disabled { cursor: not-allowed; opacity: 0.55; }
-.rk-scope-fixed {
-  display: inline-flex;
-  align-items: center;
-  min-height: 52px;
-  padding: 0 18px;
-  border-radius: 999px;
-  background: var(--rk-card);
-  box-shadow: inset 0 0 0 1.5px var(--app-control-border, var(--dashboard-border));
-  font-size: 14px;
-  font-weight: 800;
-}
-.rk-select { display: inline-flex; align-items: center; gap: 8px; min-width: 0; }
-.rk-select > .app-select-wrap { min-width: 200px; max-width: 280px; }
-.rk-select-label { color: var(--rk-muted); font-size: 13px; font-weight: 700; }
-.rk-refresh {
-  display: grid;
-  width: 44px;
-  height: 44px;
-  flex: 0 0 44px;
-  place-items: center;
-  margin-left: auto;
-  padding: 0;
-  border: 0;
-  border-radius: 50%;
-  background: var(--rk-card);
-  box-shadow: inset 0 0 0 1.5px var(--app-control-border, var(--dashboard-border));
-  color: var(--rk-text);
-  cursor: pointer;
-}
-.rk-refresh:hover:not(:disabled) { color: var(--rk-blue-text); box-shadow: inset 0 0 0 2px var(--rk-blue-text); }
-.rk-refresh:disabled { cursor: progress; opacity: 0.6; }
-
+/* ---------- Avisos ---------- */
 .rk-notice {
   margin-bottom: 16px;
   padding: 12px 16px;
@@ -265,16 +199,21 @@
 }
 
 /* ---------- Grade ---------- */
-.rk-grid { display: grid; grid-template-columns: minmax(0, 1fr) 340px; align-items: start; gap: 24px; }
-.rk-stage, .rk-empty-slot { grid-column: 1; grid-row: 1; }
-.rk-board { grid-column: 1; grid-row: 2; }
-.rk-side { display: flex; grid-column: 2; grid-row: 1 / span 2; flex-direction: column; gap: 24px; min-width: 0; }
+/* Palco (com os destaques da semana logo abaixo) na coluna da esquerda e o placar, com os filtros, na da direita.
+   O placar é o mesmo bloco nos estados de carregar, erro e vazio, então o foco do teclado não se perde ao trocar um
+   filtro; sem palco ele ocupa a largura toda (centralizado). */
+.rk-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); grid-template-rows: auto 1fr; align-items: start; gap: 16px 24px; }
+.rk-grid > * { min-width: 0; }
+.rk-grid > .sb { grid-column: 1 / -1; grid-row: 1 / span 2; width: 100%; max-width: 720px; justify-self: center; }
+.rk-grid.has-board > .sb, .rk-grid.is-loading > .sb { grid-column: 2; max-width: none; }
+.rk-grid.has-board > .hall, .rk-grid.is-loading > .content-loading { grid-column: 1; grid-row: 1; }
+.rk-grid > .rk-side { grid-column: 1; grid-row: 2; }
+.rk-side { display: flex; flex-wrap: wrap; gap: 16px; }
+.rk-side > .rk-card { flex: 1 1 280px; }
 
 .rk-card { min-width: 0; padding: 24px; border-radius: 20px; background: var(--rk-card); box-shadow: var(--dashboard-shadow); }
 .rk-card-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 4px 16px; margin-bottom: 16px; }
 .rk-card-title { color: var(--rk-text); font-size: 26px; font-weight: 800; letter-spacing: -0.02em; line-height: 1.1; }
-
-.rk-you { flex: 0 0 auto; padding: 1px 8px; border-radius: 999px; background: var(--primary); color: #FFFFFF; font-size: 11px; font-weight: 800; }
 
 /* Avatares: foto de perfil ou iniciais sobre cor fixa (tamanho por --rk-av). */
 .rk-avatar {
@@ -295,136 +234,14 @@
 .rk-avatar img { display: block; width: 100%; height: 100%; object-fit: cover; }
 .rk-avatar.has-photo { background: var(--rk-row); box-shadow: inset 0 0 0 1.5px var(--dashboard-border); }
 
-/* ---------- Pódio em palco ---------- */
-.rk-stage {
-  position: relative;
-  border: var(--app-line);
-  box-shadow: var(--app-shadow-hard);
-  background: radial-gradient(ellipse 55% 75% at 50% 0%, var(--rk-spot), transparent 72%), var(--rk-card);
-}
-.rk-podium { display: flex; align-items: flex-end; justify-content: center; gap: 16px; padding-top: 8px; border-bottom: 4px solid var(--rk-line); }
-.rk-pd { display: flex; min-width: 0; max-width: 220px; flex: 1 1 0; flex-direction: column; align-items: center; }
-.rk-pd-who { display: flex; max-width: 100%; min-width: 0; flex-direction: column; align-items: center; gap: 4px; padding: 0 4px 16px; text-align: center; }
-.rk-pd-avatar.rk-avatar { --rk-av: 72px; margin-bottom: 8px; box-shadow: 0 0 0 4px var(--rk-card), 0 0 0 8px var(--sp-orange); }
-.rk-pd.is-step-1 .rk-pd-avatar.rk-avatar { --rk-av: 92px; box-shadow: 0 0 0 4px var(--rk-card), 0 0 0 8px var(--sp-yellow), 0 0 0 10px var(--sp-black); }
-.rk-pd.is-step-2 .rk-pd-avatar.rk-avatar { box-shadow: 0 0 0 4px var(--rk-card), 0 0 0 8px #BFB7AA; }
-.rk-pd-crown { display: block; margin-bottom: -2px; }
-.rk-pd-name, .rk-pd-sub { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.rk-pd-name { font-size: 16px; font-weight: 800; }
-.rk-pd-xp { color: var(--rk-blue-text); font-size: 15px; font-weight: 800; font-variant-numeric: tabular-nums; }
-.rk-pd-sub { color: var(--rk-muted); font-size: 13px; font-weight: 600; }
-.rk-pd-step {
-  display: grid;
-  width: 100%;
-  height: 84px;
-  place-items: center;
-  border: var(--app-line-width) solid var(--rk-line);
-  border-bottom: 0;
-  border-radius: 14px 14px 0 0;
-  background: var(--sp-orange);
-  color: var(--sp-black);
-}
-.rk-pd.is-step-1 .rk-pd-step { height: 150px; background: var(--sp-yellow); }
-.rk-pd.is-step-2 .rk-pd-step { height: 112px; background: var(--rk-row); color: var(--rk-text); }
-.rk-pd-n { font-size: 56px; }
-
-/* ---------- Classificação ---------- */
-.rk-rows { display: flex; flex-direction: column; gap: 6px; }
-.rk-row {
-  display: grid;
-  grid-template-columns: 48px 40px minmax(0, 1fr) 64px 104px;
-  align-items: center;
-  gap: 12px;
-  min-height: 60px;
-  padding: 8px 14px;
-  border-radius: 14px;
-  background: var(--rk-row);
-}
-.rk-rows.no-trend .rk-row { grid-template-columns: 48px 40px minmax(0, 1fr) 104px; }
-.rk-row.is-me { background: var(--rk-me-bg); box-shadow: inset 0 0 0 2px var(--rk-me-ring); }
-.rk-row-pos { color: var(--rk-blue-text); font-size: 22px; font-weight: 800; font-variant-numeric: tabular-nums; }
-.rk-row-who { display: flex; min-width: 0; flex-direction: column; line-height: 1.25; }
-.rk-row-name { display: flex; min-width: 0; align-items: center; gap: 6px; }
-.rk-row-name strong { overflow: hidden; font-size: 15px; font-weight: 800; text-overflow: ellipsis; white-space: nowrap; }
-.rk-row-who small { overflow: hidden; color: var(--rk-muted); font-size: 13px; font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
-.rk-trend { font-size: 13px; font-weight: 800; text-align: right; font-variant-numeric: tabular-nums; color: var(--rk-muted); }
-.rk-trend.is-up { color: var(--rk-up); }
-.rk-trend.is-down { color: var(--rk-down); }
-.rk-row-xp { font-size: 16px; font-weight: 800; text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
-.rk-row-xp small { color: var(--rk-muted); font-size: 12px; font-weight: 700; }
-.rk-skip { display: flex; justify-content: center; padding: 2px 0; color: var(--rk-muted); font-weight: 800; letter-spacing: 0.3em; }
-.rk-note { margin-top: 14px; color: var(--rk-muted); font-size: 13px; font-weight: 600; }
-
-/* ---------- Sua corrida ---------- */
-.rk-lanes { display: flex; flex-direction: column; gap: 6px; }
-.rk-lane {
-  display: grid;
-  grid-template-columns: 34px minmax(0, 1fr) 52px;
-  align-items: center;
-  gap: 8px;
-  min-height: 52px;
-  padding: 4px 10px;
-  border-radius: 14px;
-  background: var(--rk-row);
-}
-.rk-lane { overflow: hidden; }
-.rk-lane.is-me { background: var(--rk-me-bg); box-shadow: inset 0 0 0 2px var(--rk-me-ring); }
-.rk-lane-pos { color: var(--rk-blue-text); font-size: 17px; font-weight: 800; font-variant-numeric: tabular-nums; }
-.rk-lane-track { position: relative; height: 42px; background: linear-gradient(var(--rk-rule), var(--rk-rule)) center / 100% 3px no-repeat; }
-.rk-lane-track::after {
-  content: '';
-  position: absolute;
-  right: 0;
-  top: 6px;
-  bottom: 6px;
-  width: 8px;
-  border-radius: 2px;
-  background: repeating-conic-gradient(var(--sp-black) 0 25%, #FFFFFF 0 50%) 0 0 / 8px 8px;
-}
-.rk-lane-run { position: absolute; top: 50%; z-index: 1; width: 32px; height: 32px; transform: translate(-50%, -50%); }
-.rk-lane-run .rk-avatar { --rk-av: 32px; }
-.rk-lane-name {
-  position: absolute;
-  top: 50%;
-  max-width: 9em;
-  overflow: hidden;
-  font-size: 12px;
-  font-weight: 800;
-  line-height: 1;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  transform: translateY(-50%);
-}
-.rk-lane-run.is-label-right .rk-lane-name { left: 38px; }
-.rk-lane-run.is-label-left .rk-lane-name { right: 38px; }
-.rk-lane-xp { font-size: 13px; font-weight: 800; text-align: right; font-variant-numeric: tabular-nums; }
-.rk-race-outside { display: flex; align-items: baseline; gap: 14px; }
-.rk-race-outside .rk-display { color: var(--rk-heading); font-size: 64px; }
-.rk-race-outside span { font-size: 20px; font-weight: 800; font-variant-numeric: tabular-nums; }
-.rk-race-next { margin-top: 12px; font-size: 14px; font-weight: 600; }
-.rk-race-next strong { font-weight: 800; }
-.rk-race-rival { font-weight: 800; overflow-wrap: anywhere; }
-.rk-race-week { display: inline-flex; margin-top: 14px; padding: 5px 12px; border-radius: 999px; background: var(--rk-blue-soft); color: var(--rk-blue-text); font-size: 13px; font-weight: 800; }
-.rk-race-week.is-down { background: var(--rk-down-soft); color: var(--rk-down); }
-.rk-race-actions { display: flex; flex-direction: column; align-items: stretch; gap: 6px; margin-top: 16px; }
-.rk-link {
-  min-height: 44px;
-  padding: 0;
-  border: 0;
-  background: transparent;
-  color: var(--rk-blue-text);
-  font-size: 14px;
-  font-weight: 800;
-  text-decoration: underline;
-  text-underline-offset: 4px;
-  cursor: pointer;
-}
-.rk-link:hover { color: var(--rk-text); }
-.rk-manage .rk-muted { margin-top: 8px; }
-
 /* ---------- Destaques ---------- */
-.rk-hl { display: flex; flex-direction: column; gap: 10px; }
-.rk-hl li { display: grid; grid-template-columns: 40px minmax(0, 1fr) auto; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 14px; background: var(--rk-row); }
+/* Compactos: ficam sob o palco (ou depois do placar no celular) sem roubar altura da tela. */
+.rk-highlights { padding: 14px 16px; }
+.rk-highlights .rk-card-head { margin-bottom: 10px; }
+.rk-highlights .rk-card-title { font-size: 20px; }
+.rk-hl { display: flex; flex-direction: column; gap: 6px; }
+.rk-hl li { display: grid; grid-template-columns: 32px minmax(0, 1fr) auto; align-items: center; gap: 10px; padding: 6px 10px; border-radius: 12px; background: var(--rk-row); }
+.rk-hl .rk-avatar { --rk-av: 32px; }
 .rk-hl-who { display: flex; min-width: 0; flex-direction: column; line-height: 1.25; }
 .rk-hl-who small { color: var(--rk-muted); font-size: 12px; font-weight: 700; }
 .rk-hl-who strong { overflow: hidden; font-size: 15px; font-weight: 800; text-overflow: ellipsis; white-space: nowrap; }
@@ -432,27 +249,28 @@
 
 /* ---------- Estados ---------- */
 .rk-state { display: flex; flex-wrap: wrap; align-items: center; gap: 18px 24px; }
+.rk-state.is-inline { padding: 8px 0 4px; }
 .rk-state-pet { width: 96px; flex: 0 0 auto; }
 .rk-state-copy { display: flex; min-width: 0; flex: 1 1 240px; flex-direction: column; align-items: flex-start; gap: 10px; }
-.rk-board-empty { padding: 6px 0; }
 
-/* ---------- Uma coluna até 900 px: sua corrida logo depois do pódio ---------- */
+/* ---------- Uma coluna até 900 px: palco, placar e, por fim, os destaques ---------- */
 @container rank-v (max-width: 900px) {
   .rk-band { grid-template-columns: minmax(0, 1fr) 180px; }
-  .rk-band-title { font-size: 60px; }
-  .rk-host-btn { width: 132px; }
+  .rk-band-title { font-size: 46px; }
+  .rk-host-btn { width: 104px; }
   .rk-band-dots i:nth-child(3) { right: 210px; }
-  /* Uma coluna na ordem do DOM (pódio, corrida/destaques, classificação): leitura e Tab
+  /* Uma coluna na ordem do DOM (palco, placar, destaques): leitura e Tab
      seguem o que se vê, sem `order` nem `display: contents`. */
-  .rk-grid { grid-template-columns: minmax(0, 1fr); }
-  .rk-stage, .rk-empty-slot, .rk-board, .rk-side { grid-column: 1; grid-row: auto; }
+  .rk-grid, .rk-grid.has-board { grid-template-columns: minmax(0, 1fr); grid-template-rows: none; }
+  .rk-grid > .sb, .rk-grid.has-board > .sb, .rk-grid.is-loading > .sb { grid-column: 1; grid-row: auto; max-width: none; }
+  .rk-grid.has-board > .hall, .rk-grid.is-loading > .content-loading, .rk-grid > .rk-side { grid-column: 1; grid-row: auto; }
 }
 
 @container rank-v (max-width: 560px) {
-  .rk-band { grid-template-columns: minmax(0, 1fr) 84px; gap: 8px; padding: 20px 16px 18px; border-radius: 22px; }
+  .rk-band { grid-template-columns: minmax(0, 1fr) 84px; gap: 8px; padding: 14px 14px 14px; border-radius: 20px; }
   .rk-band-blob { right: -90px; bottom: -110px; width: 220px; height: 200px; }
-  .rk-band-title { font-size: 48px; }
-  .rk-band-lead { font-size: 14px; }
+  .rk-band-title { font-size: 38px; }
+  .rk-band-lead { font-size: 13px; }
   .rk-band-chip { min-height: 36px; padding: 6px 12px; font-size: 12px; }
   .rk-band-dots i:nth-child(3), .rk-band-dots i:nth-child(4) { display: none; }
   .rk-host { padding-top: 0; }
@@ -461,149 +279,74 @@
   .rk-say.is-pop-a, .rk-say.is-pop-b { animation-name: rk-pop-small; }
   /* No celular a fala só aparece depois do primeiro toque; continua anunciada. */
   .rk-say:not(.is-talking) { width: 1px; height: 1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
-  .rk-controls { gap: 10px; }
-  .rk-seg { display: flex; width: 100%; }
-  .rk-seg button { min-width: 0; flex: 1 1 0; padding: 0 6px; font-size: 13px; white-space: normal; line-height: 1.1; }
-  .rk-select { width: 100%; }
-  .rk-select > .app-select-wrap { min-width: 0; max-width: none; flex: 1 1 auto; }
-  .rk-refresh { margin-left: 0; }
   .rk-card { padding: 18px 14px; border-radius: 18px; }
   .rk-card-title { font-size: 22px; }
-  .rk-podium { gap: 8px; }
-  .rk-pd-name, .rk-pd-xp { font-size: 13px; }
-  .rk-pd-sub { font-size: 12px; }
-  .rk-pd-avatar.rk-avatar { --rk-av: 52px; margin-bottom: 6px; }
-  .rk-pd.is-step-1 .rk-pd-avatar.rk-avatar { --rk-av: 64px; }
-  .rk-pd-step { height: 64px; }
-  .rk-pd.is-step-1 .rk-pd-step { height: 112px; }
-  .rk-pd.is-step-2 .rk-pd-step { height: 84px; }
-  .rk-pd-n { font-size: 40px; }
-  .rk-row, .rk-rows.no-trend .rk-row { grid-template-columns: 34px 32px minmax(0, 1fr) auto; gap: 8px; padding: 8px 10px; }
-  .rk-row .rk-trend { display: none; }
-  .rk-row .rk-avatar { --rk-av: 32px; }
-  .rk-row-pos { font-size: 18px; }
-  .rk-row-xp { font-size: 14px; }
-  .rk-lane { grid-template-columns: 30px minmax(0, 1fr) 46px; padding: 4px 8px; }
-  .rk-lane-name { max-width: 5.5em; }
 }
 @keyframes rk-pop-small { 0% { transform: rotate(-3deg) scale(0.6); } 70% { transform: rotate(-3deg) scale(1.08); } }
 
-/* ---------- Desktop: cabe na área útil sem rolar a página ----------
- * A partir de 1100 × 700 px a tela ocupa --sp-fit-h (altura útil do <main>):
- * faixa baixa (título, texto e prazo lado a lado, fala à esquerda do pet),
- * pódio compacto por altura (vh) e o que é longo rola por dentro: a
- * classificação e a coluna lateral. Abaixo disso, fluxo natural da página.
+/* ---------- Desktop: faixa baixa e palco que cabe na altura útil ----------
+ * A partir de 1100 × 700 px a faixa fica baixa (título, texto e prazo lado a lado,
+ * fala à esquerda do pet) e o palco é limitado pela altura útil (--sp-fit-h do <main>);
+ * a classificação e a coluna lateral rolam com a página.
  */
 @media (min-width: 1100px) and (min-height: 700px) {
   .rank-v {
     display: flex;
-    height: var(--sp-fit-h);
-    min-height: 0;
+    min-height: var(--sp-fit-h);
     flex-direction: column;
     padding: 0 0 8px;
   }
   .rank-v > * { flex: 0 0 auto; }
-  .rank-v > .content-loading { min-height: 0; flex: 1 1 0; }
 
   .rk-band {
     grid-template-columns: minmax(0, 1fr) auto;
     align-items: center;
     gap: 20px;
-    margin-bottom: 14px;
-    padding: 12px 20px 12px 26px;
-    border-radius: 24px;
-    box-shadow: 0 6px 0 var(--sp-black);
+    margin-bottom: 12px;
+    padding: 8px 18px 8px 24px;
+    border-radius: 20px;
+    box-shadow: 0 5px 0 var(--sp-black);
   }
-  .rk-band-blob { right: -50px; bottom: -120px; width: 260px; height: 210px; }
-  .rk-band-dots i:nth-child(3) { right: 360px; bottom: 14px; }
-  .rk-band-dots i:nth-child(4) { bottom: 12px; }
+  .rk-band-blob { right: -50px; bottom: -130px; width: 240px; height: 180px; }
+  .rk-band-dots i:nth-child(3) { right: 360px; bottom: 10px; }
+  .rk-band-dots i:nth-child(4) { bottom: 8px; }
+  .rk-band-dots i:nth-child(1), .rk-band-dots i:nth-child(2), .rk-band-dots i:nth-child(5) { top: 10px; }
   .rk-band-copy {
     display: grid;
     grid-template-columns: auto minmax(0, 1fr);
     grid-template-areas: 'eyebrow lead' 'title chip';
     align-items: end;
-    gap: 4px 28px;
+    gap: 2px 24px;
   }
-  .rk-band-eyebrow { grid-area: eyebrow; font-size: 12px; }
-  .rk-band-title { grid-area: title; margin-top: 0; font-size: clamp(36px, 5vh, 52px); }
-  .rk-band-lead { grid-area: lead; max-width: 560px; margin-top: 0; font-size: 14px; line-height: 1.35; }
-  .rk-band-chip { grid-area: chip; justify-self: start; min-height: 30px; margin-top: 0; padding: 4px 12px; font-size: 13px; }
+  .rk-band-eyebrow { grid-area: eyebrow; font-size: 11px; }
+  .rk-band-title { grid-area: title; margin-top: 0; font-size: clamp(28px, 3.6vh, 38px); }
+  .rk-band-lead { grid-area: lead; max-width: 560px; margin-top: 0; font-size: 13px; line-height: 1.3; }
+  .rk-band-chip { grid-area: chip; justify-self: start; min-height: 26px; margin-top: 0; padding: 2px 10px; font-size: 12px; }
 
-  .rk-host { flex-direction: row; align-items: center; gap: 10px; padding-top: 0; }
+  .rk-host { flex-direction: row; align-items: center; gap: 8px; padding-top: 0; }
   .rk-say {
     position: relative;
     top: auto;
     left: auto;
     max-width: 200px;
-    padding: 8px 12px;
+    padding: 6px 10px;
     border-radius: 16px 16px 4px 16px;
-    font-size: 13px;
+    font-size: 12px;
     transform: rotate(-3deg);
   }
   .rk-say.is-pop-a, .rk-say.is-pop-b { animation-name: rk-pop-small; }
-  .rk-host-btn { width: clamp(64px, 9vh, 92px); border-radius: 28px; }
+  .rk-host-btn { width: clamp(46px, 5.6vh, 60px); border-radius: 20px; }
 
-  .rk-controls { gap: 10px; margin-bottom: 14px; }
-  .rk-seg button { min-height: 38px; padding: 0 16px; }
-  .rk-scope-fixed { min-height: 46px; }
-  .rk-refresh { width: 40px; height: 40px; flex-basis: 40px; }
   .rk-notice { margin-bottom: 10px; padding: 8px 14px; }
 
-  .rk-grid {
-    min-height: 0;
-    flex: 1 1 0;
-    grid-template-columns: minmax(0, 1fr) 320px;
-    grid-template-rows: auto minmax(0, 1fr);
-    gap: 16px 20px;
-  }
+  .rk-grid { gap: 16px 20px; }
+  /* O palco cresce com a coluna (grade 1fr / 1fr, como o canvas) e é limitado pela altura útil junto da faixa; o placar compacto fica com altura parecida. */
+  .rank-v .hall { max-width: min(780px, calc((var(--sp-fit-h) - 110px) * 0.9375)); }
   .rk-card { padding: 16px 18px; }
   .rk-card-head { margin-bottom: 10px; }
   .rk-card-title { font-size: 20px; }
 
-  /* Classificação e coluna lateral rolam por dentro; o cartão encolhe até o espaço da grade. */
-  .rk-board { display: flex; max-height: 100%; min-height: 0; flex-direction: column; }
-  .rk-board > .rk-card-head, .rk-board > .rk-note { flex: 0 0 auto; }
-  /* position: relative prende os textos de leitor de tela (absolutos) dentro do
-     rolador; sem isso eles usavam o <main> como referência e esticavam a página. */
-  .rk-rows, .rk-side { position: relative; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; }
-  .rk-rows { min-height: 0; flex: 1 1 auto; gap: 4px; }
-  .rk-side {
-    max-height: 100%;
-    min-height: 0;
-    gap: 16px;
-    /* Respiro para a sombra dos cartões e o anel de foco não serem cortados. */
-    margin: -4px;
-    padding: 4px 4px 10px;
-  }
-  .rk-note { margin-top: 10px; }
 
-  .rk-podium { gap: 12px; padding-top: 0; }
-  .rk-pd-who { gap: 2px; padding-bottom: 10px; }
-  .rk-pd-crown { width: 32px; height: 22px; }
-  .rk-pd-avatar.rk-avatar { --rk-av: clamp(44px, 6vh, 60px); margin-bottom: 6px; }
-  .rk-pd.is-step-1 .rk-pd-avatar.rk-avatar { --rk-av: clamp(52px, 7.5vh, 76px); }
-  .rk-pd-name { font-size: 15px; }
-  .rk-pd-xp { font-size: 14px; }
-  .rk-pd-sub { font-size: 12px; }
-  .rk-pd-step { height: clamp(30px, 4.2vh, 52px); }
-  .rk-pd.is-step-1 .rk-pd-step { height: clamp(56px, 8vh, 96px); }
-  .rk-pd.is-step-2 .rk-pd-step { height: clamp(42px, 6vh, 72px); }
-  .rk-pd-n { font-size: clamp(26px, 3.8vh, 44px); }
-
-  .rk-row { min-height: 50px; padding: 5px 12px; }
-  .rk-row-pos { font-size: 19px; }
-  .rk-row-xp { font-size: 15px; }
-
-  .rk-lanes { gap: 4px; }
-  .rk-lane { min-height: 44px; }
-  .rk-lane-track { height: 36px; }
-  .rk-race-outside .rk-display { font-size: 48px; }
-  .rk-race-next { margin-top: 10px; }
-  .rk-race-week { margin-top: 10px; }
-  .rk-race-actions { margin-top: 12px; }
-
-  .rk-hl { gap: 6px; }
-  .rk-hl li { gap: 10px; padding: 7px 10px; }
 
   .rk-state { gap: 14px 20px; }
   .rk-state-pet { width: 72px; }

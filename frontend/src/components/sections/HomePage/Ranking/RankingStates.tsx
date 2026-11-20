@@ -8,12 +8,14 @@ interface RankingStateProps {
   children: ReactNode;
   kind?: 'status' | 'alert';
   onRetry?: () => void;
+  /** Dentro do cartão do placar: sem cartão próprio. */
+  inline?: boolean;
 }
 
-/** Estados explícitos (erro, vazio, histórico indisponível) no lugar do pódio e da lista. */
-export function RankingState({ title, children, kind = 'status', onRetry }: RankingStateProps) {
+/** Estados explícitos (erro, vazio, histórico indisponível) no lugar da lista do placar. */
+export function RankingState({ title, children, kind = 'status', onRetry, inline = false }: RankingStateProps) {
   return (
-    <section className="rk-card rk-state" role={kind} aria-labelledby="rk-state-title">
+    <section className={inline ? 'rk-state is-inline' : 'rk-card rk-state'} role={kind} aria-labelledby="rk-state-title">
       <span className="rk-state-pet" aria-hidden="true">
         <BrandCharacter expression={kind === 'alert' ? 'surprised' : 'curious'} />
       </span>

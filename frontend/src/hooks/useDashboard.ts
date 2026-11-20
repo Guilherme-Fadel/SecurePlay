@@ -1,4 +1,4 @@
-import { DashboardStats, getDashboardStats, DashboardDailyChallenge, getDashboardDailyChallenge, WeeklyStreak, getWeeklyStreak, getDashboardRanking, getDashboardJourney, JourneyData, type RankingMode, } from '@/services/dashboard';
+import { DashboardStats, getDashboardStats, DashboardDailyChallenge, getDashboardDailyChallenge, WeeklyStreak, getWeeklyStreak, getDashboardRanking, getDashboardJourney, JourneyData, type RankingCategory, type RankingMode, type RankingUnit, } from '@/services/dashboard';
 import { useCachedQuery } from './useCachedQuery';
 import { useCompanyFeatures } from './useCompanyFeatures';
 export function useDashboardStats() {
@@ -13,10 +13,18 @@ export function useWeeklyStreak() {
     const { data: streak, loading, error } = useCachedQuery<WeeklyStreak>('weeklyStreak', getWeeklyStreak, { refetchInterval: 60_000 });
     return { streak, loading, error };
 }
-export function useDashboardRanking(scope: 'global' | 'company' = 'global', companyId?: number, mode: RankingMode = 'current', season?: string) {
+export interface RankingQuery { season?: string; category?: RankingCategory; unit?: RankingUnit }
+/** Categoria e unidade fazem parte da chave (cada combinação é outra resposta); sem elas a chave segue a de antes (Início e pré-carga). */
+function rankingKey(scope: string, companyId: number | undefined, mode: RankingMode, query: RankingQuery): string {
+    const view = query.category || query.unit ? `:${query.category ?? 'xp'}:${query.unit ?? 'students'}` : '';
+    return `dashboardRanking:${scope}:${companyId ?? 'self'}:${mode}:${query.season ?? 'none'}${view}`;
+}
+export function useDashboardRanking(scope: 'global' | 'company' = 'global', companyId?: number, mode: RankingMode = 'current', query: RankingQuery = {}) {
     const features = useCompanyFeatures();
     const effectiveScope = features.globalRanking ? scope : 'company';
-    const { data, loading, error, refetch } = useCachedQuery(`dashboardRanking:${effectiveScope}:${companyId ?? 'self'}:${mode}:${season ?? 'none'}`, () => getDashboardRanking(effectiveScope, companyId, mode, season), { staleTime: 30_000, refetchInterval: mode === 'season' ? undefined : 30_000, enabled: features.ranking && (effectiveScope !== 'company' || !companyId || companyId > 0) && (mode !== 'season' || !!season) });
+    const { season, category, unit } = query;
+    const companyReady = effectiveScope !== 'company' || !companyId || companyId > 0;
+    const { data, loading, error, refetch } = useCachedQuery(rankingKey(effectiveScope, companyId, mode, query), () => getDashboardRanking(effectiveScope, companyId, mode, season, { category, unit }), { staleTime: 30_000, refetchInterval: mode === 'season' ? undefined : 30_000, enabled: features.ranking && companyReady && (mode !== 'season' || !!season) });
     return { ranking: data, loading, error, refetch };
 }
 export function useDashboardJourney() {

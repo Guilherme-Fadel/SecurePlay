@@ -49,44 +49,27 @@ test('temporada encerrada mostra a data final e Total não tem prazo', () => {
   assert.equal(model.completenessLabel('partial'), 'parcial');
 });
 
-test('pódio respeita empates do backend: 1º, 2º, 2º dividem número e degrau, na ordem visual 2-1-3', () => {
-  const list = board([900, 700, 700, 500]);
-  const slots = model.podiumSlots(ranking({ leaderboard: list, top: list.slice(0, 3), totalParticipants: 4 }));
-  assert.deepEqual(slots.map((slot) => [slot.entry.position, slot.step, slot.order]), [[1, 1, 2], [2, 2, 1], [2, 2, 3]]);
-  const tiedTop = board([800, 800, 800]);
-  assert.deepEqual(model.podiumSlots(ranking({ leaderboard: tiedTop })).map((slot) => slot.step), [1, 1, 1]);
-});
-
-test('corrida: você ±2 da lista recebida e "faltam X XP para passar" só quando a distância bate com o backend', () => {
+test('fala do pet: "faltam X XP para passar" só quando a distância bate com o backend', () => {
   const list = board([1000, 900, 800, 700, 600, 500, 400]);
   const me = { ...list[3], isCurrentUser: true };
   list[3] = me;
   const data = ranking({ leaderboard: list, totalParticipants: 7, currentUser: me, viewerParticipates: true, summary: { leaderPoints: 1000, pointsBehindLeader: 300, pointsToNextPosition: 101, percentile: 50 } });
   const race = model.raceModel(data);
-  assert.deepEqual(race.lanes.map((lane) => lane.entry.position), [2, 3, 4, 5, 6]);
-  assert.equal(race.lanes.find((lane) => lane.me).entry.rankKey, me.rankKey);
   assert.equal(race.chase.kind, 'neighbor');
   assert.equal(race.chase.gap, 101);
   assert.equal(race.chase.neighbor.rankKey, 'k3');
   const mismatch = model.raceModel({ ...data, summary: { ...data.summary, pointsToNextPosition: 40 } });
   assert.equal(mismatch.chase.kind, 'gap');
   const first = model.raceModel({ ...data, currentUser: { ...list[0], isCurrentUser: true }, leaderboard: list.map((item, index) => ({ ...item, isCurrentUser: index === 0 })), summary: { ...data.summary, pointsToNextPosition: 0 } });
-  assert.deepEqual(first.lanes.map((lane) => lane.entry.position), [1, 2, 3, 4, 5]);
   assert.equal(first.chase.kind, 'leader');
 });
 
-test('abaixo da 50ª: sua linha depois de "· · ·", corrida só com o resumo em XP e sem nomes', () => {
+test('abaixo da 50ª: corrida só com o resumo em XP e sem nomes', () => {
   const list = Array.from({ length: 50 }, (_, index) => entry(index + 1, index + 1, 5000 - index * 10));
   const me = entry(999, 73, 120, { isCurrentUser: true });
   const data = ranking({ leaderboard: list, top: list.slice(0, 3), totalParticipants: 140, currentUser: me, viewerParticipates: true, summary: { leaderPoints: 5000, pointsBehindLeader: 4880, pointsToNextPosition: 6, percentile: 48 } });
-  const rows = model.boardModel(data);
-  assert.equal(rows.viewerOutside.rankKey, 'k999');
-  assert.equal(rows.rows.length, 47);
-  assert.equal(rows.truncated, true);
-  assert.ok(rows.rows.every((row) => !row.me));
   const race = model.raceModel(data);
   assert.equal(race.inList, false);
-  assert.deepEqual(plain(race.lanes), []);
   assert.deepEqual(plain(race.chase), { kind: 'gap', gap: 6 });
 });
 
@@ -94,8 +77,6 @@ test('gestão vê sem participar: sem corrida, sem linha "Você" e só falas de 
   const list = board([300, 200, 100, 50]);
   const data = ranking({ leaderboard: list, totalParticipants: 4, currentUser: null, viewerParticipates: false, summary: { leaderPoints: 300, pointsBehindLeader: null, pointsToNextPosition: null, percentile: null } });
   assert.equal(model.raceModel(data), null);
-  assert.equal(model.boardModel(data).viewerOutside, null);
-  assert.ok(model.podiumSlots(data).every((slot) => !slot.me));
   assert.equal(model.isManagementRole('admin'), true);
   assert.equal(model.isManagementRole('platform_admin'), true);
   assert.equal(model.isManagementRole('teacher'), true);
@@ -155,13 +136,6 @@ test('sua foto do perfil completa só as suas linhas sem foto, sem mudar posiç�
   assert.equal(avatar.withViewerPhoto(data, '  '), data);
 });
 
-test('semana: setas e rótulos acessíveis, traço quando não há dados', () => {
-  assert.deepEqual(plain(model.trendOf(2, true)), { text: '▲ 2', label: 'subiu 2 posições na semana', tone: 'up' });
-  assert.equal(model.trendOf(-1, true).label, 'caiu 1 posição na semana');
-  assert.equal(model.trendOf(3, false).tone, 'none');
-  assert.equal(model.weeklyLine(null), null);
-});
-
 test('fora da lista exibida (abaixo da 50ª) a corrida não nomeia ninguém, mesmo se a distância bater', () => {
   const list = board(Array.from({ length: 50 }, (_, index) => 2000 - index * 10));
   const last = list[49];
@@ -169,14 +143,5 @@ test('fora da lista exibida (abaixo da 50ª) a corrida não nomeia ninguém, mes
   const data = ranking({ leaderboard: list, totalParticipants: 80, currentUser: me, viewerParticipates: true, summary: { leaderPoints: 2000, pointsBehindLeader: 2000 - me.points, pointsToNextPosition: 31, percentile: 30 } });
   const race = model.raceModel(data);
   assert.equal(race.inList, false);
-  assert.deepEqual(plain(race.lanes), []);
   assert.deepEqual(plain(race.chase), { kind: 'gap', gap: 31 });
-});
-
-test('sua linha fora da lista usa a variação semanal do aluno (weeklyPositionChange)', () => {
-  const list = board([900, 800, 700, 600]);
-  const me = entry(999, 73, 120, { isCurrentUser: true });
-  const data = ranking({ leaderboard: list, totalParticipants: 80, currentUser: me, viewerParticipates: true, weeklyPositionChange: 2 });
-  assert.equal(model.boardModel(data).viewerOutside.weeklyChange, 2);
-  assert.equal(model.boardModel({ ...data, weeklyPositionChange: undefined }).viewerOutside.weeklyChange, null);
 });

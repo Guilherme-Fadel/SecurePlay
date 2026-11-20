@@ -45,6 +45,25 @@ export async function getWeeklyStreak(): Promise<WeeklyStreak> {
   return response.data;
 }
 
+/** Peça equipada do personagem; o backend só envia o necessário para desenhar. */
+export interface LookPiece {
+  visualValue: string;
+  artUrl: string | null;
+  color: string | null;
+  adjust: { x: number; y: number; scale: number };
+  layer: 'back' | 'front';
+}
+
+export interface CharacterLook {
+  skin?: LookPiece;
+  head?: LookPiece;
+  face?: LookPiece;
+  neck?: LookPiece;
+  effect?: LookPiece;
+  background?: LookPiece;
+  card?: LookPiece;
+}
+
 export interface RankingEntry {
   /** Chave opaca do aluno no ranking (o id interno não é exposto). */
   rankKey: string;
@@ -56,6 +75,35 @@ export interface RankingEntry {
   isCurrentUser?: boolean;
   profileImageUrl?: string | null;
   weeklyChange?: number | null;
+  /** Visual equipado do aluno; `{}` quando não há nada equipado. */
+  look?: CharacterLook;
+  /** Só com `category`/`unit`: métrica da categoria pedida, no período. */
+  value?: number;
+  /** Só com `category`/`unit`: as três métricas do mesmo período. */
+  stats?: RankingStats;
+}
+
+export type RankingCategory = 'xp' | 'streak' | 'challenges';
+export type RankingUnit = 'students' | 'turmas';
+
+export interface RankingStats {
+  xp: number;
+  streak: number;
+  challenges: number;
+}
+
+/** Entrada de turma (`unit=turmas`): só agregados, nenhum dado de aluno. `value` e `stats` são SOMAS dos alunos participantes. */
+export interface RankingTurmaEntry {
+  rankKey: string;
+  /** `null` na turma do aluno quando a soma é 0 (fora do placar). */
+  position: number | null;
+  name: string;
+  /** Só no escopo global; `null` no da escola. */
+  companyName: string | null;
+  studentCount: number;
+  value: number;
+  stats: RankingStats;
+  mine: boolean;
 }
 
 export type RankingMode = 'current' | 'season' | 'total';
@@ -70,6 +118,9 @@ export interface RankingSeasonOption {
 }
 
 export interface RankingData {
+  /** Só quando a requisição enviou `category`/`unit`. */
+  category?: RankingCategory;
+  unit?: RankingUnit;
   mode: RankingMode;
   metric: 'seasonXp' | 'totalXp';
   selectedSeason: string | null;
@@ -106,15 +157,26 @@ export async function getDashboardRanking(
   companyId?: number,
   mode: RankingMode = 'current',
   season?: string,
+  view: { category?: RankingCategory; unit?: RankingUnit } = {},
 ): Promise<RankingData> {
   const response = await api.get('/dashboard/ranking', { params: {
     scope,
     ...(companyId ? { companyId } : {}),
     ...(mode !== 'current' ? { mode } : {}),
     ...(mode === 'season' && season ? { season } : {}),
+    ...(view.category ? { category: view.category } : {}),
+    ...(view.unit ? { unit: view.unit } : {}),
   } });
   return response.data;
 }
+
+/** Ranking por turmas: `leaderboard`, `top` e `currentUser` vêm como `RankingTurmaEntry`. */
+export type RankingTurmasData = Omit<RankingData, 'top' | 'leaderboard' | 'currentUser'> & {
+  unit: 'turmas';
+  top: RankingTurmaEntry[];
+  leaderboard: RankingTurmaEntry[];
+  currentUser: RankingTurmaEntry | null;
+};
 
 export interface JourneyNodeData {
   id: number;

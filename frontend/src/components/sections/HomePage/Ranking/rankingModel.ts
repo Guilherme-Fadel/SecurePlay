@@ -133,49 +133,7 @@ export function isViewerEntry(entry: RankingEntry, viewer: RankingEntry | null):
   return !!viewer && (entry.isCurrentUser === true || entry.rankKey === viewer.rankKey);
 }
 
-export interface PodiumSlot {
-  entry: RankingEntry;
-  /** Degrau pela posição do backend: empates dividem a altura e o número. */
-  step: 1 | 2 | 3;
-  /** Ordem visual 2º, 1º, 3º. */
-  order: number;
-  me: boolean;
-}
-
-const PODIUM_ORDER = [2, 1, 3];
-
-export function podiumSlots(ranking: RankingData): PodiumSlot[] {
-  const viewer = viewerOf(ranking);
-  return leaderboardOf(ranking).slice(0, 3).map((entry, index) => ({
-    entry,
-    step: Math.min(3, Math.max(1, entry.position)) as 1 | 2 | 3,
-    order: PODIUM_ORDER[index] ?? index + 1,
-    me: isViewerEntry(entry, viewer),
-  }));
-}
-
-export interface BoardModel {
-  rows: Array<{ entry: RankingEntry; me: boolean }>;
-  /** Sua linha quando você está fora da lista exibida (abaixo da 50ª). */
-  viewerOutside: RankingEntry | null;
-  /** A lista foi cortada pelo backend (mais participantes do que linhas). */
-  truncated: boolean;
-}
-
-export function boardModel(ranking: RankingData): BoardModel {
-  const viewer = viewerOf(ranking);
-  const list = leaderboardOf(ranking);
-  const rows = list.slice(3).map((entry) => ({ entry, me: isViewerEntry(entry, viewer) }));
-  const inList = list.some((entry) => isViewerEntry(entry, viewer));
-  return {
-    rows,
-    // currentUser não traz weeklyChange; a variação do aluno vem em weeklyPositionChange.
-    viewerOutside: viewer && !inList ? { ...viewer, weeklyChange: viewer.weeklyChange ?? ranking.weeklyPositionChange ?? null } : null,
-    truncated: list.length > 0 && ranking.totalParticipants > list.length,
-  };
-}
-
-/* ---------- Sua corrida ---------- */
+/* ---------- Fala do pet: quanto falta para subir ---------- */
 
 /**
  * Vizinho imediato de cima, igual ao Início: a lista vem limitada ao top 50 e
@@ -197,20 +155,9 @@ export type ChaseState =
   | { kind: 'neighbor'; gap: number; neighbor: RankingEntry }
   | { kind: 'gap'; gap: number };
 
-export interface RaceLane {
-  entry: RankingEntry;
-  me: boolean;
-  /** Posição do corredor na pista, em %, proporcional ao XP do grupo. */
-  x: number;
-  /** Lado do nome em relação ao corredor (perto da chegada, à esquerda). */
-  labelSide: 'left' | 'right';
-}
-
 export interface RaceModel {
   viewer: RankingEntry;
   participants: number;
-  /** Você e até dois de cada lado; vazio quando você está fora da lista (sem nomes, B3 não existe). */
-  lanes: RaceLane[];
   inList: boolean;
   chase: ChaseState;
 }
@@ -228,41 +175,11 @@ function chaseState(ranking: RankingData, viewer: RankingEntry, inList: boolean)
 export function raceModel(ranking: RankingData): RaceModel | null {
   const viewer = viewerOf(ranking);
   if (!viewer) return null;
-  const list = leaderboardOf(ranking);
-  const index = list.findIndex((entry) => isViewerEntry(entry, viewer));
-  let lanes: RaceLane[] = [];
-  if (index >= 0) {
-    const start = Math.max(0, Math.min(index - 2, list.length - 5));
-    const group = list.slice(start, start + 5);
-    const max = group[0]?.points ?? 0;
-    const min = group[group.length - 1]?.points ?? 0;
-    lanes = group.map((entry) => {
-      const x = max === min ? 50 : 8 + ((entry.points - min) / (max - min)) * 84;
-      return { entry, me: isViewerEntry(entry, viewer), x: Math.round(x * 10) / 10, labelSide: x > 55 ? 'left' : 'right' };
-    });
-  }
-  return { viewer, participants: ranking.totalParticipants, lanes, inList: index >= 0, chase: chaseState(ranking, viewer, index >= 0) };
+  const inList = leaderboardOf(ranking).some((entry) => isViewerEntry(entry, viewer));
+  return { viewer, participants: ranking.totalParticipants, inList, chase: chaseState(ranking, viewer, inList) };
 }
-
-/* ---------- Semana ---------- */
-
-export interface Trend { text: string; label: string; tone: 'up' | 'down' | 'same' | 'none' }
 
 const plural = (count: number, one: string, many: string) => `${count} ${count === 1 ? one : many}`;
-
-export function trendOf(change: number | null | undefined, available: boolean): Trend {
-  if (!available || change === null || change === undefined) return { text: '—', label: 'sem dados da semana', tone: 'none' };
-  if (change > 0) return { text: `▲ ${change}`, label: `subiu ${plural(change, 'posição', 'posições')} na semana`, tone: 'up' };
-  if (change < 0) return { text: `▼ ${-change}`, label: `caiu ${plural(-change, 'posição', 'posições')} na semana`, tone: 'down' };
-  return { text: '=', label: 'mesma posição da semana passada', tone: 'same' };
-}
-
-export function weeklyLine(change: number | null | undefined): { text: string; tone: 'up' | 'down' | 'same' } | null {
-  if (change === null || change === undefined) return null;
-  if (change > 0) return { text: `Subiu ${plural(change, 'posição', 'posições')} nesta semana`, tone: 'up' };
-  if (change < 0) return { text: `Caiu ${plural(-change, 'posição', 'posições')} nesta semana`, tone: 'down' };
-  return { text: 'Mesma posição da semana passada', tone: 'same' };
-}
 
 /* ---------- Pet anfitrião ---------- */
 
