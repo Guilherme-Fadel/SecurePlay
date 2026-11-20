@@ -153,6 +153,29 @@ function sortearProgresso(rng, config) {
   };
 }
 
+/** Data (AAAA-MM-DD) de Brasília, `diasAtras` dias antes de `agora`. */
+function diaBrasilia(agora, diasAtras) {
+  const local = new Date(agora.getTime() - 3 * 3600 * 1000 - diasAtras * 86400000);
+  return local.toISOString().slice(0, 10);
+}
+
+/** Mesma regra de checkinBonusXp (src/common/gamification/daily-checkin.ts): 5 XP por dia, teto de 7 dias. */
+function bonusCheckin(sequencia) {
+  return Math.min(Math.max(sequencia, 0), 7) * 5;
+}
+
+/**
+ * Check-ins coerentes com a sequência: um dia por ponto (streak 1..N), terminando em `ultimoDia`.
+ * Sem sequência, não há linhas.
+ */
+function montarCheckins(sequencia, agora, ultimoDiasAtras) {
+  return Array.from({ length: sequencia }, (_, i) => ({
+    day: diaBrasilia(agora, ultimoDiasAtras + (sequencia - 1 - i)),
+    streak: i + 1,
+    bonusXp: bonusCheckin(i + 1),
+  }));
+}
+
 function nomeTurma(indice) {
   return `${SERIES[Math.floor(indice / 4) % SERIES.length]} ${LETRAS[indice % 4]}`;
 }
@@ -200,7 +223,16 @@ function montarEscola(escola, config = CONFIG, agora = new Date()) {
       }),
     );
     turmas[(n - 1) % config.turmasPorEscola].alunos.push(email);
-    progresso.push({ email, ...prog, diasAtras: Math.floor(rng() * 30) });
+    const diasAtras = Math.floor(rng() * 30);
+    // Último check-in hoje, ontem ou anteontem (derivado de diasAtras: não consome o PRNG).
+    const ultimoDiasAtras = diasAtras % 3;
+    progresso.push({
+      email,
+      ...prog,
+      diasAtras,
+      ultimoCheckin: prog.sequencia > 0 ? diaBrasilia(agora, ultimoDiasAtras) : null,
+      checkins: montarCheckins(prog.sequencia, agora, ultimoDiasAtras),
+    });
   }
 
   return {
@@ -338,10 +370,12 @@ async function semear(conn, hash, agora) {
       const stats = [];
       const pontosTemporada = [];
       const aulas = [];
+      const checkins = [];
       let comProgresso = 0;
       for (const p of dados.progresso) {
         const uid = idPorEmail.get(p.email);
-        stats.push([uid, p.total, p.sequencia]);
+        stats.push([uid, p.total, p.sequencia, p.ultimoCheckin]);
+        for (const c of p.checkins) checkins.push([uid, c.day, c.streak, c.bonusXp, 'skipped']);
         if (p.total > 0) {
           comProgresso += 1;
           pontosTemporada.push([temporada, uid, p.temporada]);
@@ -356,7 +390,18 @@ async function semear(conn, hash, agora) {
           }
         }
       }
-      await inserirEmLotes(conn, 'usuario_stats', ['usuario_id', 'total_points', 'current_streak'], stats);
+      await inserirEmLotes(
+        conn,
+        'usuario_stats',
+        ['usuario_id', 'total_points', 'current_streak', 'last_checkin_date'],
+        stats,
+      );
+      await inserirEmLotes(
+        conn,
+        'daily_checkin',
+        ['usuario_id', 'day', 'streak', 'bonus_xp', 'refill_status'],
+        checkins,
+      );
       await inserirEmLotes(conn, 'ranking_season_points', ['season_id', 'usuario_id', 'points'], pontosTemporada);
       await inserirEmLotes(
         conn,
@@ -531,6 +576,8 @@ module.exports = {
   nomePessoa,
   temporadaAtual,
   sortearProgresso,
+  montarCheckins,
+  diaBrasilia,
   montarEscola,
   avaliarGuarda,
   resolverSenha,

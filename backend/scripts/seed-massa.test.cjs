@@ -7,6 +7,7 @@ const {
   avaliarGuarda,
   resolverSenha,
   temporadaAtual,
+  montarCheckins,
 } = require('./seed-massa.cjs');
 
 const AGORA = new Date('2026-11-18T12:00:00Z');
@@ -80,4 +81,32 @@ test('senha: exige 12+ caracteres quando informada e gera quando ausente', () =>
 test('temporada usa o horário de Brasília', () => {
   assert.equal(temporadaAtual(new Date('2026-12-01T01:00:00Z')), '2026-11');
   assert.equal(temporadaAtual(new Date('2026-12-01T04:00:00Z')), '2026-12');
+});
+
+test('check-ins coerentes com a sequência: um dia por ponto, terminando no último check-in', () => {
+  const prog = todasEscolas().flatMap((e) => e.progresso);
+  const comSequencia = prog.filter((p) => p.sequencia > 0);
+  assert.ok(comSequencia.length > 0);
+  for (const p of comSequencia) {
+    assert.equal(p.checkins.length, p.sequencia);
+    assert.deepEqual(p.checkins.map((c) => c.streak), Array.from({ length: p.sequencia }, (_, i) => i + 1));
+    assert.equal(p.checkins.at(-1).day, p.ultimoCheckin);
+    assert.ok(p.checkins.at(-1).bonusXp === Math.min(p.sequencia, 7) * 5);
+    const dias = p.checkins.map((c) => c.day);
+    assert.equal(new Set(dias).size, dias.length);
+    assert.deepEqual([...dias].sort(), dias);
+    assert.ok(['2026-11-18', '2026-11-17', '2026-11-16'].includes(p.ultimoCheckin));
+  }
+  for (const p of prog.filter((x) => x.sequencia === 0)) {
+    assert.equal(p.ultimoCheckin, null);
+    assert.deepEqual(p.checkins, []);
+  }
+});
+
+test('montarCheckins: datas consecutivas em Brasília e bônus com teto de 7 dias', () => {
+  const c = montarCheckins(9, new Date('2026-11-18T02:00:00Z'), 0); // 17/11 23h em Brasília
+  assert.equal(c.at(-1).day, '2026-11-17');
+  assert.equal(c[0].day, '2026-11-09');
+  assert.deepEqual(c.map((x) => x.bonusXp), [5, 10, 15, 20, 25, 30, 35, 35, 35]);
+  assert.deepEqual(montarCheckins(0, new Date(), 0), []);
 });

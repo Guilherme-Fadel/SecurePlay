@@ -36,7 +36,8 @@ massa vinculado a uma escola da massa.
 ## O que é gerado
 
 `empresa`, `usuario`, `turma`, `turma_professor`, `turma_aluno`, `usuario_stats` (todos os alunos;
-~70% com XP), `ranking_season_points` (temporada atual) e `usuario_aula` (aulas ativas já existentes;
+~70% com XP; com `current_streak` e `last_checkin_date` coerentes), `daily_checkin` (um dia por ponto da
+sequência, `streak` 1..N, terminando hoje, ontem ou anteontem; `refill_status` `skipped`), `ranking_season_points` (temporada atual) e `usuario_aula` (aulas ativas já existentes;
 sem aulas, é ignorado). Não cria conteúdo. O ranking "total" lê `usuario_stats.total_points`; o da
 temporada atual lê Redis enquanto o acompanhamento do ranking não cobre o mês (a massa não grava Redis).
 
