@@ -1,7 +1,7 @@
 import { keysLabel, rarityLabel, typeLabel } from '@/components/sections/HomePage/Awards/collectiblesModel';
 import type { CharacterLook } from '@/services/dashboard';
 import type { CosmeticRarity, CosmeticType } from '@/services/achievements';
-import type { CollectibleItem, CollectibleKind, CollectibleKit } from '@/services/adminCollectibles';
+import type { CollectibleItem, CollectibleKind, CollectibleKit, CollectiblePage } from '@/services/adminCollectibles';
 
 /** Regras puras das listagens de Colecionáveis do console. O backend decide estado e publicação. */
 
@@ -78,6 +78,9 @@ export function periodLabel(entry: PeriodEntry): string {
   return [name, window].filter(Boolean).join(' · ');
 }
 
+/** Cartões por requisição da rolagem infinita: 24 divide bem 2, 3, 4 e 6 colunas. */
+export const FEED_PAGE_SIZE = 24;
+
 export interface CollectibleListFilters { page?: number; pageSize?: number; search?: string; type?: string; status?: string }
 export interface CollectibleListQuery { page: number; pageSize: number; search?: string; type?: CosmeticType; status?: 'active' | 'inactive' }
 
@@ -87,7 +90,7 @@ export interface CollectibleListQuery { page: number; pageSize: number; search?:
  */
 export function listParams(filters: CollectibleListFilters, kind: CollectibleKind = 'items'): CollectibleListQuery {
   const page = Number.isFinite(filters.page) ? Math.max(1, Math.floor(filters.page as number)) : 1;
-  const pageSize = Number.isFinite(filters.pageSize) ? Math.min(100, Math.max(1, Math.floor(filters.pageSize as number))) : 25;
+  const pageSize = Number.isFinite(filters.pageSize) ? Math.min(100, Math.max(1, Math.floor(filters.pageSize as number))) : FEED_PAGE_SIZE;
   const search = typeof filters.search === 'string' ? filters.search.trim().slice(0, 100) : '';
   const type = kind === 'items' ? TYPE_FILTERS.find((entry) => entry.value && entry.value === filters.type)?.value : undefined;
   const status = STATUS_FILTERS.find((entry) => entry.value && entry.value === filters.status)?.value;
@@ -95,7 +98,7 @@ export function listParams(filters: CollectibleListFilters, kind: CollectibleKin
 }
 
 /** Qualquer filtro além da paginação ativo: a lista vazia vira "nenhum resultado" em vez de "nada cadastrado". */
-export const hasActiveFilter = (query: CollectibleListQuery): boolean => Boolean(query.search || query.type || query.status);
+export const hasActiveFilter = (query: Pick<CollectibleListQuery, 'search' | 'type' | 'status'>): boolean => Boolean(query.search || query.type || query.status);
 
 /** Exigência de desbloqueio: regra nova ou conquista antiga (só itens). */
 export function hasRule(row: CollectibleRow): boolean {
@@ -138,3 +141,31 @@ export function openFormOf(state: unknown): OpenForm | null {
   const open = typeof state === 'object' && state !== null ? (state as { collectibleForm?: OpenForm }).collectibleForm : undefined;
   return open && (open.kind === 'items' || open.kind === 'kits') ? open : null;
 }
+
+/** Cartões já carregados da listagem em lotes: o que o backend devolveu até a última página pedida. */
+export interface CollectibleFeed { items: CollectibleRow[]; page: number; total: number; totalPages: number }
+
+export const emptyFeed: CollectibleFeed = { items: [], page: 0, total: 0, totalPages: 0 };
+
+/** Filtros do feed (sem página): quando muda, a lista zera e recomeça do primeiro lote. */
+export const feedKey = (kind: CollectibleKind, query: Omit<CollectibleListQuery, 'page' | 'pageSize'>): string => JSON.stringify([kind, query.search ?? '', query.type ?? '', query.status ?? '']);
+
+/** Query de um lote do feed: mesmos filtros e limites de `listParams`, tamanho fixo do lote. */
+export const feedParams = (filters: Omit<CollectibleListFilters, 'page' | 'pageSize'>, kind: CollectibleKind, page: number): CollectibleListQuery => listParams({ ...filters, page, pageSize: FEED_PAGE_SIZE }, kind);
+
+/**
+ * Acrescenta um lote ao feed, sem repetir `id`: um registro criado entre lotes desloca o offset e reapareceria.
+ * O lote 1 sempre substitui (recomeço), então uma resposta de página 1 nunca duplica o que já havia.
+ */
+export function appendPage(feed: CollectibleFeed, batch: CollectiblePage<CollectibleRow>): CollectibleFeed {
+  const base = batch.page <= 1 ? [] : feed.items;
+  const seen = new Set(base.map((row) => row.id));
+  const fresh = batch.items.filter((row) => !seen.has(row.id) && seen.add(row.id));
+  return { items: [...base, ...fresh], page: batch.page, total: batch.total, totalPages: batch.totalPages };
+}
+
+/** Há mais lotes enquanto a última página carregada é anterior à última existente. */
+export const feedHasMore = (feed: Pick<CollectibleFeed, 'page' | 'totalPages'>): boolean => feed.page >= 1 && feed.page < feed.totalPages;
+
+/** Troca um cartão pelo registro devolvido (publicar/tirar da loja), sem mexer na ordem nem no restante. */
+export const replaceRow = (items: CollectibleRow[], row: CollectibleRow): CollectibleRow[] => items.map((entry) => (entry.id === row.id ? row : entry));

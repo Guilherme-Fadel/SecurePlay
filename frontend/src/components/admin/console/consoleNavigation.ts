@@ -60,7 +60,7 @@ const consolePages: Array<{ pattern: RegExp; id: ConsolePageId; title: string; l
   { pattern: /^\/admin\/operacao\/pilotos\/?$/, id: 'pilots', title: 'Pilotos escolares', list: true },
   { pattern: /^\/admin\/operacao\/pilotos\/novo\/?$/, id: 'new-pilot', title: 'Novo piloto' },
   { pattern: /^\/admin\/operacao\/pilotos\/\d+\/editar\/?$/, id: 'edit-pilot', title: 'Editar piloto' },
-  { pattern: /^\/admin\/colecionaveis(?:\/(?:itens|kits))?\/?$/, id: 'collectibles', title: 'Colecionáveis', list: true },
+  { pattern: /^\/admin\/colecionaveis(?:\/(?:itens|kits))?\/?$/, id: 'collectibles', title: 'Colecionáveis' },
   { pattern: /^\/admin\/turmas\/?$/, id: 'classes', title: 'Turmas', list: true },
   { pattern: /^\/admin\/turmas\/nova\/?$/, id: 'new-class', title: 'Nova turma' },
   { pattern: /^\/admin\/turmas\/[1-9]\d*(?:\/(?:jornada|alunos|professores|dados))?\/?$/, id: 'class-detail', title: 'Turma' },

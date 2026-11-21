@@ -84,10 +84,18 @@
 .collectible-preview-note { margin: 0; color: var(--admin-console-muted); font-size: 12px; line-height: 1.4; text-align: center; }
 
 /* Listagem em cartões, no padrão dos colecionáveis do aluno (borda, sombra dura e cor de raridade). */
-.collectible-toolbar { flex-direction: column; align-items: stretch; gap: 10px; }
-.collectible-filters { display: grid; gap: 8px; min-width: 0; }
-.collectible-chips { display: flex; flex-wrap: wrap; gap: 8px; min-width: 0; }
-.collectible-chip { min-height: 36px; padding: 0 14px; border: 2px solid var(--admin-console-border); border-radius: 999px; background: var(--admin-console-surface); color: var(--admin-console-text); font: inherit; font-size: 13px; font-weight: 700; cursor: pointer; }
+/* Barra em linha (busca, encaixe, estado), grudada no topo da área que rola; fundo sólido cobre os cartões que passam por baixo. */
+.collectible-list { display: grid; gap: 8px; min-width: 0; }
+.collectible-bar { position: sticky; top: -16px; z-index: 5; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; min-width: 0; padding: 8px 0; background: var(--dashboard-bg); }
+.collectible-bar > .app-search-control { flex: 1 1 240px; max-width: 340px; min-width: 0; background: var(--admin-console-surface); }
+.collectible-bar > .collectible-status-select { flex: 0 0 170px; width: 170px; min-width: 0; }
+.collectible-board { min-width: 0; border: 1px solid var(--admin-console-border); border-radius: 10px; background: var(--admin-console-surface); }
+@media (max-width: 720px) {
+  .collectible-bar { position: static; }
+  .collectible-bar > .app-search-control, .collectible-bar > .collectible-status-select { flex: 1 1 100%; width: 100%; max-width: none; }
+}
+.collectible-chips { display: flex; flex-wrap: wrap; gap: 6px; min-width: 0; }
+.collectible-chip { min-height: 32px; padding: 0 12px; border: 2px solid var(--admin-console-border); border-radius: 999px; background: var(--admin-console-surface); color: var(--admin-console-text); font: inherit; font-size: 13px; font-weight: 700; cursor: pointer; }
 .collectible-chip:hover { border-color: var(--admin-console-text); }
 .collectible-chip.is-active { border-color: var(--admin-console-text); background: var(--admin-console-text); color: var(--admin-console-surface); }
 .collectible-chip:focus-visible, .collectible-card:focus-visible, .collectible-card-toggle:focus-visible { outline: var(--app-focus-ring, 3px solid var(--sp-blue)); outline-offset: 3px; }
@@ -137,3 +145,10 @@
 .collectible-state.is-draft { background: var(--admin-console-soft); color: var(--admin-console-muted); box-shadow: inset 0 0 0 1.5px var(--admin-console-border); }
 .collectible-badge { background: var(--admin-console-soft); color: var(--admin-console-text); white-space: normal; }
 .collectible-empty { margin: 0; padding: 4px 14px 18px; color: var(--admin-console-muted); font-size: 13px; text-align: center; }
+
+/* Fim da listagem: contagem, "Carregar mais" e aviso de erro de um lote seguinte. */
+.collectible-feed-footer { display: grid; justify-items: center; gap: 10px; padding: 4px 14px 16px; }
+.collectible-feed-footer > .collectible-grid { width: 100%; padding: 0 0 6px; }
+.collectible-feed-count { margin: 0; color: var(--admin-console-muted); font-size: 12px; font-weight: 600; }
+.collectible-feed-error { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 10px; color: var(--danger); font-size: 13px; font-weight: 600; }
+.collectible-feed-sentinel { width: 100%; height: 1px; }

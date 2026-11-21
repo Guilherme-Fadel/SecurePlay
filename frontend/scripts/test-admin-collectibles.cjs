@@ -69,7 +69,7 @@ test('query da listagem: página, tamanho e busca saneados; busca vazia fica de 
   assert.deepEqual(plain(model.listParams({ page: 2, pageSize: 50, search: ' capa ' })), { page: 2, pageSize: 50, search: 'capa' });
   assert.deepEqual(plain(model.listParams({ page: 1, pageSize: 25, search: '   ' })), { page: 1, pageSize: 25 });
   assert.deepEqual(plain(model.listParams({ page: 0, pageSize: 1000, search: '' })), { page: 1, pageSize: 100 });
-  assert.deepEqual(plain(model.listParams({ page: Number.NaN, pageSize: Number.NaN })), { page: 1, pageSize: 25 });
+  assert.deepEqual(plain(model.listParams({ page: Number.NaN, pageSize: Number.NaN })), { page: 1, pageSize: 24 });
   assert.deepEqual(plain(model.listParams({ page: 3.9, pageSize: -3 })), { page: 3, pageSize: 1 });
   assert.equal(model.listParams({ page: 1, pageSize: 25, search: 'x'.repeat(150) }).search.length, 100);
 });
@@ -497,4 +497,49 @@ test('histórico guarda o registro salvo em modo de edição e o lê de volta', 
   assert.equal(model.openFormOf(null), null);
   assert.equal(model.openFormOf({ collectibleForm: { kind: 'frames' } }), null);
   assert.equal(model.openFormOf('x'), null);
+});
+
+test('rolagem infinita: lote de 24 e parâmetros do lote respeitam os limites do backend', () => {
+  assert.equal(model.FEED_PAGE_SIZE, 24);
+  assert.deepEqual(plain(model.feedParams({ search: ' capa ', type: 'head', status: 'active' }, 'items', 3)), { page: 3, pageSize: 24, search: 'capa', type: 'head', status: 'active' });
+  assert.deepEqual(plain(model.feedParams({ type: 'head' }, 'kits', 1)), { page: 1, pageSize: 24 });
+});
+
+const row = (id, extra = {}) => ({ id, name: `Item ${id}`, active: false, ...extra });
+const batch = (page, ids, totalPages = 3) => ({ items: ids.map((id) => row(id)), page, pageSize: 24, total: 60, totalPages });
+
+test('rolagem infinita: acrescentar lote deduplica por id (registro novo desloca o offset)', () => {
+  const first = model.appendPage(model.emptyFeed, batch(1, [9, 8, 7]));
+  assert.deepEqual(plain(first.items.map((entry) => entry.id)), [9, 8, 7]);
+  const second = model.appendPage(first, batch(2, [7, 6, 5]));
+  assert.deepEqual(plain(second.items.map((entry) => entry.id)), [9, 8, 7, 6, 5]);
+  assert.equal(second.page, 2);
+  assert.equal(second.total, 60);
+});
+
+test('rolagem infinita: hasMore enquanto a página carregada é menor que totalPages', () => {
+  assert.equal(model.feedHasMore(model.emptyFeed), false);
+  assert.equal(model.feedHasMore({ page: 1, totalPages: 3 }), true);
+  assert.equal(model.feedHasMore({ page: 3, totalPages: 3 }), false);
+  assert.equal(model.feedHasMore({ page: 1, totalPages: 0 }), false);
+});
+
+test('rolagem infinita: trocar filtro muda a chave e o lote 1 recomeça a lista', () => {
+  const base = { search: 'a' };
+  assert.equal(model.feedKey('items', base), model.feedKey('items', { search: 'a' }));
+  for (const other of [{ search: 'b' }, { search: 'a', type: 'head' }, { search: 'a', status: 'active' }]) assert.notEqual(model.feedKey('items', base), model.feedKey('items', other));
+  assert.notEqual(model.feedKey('items', base), model.feedKey('kits', base));
+  const loaded = model.appendPage(model.appendPage(model.emptyFeed, batch(1, [3, 2, 1])), batch(2, [0]));
+  const restarted = model.appendPage(loaded, batch(1, [3, 2]));
+  assert.deepEqual(plain(restarted.items.map((entry) => entry.id)), [3, 2]);
+  assert.equal(restarted.page, 1);
+});
+
+test('publicar/tirar da loja: o cartão é trocado no lugar, sem mexer na ordem nem nos demais', () => {
+  const items = [row(3), row(2), row(1)];
+  const next = model.replaceRow(items, row(2, { active: true }));
+  assert.deepEqual(plain(next.map((entry) => entry.id)), [3, 2, 1]);
+  assert.equal(next[1].active, true);
+  assert.equal(next[0], items[0]);
+  assert.deepEqual(plain(model.replaceRow(items, row(99))), plain(items));
 });

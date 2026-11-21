@@ -89,7 +89,7 @@ async function main() {
   const { collectiblesKindFromPath, collectiblesPath } = load('src/components/admin/console/consoleNavigation.ts');
   for (const path of ['/admin/colecionaveis', '/admin/colecionaveis/itens', '/admin/colecionaveis/kits/']) assert.equal(resolveConsolePage(path).id, 'collectibles');
   assert.equal(resolveConsolePage('/admin/colecionaveis/pecas').id, 'unavailable');
-  assert.equal(resolveConsolePage('/admin/colecionaveis').list, true);
+  assert.notEqual(resolveConsolePage('/admin/colecionaveis').list, true);
   assert.equal(collectiblesKindFromPath('/admin/colecionaveis/kits'), 'kits');
   assert.equal(collectiblesKindFromPath('/admin/colecionaveis/kits/'), 'kits');
   assert.equal(collectiblesKindFromPath('/admin/colecionaveis'), 'items');
