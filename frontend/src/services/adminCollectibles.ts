@@ -160,6 +160,12 @@ export async function archiveCollectible(kind: CollectibleKind, id: number): Pro
   return result.data;
 }
 
+/** Exclusão definitiva: o backend recusa (409) quando algum aluno já tem o colecionável. */
+export async function deleteCollectible(kind: CollectibleKind, id: number): Promise<void> {
+  await api.delete(`${BASE}/${kind}/${id}`);
+  changed();
+}
+
 /**
  * Envia a arte: POST pré-assinado, upload ao bucket (arquivo por último, como exige o S3) e confirmação,
  * que valida e promove o arquivo. Devolve a chave a gravar no cadastro e a URL de pré-visualização.

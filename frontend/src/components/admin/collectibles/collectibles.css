@@ -2,6 +2,14 @@
 .collectible-form-page { overflow: hidden; }
 .collectible-form-feedback { flex-shrink: 0; }
 .collectible-form-feedback:empty { display: none; }
+.collectible-danger-button { border-color: var(--danger); background: transparent; color: var(--danger); }
+.collectible-danger-button:hover:not(:disabled) { border-color: var(--danger); background: var(--danger-soft); color: var(--danger); }
+.collectible-danger-button--solid, .collectible-danger-button--solid:hover:not(:disabled) { background: var(--danger); color: var(--sp-black); }
+.collectible-danger-button--solid:hover:not(:disabled) { background: color-mix(in srgb, var(--danger) 85%, #FFFFFF); }
+:root[data-theme='light'] .collectible-danger-button--solid, :root[data-theme='light'] .collectible-danger-button--solid:hover:not(:disabled) { color: #FFFFFF; }
+.collectible-form-delete { margin-inline-end: 8px; }
+.collectible-delete-dialog { display: flex; flex-direction: column; gap: 14px; }
+.collectible-delete-dialog p { margin: 0; line-height: 1.5; }
 .collectible-form-scroll { flex: 1; min-height: 0; overflow: auto; padding-bottom: 20px; scrollbar-gutter: stable; }
 
 /* Formulário (até 900 px) e prévia ao lado no desktop; a prévia desce abaixo no celular. */

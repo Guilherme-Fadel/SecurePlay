@@ -4,10 +4,12 @@ import { AdminFeedback } from '@/components/admin/console/AdminFeedback';
 import { useAdminUnsavedChanges } from '@/hooks/useAdminUnsavedChanges';
 import { itemPreviewLook, kitPreviewLook } from './adminCollectiblesForm';
 import type { CollectibleKind, CollectibleRow } from './adminCollectiblesModel';
+import { CollectibleDeleteDialog } from './CollectibleDeleteDialog';
 import { FormActions, KindSwitch } from './CollectibleFormControls';
 import { CollectiblePreview } from './CollectiblePreview';
 import { ItemForm } from './ItemForm';
 import { KitForm } from './KitForm';
+import { useCollectibleDelete } from './useCollectibleDelete';
 import { useCollectibleForms } from './useCollectibleForms';
 import { useCollectibleSave } from './useCollectibleSave';
 import './collectibles.css';
@@ -19,6 +21,8 @@ interface CollectibleFormPageProps {
   onBack: () => void;
   /** Depois de cada salvamento: o histórico passa a guardar a versão salva (recarregar não perde nem desfaz nada). */
   onSaved: (row: CollectibleRow) => void;
+  /** Depois de excluir: a tela volta para a listagem, que busca de novo e não mostra mais o registro. */
+  onDeleted: () => void;
 }
 
 const DESCRIPTION: Record<CollectibleKind, string> = {
@@ -26,8 +30,10 @@ const DESCRIPTION: Record<CollectibleKind, string> = {
   kits: 'Cadastre um kit com as peças do personagem, defina como ele se libera e confira o resultado ao vivo. O aluno compra o kit inteiro. Salve como rascunho e publique quando todas as artes estiverem prontas.',
 };
 
+const deleteName = (record: CollectibleRow | undefined, typed: string) => record?.name || typed || 'este colecionável';
+
 /** Formulário de item avulso e de kit: cabeçalho com as ações, blocos do cadastro e a prévia do personagem ao lado. */
-export function CollectibleFormPage({ kind: initialKind, record, onBack, onSaved }: CollectibleFormPageProps) {
+export function CollectibleFormPage({ kind: initialKind, record, onBack, onSaved, onDeleted }: CollectibleFormPageProps) {
   const forms = useCollectibleForms(initialKind, record);
   const { kind } = forms;
   // Registro salvo: o formulário reflete o backend e a entrada do histórico é substituída sem acionar o aviso de alterações.
@@ -35,13 +41,15 @@ export function CollectibleFormPage({ kind: initialKind, record, onBack, onSaved
   const persisted = (row: CollectibleRow) => { forms.load(row); allowNavigation.current(); onSaved(row); };
   const { saved, errors, busy, feedback, run } = useCollectibleSave({ kind, item: forms.item, kit: forms.kit, record, onPersisted: persisted });
   const editing = saved !== null;
+  // Excluído: o formulário some junto, então a saída não pode cair no aviso de alterações não salvas.
+  const removal = useCollectibleDelete(kind, saved?.id ?? null, () => { allowNavigation.current(); onDeleted(); });
   // Navegação (menu, voltar do navegador, recarregar) com alterações pendentes abre o aviso do console.
   const { prompt, allowNextNavigation } = useAdminUnsavedChanges(forms.dirty, undefined, busy);
   allowNavigation.current = allowNextNavigation;
   const kindSwitch = editing ? undefined : <KindSwitch kind={kind} onChange={forms.switchKind} />;
   return <div className="admin-users-content collectible-form-page">
     <AdminPageHeader title={`${editing ? 'Editar' : 'Novo'} ${kind === 'kits' ? 'kit' : 'item'}`} description={DESCRIPTION[kind]}
-      action={<FormActions busy={busy} saved={saved} onBack={onBack} onSave={() => void run(false)} onPublish={() => void run(true)} />} />
+      action={<FormActions busy={busy} saved={saved} onBack={onBack} onSave={() => void run(false)} onPublish={() => void run(true)} onDelete={removal.ask} />} />
     <div className="collectible-form-feedback">
       {feedback && <AdminFeedback variant={feedback.error ? 'error' : 'success'}>{feedback.text}</AdminFeedback>}
     </div>
@@ -59,6 +67,8 @@ export function CollectibleFormPage({ kind: initialKind, record, onBack, onSaved
         </aside>
       </div>
     </div>
+    <CollectibleDeleteDialog open={removal.open} name={deleteName(record, kind === 'kits' ? forms.kit.name : forms.item.name)}
+      busy={removal.busy} error={removal.error} onCancel={removal.cancel} onConfirm={() => void removal.confirm()} />
     {prompt}
   </div>;
 }

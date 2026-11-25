@@ -1,4 +1,4 @@
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Trash2 } from 'lucide-react';
 import { AppButton } from '@/components/ui/buttons/AppButton';
 import { AppFilterChip } from '@/components/ui/buttons/AppFilterChip';
 import type { CollectibleKind } from './adminCollectiblesModel';
@@ -18,11 +18,14 @@ interface FormActionsProps {
   onBack: () => void;
   onSave: () => void;
   onPublish: () => void;
+  /** Só no registro salvo: abre a confirmação de exclusão. */
+  onDelete?: () => void;
 }
 
-/** Voltar, Salvar rascunho (primary) e, quando salvo e ainda não publicado, Publicar. */
-export function FormActions({ busy, saved, onBack, onSave, onPublish }: FormActionsProps) {
+/** Voltar, Salvar rascunho (primary), Publicar (salvo e ainda não publicado) e, à parte, Excluir (registro salvo). */
+export function FormActions({ busy, saved, onBack, onSave, onPublish, onDelete }: FormActionsProps) {
   return <div className="admin-console-setting-actions">
+    {saved && onDelete && <AppButton variant="ghost" className="collectible-danger-button collectible-form-delete" icon={<Trash2 size={16} aria-hidden="true" />} disabled={busy} onClick={onDelete}>Excluir</AppButton>}
     <AppButton variant="ghost" icon={<ArrowLeft size={16} aria-hidden="true" />} onClick={onBack}>Voltar</AppButton>
     <AppButton variant="primary" disabled={busy} onClick={onSave}>{busy ? 'Salvando…' : saved?.active ? 'Salvar alterações' : 'Salvar rascunho'}</AppButton>
     {saved && !saved.active && <AppButton variant="secondary" disabled={busy} onClick={onPublish}>Publicar</AppButton>}

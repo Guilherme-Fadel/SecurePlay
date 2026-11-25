@@ -3,9 +3,10 @@ import {
   ConflictException,
   Inject,
   Injectable,
+  Logger,
   NotFoundException,
 } from '@nestjs/common';
-import { DataSource, EntityManager, In, IsNull, Like } from 'typeorm';
+import { DataSource, EntityManager } from 'typeorm';
 import { AdminAuditService } from '../admin/admin-audit.service';
 import { S3Service } from '../conteudo/s3/s3.service';
 import { CosmeticItem } from './entities/cosmetic-item.entity';
@@ -25,18 +26,21 @@ import {
   CollectibleItemView,
   CollectibleKitView,
 } from './collectible-views';
+import { CollectibleFilters } from './collectible-pagination';
+import { listItems, listKits } from './collectible-listing';
 import {
-  CollectibleFilters,
-  normalizeFilters,
-  paginated,
-} from './collectible-pagination';
+  asOwnersConflict,
+  deleteUnusedArt,
+  removeItem,
+  removeKit,
+} from './collectible-removal';
 import type { CollectibleItemDto } from './dto/collectible-item.dto';
 import type { CollectibleKitDto } from './dto/collectible-kit.dto';
 
 export type { CollectibleFilters };
 export type CollectibleKind = 'items' | 'kits';
 
-type AuditAction = 'created' | 'updated' | 'published' | 'archived';
+type AuditAction = 'created' | 'updated' | 'published' | 'archived' | 'deleted';
 
 /** Os colecionáveis são globais da plataforma: não pertencem a nenhuma empresa. */
 const PLATFORM_AUDIT_SCOPE = 0;
@@ -45,6 +49,8 @@ const LOCK = { mode: 'pessimistic_write' } as const;
 
 @Injectable()
 export class AdminCollectiblesService {
+  private readonly logger = new Logger(AdminCollectiblesService.name);
+
   constructor(
     @Inject('DATA_SOURCE') private readonly dataSource: DataSource,
     private readonly audit: AdminAuditService,
@@ -86,65 +92,12 @@ export class AdminCollectiblesService {
     );
   }
 
-  async listItems(filters: CollectibleFilters) {
-    const { page, pageSize, search, type, active } = normalizeFilters(filters);
-    const standalone = {
-      kit_id: IsNull(),
-      ...(type ? { type } : {}),
-      ...(active === undefined ? {} : { active }),
-    };
-    const where = search
-      ? [
-          { ...standalone, name: Like(`%${search}%`) },
-          { ...standalone, slug: Like(`%${search}%`) },
-        ]
-      : standalone;
-    const [rows, total] = await this.dataSource
-      .getRepository(CosmeticItem)
-      .findAndCount({
-        where,
-        order: { id: 'DESC' },
-        skip: (page - 1) * pageSize,
-        take: pageSize,
-      });
-    const items = await Promise.all(
-      rows.map((row) => toItemView(row, this.resolveArt)),
-    );
-    return paginated(items, total, page, pageSize);
+  listItems(filters: CollectibleFilters) {
+    return listItems(this.dataSource, filters, this.resolveArt);
   }
 
-  async listKits(filters: CollectibleFilters) {
-    const { page, pageSize, search, active } = normalizeFilters(filters);
-    const state = active === undefined ? {} : { active };
-    const where = search
-      ? [
-          { ...state, name: Like(`%${search}%`) },
-          { ...state, slug: Like(`%${search}%`) },
-        ]
-      : state;
-    const [kits, total] = await this.dataSource
-      .getRepository(CosmeticKit)
-      .findAndCount({
-        where,
-        order: { id: 'DESC' },
-        skip: (page - 1) * pageSize,
-        take: pageSize,
-      });
-    const pieces = kits.length
-      ? await this.dataSource
-          .getRepository(CosmeticItem)
-          .find({ where: { kit_id: In(kits.map((kit) => kit.id)) } })
-      : [];
-    const items = await Promise.all(
-      kits.map((kit) =>
-        toKitView(
-          kit,
-          pieces.filter((piece) => piece.kit_id === kit.id),
-          this.resolveArt,
-        ),
-      ),
-    );
-    return paginated(items, total, page, pageSize);
+  listKits(filters: CollectibleFilters) {
+    return listKits(this.dataSource, filters, this.resolveArt);
   }
 
   async createItem(actorId: number, dto: CollectibleItemDto) {
@@ -241,6 +194,33 @@ export class AdminCollectiblesService {
 
   archive(actorId: number, kind: CollectibleKind, id: number) {
     return this.setActive(actorId, kind, id, false);
+  }
+
+  /** Exclui só o que nenhum aluno tem; a contagem e a exclusão ficam na mesma transação. */
+  async remove(actorId: number, kind: CollectibleKind, id: number) {
+    const removed = await this.dataSource
+      .transaction(async (manager) => {
+        const result =
+          kind === 'items'
+            ? await removeItem(manager, id)
+            : await removeKit(manager, id);
+        await this.record(manager, actorId, 'deleted', {
+          kind,
+          id,
+          slug: result.slug,
+        });
+        return result;
+      })
+      .catch((error: unknown) => {
+        throw asOwnersConflict(error);
+      });
+    await deleteUnusedArt(
+      this.dataSource,
+      this.s3,
+      this.logger,
+      removed.artKeys,
+    );
+    return { ok: true };
   }
 
   private setActive(

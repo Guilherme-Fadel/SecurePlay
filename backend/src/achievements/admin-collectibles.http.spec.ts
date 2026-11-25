@@ -20,6 +20,7 @@ describe('HTTP — cadastro de colecionáveis', () => {
     listKits: jest.fn().mockResolvedValue({ items: [], total: 0 }),
     createKit: jest.fn().mockResolvedValue({ id: 1 }),
     publish: jest.fn().mockResolvedValue({ id: 1, active: true }),
+    remove: jest.fn().mockResolvedValue({ ok: true }),
   };
   const artService = {
     createUpload: jest.fn().mockResolvedValue({ key: 'k' }),
@@ -80,6 +81,7 @@ describe('HTTP — cadastro de colecionáveis', () => {
     ['GET', '/admin/collectibles/kits'],
     ['POST', '/admin/collectibles/kits'],
     ['POST', '/admin/collectibles/kits/1/publish'],
+    ['DELETE', '/admin/collectibles/kits/1'],
     ['POST', '/admin/collectibles/art/upload'],
     ['POST', '/admin/collectibles/art/confirm'],
   ] as const)('barra admin de escola e aluno em %s %s', async (method, url) => {
@@ -180,5 +182,28 @@ describe('HTTP — cadastro de colecionáveis', () => {
     });
     expect(result.statusCode).toBe(201);
     expect(artService.confirm).toHaveBeenCalledWith('collectibles/tmp/x.png');
+  });
+
+  it('platform_admin exclui por tipo e id; tipo ou id inválido é 400', async () => {
+    const ok = await app.inject({
+      method: 'DELETE',
+      url: '/admin/collectibles/items/4',
+      headers: headers('9'),
+    });
+    expect(ok.statusCode).toBe(200);
+    expect(ok.json()).toEqual({ ok: true });
+    expect(service.remove).toHaveBeenCalledWith(9, 'items', 4);
+    for (const url of [
+      '/admin/collectibles/things/4',
+      '/admin/collectibles/kits/abc',
+    ]) {
+      const bad = await app.inject({
+        method: 'DELETE',
+        url,
+        headers: headers('9'),
+      });
+      expect(bad.statusCode).toBe(400);
+    }
+    expect(service.remove).toHaveBeenCalledTimes(1);
   });
 });

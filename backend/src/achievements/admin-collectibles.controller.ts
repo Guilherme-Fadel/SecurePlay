@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Param,
   ParseEnumPipe,
@@ -99,5 +100,14 @@ export class AdminCollectiblesController {
     @Param('id', ParseIntPipe) id: number,
   ) {
     return this.collectibles.archive(req.user.userId, kind, id);
+  }
+
+  @Delete(':kind/:id')
+  remove(
+    @Request() req: AdminRequest,
+    @Param('kind', new ParseEnumPipe(KINDS)) kind: CollectibleKind,
+    @Param('id', ParseIntPipe) id: number,
+  ) {
+    return this.collectibles.remove(req.user.userId, kind, id);
   }
 }

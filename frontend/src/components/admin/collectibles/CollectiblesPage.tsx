@@ -18,7 +18,7 @@ export function CollectiblesPage() {
   const form = openFormOf(location.state);
   const openForm = (next: Parameters<typeof formNavigationState>[0]) => navigate(location.pathname, { state: formNavigationState(next) });
   // Chave estável: salvar troca o registro do histórico, mas o formulário não deve remontar (perderia mensagem e ajuste aberto).
-  if (form) return <CollectibleFormPage key={`form-${form.kind}`} kind={form.kind} record={form.record} onBack={() => navigate(-1)}
+  if (form) return <CollectibleFormPage key={`form-${form.kind}`} kind={form.kind} record={form.record} onBack={() => navigate(-1)} onDeleted={() => navigate(-1)}
     onSaved={(row) => navigate(location.pathname, { replace: true, state: savedFormState(row) })} />;
   return <div className="admin-users-content">
     <AdminPageHeader title="Colecionáveis" description="Itens avulsos e kits do personagem que os alunos compram com chaves. Só o que está publicado aparece na loja." />
