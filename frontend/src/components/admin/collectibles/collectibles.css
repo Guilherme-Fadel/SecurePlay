@@ -77,7 +77,9 @@
 
 /* Prévia do personagem. */
 .collectible-preview { display: grid; gap: 14px; }
-.collectible-preview-stage { display: grid; place-items: center; padding: 16px; border: 1px solid var(--admin-console-border); border-radius: 12px; background: var(--admin-console-soft); }
+.collectible-preview-stage { display: grid; place-items: center; aspect-ratio: 239 / 270; padding: 16px; border: 1px solid var(--admin-console-border); border-radius: 12px; background-color: var(--admin-console-soft); }
+/* Fundo enviado: cobre o palco como no provador do aluno (o `background` abreviado zerava o `cover`). */
+.collectible-preview-stage.chr-art { background-position: center; background-size: cover; background-repeat: no-repeat; }
 .collectible-preview-stage .character-avatar { width: min(200px, 100%); }
 .collectible-preview-mini { display: flex; align-items: center; justify-content: center; gap: 12px; color: var(--admin-console-muted); font-size: 12px; }
 .collectible-preview-mini .character-avatar { width: 52px; }
