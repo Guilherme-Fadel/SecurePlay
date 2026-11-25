@@ -3,6 +3,7 @@ const { test } = require('node:test');
 const { load } = require('./helpers/react-hooks.cjs');
 
 const look = load('src/components/shared/Character/characterLook.ts', {});
+const bounds = load('src/components/shared/Character/artBounds.ts', {});
 const plain = (value) => JSON.parse(JSON.stringify(value));
 
 const piece = (visualValue, extra = {}) => ({
@@ -78,4 +79,38 @@ test('só aceita endereço de arte http(s) ou da própria origem', () => {
   assert.equal(look.isSafeArtUrl('javascript:alert(1)'), false);
   assert.equal(look.isSafeArtUrl('//evil.com/a.png'), false);
   assert.equal(look.isSafeArtUrl(null), false);
+});
+
+const pixels = (width, height, paint) => {
+  const data = new Uint8ClampedArray(width * height * 4);
+  paint((x, y, alpha) => { data[(y * width + x) * 4 + 3] = alpha; });
+  return data;
+};
+
+test('caixa do alfa: imagem vazia ou inválida não tem caixa', () => {
+  assert.equal(bounds.alphaBounds(pixels(4, 4, () => {}), 4, 4), null);
+  assert.equal(bounds.alphaBounds(new Uint8ClampedArray(0), 0, 0), null);
+  assert.equal(bounds.alphaBounds(new Uint8ClampedArray(8), 4, 4), null);
+});
+
+test('caixa do alfa: um pixel e um retângulo, em fração da imagem', () => {
+  assert.deepEqual(plain(bounds.alphaBounds(pixels(10, 5, (set) => set(3, 2, 255)), 10, 5)), { x: 0.3, y: 0.4, w: 0.1, h: 0.2 });
+  const box = bounds.alphaBounds(pixels(10, 10, (set) => { for (let y = 2; y < 6; y += 1) for (let x = 1; x < 9; x += 1) set(x, y, 200); }), 10, 10);
+  assert.deepEqual(plain(box), { x: 0.1, y: 0.2, w: 0.8, h: 0.4 });
+});
+
+test('caixa do alfa: só conta alfa acima do limite', () => {
+  const data = pixels(4, 4, (set) => { set(0, 0, 16); set(2, 2, 17); });
+  assert.deepEqual(plain(bounds.alphaBounds(data, 4, 4)), { x: 0.5, y: 0.5, w: 0.25, h: 0.25 });
+  assert.equal(bounds.alphaBounds(data, 4, 4, 17), null);
+  assert.deepEqual(plain(bounds.alphaBounds(data, 4, 4, 0)), { x: 0, y: 0, w: 0.75, h: 0.75 });
+});
+
+test('moldura: margem proporcional à caixa e limitada à imagem', () => {
+  const framed = bounds.framedBounds({ x: 0.4, y: 0.4, w: 0.2, h: 0.1 }, 0.1);
+  assert.ok(Math.abs(framed.x - 0.38) < 1e-9 && Math.abs(framed.y - 0.39) < 1e-9);
+  assert.ok(Math.abs(framed.w - 0.24) < 1e-9 && Math.abs(framed.h - 0.12) < 1e-9);
+  assert.deepEqual(plain(bounds.framedBounds({ x: 0, y: 0, w: 1, h: 1 })), { x: 0, y: 0, w: 1, h: 1 });
+  const edge = bounds.framedBounds({ x: 0.9, y: 0, w: 0.1, h: 0.5 }, 0.5);
+  assert.ok(edge.x + edge.w <= 1 && edge.y === 0);
 });

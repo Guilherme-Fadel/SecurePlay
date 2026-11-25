@@ -1,10 +1,11 @@
 import { BRAND_CHARACTER_BODY } from '@/components/shared/BrandCharacter';
 import { CharacterAvatar } from '@/components/shared/Character/CharacterAvatar';
-import type { CharacterLook, LookPiece } from '@/components/shared/Character/characterLook';
+import { isSafeArtUrl, type CharacterLook, type LookPiece } from '@/components/shared/Character/characterLook';
 import { cn } from '@/lib/utils';
 import type { CosmeticType } from '@/services/achievements';
 import { CosmeticArt, hasCosmeticArtwork } from './CollectiblesArt';
 import { cardTheme, isCharacterSlot, stageTheme } from './characterModel';
+import { PieceArtThumb } from './PieceArtThumb';
 
 export interface ThumbSource {
   slug?: string;
@@ -42,11 +43,13 @@ export function CharacterThumb({ source, size = 64 }: { source: ThumbSource; siz
   if (isCharacterSlot(source.type)) {
     const look: CharacterLook = {};
     look[source.type] = piece;
-    return (
+    const worn = (
       <span className="chr-thumb chr-thumb--pet" aria-hidden="true">
         <CharacterAvatar look={look} color={BRAND_CHARACTER_BODY} variant={source.type === 'effect' ? 'full' : 'compact'} />
       </span>
     );
+    // Arte enviada: só o acessório recortado; se não der para medir, o personagem vestindo a peça.
+    return source.artUrl && isSafeArtUrl(source.artUrl) ? <PieceArtThumb artUrl={source.artUrl} fallback={worn} /> : worn;
   }
   return <CosmeticArt slug={source.slug ?? source.visualValue} name={source.name} size={size} />;
 }

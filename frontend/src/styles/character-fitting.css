@@ -171,6 +171,11 @@
 .chr-thumb { display: grid; width: 100%; height: 100%; place-items: center; overflow: hidden; border-radius: 12px; }
 .chr-thumb--pet { padding: 4px; }
 .chr-thumb--pet .character-avatar { width: auto; max-width: 100%; height: 100%; }
+.chr-thumb--art { container-type: size; padding: 6px; }
+.chr-art-crop { position: relative; width: min(100cqw, 100cqh * var(--art-ratio)); aspect-ratio: var(--art-ratio); overflow: hidden; }
+.chr-art-crop img, .chr-art-whole { display: block; max-width: none; }
+.chr-art-crop img { position: absolute; height: auto; }
+.chr-art-whole { width: 100%; height: 100%; object-fit: contain; }
 .chr-thumb--swatch { border: 2px solid var(--sp-black); }
 .chr-thumb--card { width: 88%; height: 54%; border: 2px solid var(--sp-black); border-radius: 8px; font-size: 11px; font-weight: 800; }
 .cole-tile.is-locked .chr-thumb { filter: var(--cole-sil); }
