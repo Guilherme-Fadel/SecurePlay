@@ -40,9 +40,21 @@ Cole apenas o resultado em `DB_CA_CERT_BASE64` no Render. Não salve credenciais
 
 No Valkey, use a URI do serviço como `REDIS_URL`. O backend aceita `valkeys://`, `rediss://`, `valkey://` e `redis://`.
 
-### 2. Cloudflare R2 — opcional
+### 2. Armazenamento de mídia (bucket S3)
 
-Crie um bucket Standard chamado `secureplay-media` e um token S3 restrito a esse bucket. Configure:
+O backend usa a API do S3. `AWS_REGION` e `S3_ENDPOINT` precisam combinar com o provedor do bucket. A combinação `AWS_REGION=auto` sem `S3_ENDPOINT` gera o endereço inválido `<bucket>.s3.auto.amazonaws.com`, e todo upload falha com `ERR_NAME_NOT_RESOLVED`.
+
+**AWS S3:** o bucket atual `secureplay-media` fica em `us-east-1`. Configure:
+
+- `S3_BUCKET_NAME=secureplay-media`
+- `AWS_REGION=us-east-1`
+- `AWS_ACCESS_KEY_ID` e `AWS_SECRET_ACCESS_KEY` de um usuário IAM restrito ao bucket
+- `S3_ENDPOINT` vazio
+- `S3_FORCE_PATH_STYLE=false`
+
+O navegador envia a arte direto ao bucket por POST assinado. Por isso o bucket precisa de uma regra de CORS que libere `POST`, `PUT` e `GET` vindos do domínio do frontend de homologação.
+
+**Cloudflare R2 (alternativa):** crie um bucket Standard chamado `secureplay-media` e um token S3 restrito a esse bucket. Configure:
 
 - `S3_BUCKET_NAME=secureplay-media`
 - `AWS_REGION=auto`
