@@ -166,26 +166,13 @@
 .chr-card--rosa { background: var(--sp-pink); color: var(--sp-black); }
 .chr-card--azul { background: var(--sp-blue); color: var(--sp-paper); }
 
-/* Arte enviada do tema do card: moldura 9 partes (956x1080, cantos em 20%, miolo transparente) por cima do fundo. */
+/* Arte enviada do tema do card: a moldura (956x1080, miolo transparente) é desenhada por CardFrame, filho do card, por cima do fundo. */
 :where(.chr-card-frame) { position: relative; } /* sem especificidade: a placa do Hall segue absoluta */
-.chr-card-frame { isolation: isolate; --card-frame-w: 16px; }
-.chr-card-frame::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  z-index: 1;
-  border-style: solid;
-  border-color: transparent;
-  border-width: var(--card-frame-w);
-  border-image: var(--card-frame) 20% / var(--card-frame-w) stretch;
-  pointer-events: none;
-}
-.chr-thumb--card.chr-card-frame { --card-frame-w: 7px; }
-.sb-row.chr-card-frame { --card-frame-w: 8px; }
-.hall-plate.chr-card-frame { --card-frame-w: 18px; }
-.collectible-preview-mini.chr-card-frame { --card-frame-w: 14px; }
+.chr-card-frame { isolation: isolate; }
 /* Conteúdo do card fora da faixa da moldura. */
-.chr-board.chr-card-frame, .collectible-preview-mini.chr-card-frame { padding: calc(var(--card-frame-w) - 2px) calc(var(--card-frame-w) + 4px); }
+.chr-board.chr-card-frame, .collectible-preview-mini.chr-card-frame { padding: 12px 20px; }
+.hall-plate.chr-card-frame { padding: 16px 24px 18px; }
+.sb-row.chr-card-frame { padding-inline: 16px; }
 .chr-board.chr-art, .collectible-preview-mini.chr-art { color: var(--sp-cream); text-shadow: 0 1px 2px color-mix(in srgb, var(--sp-black) 60%, transparent); }
 
 /* ---------- Miniaturas ---------- */

@@ -1,3 +1,4 @@
+import { CardFrame } from '@/components/shared/Character/CardFrame';
 import { CharacterAvatar } from '@/components/shared/Character/CharacterAvatar';
 import type { RankingCategory, RankingEntry } from '@/services/dashboard';
 import { rowSub, rowTrend, toBoardEntry, turmaChip, valueParts, type BoardEntry } from './boardModel';
@@ -75,6 +76,7 @@ export function ScoreboardRow({ entry, category, me, onStage, showCompany, onSel
         </span>
         <span className="sb-lv" aria-hidden="true">{turma ? '' : `Nv ${row.level}`}</span>
         <RowValue category={category} entry={row} />
+        {theme && <CardFrame artUrl={theme.frameUrl} />}
       </button>
     </li>
   );

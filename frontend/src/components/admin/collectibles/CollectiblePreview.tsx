@@ -1,4 +1,5 @@
 import { BRAND_CHARACTER_BODY } from '@/components/shared/BrandCharacter';
+import { CardFrame } from '@/components/shared/Character/CardFrame';
 import { CharacterAvatar } from '@/components/shared/Character/CharacterAvatar';
 import { cardTheme, stageTheme } from '@/components/sections/HomePage/Awards/characterModel';
 import { cn } from '@/lib/utils';
@@ -23,6 +24,7 @@ export function CollectiblePreview({ look }: { look: CharacterLook }) {
       <div className={cn('collectible-preview-mini', board && 'has-card', board?.className)} style={board?.style}>
         <CharacterAvatar look={look} color={PREVIEW_BODY} variant="compact" />
         <span>No placar</span>
+        {board && <CardFrame artUrl={board.frameUrl} />}
       </div>
       {empty && <p className="collectible-preview-note">Envie a arte para ver o colecionável no personagem.</p>}
     </div>

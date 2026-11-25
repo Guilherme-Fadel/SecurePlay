@@ -206,7 +206,9 @@ export function buildCharacterLook(shop: Pick<AchievementShop, 'equipped'>, tryi
 
 export interface ThemeView {
   className: string;
-  style: (Pick<CSSProperties, 'backgroundColor' | 'backgroundImage'> & { '--card-frame'?: string }) | undefined;
+  style: Pick<CSSProperties, 'backgroundColor' | 'backgroundImage'> | undefined;
+  /** Arte enviada do tema do card, desenhada como moldura por `CardFrame`; `null` nos demais temas. */
+  frameUrl: string | null;
 }
 
 export const STAGE_THEMES: readonly string[] = ['palco', 'por-do-sol', 'noite', 'confete', 'xadrez', 'custom'];
@@ -217,30 +219,30 @@ const LEGACY_BACKGROUND = /^background-[a-z0-9-]+$/;
 // A URL entra em `url("...")`: nada que feche aspas ou parênteses.
 const CSS_URL_SAFE = /^[^"'()\\\s]+$/;
 
-/** `url("...")` da arte enviada, ou `null` se a URL não for segura. */
-function artCssUrl(piece: LookPiece | undefined): string | null {
+/** URL da arte enviada, ou `null` se não for segura. */
+function safeArtUrl(piece: LookPiece | undefined): string | null {
   const url = piece?.artUrl;
   if (!isSafeArtUrl(url) || !CSS_URL_SAFE.test(url)) return null;
-  return `url("${url}")`;
+  return url;
 }
 
 /** Fundo do palco: arte enviada, fundo antigo do catálogo, tema conhecido ou o palco padrão. */
 export function stageTheme(piece: LookPiece | undefined): ThemeView {
-  const art = artCssUrl(piece);
-  if (art) return { className: 'chr-art', style: { backgroundImage: art } };
+  const art = safeArtUrl(piece);
+  if (art) return { className: 'chr-art', style: { backgroundImage: `url("${art}")` }, frameUrl: null };
   const value = piece?.visualValue ?? '';
-  if (LEGACY_BACKGROUND.test(value)) return { className: `cosmetic-background-host ${value}`, style: undefined };
-  if (!STAGE_THEMES.includes(value)) return { className: 'chr-bg--palco', style: undefined };
+  if (LEGACY_BACKGROUND.test(value)) return { className: `cosmetic-background-host ${value}`, style: undefined, frameUrl: null };
+  if (!STAGE_THEMES.includes(value)) return { className: 'chr-bg--palco', style: undefined, frameUrl: null };
   const color = value === 'custom' && piece?.color && HEX_COLOR.test(piece.color) ? piece.color : null;
-  return { className: `chr-bg--${value}`, style: color ? { backgroundColor: color } : undefined };
+  return { className: `chr-bg--${value}`, style: color ? { backgroundColor: color } : undefined, frameUrl: null };
 }
 
-/** Tema do card: a arte enviada é uma moldura 9 partes (`border-image`) sobre o fundo escuro, nunca `cover`. */
+/** Tema do card: a arte enviada é uma moldura (`CardFrame`, filho do card) sobre o fundo escuro, nunca `cover`. */
 export function cardTheme(piece: LookPiece | undefined): ThemeView {
-  const art = artCssUrl(piece);
-  if (art) return { className: 'chr-art chr-card-frame', style: { '--card-frame': art } };
+  const art = safeArtUrl(piece);
+  if (art) return { className: 'chr-art chr-card-frame', style: undefined, frameUrl: art };
   const value = piece?.visualValue ?? '';
-  return { className: `chr-card--${CARD_THEMES.includes(value) ? value : 'classico'}`, style: undefined };
+  return { className: `chr-card--${CARD_THEMES.includes(value) ? value : 'classico'}`, style: undefined, frameUrl: null };
 }
 
 /* ---------- Cor ---------- */
