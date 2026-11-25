@@ -1,3 +1,4 @@
+import type { CSSProperties } from 'react';
 import { isSafeArtUrl } from '@/components/shared/Character/characterLook';
 import type {
   AchievementNode,
@@ -205,7 +206,7 @@ export function buildCharacterLook(shop: Pick<AchievementShop, 'equipped'>, tryi
 
 export interface ThemeView {
   className: string;
-  style: { backgroundColor?: string; backgroundImage?: string } | undefined;
+  style: (Pick<CSSProperties, 'backgroundColor' | 'backgroundImage'> & { '--card-frame'?: string }) | undefined;
 }
 
 export const STAGE_THEMES: readonly string[] = ['palco', 'por-do-sol', 'noite', 'confete', 'xadrez', 'custom'];
@@ -216,16 +217,17 @@ const LEGACY_BACKGROUND = /^background-[a-z0-9-]+$/;
 // A URL entra em `url("...")`: nada que feche aspas ou parênteses.
 const CSS_URL_SAFE = /^[^"'()\\\s]+$/;
 
-function artTheme(piece: LookPiece | undefined): ThemeView | null {
+/** `url("...")` da arte enviada, ou `null` se a URL não for segura. */
+function artCssUrl(piece: LookPiece | undefined): string | null {
   const url = piece?.artUrl;
   if (!isSafeArtUrl(url) || !CSS_URL_SAFE.test(url)) return null;
-  return { className: 'chr-art', style: { backgroundImage: `url("${url}")` } };
+  return `url("${url}")`;
 }
 
 /** Fundo do palco: arte enviada, fundo antigo do catálogo, tema conhecido ou o palco padrão. */
 export function stageTheme(piece: LookPiece | undefined): ThemeView {
-  const art = artTheme(piece);
-  if (art) return art;
+  const art = artCssUrl(piece);
+  if (art) return { className: 'chr-art', style: { backgroundImage: art } };
   const value = piece?.visualValue ?? '';
   if (LEGACY_BACKGROUND.test(value)) return { className: `cosmetic-background-host ${value}`, style: undefined };
   if (!STAGE_THEMES.includes(value)) return { className: 'chr-bg--palco', style: undefined };
@@ -233,9 +235,10 @@ export function stageTheme(piece: LookPiece | undefined): ThemeView {
   return { className: `chr-bg--${value}`, style: color ? { backgroundColor: color } : undefined };
 }
 
+/** Tema do card: a arte enviada é uma moldura 9 partes (`border-image`) sobre o fundo escuro, nunca `cover`. */
 export function cardTheme(piece: LookPiece | undefined): ThemeView {
-  const art = artTheme(piece);
-  if (art) return art;
+  const art = artCssUrl(piece);
+  if (art) return { className: 'chr-art chr-card-frame', style: { '--card-frame': art } };
   const value = piece?.visualValue ?? '';
   return { className: `chr-card--${CARD_THEMES.includes(value) ? value : 'classico'}`, style: undefined };
 }

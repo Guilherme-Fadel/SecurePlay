@@ -1,4 +1,3 @@
-import type { CSSProperties } from 'react';
 import { CharacterAvatar } from '@/components/shared/Character/CharacterAvatar';
 import type { RankingCategory, RankingEntry } from '@/services/dashboard';
 import { rowSub, rowTrend, toBoardEntry, turmaChip, valueParts, type BoardEntry } from './boardModel';
@@ -63,7 +62,7 @@ export function ScoreboardRow({ entry, category, me, onStage, showCompany, onSel
       <button
         type="button"
         className={classes}
-        style={theme?.style as CSSProperties | undefined}
+        style={theme?.style}
         aria-current={onStage ? 'true' : undefined}
         aria-label={scoreboardRowLabel(row, { me, onStage, showCompany, category })}
         onClick={() => onSelect(row.rankKey)}
