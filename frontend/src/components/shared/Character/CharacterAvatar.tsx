@@ -1,4 +1,4 @@
-import { useId } from 'react';
+import { useEffect, useId, useState } from 'react';
 import type { BrandCharacterExpression } from '../BrandCharacter';
 import { FaceBase } from './art/faceBase';
 import { INK } from './art/palette';
@@ -22,9 +22,35 @@ export interface CharacterAvatarProps {
 
 interface LayerProps { layer: CharacterLayer; uid: string; eye: string }
 
+type LayerPiece = CharacterLayer['piece'];
+
+/**
+ * Peça que está na tela. Ao trocar a arte enviada, a peça anterior (arte e ajuste) continua até a nova
+ * carregar e então as duas trocam juntas; sem isso, a arte antiga aparecia por um instante já na posição
+ * da nova. Com a mesma arte (ex.: ajuste fino ao vivo no console), a peça atual vale na hora.
+ */
+function useSettledPiece(piece: LayerPiece): LayerPiece {
+  const [settled, setSettled] = useState<{ url: string | null; piece: LayerPiece }>(() => ({ url: piece.artUrl, piece }));
+  const pending = isSafeArtUrl(piece.artUrl) && piece.artUrl !== settled.url;
+  useEffect(() => {
+    if (!pending || !piece.artUrl) return undefined;
+    let alive = true;
+    const image = new Image();
+    image.decoding = 'async';
+    // Erro também libera a troca: a camada mostra a peça nova (como antes) em vez de ficar presa na antiga.
+    const settle = () => { if (alive) setSettled({ url: piece.artUrl, piece }); };
+    image.onload = settle;
+    image.onerror = settle;
+    image.src = piece.artUrl;
+    return () => { alive = false; };
+  }, [pending, piece]);
+  return pending ? settled.piece : piece;
+}
+
 /** Uma peça: imagem enviada cobrindo a prancheta ou arte da biblioteca; sem nenhuma, nada. */
 function LookLayer({ layer, uid, eye }: LayerProps) {
-  const { slot, piece } = layer;
+  const { slot } = layer;
+  const piece = useSettledPiece(layer.piece);
   const transform = pieceTransform(slot, piece.adjust) || undefined;
   if (isSafeArtUrl(piece.artUrl)) {
     return (
