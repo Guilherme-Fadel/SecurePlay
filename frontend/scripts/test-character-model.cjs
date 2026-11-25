@@ -153,6 +153,15 @@ test('prévia: o equipado monta o personagem e o item em prova troca só o seu e
   const same = model.buildCharacterLook(shop, item(2, 'head', { slug: 'bone', equipped: true, owned: true }));
   assert.equal(same.head.color, '#F51300');
   assert.deepEqual(plain(same.head.adjust), { x: 1, y: 2, scale: 1.5 });
+
+
+  // Vários itens em prova ao mesmo tempo, um por encaixe: o conjunto aparece junto.
+  const efeito = item(11, 'effect', { visualValue: 'brilhos', artUrl: 'https://cdn.exemplo/brilhos.png' });
+  const conjunto = model.buildCharacterLook(shop, [cartola, efeito]);
+  assert.equal(conjunto.head.visualValue, 'cartola');
+  assert.equal(conjunto.effect.artUrl, 'https://cdn.exemplo/brilhos.png');
+  assert.equal(conjunto.skin.visualValue, 'veludo');
+  assert.deepEqual(plain(model.buildCharacterLook(shop, [])), plain(worn));
 });
 
 test('fundo e tema do card: classes conhecidas, arte segura e cor só em hexadecimal', () => {

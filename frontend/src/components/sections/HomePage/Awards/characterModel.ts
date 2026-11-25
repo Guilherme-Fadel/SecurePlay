@@ -188,15 +188,20 @@ function trialPiece(item: CosmeticItem): LookPiece {
   return { visualValue: item.visualValue, artUrl: item.artUrl, color: item.color, adjust: item.adjust, layer: item.layer };
 }
 
-/** O que está equipado, com o item em prova no lugar do seu encaixe (e só dele). */
-export function buildCharacterLook(shop: Pick<AchievementShop, 'equipped'>, trying: CosmeticItem | null): CharacterLook {
+/**
+ * O que está equipado, com cada item em prova no lugar do seu encaixe (e só dele). Aceita vários itens em
+ * prova ao mesmo tempo, um por encaixe, para o aluno ver o conjunto (ex.: skin + efeito + chapéu).
+ */
+export function buildCharacterLook(shop: Pick<AchievementShop, 'equipped'>, trying: CosmeticItem | readonly CosmeticItem[] | null): CharacterLook {
   const look: CharacterLook = {};
   for (const piece of shop.equipped) {
     if (isCharacterSlot(piece.type)) look[piece.type] = equippedPiece(piece);
   }
-  if (trying && isCharacterSlot(trying.type)) {
-    const worn = shop.equipped.find((piece) => piece.type === trying.type && piece.slug === trying.slug);
-    look[trying.type] = worn ? equippedPiece(worn) : trialPiece(trying);
+  const trials: readonly CosmeticItem[] = trying === null ? [] : Array.isArray(trying) ? trying : [trying];
+  for (const item of trials) {
+    if (!isCharacterSlot(item.type)) continue;
+    const worn = shop.equipped.find((piece) => piece.type === item.type && piece.slug === item.slug);
+    look[item.type] = worn ? equippedPiece(worn) : trialPiece(item);
   }
   return look;
 }
