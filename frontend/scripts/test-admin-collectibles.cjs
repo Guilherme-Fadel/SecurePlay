@@ -543,3 +543,113 @@ test('publicar/tirar da loja: o cartão é trocado no lugar, sem mexer na ordem 
   assert.equal(next[0], items[0]);
   assert.deepEqual(plain(model.replaceRow(items, row(99))), plain(items));
 });
+
+// Importar JSON: arquivo exportado pelo organizador de artes preenche o formulário do item avulso.
+const importer = load('src/components/admin/collectibles/collectibleImport.ts', {
+  '@/services/adminCollectibles': loadService().service,
+  './adminCollectiblesForm': form,
+}, { atob, File });
+const PNG_B64 = Buffer.from('arte-de-teste').toString('base64');
+const exported = (item = {}, root = {}) => JSON.stringify({
+  formato: 'secureplay-colecionavel', versao: 1, exportadoEm: '2026-11-25T15:00:00.000Z',
+  item: { nome: 'Fone gamer', encaixe: 'head', ...item }, ...root,
+});
+const importError = (item, root) => { const result = importer.parseCollectibleImport(exported(item, root)); assert.equal(result.ok, false); return result.error; };
+
+test('importar: arquivo completo vira patch do formulário e arte para enviar', () => {
+  const result = importer.parseCollectibleImport(exported({
+    slug: 'fone-gamer', descricao: ' Para quem estuda ouvindo música. ', raridade: 'rare', preco: 120, camada: 'front',
+    ajuste: { x: 10, y: -5, escala: 1.5 }, arte: { nome: 'head_fone.png', tipo: 'image/png', dados: `data:image/png;base64,${PNG_B64}` },
+  }));
+  assert.equal(result.ok, true);
+  assert.deepEqual(plain(result.form), {
+    name: 'Fone gamer', slug: 'fone-gamer', slugEdited: true, description: 'Para quem estuda ouvindo música.', rarity: 'rare', price: '120',
+    type: 'head', layer: 'front', adjust: { x: '10', y: '-5', scale: '1.5' }, visualValue: '',
+  });
+  assert.deepEqual(plain(result.art), { name: 'head_fone.png', type: 'image/png', base64: PNG_B64 });
+});
+
+test('importar: só nome e encaixe bastam; slug sai do nome e o resto assume o padrão (ajuste 0, 0, 1)', () => {
+  const result = importer.parseCollectibleImport(exported({ nome: 'Óculos Mágico!' }));
+  assert.equal(result.ok, true);
+  assert.deepEqual(plain(result.form), {
+    name: 'Óculos Mágico!', slug: 'oculos-magico', slugEdited: true, description: '', rarity: 'common', price: '0',
+    type: 'head', layer: 'front', adjust: { x: '0', y: '0', scale: '1' }, visualValue: '',
+  });
+  assert.equal(result.art, null);
+});
+
+test('importar: campos desconhecidos são ignorados e não entram no patch', () => {
+  const result = importer.parseCollectibleImport(exported({ extra: 'x', slugEdited: false, artKey: 'k' }, { outro: 1 }));
+  assert.equal(result.ok, true);
+  assert.equal('artKey' in result.form, false);
+  assert.equal(result.form.slugEdited, true);
+  assert.equal('extra' in result.form, false);
+});
+
+test('importar: raridade festiva é recusada; as demais valem', () => {
+  assert.match(importError({ raridade: 'festive' }), /Comemorativa/);
+  assert.match(importError({ raridade: 'mythic' }), /raridade/);
+  for (const rarity of ['common', 'uncommon', 'rare', 'epic', 'legendary']) assert.equal(importer.parseCollectibleImport(exported({ raridade: rarity })).form.rarity, rarity);
+});
+
+test('importar: encaixe obrigatório e dentro da lista (inclui fundo e tema do card)', () => {
+  assert.match(importError({ encaixe: 'hat' }), /encaixe/);
+  assert.match(importError({ encaixe: undefined }), /encaixe/);
+  for (const slot of ['skin', 'head', 'face', 'neck', 'effect', 'background', 'card']) assert.equal(importer.parseCollectibleImport(exported({ encaixe: slot })).form.type, slot);
+});
+
+test('importar: preço inteiro de 0 a 100.000', () => {
+  for (const price of [-1, 100001, 1.5, '10', true]) assert.equal(importError({ preco: price }), 'O preço deve ser um número inteiro de 0 a 100.000.');
+  assert.equal(importer.parseCollectibleImport(exported({ preco: 100000 })).form.price, '100000');
+});
+
+test('importar: ajuste fora da faixa é recusado', () => {
+  assert.match(importError({ ajuste: { x: 501 } }), /x e y/);
+  assert.match(importError({ ajuste: { y: '1' } }), /x e y/);
+  assert.match(importError({ ajuste: { escala: 0.05 } }), /escala/);
+  assert.match(importError({ ajuste: { escala: 5.5 } }), /escala/);
+  assert.match(importError({ ajuste: 3 }), /ajuste/);
+});
+
+test('importar: nome, slug e descrição seguem os limites do console', () => {
+  assert.match(importError({ nome: ' a ' }), /nome/);
+  assert.match(importError({ nome: 'x'.repeat(121) }), /nome/);
+  assert.match(importError({ slug: 'Fone Gamer' }), /slug/);
+  assert.match(importError({ slug: 'a'.repeat(81) }), /slug/);
+  assert.match(importError({ descricao: 'd'.repeat(401) }), /descrição/);
+  assert.match(importError({ nome: '!!' }), /slug/);
+});
+
+test('importar: formato, versão e JSON inválidos têm mensagem própria', () => {
+  assert.equal(importError({}, { formato: 'outro' }), 'Este arquivo não é um colecionável exportado pelo organizador.');
+  assert.equal(importError({}, { versao: 2 }), 'Versão do arquivo não suportada.');
+  assert.equal(importer.parseCollectibleImport('{ não é json').error, 'O arquivo não é um JSON válido.');
+  assert.equal(importer.parseCollectibleImport('[]').error, 'Este arquivo não é um colecionável exportado pelo organizador.');
+  assert.equal(importer.parseCollectibleImport('x'.repeat(1024 * 1024 + 1)).error, 'O arquivo passa de 1 MB.');
+});
+
+test('importar: camada "back" só vale para Efeito; nos demais encaixes volta para "front"', () => {
+  assert.equal(importer.parseCollectibleImport(exported({ encaixe: 'effect', camada: 'back' })).form.layer, 'back');
+  assert.equal(importer.parseCollectibleImport(exported({ encaixe: 'head', camada: 'back' })).form.layer, 'front');
+  assert.match(importError({ camada: 'middle' }), /camada/);
+});
+
+test('importar: arte com tipo diferente do dataURL, tipo inválido ou base64 malformado é recusada', () => {
+  assert.match(importError({ arte: { tipo: 'image/svg+xml', dados: `data:image/png;base64,${PNG_B64}` } }), /não correspondem ao tipo/);
+  assert.match(importError({ arte: { tipo: 'image/gif', dados: 'data:image/gif;base64,R0lG' } }), /PNG ou SVG/);
+  assert.match(importError({ arte: { tipo: 'image/png', dados: 'data:image/png;base64,@@@@' } }), /inválidos/);
+  assert.match(importError({ arte: { tipo: 'image/png', dados: 'iVBORw0' } }), /inválidos/);
+});
+
+test('importar: arte de até 200 KB passa e acima disso é recusada', () => {
+  const big = (bytes) => ({ nome: 'g.png', tipo: 'image/png', dados: `data:image/png;base64,${Buffer.alloc(bytes, 1).toString('base64')}` });
+  assert.equal(importer.parseCollectibleImport(exported({ arte: big(200 * 1024) })).ok, true);
+  assert.equal(importError({ arte: big(200 * 1024 + 1) }), 'A arte passa de 200 KB.');
+});
+
+test('importar: arte sem nome recebe nome pelo tipo', () => {
+  const svg = Buffer.from('<svg/>').toString('base64');
+  const result = importer.parseCollectibleImport(exported({ arte: { tipo: 'image/svg+xml', dados: `data:image/svg+xml;base64,${svg}` } }));
+  assert.equal(result.art.name, 'arte.svg');
+});

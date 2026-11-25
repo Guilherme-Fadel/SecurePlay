@@ -6,6 +6,7 @@ import { slotLabel } from './adminCollectiblesModel';
 import { CommonFields } from './CommonFields';
 import { FormSection } from './FormSection';
 import { ItemArt } from './ItemArt';
+import { ItemImportBar } from './ItemImportBar';
 import { RequirementsEditor } from './RequirementsEditor';
 import { ThemeSelect } from './ThemeSelect';
 
@@ -30,7 +31,7 @@ export function ItemForm({ value, errors, onChange, locked, kindSwitch }: ItemFo
   const theme = isThemeSlot(value.type);
   return <>
     <FormSection title="Dados do item" help={BASICS_HELP}>
-      {kindSwitch}
+      {kindSwitch && <ItemImportBar kindSwitch={kindSwitch} onChange={onChange} />}
       <CommonFields value={value} errors={errors} onChange={onChange} slugLocked={locked} slugMax={80} nameLabel="Nome do item" />
     </FormSection>
     <RequirementsEditor rule={value.rule} errors={errors} onChange={(rule) => patch({ rule })} legacyAchievement={value.requiredAchievementSlug} />

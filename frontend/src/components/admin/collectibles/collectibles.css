@@ -16,6 +16,7 @@
 
 .collectible-form-section .admin-heading-title { margin: 0; }
 .collectible-form-kind { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.collectible-form-kind-row { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 16px; }
 .collectible-form-grid .is-wide { grid-column: 1 / -1; }
 .collectible-form-grid small, .collectible-form-section small { color: var(--admin-console-muted); font-size: 12px; font-weight: 500; line-height: 1.4; }
 .collectible-form-grid .collectible-field-error, .collectible-field-error { color: var(--danger); font-size: 12px; font-weight: 600; }
