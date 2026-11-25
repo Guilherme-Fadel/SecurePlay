@@ -1,4 +1,4 @@
-import { useEffect, useId, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import type { BrandCharacterExpression } from '../BrandCharacter';
 import { FaceBase } from './art/faceBase';
 import { INK } from './art/palette';
@@ -31,19 +31,24 @@ type LayerPiece = CharacterLayer['piece'];
  */
 function useSettledPiece(piece: LayerPiece): LayerPiece {
   const [settled, setSettled] = useState<{ url: string | null; piece: LayerPiece }>(() => ({ url: piece.artUrl, piece }));
-  const pending = isSafeArtUrl(piece.artUrl) && piece.artUrl !== settled.url;
+  // A peça chega como objeto novo a cada render; o carregamento depende só da URL, senão cada render
+  // cancelaria o anterior e a arte nova nunca entraria em telas que se redesenham o tempo todo.
+  const latest = useRef(piece);
+  useEffect(() => { latest.current = piece; });
+  const url = piece.artUrl;
+  const pending = isSafeArtUrl(url) && url !== settled.url;
   useEffect(() => {
-    if (!pending || !piece.artUrl) return undefined;
+    if (!pending || !url) return undefined;
     let alive = true;
     const image = new Image();
     image.decoding = 'async';
     // Erro também libera a troca: a camada mostra a peça nova (como antes) em vez de ficar presa na antiga.
-    const settle = () => { if (alive) setSettled({ url: piece.artUrl, piece }); };
+    const settle = () => { if (alive) setSettled({ url, piece: latest.current }); };
     image.onload = settle;
     image.onerror = settle;
-    image.src = piece.artUrl;
+    image.src = url;
     return () => { alive = false; };
-  }, [pending, piece]);
+  }, [pending, url]);
   return pending ? settled.piece : piece;
 }
 

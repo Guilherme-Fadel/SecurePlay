@@ -23,10 +23,11 @@ function cacheKey(url: string): string {
   return cut < 0 ? url : url.slice(0, cut);
 }
 
-function measure(url: string): Promise<Settled> {
+/** Lê a caixa visível de uma imagem já permitida para leitura (CORS ou mesma origem). */
+function boundsOf(src: string, cors: boolean): Promise<Settled> {
   return new Promise((resolve) => {
     const image = new Image();
-    image.crossOrigin = 'anonymous';
+    if (cors) image.crossOrigin = 'anonymous';
     image.decoding = 'async';
     image.onload = () => {
       try {
@@ -44,8 +45,29 @@ function measure(url: string): Promise<Settled> {
       }
     };
     image.onerror = () => resolve(FAILED);
-    image.src = url;
+    image.src = src;
   });
+}
+
+/**
+ * Segunda tentativa: se o navegador já tinha a arte em cache sem CORS (carregada pelo personagem), a
+ * leitura acima falha. Busca de novo sem cache, em modo CORS, e mede a cópia local (mesma origem).
+ */
+async function boundsFromFreshCopy(url: string): Promise<Settled> {
+  if (!/^https?:/i.test(url)) return FAILED;
+  try {
+    const response = await fetch(url, { mode: 'cors', cache: 'no-store', credentials: 'omit' });
+    if (!response.ok) return FAILED;
+    const local = URL.createObjectURL(await response.blob());
+    try { return await boundsOf(local, false); } finally { URL.revokeObjectURL(local); }
+  } catch {
+    return FAILED;
+  }
+}
+
+async function measure(url: string): Promise<Settled> {
+  const first = await boundsOf(url, true);
+  return first.status === 'ready' ? first : boundsFromFreshCopy(url);
 }
 
 function load(url: string): Promise<Settled> {
