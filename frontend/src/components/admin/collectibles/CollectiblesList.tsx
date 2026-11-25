@@ -6,6 +6,7 @@ import { hasActiveFilter, kindCopy, listParams, type CollectibleKind, type Colle
 import { CollectibleFeedFooter } from './CollectibleFeedFooter';
 import { CollectibleGrid } from './CollectibleGrid';
 import { CollectibleFilters } from './CollectibleFilters';
+import { ItemBatchImport } from './ItemBatchImport';
 import { useCollectibleFeed } from './useCollectibleFeed';
 import { useCollectibleToggle } from './useCollectibleToggle';
 import './collectibles.css';
@@ -36,6 +37,7 @@ export function CollectiblesList({ kind, onCreate, onEdit }: CollectiblesListPro
       <div className="collectible-bar">
         <AppSearchInput label={copy.searchLabel} value={search} placeholder={copy.searchLabel} onChange={(event) => setSearch(event.target.value)} />
         <CollectibleFilters kind={kind} type={type ?? ''} status={status ?? ''} onChange={change} />
+        {kind === 'items' && <ItemBatchImport onCreated={feed.retry} />}
       </div>
       <div className="collectible-board">
         <CollectibleGrid kind={kind} loading={feed.loading} failed={feed.failed} rows={feed.items} busy={busy} emptyText={emptyText} onRetry={feed.retry} onCreate={() => onCreate(kind)} onEdit={(entry) => onEdit(kind, entry)} onToggle={(entry) => void toggle(entry)} />

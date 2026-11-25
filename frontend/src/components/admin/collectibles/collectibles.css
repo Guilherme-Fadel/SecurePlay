@@ -153,3 +153,24 @@
 .collectible-feed-count { margin: 0; color: var(--admin-console-muted); font-size: 12px; font-weight: 600; }
 .collectible-feed-error { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 10px; color: var(--danger); font-size: 13px; font-weight: 600; }
 .collectible-feed-sentinel { width: 100%; height: 1px; }
+.collectible-import-button { margin-left: auto; }
+.collectible-bar-notice { flex: 1 1 100%; min-width: 0; }
+.collectible-import { display: grid; gap: 12px; min-width: 0; max-height: calc(100dvh - 160px); grid-template-rows: auto minmax(0, 1fr) auto auto; }
+.collectible-import-intro, .collectible-import-progress { margin: 0; color: var(--admin-console-muted); font-size: var(--font-label, 13px); }
+.collectible-import-progress:empty { display: none; }
+.collectible-import-scroll { min-height: 0; overflow: auto; border: 1px solid var(--admin-console-border); border-radius: 10px; }
+.collectible-import-table td { vertical-align: middle; }
+.collectible-import-table td[data-label='Preço'] { white-space: nowrap; }
+.collectible-import-table tr.is-invalid .collectible-import-thumb, .collectible-import-table tr.is-invalid strong { opacity: .7; }
+.collectible-import-check { width: 18px; height: 18px; accent-color: var(--primary); cursor: pointer; }
+.collectible-import-check:disabled { cursor: not-allowed; }
+.collectible-import-check:focus-visible { outline: var(--app-focus-ring, 3px solid var(--sp-blue)); outline-offset: 2px; }
+.collectible-import-thumb { display: block; width: 56px; height: 56px; overflow: hidden; border: 1px solid var(--admin-console-border); border-radius: 8px; background: var(--admin-console-soft); }
+.collectible-import-whole { display: block; width: 100%; height: 100%; object-fit: contain; }
+.collectible-import-noart { color: var(--admin-console-muted); font-size: 12px; }
+.collectible-import-status { font-size: 12px; font-weight: 700; line-height: 1.35; }
+.collectible-import-status.is-ok { color: var(--success); }
+.collectible-import-status.is-warn { color: var(--warning); }
+.collectible-import-status.is-error { color: var(--danger); }
+.collectible-import-status.is-idle { color: var(--admin-console-muted); }
+.collectible-import-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; }

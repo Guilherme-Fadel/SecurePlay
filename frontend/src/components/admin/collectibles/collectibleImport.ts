@@ -1,9 +1,9 @@
 import type { CosmeticRarity, CosmeticType } from '@/services/achievements';
-import { COLLECTIBLE_ART_MAX_BYTES, COLLECTIBLE_ART_TYPES, type CollectibleLayer } from '@/services/adminCollectibles';
-import { ITEM_TYPES, RARITIES, slugify, type AdjustDraft, type ItemForm } from './adminCollectiblesForm';
+import { COLLECTIBLE_ART_MAX_BYTES, COLLECTIBLE_ART_TYPES, type CollectibleItemInput, type CollectibleLayer } from '@/services/adminCollectibles';
+import { ITEM_TYPES, RARITIES, buildItemBody, emptyItemForm, slugify, type AdjustDraft, type ItemForm } from './adminCollectiblesForm';
 
 /**
- * Leitura do arquivo `.json` exportado pelo organizador de artes (um item avulso por arquivo).
+ * Leitura do arquivo `.json` exportado pelo organizador de artes (um item avulso por arquivo ou um lote em `itens`).
  * Só valida e converte: nada é salvo, e o backend continua sendo a autoridade quando o formulário for salvo.
  */
 
@@ -111,20 +111,84 @@ function readItem(item: Record<string, unknown>): { form: ItemFormPatch; art: Im
   return { form, art: readArt(item.arte) };
 }
 
+const ONE_AND_MANY = 'O arquivo tem "item" e "itens" ao mesmo tempo. Use só um dos dois.';
+export const IMPORT_MANY_IN_SINGLE = 'Este arquivo tem vários itens. Use Importar JSON na lista de colecionáveis.';
+export const IMPORT_BATCH_MAX_ITEMS = 50;
+/** Tamanho máximo do arquivo de importação em lote. */
+export const IMPORT_BATCH_MAX_BYTES = 10 * 1024 * 1024;
+export const IMPORT_BATCH_TOO_BIG = 'O arquivo passa de 10 MB.';
+
+/** Texto → objeto raiz do arquivo (formato e versão conferidos). */
+function readRoot(text: string, maxLength: number, tooBig: string): Record<string, unknown> {
+  if (text.length > maxLength) refuse(tooBig);
+  let data: unknown;
+  try { data = JSON.parse(text); } catch { refuse('O arquivo não é um JSON válido.'); }
+  if (!isRecord(data) || data.formato !== IMPORT_FORMAT) refuse('Este arquivo não é um colecionável exportado pelo organizador.');
+  if (data.versao !== IMPORT_VERSION) refuse('Versão do arquivo não suportada.');
+  return data;
+}
+
 /** Valida o texto do arquivo conforme o contrato do organizador e devolve os campos do formulário e a arte (se houver). */
 export function parseCollectibleImport(text: string): CollectibleImport {
   try {
+    // Lê com o limite do lote para orientar quem abriu um arquivo de vários itens aqui; o limite de 1 item vale depois.
+    const data = readRoot(text, IMPORT_BATCH_MAX_BYTES, IMPORT_BATCH_TOO_BIG);
+    if (!absent(data.itens)) refuse(isRecord(data.item) ? ONE_AND_MANY : IMPORT_MANY_IN_SINGLE);
     if (text.length > IMPORT_MAX_BYTES) refuse(IMPORT_TOO_BIG);
-    let data: unknown;
-    try { data = JSON.parse(text); } catch { refuse('O arquivo não é um JSON válido.'); }
-    if (!isRecord(data) || data.formato !== IMPORT_FORMAT) refuse('Este arquivo não é um colecionável exportado pelo organizador.');
-    if (data.versao !== IMPORT_VERSION) refuse('Versão do arquivo não suportada.');
     if (!isRecord(data.item)) refuse('O arquivo não traz os dados do item.');
     return { ok: true, ...readItem(data.item) };
   } catch (failure) {
     if (failure instanceof ImportRefusal) return fail(failure.message);
     throw failure;
   }
+}
+
+/** Um item do lote (`index` conta a partir de 0, na ordem do arquivo): válido, com o patch do formulário, ou inválido, com o motivo. */
+export type BatchEntry =
+  | { index: number; ok: true; form: ItemFormPatch; art: ImportArt | null }
+  | { index: number; ok: false; name?: string; error: string };
+export type CollectibleBatch = { ok: true; entries: BatchEntry[] } | { ok: false; error: string };
+
+const DUPLICATE_SLUG = 'Slug repetido no arquivo';
+
+function readEntry(raw: unknown, index: number, seen: Set<string>): BatchEntry {
+  if (!isRecord(raw)) return { index, ok: false, error: 'O item não está em formato válido.' };
+  const name = typeof raw.nome === 'string' && raw.nome.trim() !== '' ? raw.nome.trim().slice(0, 120) : undefined;
+  try {
+    const entry = readItem(raw);
+    if (seen.has(entry.form.slug)) refuse(DUPLICATE_SLUG);
+    seen.add(entry.form.slug);
+    return { index, ok: true, ...entry };
+  } catch (failure) {
+    if (failure instanceof ImportRefusal) return { index, ok: false, ...(name === undefined ? {} : { name }), error: failure.message };
+    throw failure;
+  }
+}
+
+/**
+ * Lê um arquivo com `item` (lote de 1) ou `itens` (1 a 50). Cada item é validado isoladamente: o inválido vira
+ * uma entrada com o motivo e não derruba os outros. Só problema do arquivo inteiro o recusa.
+ */
+export function parseCollectibleBatch(text: string): CollectibleBatch {
+  try {
+    const data = readRoot(text, IMPORT_BATCH_MAX_BYTES, IMPORT_BATCH_TOO_BIG);
+    const hasItem = !absent(data.item);
+    if (hasItem && !absent(data.itens)) refuse(ONE_AND_MANY);
+    const seen = new Set<string>();
+    if (hasItem) return { ok: true, entries: [readEntry(data.item, 0, seen)] };
+    if (!Array.isArray(data.itens)) refuse('O arquivo não traz a lista de itens.');
+    if (data.itens.length === 0) refuse('A lista de itens está vazia.');
+    if (data.itens.length > IMPORT_BATCH_MAX_ITEMS) refuse(`O arquivo tem mais de ${IMPORT_BATCH_MAX_ITEMS} itens.`);
+    return { ok: true, entries: data.itens.map((raw: unknown, index: number) => readEntry(raw, index, seen)) };
+  } catch (failure) {
+    if (failure instanceof ImportRefusal) return fail(failure.message);
+    throw failure;
+  }
+}
+
+/** Corpo de criação de um item importado: o formulário em branco com o patch do arquivo e a chave da arte enviada; sem regra de liberação. */
+export function buildImportedItemBody(patch: ItemFormPatch, artKey: string | null): CollectibleItemInput {
+  return buildItemBody({ ...emptyItemForm(), ...patch, artKey });
 }
 
 /** Arquivo da arte importada, no formato que `uploadCollectibleArt` espera. */

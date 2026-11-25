@@ -626,7 +626,11 @@ test('importar: formato, versão e JSON inválidos têm mensagem própria', () =
   assert.equal(importError({}, { versao: 2 }), 'Versão do arquivo não suportada.');
   assert.equal(importer.parseCollectibleImport('{ não é json').error, 'O arquivo não é um JSON válido.');
   assert.equal(importer.parseCollectibleImport('[]').error, 'Este arquivo não é um colecionável exportado pelo organizador.');
-  assert.equal(importer.parseCollectibleImport('x'.repeat(1024 * 1024 + 1)).error, 'O arquivo passa de 1 MB.');
+  // Arquivo de 1 item acima de 1 MB é recusado; um lote grande recebe a orientação de usar a lista.
+  const grande = JSON.stringify({ formato: 'secureplay-colecionavel', versao: 1, item: { nome: 'Coroa', encaixe: 'head' }, sobra: 'x'.repeat(1024 * 1024) });
+  assert.equal(importer.parseCollectibleImport(grande).error, 'O arquivo passa de 1 MB.');
+  const loteGrande = JSON.stringify({ formato: 'secureplay-colecionavel', versao: 1, itens: [{ nome: 'Coroa', encaixe: 'head' }], sobra: 'x'.repeat(1024 * 1024) });
+  assert.equal(importer.parseCollectibleImport(loteGrande).error, 'Este arquivo tem vários itens. Use Importar JSON na lista de colecionáveis.');
 });
 
 test('importar: camada "back" só vale para Efeito; nos demais encaixes volta para "front"', () => {
@@ -652,4 +656,88 @@ test('importar: arte sem nome recebe nome pelo tipo', () => {
   const svg = Buffer.from('<svg/>').toString('base64');
   const result = importer.parseCollectibleImport(exported({ arte: { tipo: 'image/svg+xml', dados: `data:image/svg+xml;base64,${svg}` } }));
   assert.equal(result.art.name, 'arte.svg');
+});
+
+// Importar JSON em lote: `itens` (ou um `item`) na lista de colecionáveis.
+const batchFile = (itens, root = {}) => JSON.stringify({ formato: 'secureplay-colecionavel', versao: 1, exportadoEm: '2026-11-25T15:00:00.000Z', itens, ...root });
+const entryOf = (nome, extra = {}) => ({ nome, encaixe: 'head', ...extra });
+
+test('lote: três itens válidos, na ordem do arquivo e com índice a partir de 0', () => {
+  const art = { nome: 'c.png', tipo: 'image/png', dados: `data:image/png;base64,${PNG_B64}` };
+  const result = importer.parseCollectibleBatch(batchFile([entryOf('Coroa', { arte: art }), entryOf('Fone gamer', { encaixe: 'face', preco: 50 }), entryOf('Capa', { encaixe: 'neck' })]));
+  assert.equal(result.ok, true);
+  assert.deepEqual(plain(result.entries.map((entry) => [entry.index, entry.ok, entry.form.slug, entry.form.type])), [[0, true, 'coroa', 'head'], [1, true, 'fone-gamer', 'face'], [2, true, 'capa', 'neck']]);
+  assert.equal(result.entries[0].art.name, 'c.png');
+  assert.equal(result.entries[1].art, null);
+  assert.equal(result.entries[1].form.price, '50');
+});
+
+test('lote: arquivo com "item" vira um lote de 1', () => {
+  const result = importer.parseCollectibleBatch(exported({ nome: 'Coroa' }));
+  assert.equal(result.ok, true);
+  assert.equal(result.entries.length, 1);
+  assert.equal(result.entries[0].ok, true);
+  assert.equal(result.entries[0].form.slug, 'coroa');
+});
+
+test('lote: item inválido no meio não derruba os outros e traz nome e motivo', () => {
+  const result = importer.parseCollectibleBatch(batchFile([entryOf('Coroa'), entryOf('Chapéu', { encaixe: 'hat' }), 42, entryOf('Capa')]));
+  assert.equal(result.ok, true);
+  assert.deepEqual(plain(result.entries.map((entry) => entry.ok)), [true, false, false, true]);
+  assert.equal(result.entries[1].name, 'Chapéu');
+  assert.match(result.entries[1].error, /encaixe/);
+  assert.equal(result.entries[2].name, undefined);
+  assert.match(result.entries[2].error, /formato válido/);
+  assert.equal(result.entries[3].form.slug, 'capa');
+});
+
+test('lote: slug repetido no arquivo invalida só o segundo em diante', () => {
+  const result = importer.parseCollectibleBatch(batchFile([entryOf('Coroa'), entryOf('Outra coroa', { slug: 'coroa' }), entryOf('Coroa!')]));
+  assert.deepEqual(plain(result.entries.map((entry) => entry.ok)), [true, false, false]);
+  assert.equal(result.entries[1].error, 'Slug repetido no arquivo');
+  assert.equal(result.entries[2].error, 'Slug repetido no arquivo');
+});
+
+test('lote: "itens" vazio, acima de 50 ou fora de lista recusam o arquivo', () => {
+  assert.equal(importer.parseCollectibleBatch(batchFile([])).ok, false);
+  assert.equal(importer.parseCollectibleBatch(batchFile({})).ok, false);
+  const fifty = Array.from({ length: 50 }, (_, index) => entryOf(`Item ${index}`));
+  assert.equal(importer.parseCollectibleBatch(batchFile(fifty)).ok, true);
+  const tooMany = importer.parseCollectibleBatch(batchFile([...fifty, entryOf('Item 50')]));
+  assert.equal(tooMany.ok, false);
+  assert.match(tooMany.error, /mais de 50/);
+});
+
+test('lote: "item" e "itens" juntos, formato, versão, JSON e tamanho recusam o arquivo', () => {
+  assert.match(importer.parseCollectibleBatch(batchFile([entryOf('A')], { item: entryOf('B') })).error, /ao mesmo tempo/);
+  assert.equal(importer.parseCollectibleBatch(batchFile([entryOf('A')], { formato: 'x' })).error, 'Este arquivo não é um colecionável exportado pelo organizador.');
+  assert.equal(importer.parseCollectibleBatch(batchFile([entryOf('A')], { versao: 2 })).error, 'Versão do arquivo não suportada.');
+  assert.equal(importer.parseCollectibleBatch('{ não é json').error, 'O arquivo não é um JSON válido.');
+  assert.equal(importer.parseCollectibleBatch('x'.repeat(10 * 1024 * 1024 + 1)).error, 'O arquivo passa de 10 MB.');
+  assert.equal(importer.parseCollectibleBatch('{"formato":"secureplay-colecionavel","versao":1}').ok, false);
+});
+
+test('lote: arquivo em lote com mais de 1 MB é aceito até 10 MB (cada arte segue o limite de 200 KB)', () => {
+  const big = { nome: 'g.png', tipo: 'image/png', dados: `data:image/png;base64,${Buffer.alloc(150 * 1024, 1).toString('base64')}` };
+  const text = batchFile(Array.from({ length: 8 }, (_, index) => entryOf(`Item ${index}`, { arte: big })));
+  assert.ok(text.length > 1024 * 1024);
+  assert.equal(importer.parseCollectibleBatch(text).ok, true);
+  assert.equal(importer.parseCollectibleImport(batchFile([entryOf('A')], { item: entryOf('B') })).ok, false);
+});
+
+test('Novo item recusa arquivo com "itens" e aponta para a lista', () => {
+  const text = batchFile([entryOf('A'), entryOf('B')]);
+  assert.equal(importer.parseCollectibleImport(text).error, 'Este arquivo tem vários itens. Use Importar JSON na lista de colecionáveis.');
+  assert.match(importer.parseCollectibleImport(batchFile([entryOf('A')], { item: entryOf('B') })).error, /ao mesmo tempo/);
+});
+
+test('corpo de criação do item importado: preço número, ajuste, camada, sem regra de liberação e com a chave da arte', () => {
+  const result = importer.parseCollectibleImport(exported({ nome: 'Brilho', encaixe: 'effect', camada: 'back', preco: 75, ajuste: { x: 4, y: -3, escala: 1.5 }, raridade: 'epic', descricao: ' Um brilho. ' }));
+  const body = plain(importer.buildImportedItemBody(result.form, 'art/abc.png'));
+  assert.deepEqual(body, {
+    name: 'Brilho', slug: 'brilho', description: 'Um brilho.', rarity: 'epic', price: 75, unlockRule: null,
+    festiveEvent: null, availableFrom: null, availableUntil: null,
+    type: 'effect', visualValue: '', artKey: 'art/abc.png', layer: 'back', recolorable: false, adjust: { x: 4, y: -3, scale: 1.5 },
+  });
+  assert.equal(plain(importer.buildImportedItemBody(result.form, null)).artKey, null);
 });
