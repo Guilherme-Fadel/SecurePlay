@@ -27,7 +27,6 @@
     "test:album-model": "node --test scripts/test-album-model.cjs",
     "test:collectibles-model": "node --test scripts/test-collectibles-model.cjs",
     "test:character-model": "node --test scripts/test-character-model.cjs",
-    "test:card-frame-parts": "node --test scripts/test-card-frame-parts.cjs",
     "test:character-look": "node --test scripts/test-character-look.cjs",
     "test:level-progress": "node --test scripts/test-level-progress.cjs",
     "test:page-loading": "node --test scripts/test-page-loading.cjs",

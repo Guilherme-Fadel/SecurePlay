@@ -1,5 +1,4 @@
 import { BRAND_CHARACTER_BODY } from '@/components/shared/BrandCharacter';
-import { CardFrame } from '@/components/shared/Character/CardFrame';
 import { CharacterAvatar } from '@/components/shared/Character/CharacterAvatar';
 import { isSafeArtUrl, type CharacterLook, type LookPiece } from '@/components/shared/Character/characterLook';
 import { cn } from '@/lib/utils';
@@ -39,7 +38,7 @@ export function CharacterThumb({ source, size = 64 }: { source: ThumbSource; siz
   }
   if (source.type === 'card') {
     const theme = cardTheme(piece);
-    return <span className={cn('chr-thumb chr-thumb--card', theme.className)} style={theme.style} aria-hidden="true">Você<CardFrame artUrl={theme.frameUrl} /></span>;
+    return <span className={cn('chr-thumb chr-thumb--card', theme.className)} style={theme.style} aria-hidden="true">Você</span>;
   }
   if (isCharacterSlot(source.type)) {
     const look: CharacterLook = {};

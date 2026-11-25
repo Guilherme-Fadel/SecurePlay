@@ -1,5 +1,4 @@
 import { BRAND_CHARACTER_BODY } from '@/components/shared/BrandCharacter';
-import { CardFrame } from '@/components/shared/Character/CardFrame';
 import { CharacterAvatar } from '@/components/shared/Character/CharacterAvatar';
 import type { CharacterLook } from '@/components/shared/Character/characterLook';
 import { cn } from '@/lib/utils';
@@ -41,7 +40,6 @@ export function CharacterPreview({ look, user, level }: PreviewProps) {
               <strong>{name}</strong>
               {level !== null && <small>Nível {level}</small>}
             </span>
-            <CardFrame artUrl={board.frameUrl} />
           </div>
           <figcaption>Na linha do placar</figcaption>
         </figure>

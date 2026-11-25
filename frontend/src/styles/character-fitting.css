@@ -165,14 +165,6 @@
 .chr-card--noite { background: var(--sp-ink-800); color: var(--sp-cream); }
 .chr-card--rosa { background: var(--sp-pink); color: var(--sp-black); }
 .chr-card--azul { background: var(--sp-blue); color: var(--sp-paper); }
-
-/* Arte enviada do tema do card: a moldura (956x1080, miolo transparente) é desenhada por CardFrame, filho do card, por cima do fundo. */
-:where(.chr-card-frame) { position: relative; } /* sem especificidade: a placa do Hall segue absoluta */
-.chr-card-frame { isolation: isolate; }
-/* Conteúdo do card fora da faixa da moldura. */
-.chr-board.chr-card-frame, .collectible-preview-mini.chr-card-frame { padding: 12px 20px; }
-.hall-plate.chr-card-frame { padding: 16px 24px 18px; }
-.sb-row.chr-card-frame { padding-inline: 16px; }
 .chr-board.chr-art, .collectible-preview-mini.chr-art { color: var(--sp-cream); text-shadow: 0 1px 2px color-mix(in srgb, var(--sp-black) 60%, transparent); }
 
 /* ---------- Miniaturas ---------- */

@@ -1,5 +1,4 @@
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { CardFrame } from '@/components/shared/Character/CardFrame';
 import type { RankingCategory, RankingData, RankingEntry, RankingMode, RankingUnit } from '@/services/dashboard';
 import { stageStats, toBoardEntry } from './boardModel';
 import { hallBadge, hallPill, type HallTheme } from './hallModel';
@@ -45,14 +44,13 @@ interface HallPlateProps {
   entry: RankingEntry;
   className: string;
   style: { backgroundColor?: string; backgroundImage?: string } | undefined;
-  frameUrl: string | null;
   pill: string;
   mode: RankingMode;
   category: RankingCategory;
 }
 
 /** Placa com o tema do card do aluno (`look.card`): nome, nível ou escola e as três estatísticas do período (a da categoria em destaque). */
-export function HallPlate({ entry, className, style, frameUrl, pill, mode, category }: HallPlateProps) {
+export function HallPlate({ entry, className, style, pill, mode, category }: HallPlateProps) {
   return (
     <div className={`hall-plate ${className}`} style={style}>
       <div className="hall-plate-head">
@@ -64,7 +62,6 @@ export function HallPlate({ entry, className, style, frameUrl, pill, mode, categ
           <div key={stat.key} className={stat.on ? 'hall-stat is-on' : 'hall-stat'}><dt><span className="is-long">{stat.label}</span><span className="is-short">{stat.short}</span></dt><dd>{stat.text}</dd></div>
         ))}
       </dl>
-      <CardFrame artUrl={frameUrl} />
     </div>
   );
 }
@@ -104,7 +101,6 @@ export function HallCastLayer({ entering, entry, me, theme, scope, mode, categor
         entry={entry}
         className={theme.card.className}
         style={theme.card.style}
-        frameUrl={theme.card.frameUrl}
         pill={hallPill(entry, showCompany)}
         mode={mode}
         category={category}

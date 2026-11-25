@@ -258,8 +258,7 @@ test('placar: o tema do card equipado veste a linha; sem ele, a linha comum', ()
   assert.equal(board.scoreboardRowTheme(entry(1, 1, 10, { look: {} })), null);
   assert.equal(board.scoreboardRowTheme(entry(1, 1, 10)), null);
   const art = board.scoreboardRowTheme(entry(1, 1, 10, { look: { card: piece('x', { artUrl: 'https://cdn.exemplo.com/card.png' }) } }));
-  assert.equal(art.className, 'chr-art chr-card-frame');
-  assert.equal(art.frameUrl, 'https://cdn.exemplo.com/card.png');
+  assert.equal(art.className, 'chr-art');
 });
 
 // ---------- Cortina com carregamento (curtainFlow) ----------
