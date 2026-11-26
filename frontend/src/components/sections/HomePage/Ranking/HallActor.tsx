@@ -1,22 +1,15 @@
 import { useEffect, useState } from 'react';
 import { CharacterAvatar } from '@/components/shared/Character/CharacterAvatar';
 import type { CharacterLook } from '@/services/dashboard';
-import { INERT_PROPS } from './HallCast';
 
 const HAPPY_MS = 1200;
 
 interface HallActorProps {
-  /** Aluno em destaque: ao mudar, a reação do cutucar recomeça e o personagem entra de novo. */
+  /** Aluno em destaque: ao mudar, a reação do cutucar recomeça e o personagem entra de novo, com um pulo. */
   entryId: string;
   look: CharacterLook;
   color: string;
   pokeLabel: string;
-  /** Subiu com o palco aberto: entra com um pulo (na abertura da cortina quem entra é a cortina). */
-  open: boolean;
-  /** Cutucar só existe com o palco montado (cortina abrindo, aberta ou fechando). */
-  interactive: boolean;
-  /** A cortina cobre o palco (ainda abrindo ou já fechando): o botão de cutucar não recebe foco nem toque. */
-  covered: boolean;
   reduceMotion: boolean;
   /** Turma: três personagens padrão (esquerda, centro, direita) no lugar do personagem do aluno. */
   trio?: readonly [string, string, string] | null;
@@ -62,19 +55,12 @@ function ActorBody({ look, color, drop, hop, happy, trio }: BodyProps) {
   );
 }
 
-/** Mesma peça por aluno, só para guardar se a queda vale (palco já aberto quando ele subiu). */
-function KeyedBody(props: BodyProps & { open: boolean }) {
-  const { open, drop, ...rest } = props;
-  const [dropOnMount] = useState(open && drop);
-  return <ActorBody {...rest} drop={dropOnMount} />;
-}
-
 /**
- * O personagem em cima do pedestal, em `variant="full"`, e o "cutucar": uma reação só local
+ * O personagem no palco, em `variant="full"`, e o "cutucar": uma reação só local
  * (pulinho e olhos felizes), sem chamada ao backend. Com movimento reduzido só a expressão muda.
  * O botão de cutucar fica fora da parte remontada por aluno: o foco sobrevive às setas ← →.
  */
-export function HallActor({ entryId, look, color, pokeLabel, open, interactive, covered, reduceMotion, trio }: HallActorProps) {
+export function HallActor({ entryId, look, color, pokeLabel, reduceMotion, trio }: HallActorProps) {
   const [stored, setStored] = useState<PokeState>({ id: entryId, count: 0, happy: false });
   const poke = stored.id === entryId ? stored : { id: entryId, count: 0, happy: false };
 
@@ -87,16 +73,13 @@ export function HallActor({ entryId, look, color, pokeLabel, open, interactive, 
   const hop = !reduceMotion && poke.count > 0 ? ` is-hop-${poke.count % 2 === 0 ? 'b' : 'a'}` : '';
   return (
     <>
-      <KeyedBody key={entryId} look={look} color={color} open={open} drop={!reduceMotion} hop={hop} happy={poke.happy} trio={trio} />
-      {interactive && (
-        <button
-          type="button"
-          className="hall-pokebtn"
-          aria-label={pokeLabel}
-          {...(covered ? INERT_PROPS : {})}
-          onClick={() => setStored({ id: entryId, count: poke.count + 1, happy: true })}
-        />
-      )}
+      <ActorBody key={entryId} look={look} color={color} drop={!reduceMotion} hop={hop} happy={poke.happy} trio={trio} />
+      <button
+        type="button"
+        className="hall-pokebtn"
+        aria-label={pokeLabel}
+        onClick={() => setStored({ id: entryId, count: poke.count + 1, happy: true })}
+      />
     </>
   );
 }

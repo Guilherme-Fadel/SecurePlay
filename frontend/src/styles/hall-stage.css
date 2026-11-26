@@ -1,21 +1,10 @@
 /*
- * Hall da Fama · palco com cortina (canvas Hall da Fama aprovado, sem os prendedores laterais).
- * O palco é uma cena: veludo, madeira, ouro e holofotes usam a paleta fixa --sp-* e valem nos dois
- * temas. Só a moldura (borda e sombra dura) e o foco seguem o tema. Importado depois de
- * ranking-ui.css para que as medidas daqui vençam o reset tipográfico escopado de .rank-v.
+ * Hall da Fama · palco: o fundo equipado do aluno, o personagem, o selo de posição, as setas, a placa
+ * do card e o nome da temporada. Usa a paleta fixa --sp-* e vale nos dois temas; só a moldura (borda e
+ * sombra dura) e o foco seguem o tema. Importado depois de ranking-ui.css para que as medidas daqui
+ * vençam o reset tipográfico escopado de .rank-v.
  */
 .hall {
-  --hall-velvet-dark: color-mix(in srgb, var(--sp-red) 66%, var(--sp-black));
-  --hall-velvet: color-mix(in srgb, var(--sp-red) 94%, var(--sp-black));
-  --hall-velvet-light: color-mix(in srgb, var(--sp-red) 80%, var(--sp-pink));
-  --hall-gold-dark: color-mix(in srgb, var(--sp-yellow) 78%, var(--sp-black));
-  --hall-gold-light: color-mix(in srgb, var(--sp-yellow) 60%, var(--sp-paper));
-  --hall-brass: color-mix(in srgb, var(--sp-yellow) 90%, var(--sp-black));
-  --hall-light: color-mix(in srgb, var(--sp-yellow) 26%, var(--sp-paper));
-  --hall-wood-top: color-mix(in srgb, var(--sp-orange) 91%, var(--sp-black));
-  --hall-wood-bottom: color-mix(in srgb, var(--sp-orange) 84%, var(--sp-paper));
-  --hall-wood-line: color-mix(in srgb, var(--sp-orange) 78%, var(--sp-black));
-  --hall-apron: color-mix(in srgb, var(--sp-orange) 65%, var(--sp-black));
   width: 100%;
   min-width: 0;
   max-width: 560px;
@@ -38,20 +27,13 @@
   container-type: inline-size;
 }
 
-/* Metais do pedestal por posição; os gradientes do SVG leem estas variáveis. */
-.hall-tier--gold { --ped-edge: #C9A000; --ped-mid: var(--sp-yellow); --ped-hi: #FFE97A; --ped-top: #FFE45C; --ped-ring: #B89400; --ped-inner: #E5BF00; }
-.hall-tier--silver { --ped-edge: #6E8FD9; --ped-mid: #C9D8FF; --ped-hi: #F2F6FF; --ped-top: #F2F6FF; --ped-ring: #6E8FD9; --ped-inner: #A9C2FF; }
-.hall-tier--bronze { --ped-edge: #D9782E; --ped-mid: #FFB27A; --ped-hi: #FFE6D1; --ped-top: #FFF1E6; --ped-ring: #D9782E; --ped-inner: #FFB27A; }
-.hall-tier--plain { --ped-edge: #B8A88C; --ped-mid: var(--sp-sand); --ped-hi: var(--sp-paper); --ped-top: var(--sp-paper); --ped-ring: #B8A88C; --ped-inner: var(--sp-sand); }
+/* Cor do selo de posição (as mesmas do .sb-pos do placar). */
+.hall-tier--gold { --hall-badge-bg: var(--sp-yellow); }
+.hall-tier--silver { --hall-badge-bg: color-mix(in srgb, var(--sp-blue) 14%, var(--sp-paper)); }
+.hall-tier--bronze { --hall-badge-bg: color-mix(in srgb, var(--sp-orange) 22%, var(--sp-paper)); }
+.hall-tier--plain { --hall-badge-bg: var(--sp-paper); }
 
-.hall-scene, .hall-layer { position: absolute; inset: 0; display: block; width: 100%; height: 100%; }
-.hall-layer { pointer-events: none; }
-/* Ordem de empilhar: cena, personagem, cortina, sanca, confete, selo/placa/setas, nome da temporada.
-   Enquanto a cortina fecha (is-covered) o elenco desce para baixo dela; fechada, ele nem existe (e coberto vira `inert` no HTML). */
-.hall-curtain { z-index: 2; }
-.hall-stage.is-covered .hall-cast, .hall-stage.is-covered .hall-pokebtn { z-index: 1; }
-.hall-valance { z-index: 3; }
-/* Aviso sobre o pano enquanto o filtro novo carrega: pílula de papel, legível sobre o veludo e sobre o palco. */
+/* Aviso sobre o palco enquanto o filtro novo carrega: pílula de papel, legível sobre qualquer fundo. */
 .hall-wait {
   position: absolute;
   top: 50%;
@@ -72,61 +54,22 @@
 }
 .hall-wait:empty { display: none; }
 
-/* ---------- Cena ---------- */
-.hall-ink { stroke: var(--sp-black); stroke-linejoin: round; stroke-width: 3; }
-.hall-ink.is-fine { stroke-width: 2.5; }
-.hall-ink.is-hair { stroke-width: 2; }
-.hall-boards { fill: none; stroke: var(--hall-wood-line); stroke-width: 2.5; }
-.hall-apron { fill: var(--hall-apron); }
-.hall-apron-line { stroke: var(--hall-wood-line); stroke-width: 3; }
-.hall-shadow { fill: color-mix(in srgb, var(--sp-black) 25%, transparent); }
-.hall-shadow--top { fill: color-mix(in srgb, var(--sp-black) 22%, transparent); }
-.hall-ped-top { fill: var(--ped-top); }
-.hall-ped-ring { fill: none; stroke: var(--ped-ring); stroke-width: 3; }
-.hall-ped-inner { fill: none; stroke: var(--ped-inner); stroke-width: 3; }
-.hall-ped-num {
-  fill: var(--sp-black);
-  font-family: var(--font-family-brand);
-  font-weight: 800;
-  font-stretch: 75%;
-  font-variation-settings: 'wdth' 75;
-}
-
-/* Luzes da ribalta: acendem quando o palco abre. */
-.hall-glow { opacity: 0; transition: opacity 0.35s ease-out; }
-.hall-bulb { fill: var(--sp-sand); transition: fill 0.35s ease-out; }
-.hall-stage.is-lit .hall-glow { opacity: 0.85; }
-.hall-stage.is-lit .hall-bulb { fill: var(--hall-light); }
-
-/* Holofotes: varrem o palco quando alguém novo sobe. */
-.hall-beam { transform-box: view-box; transform-origin: 90px 30px; }
-.hall-beam.is-right { transform-origin: 510px 30px; }
-.hall-beams.is-sweep .hall-beam.is-left { animation: hall-sweep-left 0.7s cubic-bezier(0.3, 0.7, 0.3, 1); }
-.hall-beams.is-sweep .hall-beam.is-right { animation: hall-sweep-right 0.7s cubic-bezier(0.3, 0.7, 0.3, 1); }
-@keyframes hall-sweep-left { 0% { transform: rotate(-16deg); } 60% { transform: rotate(3deg); } 100% { transform: none; } }
-@keyframes hall-sweep-right { 0% { transform: rotate(16deg); } 60% { transform: rotate(-3deg); } 100% { transform: none; } }
-
-/* ---------- Sanca ---------- */
-.hall-swag-cord { fill: none; stroke: var(--sp-black); stroke-width: 14; }
-.hall-swag-dash { fill: none; stroke: var(--hall-brass); stroke-width: 10; stroke-dasharray: 1.6 2.4; }
-.hall-swag-fold { fill: none; stroke: var(--hall-velvet-dark); stroke-linecap: round; }
-.hall-swag-shine { fill: none; stroke: color-mix(in srgb, var(--sp-red) 60%, var(--sp-pink)); stroke-width: 2; stroke-linecap: round; opacity: 0.7; }
-.hall-swag-trim { fill: none; stroke: var(--sp-yellow); stroke-width: 2.5; }
-.hall-tassel-cord { fill: none; stroke: var(--sp-black); stroke-width: 5; }
-.hall-tassel-gold { fill: none; stroke: var(--hall-brass); stroke-width: 2.5; }
-.hall-tassel-fringe { fill: none; stroke: var(--hall-gold-dark); stroke-width: 1.4; }
-
+/* Nome da temporada: aba presa à borda de cima do palco. */
 .hall-season {
   position: absolute;
-  top: 0.4%;
-  right: 0;
-  left: 0;
+  top: 0;
+  left: 50%;
   z-index: 6;
+  width: max-content;
+  max-width: 70%;
+  padding: 4px 16px 6px;
+  border-radius: 0 0 14px 14px;
+  background: var(--sp-black);
   color: var(--sp-paper);
   font-size: clamp(14px, 3.6cqi, 22px);
   letter-spacing: 0.03em;
   text-align: center;
-  text-shadow: 0 2px 0 color-mix(in srgb, var(--sp-black) 35%, transparent);
+  transform: translateX(-50%);
   pointer-events: none;
 }
 
@@ -170,29 +113,32 @@
 /* ---------- Elementos sobre o palco: selo, "Você", setas e placa ---------- */
 .hall-cast { position: absolute; inset: 0; z-index: 5; pointer-events: none; }
 .hall-cast > * { pointer-events: auto; }
-.hall-cast.is-entering > * { animation: hall-rise 0.42s cubic-bezier(0.2, 0.9, 0.3, 1.2) 0.95s both; }
-.hall-cast.is-entering > .hall-badge { animation-name: hall-rise-badge; }
-@keyframes hall-rise { from { opacity: 0; transform: translateY(14px) scale(0.96); } }
-@keyframes hall-rise-badge { from { opacity: 0; transform: rotate(-9deg) translateY(14px) scale(0.9); } }
 
-.hall-badge { position: absolute; top: 14%; left: 4.5%; color: var(--sp-yellow); transform: rotate(-9deg); transform-origin: 0 0; pointer-events: none; }
-.hall-badge b {
-  display: block;
-  font-size: clamp(48px, 16cqi, 96px);
-  -webkit-text-stroke: 3px var(--sp-black);
-  paint-order: stroke fill;
-  text-shadow: 4px 4px 0 var(--sp-black);
+/* Selo de posição: adesivo sólido, legível sobre qualquer fundo (a cor vem do .hall-tier--*). */
+.hall-badge {
+  position: absolute;
+  top: 5%;
+  left: 4.5%;
+  padding: 6px 14px 8px;
+  border: 3px solid var(--sp-black);
+  border-radius: 16px;
+  background: var(--hall-badge-bg, var(--sp-paper));
+  box-shadow: 4px 4px 0 var(--sp-black);
+  color: var(--sp-black);
+  transform: rotate(-6deg);
+  transform-origin: 0 0;
+  pointer-events: none;
 }
-.hall-badge b.is-word { margin-top: -2px; font-size: clamp(22px, 6.6cqi, 40px); }
+.hall-badge b { display: block; font-size: clamp(40px, 12cqi, 72px); line-height: 0.95; }
+.hall-badge b.is-word { margin-top: -2px; font-size: clamp(18px, 5cqi, 30px); line-height: 1; }
 .hall-badge small {
   display: block;
   max-width: 14em;
-  margin: 6px 0 0 4px;
-  color: var(--sp-paper);
+  margin: 4px 0 0;
+  color: color-mix(in srgb, var(--sp-black) 70%, transparent);
   font-size: clamp(12px, 2.4cqi, 14px);
   font-weight: 800;
   letter-spacing: 0.08em;
-  text-shadow: 0 2px 0 color-mix(in srgb, var(--sp-black) 45%, transparent);
   text-transform: uppercase;
 }
 
@@ -310,23 +256,6 @@
 /* Rótulo curto só nos palcos estreitos (o outro sai da árvore de acessibilidade). */
 .hall-stat dt .is-short { display: none; }
 
-/* ---------- Confete do 1º lugar ---------- */
-.hall-confetti { position: absolute; inset: 0; z-index: 4; overflow: hidden; pointer-events: none; }
-.hall-confetti i {
-  position: absolute;
-  top: -6%;
-  width: 10px;
-  height: 16px;
-  border: 1.5px solid var(--sp-black);
-  border-radius: 2px;
-  animation: hall-fall 2.4s cubic-bezier(0.3, 0.6, 0.5, 1) both;
-}
-@keyframes hall-fall {
-  0% { transform: translateY(0) rotate(0); opacity: 1; }
-  85% { opacity: 1; }
-  100% { transform: translateY(560px) rotate(540deg); opacity: 0; }
-}
-
 /* ---------- Celular e palcos estreitos ---------- */
 @container (max-width: 420px) {
   .hall-nav { width: 44px; height: 44px; }
@@ -343,7 +272,7 @@
   .hall-stat dd { font-size: 14px; line-height: 1.15; }
 }
 
-/* Movimento reduzido: a cortina já aparece aberta (o JS não a anima) e nada se mexe nem pisca. */
+/* Movimento reduzido: nada se mexe nem pisca. */
 @media (prefers-reduced-motion: reduce) {
   .hall *, .hall *::before, .hall *::after { animation: none !important; transition: none !important; }
 }

@@ -6,7 +6,7 @@ import type { HallStep } from './useHallSteps';
 
 interface HallBadgeProps { number: string; caption: string }
 
-/** "1º lugar" em letras grandes no canto do palco; a placa e o aviso do leitor de tela já dizem o mesmo. */
+/** "1º lugar" num adesivo no canto do palco; a placa e o aviso do leitor de tela já dizem o mesmo. */
 export function HallBadge({ number, caption }: HallBadgeProps) {
   return (
     <div className="hall-badge" aria-hidden="true">
@@ -67,7 +67,6 @@ export function HallPlate({ entry, className, style, pill, mode, category }: Hal
 }
 
 interface HallCastLayerProps {
-  entering: boolean;
   entry: RankingEntry;
   me: boolean;
   theme: HallTheme;
@@ -78,21 +77,13 @@ interface HallCastLayerProps {
   showCompany: boolean;
   prev: HallStep;
   next: HallStep;
-  /** A cortina ainda não terminou de abrir (ou já fechou): nada daqui recebe foco nem toque. */
-  covered: boolean;
 }
 
-/**
- * Atributo `inert` (o React 18 não o tipa): tira do foco, do toque e do leitor de tela o que a cortina cobre.
- * No React 19 ele vira prop booleana (`inert={covered}`) e este objeto deixa de ser necessário.
- */
-export const INERT_PROPS: Record<string, string> = { inert: '' };
-
-/** Tudo o que sobe ao palco com a cortina aberta: selo, "Você", setas e a placa do aluno. */
-export function HallCastLayer({ entering, entry, me, theme, scope, mode, category, unit, showCompany, prev, next, covered }: HallCastLayerProps) {
+/** Tudo o que fica sobre o palco: selo, "Você", setas e a placa do aluno. */
+export function HallCastLayer({ entry, me, theme, scope, mode, category, unit, showCompany, prev, next }: HallCastLayerProps) {
   const badge = hallBadge(entry.position, scope, mode, unit);
   return (
-    <div className={`hall-cast${entering ? ' is-entering' : ''}`} {...(covered ? INERT_PROPS : {})}>
+    <div className="hall-cast">
       <HallBadge number={badge.number} caption={badge.caption} />
       {me && <span className="hall-me">{toBoardEntry(entry).kind === 'turma' ? 'Sua turma' : 'Você'}</span>}
       <HallNav direction={-1} label={prev.label} enabled={prev.enabled} onStep={prev.go} />

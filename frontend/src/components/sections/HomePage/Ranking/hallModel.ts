@@ -6,7 +6,7 @@ import { isViewerEntry, leaderboardOf, ordinal, viewerOf } from './rankingModel'
 /*
  * Regras do palco do Hall da Fama (sem dependências de runtime, testável em Node).
  * O backend é a autoridade de posição, XP e participação: aqui só se escolhe quem
- * aparece no palco, como o pedestal e o card se vestem e o que o leitor de tela ouve.
+ * aparece no palco, como o selo e o card se vestem e o que o leitor de tela ouve.
  */
 
 /** Quem pode subir ao palco: a lista recebida (top 50) e, abaixo dela, o próprio aluno no fim. */
@@ -19,7 +19,7 @@ export function hallEntries(ranking: RankingData): RankingEntry[] {
 
 /**
  * Identifica o "espetáculo": escopo, período, temporada, instituição, categoria e unidade. Muda com
- * o filtro (a cortina fecha e reabre) e não com a atualização dos mesmos dados.
+ * o filtro (zera o destaque e a página do placar) e não com a atualização dos mesmos dados.
  */
 export function hallSceneKey(ranking: RankingData): string {
   return [ranking.scope, ranking.mode, ranking.selectedSeason ?? 'atual', ranking.company?.id ?? 'self', categoryOf(ranking), unitOf(ranking)].join('|');
@@ -49,21 +49,16 @@ export function canStep(entries: readonly RankingEntry[], selectedId: string | n
   return target >= 0 && target < entries.length;
 }
 
-/* ---------- Pedestal ---------- */
+/* ---------- Posição ---------- */
 
 export type PedestalTier = 'gold' | 'silver' | 'bronze' | 'plain';
 
-/** Pela posição do backend: empates dividem o estilo; da 4ª em diante, neutro. */
+/** Estilo do selo pela posição do backend: empates dividem o estilo; da 4ª em diante, neutro. */
 export function pedestalTier(position: number): PedestalTier {
   if (position === 1) return 'gold';
   if (position === 2) return 'silver';
   if (position === 3) return 'bronze';
   return 'plain';
-}
-
-/** Número gravado no pedestal; encolhe para caber com 2 e 3 dígitos. */
-export function pedestalLabel(position: number): { text: string; size: number } {
-  return { text: ordinal(position), size: position < 10 ? 40 : position < 100 ? 34 : 28 };
 }
 
 /* ---------- Tema do aluno ---------- */
@@ -80,29 +75,9 @@ export function isHallMe(entry: RankingEntry, viewerKey: string | null): boolean
   return entry.isCurrentUser === true || (viewerKey !== null && entry.rankKey === viewerKey);
 }
 
-/** Classes do palco: metais do pedestal pela posição, fundo equipado, luzes da ribalta e, com a cortina fechando, o elenco por baixo dela. */
-export function hallStageClass(position: number, theme: HallTheme, state: { lit: boolean; covered?: boolean }): string {
-  return ['hall-stage', `hall-tier--${pedestalTier(position)}`, theme.stage.className, state.lit ? 'is-lit' : '', state.covered ? 'is-covered' : ''].filter(Boolean).join(' ');
-}
-
-export type StagePhase = 'closed' | 'opening' | 'closing' | 'open';
-
-export interface StageFlags {
-  /** Elenco (selo, setas, placa) e botão de cutucar montados: abrindo, aberta ou fechando (por baixo da cortina). */
-  mounted: boolean;
-  /** Cortina aberta: só então o elenco recebe foco, toque e o teclado do palco. */
-  live: boolean;
-  /** Setas habilitadas (desde a abertura; o foco e o toque seguem vedados até `live`). */
-  steps: boolean;
-  /** O leitor de tela anuncia quem está no palco. */
-  announce: boolean;
-}
-
-/** O que a fase da cortina permite: com ela fechada ou fechando, nada do palco é tocável nem lido. */
-export function stageFlags(phase: StagePhase): StageFlags {
-  const live = phase === 'open';
-  const opening = phase === 'opening';
-  return { mounted: opening || live || phase === 'closing', live, steps: opening || live, announce: opening || live };
+/** Classes do palco: cor do selo pela posição (`hall-tier--*`) e o fundo equipado do aluno. */
+export function hallStageClass(position: number, theme: HallTheme): string {
+  return ['hall-stage', `hall-tier--${pedestalTier(position)}`, theme.stage.className].filter(Boolean).join(' ');
 }
 
 /** Cores do trio de personagens que representa a turma no palco; `null` para o aluno (que tem o próprio personagem). */
@@ -131,11 +106,6 @@ export function hallBadge(position: number, scope: RankingData['scope'], mode: R
   return { number: ordinal(position), caption: `${hallScopeText(scope, unit)}${MODE_SUFFIX[mode]}` };
 }
 
-/** Confete só quando o 1º colocado sobe ao palco. */
-export function celebrates(position: number): boolean {
-  return position === 1;
-}
-
 /** Selo da placa: a instituição na classificação global; nos demais casos, o nível (aluno) ou "N alunos" (turma). */
 export function hallPill(entry: RankingEntry, showCompany: boolean): string {
   if (showCompany && entry.companyName) return entry.companyName;
@@ -160,25 +130,3 @@ export function hallStepLabel(name: string | null, delta: -1 | 1, turmas = false
   if (name === null) return delta < 0 ? 'Não há aluno anterior' : 'Não há próximo aluno';
   return `Levar ao palco o ${delta < 0 ? 'aluno anterior' : 'próximo aluno'}: ${name}`;
 }
-
-/* ---------- Confete ---------- */
-
-export interface ConfettiPiece { left: number; color: string; delay: number; duration: number }
-
-/** Quatorze pedaços do canvas aprovado, com as cores da paleta fixa da marca. */
-export const CONFETTI: readonly ConfettiPiece[] = [
-  { left: 22, color: 'var(--sp-yellow)', delay: 0, duration: 2.2 },
-  { left: 30, color: 'var(--sp-pink)', delay: 0.15, duration: 2.6 },
-  { left: 38, color: 'var(--sp-cream)', delay: 0.3, duration: 2.1 },
-  { left: 45, color: 'var(--sp-orange)', delay: 0.05, duration: 2.5 },
-  { left: 52, color: 'var(--sp-yellow)', delay: 0.4, duration: 2.3 },
-  { left: 58, color: 'var(--sp-blue)', delay: 0.2, duration: 2.7 },
-  { left: 64, color: 'var(--sp-pink)', delay: 0.5, duration: 2.2 },
-  { left: 70, color: 'var(--sp-cream)', delay: 0.1, duration: 2.4 },
-  { left: 76, color: 'var(--sp-yellow)', delay: 0.35, duration: 2.6 },
-  { left: 34, color: 'var(--sp-orange)', delay: 0.65, duration: 2.3 },
-  { left: 48, color: 'var(--sp-red)', delay: 0.75, duration: 2.1 },
-  { left: 62, color: 'var(--sp-yellow)', delay: 0.85, duration: 2.5 },
-  { left: 26, color: 'var(--sp-blue)', delay: 0.9, duration: 2.4 },
-  { left: 72, color: 'var(--sp-orange)', delay: 1, duration: 2.2 },
-];

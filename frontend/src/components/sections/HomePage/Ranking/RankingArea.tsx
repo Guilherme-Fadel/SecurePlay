@@ -17,7 +17,7 @@ export interface RankingAreaProps {
   filters: ScoreboardFiltersProps;
   /** Já com as entradas normalizadas (`boardRanking`); `null` enquanto carrega ou se falhou. */
   ranking: RankingData | null;
-  /** O ranking recebido é o do filtro anterior, enquanto o novo carrega: o palco fecha a cortina e o placar mostra silhuetas. */
+  /** O ranking recebido é o do filtro anterior, enquanto o novo carrega: o palco avisa "Trocando o placar…" e o placar mostra silhuetas. */
   stale: boolean;
   loading: boolean;
   onRetry: () => void;
@@ -88,19 +88,17 @@ interface AreaStageProps {
   entries: RankingEntry[];
   selectedId: string | null;
   onSelect: (id: string) => void;
-  sceneKey: string;
   seasonName: string;
   pending: boolean;
 }
 
-function AreaStage({ ranking, entries, selectedId, onSelect, sceneKey, seasonName, pending }: AreaStageProps) {
+function AreaStage({ ranking, entries, selectedId, onSelect, seasonName, pending }: AreaStageProps) {
   const view = scoreboardView(ranking, { category: 'xp', unit: 'students' });
   return (
     <HallStage
       entries={entries}
       selectedId={selectedId}
       onSelect={onSelect}
-      sceneKey={sceneKey}
       viewerKey={viewerOf(ranking)?.rankKey ?? null}
       scope={ranking.scope}
       mode={ranking.mode}
@@ -126,7 +124,7 @@ function extrasOf(props: RankingAreaProps, status: Status, entries: RankingEntry
   };
 }
 
-/** A classificação que o palco mostra: a da lista ou, carregando outro filtro, a anterior (cortina fechada). */
+/** A classificação que o palco mostra: a da lista ou, carregando outro filtro, a anterior. */
 function stageRanking(status: Status, ranking: RankingData | null): RankingData | null {
   return status.kind === 'rows' || status.kind === 'loading' ? ranking : null;
 }
@@ -144,12 +142,12 @@ export function RankingArea(props: RankingAreaProps) {
   const status = statusOf(props);
   const view = scoreboardView(ranking, filters);
   const extras = extrasOf(props, status, entries, selectedId);
-  // Carregando outro filtro, o palco segue com a classificação anterior (cortina fechada) até a nova chegar.
+  // Carregando outro filtro, o palco segue com a classificação anterior até a nova chegar.
   const board = stageRanking(status, ranking);
   return (
     <div className={`rk-grid${board ? ' has-board' : ''}${status.kind === 'loading' ? ' is-loading' : ''}`}>
       {board
-        ? <AreaStage ranking={board} entries={entries} selectedId={selectedId} onSelect={select} sceneKey={sceneKey} seasonName={seasonName} pending={status.kind === 'loading'} />
+        ? <AreaStage ranking={board} entries={entries} selectedId={selectedId} onSelect={select} seasonName={seasonName} pending={status.kind === 'loading'} />
         : status.kind === 'loading' && <ContentLoading variant="ranking" />}
       <RankingScoreboard
         {...extras}

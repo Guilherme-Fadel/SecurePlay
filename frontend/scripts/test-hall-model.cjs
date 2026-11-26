@@ -22,7 +22,6 @@ const board = load('src/components/sections/HomePage/Ranking/scoreboardModel.ts'
   './boardModel': boardRows,
   '../Awards/characterModel': character,
 });
-const paths = load('src/components/sections/HomePage/Ranking/hallCurtainPaths.ts', {});
 const plain = (value) => JSON.parse(JSON.stringify(value));
 
 const entry = (key, position, points, extra = {}) => ({ rankKey: `k${key}`, position, name: `Aluno ${key}`, points, level: 3, ...extra });
@@ -77,9 +76,6 @@ test('anterior e próxima percorrem a lista e param nos limites', () => {
 test('pedestal: 1º, 2º e 3º têm estilo próprio e as demais posições são neutras; empate divide o estilo', () => {
   assert.deepEqual(plain([1, 2, 3, 4, 50, 73].map(hall.pedestalTier)), ['gold', 'silver', 'bronze', 'plain', 'plain', 'plain']);
   assert.equal(hall.pedestalTier(2), hall.pedestalTier(2));
-  assert.deepEqual(plain(hall.pedestalLabel(1)), { text: '1º', size: 40 });
-  assert.deepEqual(plain(hall.pedestalLabel(12)), { text: '12º', size: 34 });
-  assert.deepEqual(plain(hall.pedestalLabel(140)), { text: '140º', size: 28 });
 });
 
 test('fundo e tema do card vêm do look; sem eles, palco padrão e card clássico', () => {
@@ -96,13 +92,10 @@ test('fundo e tema do card vêm do look; sem eles, palco padrão e card clássic
   assert.equal(custom.stage.style.backgroundColor, '#112233');
 });
 
-test('faixa "Nº lugar" e selo falam do escopo e do período, e o confete é só do 1º', () => {
+test('faixa "Nº lugar" e selo falam do escopo e do período, ', () => {
   assert.deepEqual(plain(hall.hallBadge(1, 'company', 'current')), { number: '1º', caption: 'na sua escola' });
   assert.deepEqual(plain(hall.hallBadge(4, 'global', 'season')), { number: '4º', caption: 'entre todas as escolas · final' });
   assert.deepEqual(plain(hall.hallBadge(2, 'company', 'total')), { number: '2º', caption: 'na sua escola · geral' });
-  assert.equal(hall.celebrates(1), true);
-  assert.equal(hall.celebrates(2), false);
-  assert.equal(hall.celebrates(0), false);
 });
 
 test('placa e aviso do leitor de tela: nome, posição e XP; "você" no próprio aluno', () => {
@@ -126,70 +119,6 @@ test('a cena muda com escopo, modo, temporada ou instituição, e não com o ref
   assert.notEqual(hall.hallSceneKey(base), hall.hallSceneKey(data({ selectedSeason: '2026-10' })));
   assert.notEqual(hall.hallSceneKey(base), hall.hallSceneKey(data({ company: { id: 8, name: 'Outra' } })));
   assert.equal(hall.hallSceneKey(data({ company: null })), 'company|current|2026-11|self|xp|students');
-});
-
-test('cortina: sete faixas e as mesmas formas fechada e aberta', () => {
-  const curtain = paths.curtainPaths();
-  assert.equal(curtain.closed.length, 7);
-  assert.equal(curtain.open.length, 7);
-  const commands = (d) => d.replace(/[-\d.\s,]+/g, '|');
-  curtain.closed.forEach((d, index) => assert.equal(commands(d), commands(curtain.open[index])));
-  assert.equal(commands(curtain.closedEdge), commands(curtain.openEdge));
-  assert.ok(curtain.closed.every((d) => !d.includes('NaN')));
-});
-
-test('cortina: a curva de suavização parte de 0, chega a 1 e nunca volta', () => {
-  const ease = paths.cubicBezier(0.55, 0, 0.45, 1);
-  assert.equal(ease(0), 0);
-  assert.equal(ease(1), 1);
-  assert.ok(Math.abs(ease(0.5) - 0.5) < 1e-6);
-  const samples = Array.from({ length: 21 }, (_, index) => ease(index / 20));
-  samples.slice(1).forEach((value, index) => assert.ok(value >= samples[index]));
-  assert.ok(ease(0.2) < 0.2);
-  assert.ok(paths.cubicBezier(0.25, 0, 0.2, 1)(0.2) > 0.2);
-});
-
-test('cortina: cada quadro da abertura e do fechamento vai de uma ponta à outra, sem pular', () => {
-  const curtain = paths.curtainPaths();
-  const first = (d) => Number(d.split(' ')[0].slice(1));
-  const edgeX = (d) => Number(d.split(' ')[2].slice(1));
-  assert.deepEqual(plain(paths.curtainFrame('opening', 0)), plain({ bands: curtain.closed, edge: curtain.closedEdge }));
-  assert.deepEqual(plain(paths.curtainFrame('opening', 1)), plain({ bands: curtain.open, edge: curtain.openEdge }));
-  assert.deepEqual(plain(paths.curtainFrame('closing', 0)), plain({ bands: curtain.open, edge: curtain.openEdge }));
-  assert.deepEqual(plain(paths.curtainFrame('closing', 1)), plain({ bands: curtain.closed, edge: curtain.closedEdge }));
-  assert.deepEqual(plain(paths.curtainFrame('opening', -3).bands), plain(curtain.closed));
-  assert.deepEqual(plain(paths.curtainFrame('opening', 9).bands), plain(curtain.open));
-  // Faixa 6: a abertura recolhe a borda esquerda de 262 para perto de 89; a cada quadro ela só anda para a esquerda.
-  const steps = Array.from({ length: 24 }, (_, index) => first(paths.curtainFrame('opening', index / 23).bands[6]));
-  assert.equal(steps[0], first(curtain.closed[6]));
-  assert.equal(steps[23], first(curtain.open[6]));
-  steps.slice(1).forEach((value, index) => assert.ok(value <= steps[index] + 1e-9));
-  assert.ok(steps[12] < steps[0] && steps[12] > steps[23], 'no meio do caminho a faixa não está nem fechada nem aberta');
-  const closing = Array.from({ length: 24 }, (_, index) => first(paths.curtainFrame('closing', index / 23).bands[6]));
-  closing.slice(1).forEach((value, index) => assert.ok(value >= closing[index] - 1e-9));
-  assert.ok(edgeX(paths.curtainFrame('opening', 0.5).edge) < edgeX(curtain.closedEdge));
-  const every = Array.from({ length: 11 }, (_, index) => paths.curtainFrame('opening', index / 10));
-  assert.ok(every.every((frame) => frame.bands.length === 7 && frame.bands.every((d) => !d.includes('NaN'))));
-});
-
-test('cortina: fechar no meio da abertura parte da forma atual e chega à fechada, sem pular', () => {
-  const closed = paths.curtainFrame('opening', 0);
-  const mid = paths.curtainShape('opening', 0.5);
-  const first = (d) => Number(d.split(' ')[0].slice(1));
-  assert.ok(paths.curtainOpenness(mid) > 0 && paths.curtainOpenness(mid) < 1);
-  assert.equal(paths.curtainOpenness(paths.curtainShape('opening', 0)), 0);
-  assert.equal(paths.curtainOpenness(paths.curtainShape('opening', 1)), 1);
-  assert.deepEqual(plain(paths.shapeFrame(paths.closeFrom(mid, 0))), plain(paths.shapeFrame(mid)));
-  assert.deepEqual(plain(paths.shapeFrame(paths.closeFrom(mid, 1))), plain(closed));
-  const steps = Array.from({ length: 20 }, (_, index) => first(paths.shapeFrame(paths.closeFrom(mid, index / 19)).bands[6]));
-  steps.slice(1).forEach((value, index) => assert.ok(value >= steps[index] - 1e-9));
-  assert.ok(paths.closeMs(mid) < paths.CURTAIN_MS.closing && paths.closeMs(mid) > 0);
-  assert.equal(paths.closeMs(paths.curtainShape('opening', 1)), paths.CURTAIN_MS.closing);
-});
-
-test('cortina: abrir leva 1,15 s e fechar 0,6 s, como no canvas', () => {
-  assert.equal(paths.CURTAIN_MS.opening, 1150);
-  assert.equal(paths.CURTAIN_MS.closing, 600);
 });
 
 /* ---------- Placar (Task 4.2) ---------- */
@@ -259,99 +188,4 @@ test('placar: o tema do card equipado veste a linha; sem ele, a linha comum', ()
   assert.equal(board.scoreboardRowTheme(entry(1, 1, 10)), null);
   const art = board.scoreboardRowTheme(entry(1, 1, 10, { look: { card: piece('x', { artUrl: 'https://cdn.exemplo.com/card.png' }) } }));
   assert.equal(art.className, 'chr-art chr-art--card');
-});
-
-// ---------- Cortina com carregamento (curtainFlow) ----------
-const flow = load('src/components/sections/HomePage/Ranking/curtainFlow.ts', { './hallCurtainPaths': paths });
-const at = (sceneKey, pending = false, reduceMotion = false) => ({ sceneKey, pending, reduceMotion });
-
-test('cortina: troca de filtro aberta fecha, fica fechada carregando e abre com o resultado', () => {
-  let state = flow.openedState('a');
-  state = flow.syncFlow(state, at('a', true));
-  assert.equal(state.phase, 'closing');
-  assert.equal(state.lit, false);
-  // O fechamento termina com a consulta ainda em andamento: espera fechada, sem abrir.
-  state = flow.finishClosing(state, at('a', true));
-  assert.equal(state.phase, 'closed');
-  assert.equal(state.held, true);
-  assert.equal(flow.finishWaiting(state, at('a', true)).phase, 'closed');
-  assert.equal(flow.waitMs(state), 0);
-  // Os dados chegam (cena nova): abre já com a cena nova.
-  state = flow.syncFlow(state, at('b'));
-  assert.equal(state.shownKey, 'b');
-  state = flow.finishWaiting(state, at('b'));
-  assert.equal(state.phase, 'opening');
-  assert.equal(state.shownKey, 'b');
-  assert.equal(state.entering, true);
-});
-
-test('cortina: dados antes do fim do fechamento esperam o fechamento acabar', () => {
-  let state = flow.syncFlow(flow.openedState('a'), at('a', true));
-  state = flow.syncFlow(state, at('b'));
-  assert.equal(state.phase, 'closing');
-  assert.equal(state.shownKey, 'a');
-  state = flow.finishClosing(state, at('b'));
-  assert.equal(state.phase, 'opening');
-  assert.equal(state.shownKey, 'b');
-});
-
-test('cortina: trocas seguidas durante o carregamento mantêm fechada e abrem só com o último resultado', () => {
-  let state = flow.syncFlow(flow.openedState('a'), at('a', true));
-  state = flow.finishClosing(state, at('a', true));
-  // Outro filtro: a consulta continua pendente (o palco ainda tem a cena a).
-  state = flow.syncFlow(state, at('a', true));
-  assert.equal(state.phase, 'closed');
-  assert.equal(flow.finishWaiting(state, at('a', true)).phase, 'closed');
-  state = flow.syncFlow(state, at('c'));
-  state = flow.finishWaiting(state, at('c'));
-  assert.equal(state.phase, 'opening');
-  assert.equal(state.shownKey, 'c');
-});
-
-test('cortina: troca durante o fechamento segue fechando e consulta nova mantém fechada', () => {
-  let state = flow.syncFlow(flow.openedState('a'), at('a', true));
-  assert.equal(flow.syncFlow(state, at('a', true)), state);
-  state = flow.finishClosing(flow.syncFlow(state, at('b', true)), at('b', true));
-  assert.equal(state.phase, 'closed');
-});
-
-test('cortina: erro na consulta reabre com a cena que estava no palco', () => {
-  let state = flow.finishClosing(flow.syncFlow(flow.openedState('a'), at('a', true)), at('a', true));
-  state = flow.syncFlow(state, at('a', false));
-  state = flow.finishWaiting(state, at('a', false));
-  assert.equal(state.phase, 'opening');
-  assert.equal(state.shownKey, 'a');
-  // Erro antes de acabar de fechar: o fechamento termina e já reabre.
-  const closing = flow.syncFlow(flow.openedState('a'), at('a', true));
-  assert.equal(flow.finishClosing(closing, at('a', false)).phase, 'opening');
-});
-
-test('cortina: abrindo, um filtro novo fecha de novo; sem mudança, nada muda', () => {
-  const opening = flow.finishWaiting(flow.waitingState('a'), at('a'));
-  assert.equal(opening.phase, 'opening');
-  assert.equal(flow.syncFlow(opening, at('a')), opening);
-  assert.equal(flow.syncFlow(opening, at('a', true)).phase, 'closing');
-  assert.equal(flow.syncFlow(opening, at('b')).phase, 'closing');
-});
-
-test('cortina: a entrada da tela espera e abre; a espera depois de carregar é zero', () => {
-  const entry = flow.waitingState('a');
-  assert.equal(flow.waitMs(entry), paths.CURTAIN_MS.wait);
-  assert.equal(flow.finishWaiting(entry, at('a', true)).phase, 'closed');
-  assert.equal(flow.syncFlow(entry, at('b')).shownKey, 'b');
-});
-
-test('cortina: movimento reduzido não anima, fica aberta na cena atual', () => {
-  const state = flow.syncFlow(flow.waitingState('a'), at('b', true, true));
-  assert.equal(state.phase, 'open');
-  assert.equal(state.shownKey, 'b');
-  assert.equal(flow.syncFlow(state, at('b', true, true)), state);
-});
-
-test('cortina: o aviso aparece fechada ou fechando durante a consulta, e sempre com movimento reduzido', () => {
-  assert.equal(flow.waitNotice('closed', true, false), 'Trocando o placar…');
-  assert.equal(flow.waitNotice('closing', true, false), 'Trocando o placar…');
-  assert.equal(flow.waitNotice('open', true, true), 'Trocando o placar…');
-  assert.equal(flow.waitNotice('open', true, false), '');
-  assert.equal(flow.waitNotice('closed', false, false), '');
 });

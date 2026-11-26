@@ -244,23 +244,15 @@ test('cartão do placar: categoria e unidade da resposta, subtítulo e corte', (
   assert.equal(scoreboard.scoreboardView(data({ company: null, totalParticipants: 2 }), fallback).subtitle, 'Minha escola · 2 participantes');
 });
 
-test('palco: nome do botão de cutucar e classes com a cortina fechando', () => {
+test('palco: nome do botão de cutucar, classes do palco e trio da turma', () => {
   const ana = board.toBoardEntry(student(1, 1, 5, { name: 'Ana' }));
   assert.equal(hall.hallPokeLabel(ana, true), 'Cutucar o seu personagem');
   assert.equal(hall.hallPokeLabel(ana, false), 'Cutucar o personagem de Ana');
   assert.equal(hall.hallPokeLabel(board.toBoardEntry(turma(1, 1, 5, { name: '7º ano B' })), false), 'Cutucar os personagens da turma 7º ano B');
   const theme = hall.hallTheme(undefined);
-  assert.equal(hall.hallStageClass(1, theme, { lit: true }).includes('is-covered'), false);
-  assert.equal(hall.hallStageClass(1, theme, { lit: false, covered: true }).includes('is-covered'), true);
-  assert.equal(hall.hallStageClass(1, theme, { lit: true }).includes('is-lit'), true);
-});
-
-test('fases da cortina: só aberta o elenco é tocável; fechando, ele fica montado atrás dela', () => {
-  const flags = (phase) => plain(hall.stageFlags(phase));
-  assert.deepEqual(flags('closed'), { mounted: false, live: false, steps: false, announce: false });
-  assert.deepEqual(flags('opening'), { mounted: true, live: false, steps: true, announce: true });
-  assert.deepEqual(flags('open'), { mounted: true, live: true, steps: true, announce: true });
-  assert.deepEqual(flags('closing'), { mounted: true, live: false, steps: false, announce: false });
+  const gold = hall.hallStageClass(1, theme).split(' ');
+  assert.ok(gold.includes('hall-stage') && gold.includes('hall-tier--gold') && gold.includes(theme.stage.className));
+  assert.ok(hall.hallStageClass(5, theme).split(' ').includes('hall-tier--plain'));
   assert.equal(hall.hallTrio(board.toBoardEntry(student(1, 1, 5))), null);
   assert.equal(hall.hallTrio(board.toBoardEntry(turma(1, 1, 5))).length, 3);
 });

@@ -33,8 +33,8 @@ function weeklyHighlight(ranking: RankingData | null) {
 }
 
 /**
- * Enquanto o ranking de outro filtro carrega, segue a última classificação (`stale`): o palco fecha a cortina
- * na hora, espera fechada e abre com a nova, em vez de sumir; o placar mostra silhuetas. Sem carregamento em
+ * Enquanto o ranking de outro filtro carrega, segue a última classificação (`stale`): o palco mostra
+ * "Trocando o placar…" sobre ela até a nova chegar, em vez de sumir; o placar mostra silhuetas. Sem carregamento em
  * curso (erro, escolha de temporada), solta.
  */
 function useKeptRanking(ranking: RankingData | null, hold: boolean): { ranking: RankingData | null; stale: boolean } {
