@@ -20,9 +20,7 @@ interface ColorsProps {
  */
 export function CharacterColors({ color, changing, locked, onChoose }: ColorsProps) {
   return (
-    <section className="chr-base" aria-labelledby="chr-base-title">
-      <h3 id="chr-base-title" className="cole-display chr-base-title">Cor do personagem</h3>
-      <p className="chr-base-help">As cores base são grátis. Escolha a sua e troque quando quiser.</p>
+    <section className="chr-base" aria-label="Cor do personagem (grátis)">
       <ul className="chr-base-list">
         {CHARACTER_COLORS.map((option) => {
           const selected = option.color === color;

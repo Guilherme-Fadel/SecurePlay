@@ -66,8 +66,13 @@
   .chr-readings {
     grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
     grid-template-areas: 'stage base' 'board board';
-    align-items: start;
   }
+  /* As cores ocupam a altura do palco (sem a legenda dele): a primeira e a última alinham com o quadro. */
+  .chr-readings-base { display: flex; padding-bottom: 27px; }
+  .chr-base, .chr-base-list { flex: 1 1 auto; }
+  .chr-base-list > li { display: flex; flex: 1 1 0; }
+  .chr-readings-base .chr-base-btn { min-height: 40px; }
+  .chr-readings-base .chr-base-pet { width: 28px; }
 }
 
 .chr-reading { display: flex; min-width: 0; margin: 0; flex-direction: column; gap: 8px; }
@@ -185,9 +190,7 @@
 
 /* ---------- Cores base ---------- */
 .chr-base { display: flex; min-width: 0; flex-direction: column; gap: 8px; }
-.chr-base-title { margin: 0; font-size: 20px; color: var(--cole-heading); }
-.chr-base-help { margin: 0; font-size: 13px; font-weight: 600; line-height: 1.35; color: var(--cole-muted); }
-.chr-base-list { display: flex; margin: 4px 0 0; padding: 0; flex-direction: column; gap: 8px; list-style: none; }
+.chr-base-list { display: flex; margin: 0; padding: 0; flex-direction: column; gap: 8px; list-style: none; }
 
 .chr-base-btn {
   display: flex;
