@@ -6,6 +6,7 @@ import type { CosmeticType } from '@/services/achievements';
 import { CosmeticArt, hasCosmeticArtwork } from './CollectiblesArt';
 import { cardTheme, isCharacterSlot, stageTheme } from './characterModel';
 import { PieceArtThumb } from './PieceArtThumb';
+import '@/styles/character-thumb.css';
 
 export interface ThumbSource {
   slug?: string;
@@ -38,7 +39,8 @@ export function CharacterThumb({ source, size = 64 }: { source: ThumbSource; siz
   }
   if (source.type === 'card') {
     const theme = cardTheme(piece);
-    return <span className={cn('chr-thumb chr-thumb--card', theme.className)} style={theme.style} aria-hidden="true">Você</span>;
+    // Faixa 8:1 com a arte inteira (degradê à esquerda, cena à direita) e o "Você" de uma linha de placar.
+    return <span className={cn('chr-thumb chr-thumb--strip', theme.className)} style={theme.style} aria-hidden="true">Você</span>;
   }
   if (isCharacterSlot(source.type)) {
     const look: CharacterLook = {};

@@ -89,12 +89,12 @@ function ItemGroup({ title, items, tryingId, onTry, balance }: { title: string; 
               <button
                 id={characterItemId(item.id)}
                 type="button"
-                className={cn('cole-row', `is-${state}`, selected && 'is-selected')}
+                className={cn('cole-row', `is-${state}`, selected && 'is-selected', item.type === 'card' && 'cole-row--strip')}
                 aria-pressed={selected}
                 aria-label={characterItemLabel(item, balance)}
                 onClick={() => onTry(item)}
               >
-                <span className={cn('cole-tile', state === 'lock' && 'is-locked')}><CharacterThumb source={item} /></span>
+                <span className={cn('cole-tile', item.type === 'card' && 'cole-tile--strip', state === 'lock' && 'is-locked')}><CharacterThumb source={item} /></span>
                 <span className="cole-row-text">
                   <strong>{item.name}</strong>
                   <span className="cole-row-tags">

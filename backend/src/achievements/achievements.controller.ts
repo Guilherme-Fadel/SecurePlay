@@ -10,6 +10,7 @@ import {
 } from '@nestjs/common';
 import { AchievementsService } from './achievements.service';
 import { CosmeticType } from './entities/cosmetic-item.entity';
+import { CharacterColorDto } from './dto/character-color.dto';
 import { EquipCosmeticDto } from './dto/equip-cosmetic.dto';
 import { RequiresFeature } from '../common/features/feature.decorator';
 import { Roles } from '../auth/roles.decorator';
@@ -57,6 +58,15 @@ export class AchievementsController {
     @Body() body: EquipCosmeticDto,
   ) {
     return this.achievementsService.equip(req.user.userId, id, body.color);
+  }
+
+  @Roles(Role.USER)
+  @Post('character/color')
+  setCharacterColor(@Request() req: any, @Body() body: CharacterColorDto) {
+    return this.achievementsService.setCharacterColor(
+      req.user.userId,
+      body.color,
+    );
   }
 
   @Roles(Role.USER)

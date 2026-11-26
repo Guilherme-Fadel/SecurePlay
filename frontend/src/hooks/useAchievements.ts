@@ -4,7 +4,9 @@ import { invalidate, setCache } from '@/lib/queryCache';
 import { useCurrentUser } from './useCurrentUser';
 import { useCompanyFeatures } from './useCompanyFeatures';
 import { companyCacheKey } from '@/config/features';
+import type { CharacterColor } from '@/components/shared/Character/characterColor';
 import {
+  chooseCharacterColor,
   equipCosmetic,
   getAchievementShop,
   getAchievementTrail,
@@ -72,6 +74,18 @@ export function useAchievementShop(enabled = true) {
     }
   };
 
+  const [changingColor, setChangingColor] = useState<CharacterColor | null>(null);
+  const chooseColor = async (color: CharacterColor) => {
+    setChangingColor(color);
+    try {
+      const updated = await chooseCharacterColor(color);
+      setCache<AchievementShop>(shopCacheKey, updated);
+      return updated;
+    } finally {
+      setChangingColor(null);
+    }
+  };
+
   const unequip = async (type: CosmeticType, itemId: number) => {
     setChangingItem(itemId);
     try {
@@ -83,5 +97,5 @@ export function useAchievementShop(enabled = true) {
     }
   };
 
-  return { ...query, changingItem, changingKit, purchase, purchaseKit, equip, unequip };
+  return { ...query, changingItem, changingKit, changingColor, purchase, purchaseKit, equip, unequip, chooseColor };
 }

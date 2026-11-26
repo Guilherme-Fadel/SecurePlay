@@ -1,7 +1,10 @@
 import { Test } from '@nestjs/testing';
 import { EventEmitter2, EventEmitterModule } from '@nestjs/event-emitter';
 import { DashboardService } from './dashboard.service';
+import { defaultCharacterColor } from '../achievements/character-color';
 import { resolveCompanyParameters } from '../config/features';
+import { Usuario } from '../usuario/usuario.entity';
+import { rankKey } from './rank-key';
 
 describe('DashboardService — entrega de progresso/check-in', () => {
   const build = () => {
@@ -92,7 +95,10 @@ describe('DashboardService — visual equipado no ranking', () => {
     },
   });
 
-  const build = (rows: unknown[]) => {
+  const build = (
+    rows: unknown[],
+    owners: Array<{ id: number; character_color: string | null }> = [],
+  ) => {
     const parameters = resolveCompanyParameters({ globalRankingEnabled: true });
     const query = {
       leftJoinAndSelect: jest.fn().mockReturnThis(),
@@ -133,8 +139,11 @@ describe('DashboardService — visual equipado no ranking', () => {
       ]),
     };
     const find = jest.fn().mockResolvedValue(rows);
+    const findUsers = jest.fn().mockResolvedValue(owners);
     const dataSource = {
-      getRepository: jest.fn().mockReturnValue({ find }),
+      getRepository: jest.fn((entity: unknown) =>
+        entity === Usuario ? { find: findUsers } : { find },
+      ),
       query: jest.fn().mockResolvedValue([]),
     };
     const service = new DashboardService(
@@ -166,6 +175,7 @@ describe('DashboardService — visual equipado no ranking', () => {
     const ranking = await service.getRanking(7, 'global', false);
     const entry = ranking.leaderboard.find((e) => e.name === 'Cartola');
     expect(entry?.look).toEqual({
+      bodyColor: defaultCharacterColor(rankKey(11)),
       head: {
         visualValue: 'cartola',
         artUrl: null,
@@ -176,8 +186,10 @@ describe('DashboardService — visual equipado no ranking', () => {
     });
     expect(
       ranking.leaderboard.find((e) => e.name === 'Sem item')?.look,
-    ).toEqual({});
-    expect(ranking.currentUser?.look).toEqual({});
+    ).toEqual({ bodyColor: defaultCharacterColor(rankKey(12)) });
+    expect(ranking.currentUser?.look).toEqual({
+      bodyColor: defaultCharacterColor(rankKey(7)),
+    });
     expect(find).toHaveBeenCalledTimes(1);
     expect(find).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -192,6 +204,20 @@ describe('DashboardService — visual equipado no ranking', () => {
     for (const leak of ['@escola.com', 'cartola-interna', '"price"', '"slug"'])
       expect(json).not.toContain(leak);
     expect(Object.keys(entry ?? {})).not.toContain('usuarioId');
+  });
+
+  it('traz a cor base escolhida no look do ranking e a padrão de quem não escolheu', async () => {
+    const { service } = build([], [{ id: 11, character_color: 'vermelho' }]);
+    const ranking = await service.getRanking(7, 'global', false);
+    expect(
+      ranking.leaderboard.find((e) => e.name === 'Cartola')?.look.bodyColor,
+    ).toBe('vermelho');
+    expect(
+      ranking.leaderboard.find((e) => e.name === 'Sem item')?.look.bodyColor,
+    ).toBe(defaultCharacterColor(rankKey(12)));
+    expect(ranking.currentUser?.look?.bodyColor).toBe(
+      defaultCharacterColor(rankKey(7)),
+    );
   });
 
   it('o ranking continua quando o visual não carrega', async () => {

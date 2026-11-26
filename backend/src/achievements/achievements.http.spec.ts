@@ -20,6 +20,7 @@ describe('HTTP — Shop de colecionáveis (compra e equipar)', () => {
     purchaseKit: jest.fn().mockResolvedValue({ shop: true }),
     equip: jest.fn().mockResolvedValue({ shop: true }),
     unequip: jest.fn().mockResolvedValue({ shop: true }),
+    setCharacterColor: jest.fn().mockResolvedValue({ shop: true }),
   };
   const identities = new Map([
     [1, { userId: 1, role: Role.ADMIN, empresa_id: 10 }],
@@ -76,6 +77,7 @@ describe('HTTP — Shop de colecionáveis (compra e equipar)', () => {
     ['/achievements/shop/kits/3/purchase', 'purchaseKit'],
     ['/achievements/shop/10/equip', 'equip'],
     ['/achievements/shop/type/head/unequip', 'unequip'],
+    ['/achievements/character/color', 'setCharacterColor'],
   ] as const)('gestão recebe 403 em POST %s', async (url, method) => {
     for (const user of ['1', '2', '9']) {
       const result = await app.inject({
@@ -104,6 +106,31 @@ describe('HTTP — Shop de colecionáveis (compra e equipar)', () => {
     expect(result.statusCode).toBe(201);
     expect(service[method]).toHaveBeenCalledWith(...args);
   });
+
+  it('aluno escolhe a cor base e o service recebe só a cor válida', async () => {
+    const result = await app.inject({
+      method: 'POST',
+      url: '/achievements/character/color',
+      headers: headers('3'),
+      payload: { color: 'rosa' },
+    });
+    expect(result.statusCode).toBe(201);
+    expect(service.setCharacterColor).toHaveBeenCalledWith(3, 'rosa');
+  });
+
+  it.each([{}, { color: 'verde' }, { color: 7 }, { color: null }])(
+    'cor base %j é recusada com 400 antes do service',
+    async (payload) => {
+      const result = await app.inject({
+        method: 'POST',
+        url: '/achievements/character/color',
+        headers: headers('3'),
+        payload,
+      });
+      expect(result.statusCode).toBe(400);
+      expect(service.setCharacterColor).not.toHaveBeenCalled();
+    },
+  );
 
   it('a vitrine continua aberta à gestão', async () => {
     const result = await app.inject({

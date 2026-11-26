@@ -1,9 +1,12 @@
 import { Logger } from '@nestjs/common';
 import { In, Repository } from 'typeorm';
+import { resolveCharacterColor, type CharacterColor } from './character-color';
 import { resolveArtUrls } from './cosmetic-shop.catalog';
 import { CosmeticItem, CosmeticType } from './entities/cosmetic-item.entity';
 import { UsuarioCosmetic } from './entities/usuario-cosmetic.entity';
 import type { S3Service } from '../conteudo/s3/s3.service';
+import { rankKey } from '../dashboard/rank-key';
+import type { Usuario } from '../usuario/usuario.entity';
 
 /** Peça equipada, no formato que o front desenha. Nada além disto sai do backend. */
 export interface LookPiece {
@@ -15,6 +18,8 @@ export interface LookPiece {
 }
 
 export interface CharacterLook {
+  /** Cor base do corpo (escolhida ou padrão pela rankKey); não é um encaixe. */
+  bodyColor?: CharacterColor;
   skin?: LookPiece;
   head?: LookPiece;
   face?: LookPiece;
@@ -55,28 +60,42 @@ export function toLookPiece(
 }
 
 /**
- * Visual equipado de cada aluno em uma única consulta. Todo ID pedido volta no
- * mapa; quem não equipou nada recebe `{}`. Sem cache por aluno: equipar tem de
- * aparecer na próxima leitura.
+ * Visual equipado de cada aluno, com duas consultas em paralelo (peças e cor
+ * base). Todo ID pedido volta no mapa com `bodyColor` (escolhida ou padrão pela
+ * rankKey); quem não equipou nada não tem peças. Sem cache por aluno: equipar
+ * tem de aparecer na próxima leitura.
  */
 export async function loadLooks(
   deps: {
     userItems: Pick<Repository<UsuarioCosmetic>, 'find'>;
+    users: Pick<Repository<Usuario>, 'find'>;
     s3?: Pick<S3Service, 'resolveImageUrl'>;
     logger: Logger;
   },
   userIds: number[],
 ): Promise<Map<number, CharacterLook>> {
-  const looks = new Map<number, CharacterLook>(userIds.map((id) => [id, {}]));
+  const looks = new Map<number, CharacterLook>();
   if (!userIds.length) return looks;
-  const rows = await deps.userItems.find({
-    where: {
-      usuario_id: In([...new Set(userIds)]),
-      equipped: true,
-      cosmetic_item: { type: In([...LOOK_SLOTS]) },
-    },
-    relations: { cosmetic_item: true },
-  });
+  const uniqueIds = [...new Set(userIds)];
+  const [rows, owners] = await Promise.all([
+    deps.userItems.find({
+      where: {
+        usuario_id: In(uniqueIds),
+        equipped: true,
+        cosmetic_item: { type: In([...LOOK_SLOTS]) },
+      },
+      relations: { cosmetic_item: true },
+    }),
+    deps.users.find({
+      where: { id: In(uniqueIds) },
+      select: { id: true, character_color: true },
+    }),
+  ]);
+  const stored = new Map(owners.map((u) => [u.id, u.character_color]));
+  for (const id of userIds)
+    looks.set(id, {
+      bodyColor: resolveCharacterColor(stored.get(id), rankKey(id)).color,
+    });
   const worn = rows.filter(
     (row) => row.equipped && isLookSlot(row.cosmetic_item.type),
   );

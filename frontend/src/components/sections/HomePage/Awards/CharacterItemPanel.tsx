@@ -57,8 +57,8 @@ function EmptyPanel() {
 function ItemHead({ item, equipped }: { item: CosmeticItem; equipped: boolean }) {
   const festive = festiveLabel(item);
   return (
-    <div className="cole-act-head">
-      <span className={cn('cole-tile', !item.owned && !item.unlock.met && 'is-locked')}><CharacterThumb source={item} /></span>
+    <div className={cn('cole-act-head', item.type === 'card' && 'cole-act-head--strip')}>
+      <span className={cn('cole-tile', item.type === 'card' && 'cole-tile--strip', !item.owned && !item.unlock.met && 'is-locked')}><CharacterThumb source={item} /></span>
       <div>
         <span className="cole-eyebrow">{equipped ? 'No seu personagem' : 'Experimentando'}</span>
         <strong>{item.name}</strong>

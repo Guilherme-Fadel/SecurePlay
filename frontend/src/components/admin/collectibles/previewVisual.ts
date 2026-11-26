@@ -7,7 +7,7 @@ const LEGACY_BACKGROUND = /^background-[a-z0-9-]+$/;
 const CHARACTER_SLOTS: readonly CharacterSlot[] = ['skin', 'head', 'face', 'neck', 'effect'];
 
 /** A peça aparece na prévia: arte enviada ou valor que a biblioteca (avatar, palco ou card) sabe desenhar. */
-function pieceShows(slot: keyof CharacterLook, piece: LookPiece | undefined): boolean {
+function pieceShows(slot: Exclude<keyof CharacterLook, 'bodyColor'>, piece: LookPiece | undefined): boolean {
   if (!piece) return false;
   if (isSafeArtUrl(piece.artUrl)) return true;
   if (slot === 'background') return STAGE_THEMES.includes(piece.visualValue) || LEGACY_BACKGROUND.test(piece.visualValue);

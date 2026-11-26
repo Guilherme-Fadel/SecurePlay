@@ -3,7 +3,10 @@ import { AchievementsService } from './achievements.service';
 import { CosmeticType } from './entities/cosmetic-item.entity';
 import { CosmeticRarity } from './entities/cosmetic-rarity';
 import { UsuarioCosmeticKit } from './entities/usuario-cosmetic-kit.entity';
+import { defaultCharacterColor } from './character-color';
 import type { UnlockFacts } from './unlock-evaluator';
+import { rankKey } from '../dashboard/rank-key';
+import { Usuario } from '../usuario/usuario.entity';
 
 const facts: UnlockFacts = {
   xpSeason: 0,
@@ -111,9 +114,17 @@ function setup() {
   const ownedKits = {
     find: jest.fn().mockResolvedValue([{ usuario_id: 7, kit_id: 4 }]),
   };
+  const usuarios = {
+    findOne: jest.fn().mockResolvedValue({ id: 7, character_color: null }),
+    update: jest.fn().mockResolvedValue(undefined),
+  };
   const dataSource = {
     getRepository: jest.fn((entity: unknown) =>
-      entity === UsuarioCosmeticKit ? ownedKits : kits,
+      entity === UsuarioCosmeticKit
+        ? ownedKits
+        : entity === Usuario
+          ? usuarios
+          : kits,
     ),
   };
   const loader = { load: jest.fn().mockResolvedValue(facts) };
@@ -135,7 +146,7 @@ function setup() {
     metrics: {},
     nodes: [],
   } as never);
-  return { service, loader, s3, cosmetics, kits };
+  return { service, loader, s3, cosmetics, kits, usuarios };
 }
 
 describe('AchievementsService.getShop', () => {
@@ -338,4 +349,55 @@ describe('AchievementsService.getShop', () => {
     expect(shop.items[0].artUrl).toBeNull();
     expect(shop.equipped[0].artUrl).toBeNull();
   });
+});
+
+describe('AchievementsService.getShop - cor base do personagem', () => {
+  it('sem escolha traz a cor padrão da rankKey com chosen=false', async () => {
+    const { service } = setup();
+    const shop = await service.getShop(7);
+    expect(shop.character).toEqual({
+      color: defaultCharacterColor(rankKey(7)),
+      chosen: false,
+    });
+  });
+
+  it('com escolha traz a cor gravada com chosen=true', async () => {
+    const { service, usuarios } = setup();
+    usuarios.findOne.mockResolvedValue({ id: 7, character_color: 'rosa' });
+    const shop = await service.getShop(7);
+    expect(shop.character).toEqual({ color: 'rosa', chosen: true });
+  });
+
+  it('ignora valor inválido gravado e volta à cor padrão', async () => {
+    const { service, usuarios } = setup();
+    usuarios.findOne.mockResolvedValue({ id: 7, character_color: 'verde' });
+    expect((await service.getShop(7)).character.chosen).toBe(false);
+  });
+});
+
+describe('AchievementsService.setCharacterColor', () => {
+  it('grava a cor do aluno autenticado e devolve a loja com chosen=true', async () => {
+    const { service, usuarios } = setup();
+    usuarios.update.mockImplementation(() => {
+      usuarios.findOne.mockResolvedValue({ id: 7, character_color: 'preto' });
+      return Promise.resolve();
+    });
+    const shop = await service.setCharacterColor(7, 'preto');
+    expect(usuarios.update).toHaveBeenCalledWith(
+      { id: 7 },
+      { character_color: 'preto' },
+    );
+    expect(shop.character).toEqual({ color: 'preto', chosen: true });
+  });
+
+  it.each(['verde', '', null, undefined, 3, 'AZUL'])(
+    'recusa a cor %j com 400 sem gravar',
+    async (color) => {
+      const { service, usuarios } = setup();
+      await expect(service.setCharacterColor(7, color)).rejects.toMatchObject({
+        status: 400,
+      });
+      expect(usuarios.update).not.toHaveBeenCalled();
+    },
+  );
 });

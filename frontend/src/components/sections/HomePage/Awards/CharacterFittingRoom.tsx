@@ -1,7 +1,9 @@
 import { useState, type Ref } from 'react';
+import { DEFAULT_CHARACTER_COLOR, characterColorLabel, type CharacterColor } from '@/components/shared/Character/characterColor';
 import type { useAchievementShop } from '@/hooks/useAchievements';
 import type { AchievementShop, AchievementTrail, CosmeticItem, CosmeticKit } from '@/services/achievements';
 import type { CurrentUser } from '@/services/me';
+import { characterColorId, CharacterColors } from './CharacterColors';
 import { CharacterItemPanel, characterSwatchId } from './CharacterItemPanel';
 import { CharacterItems, characterItemId } from './CharacterItems';
 import { CharacterKits, characterKitId } from './CharacterKits';
@@ -50,7 +52,7 @@ function useShopAction(refetch: ShopState['refetch']) {
  * do backend; a prévia nunca grava nada.
  */
 export function CharacterFittingRoom({ shop, shopState, trail, user, level, earnRef, onShowEarn }: FittingRoomProps) {
-  const { changingItem, changingKit, purchase, purchaseKit, equip, unequip, refetch } = shopState;
+  const { changingItem, changingKit, changingColor, chooseColor, purchase, purchaseKit, equip, unequip, refetch } = shopState;
   const [slot, setSlot] = useState<CharacterSlot>(CHARACTER_SLOTS[0].slot);
   // Um item em prova por encaixe: trocar de aba não desfaz a prova das outras (o aluno vê o conjunto).
   const [trials, setTrials] = useState<Partial<Record<CharacterSlot, number>>>({});
@@ -60,7 +62,8 @@ export function CharacterFittingRoom({ shop, shopState, trail, user, level, earn
   const trialItems = shop.items.filter((item) => Object.values(trials).includes(item.id));
   const trying = shop.items.find((item) => item.id === activeId) ?? null;
   const look = buildCharacterLook(shop, trialItems);
-  const locked = changingItem !== null || changingKit !== null;
+  const bodyColor = shop.character?.color ?? DEFAULT_CHARACTER_COLOR;
+  const locked = changingItem !== null || changingKit !== null || changingColor !== null;
 
   /** Tira da prova o item do encaixe dele (depois de comprar, equipar, tirar ou limpar). */
   const endTrial = (item: CosmeticItem) => {
@@ -100,6 +103,10 @@ export function CharacterFittingRoom({ shop, shopState, trail, user, level, earn
     if (done) endTrial(item);
   };
 
+  const onChooseColor = (color: CharacterColor) => {
+    void run(() => chooseColor(color), `Cor ${characterColorLabel(color).toLowerCase()} escolhida.`, 'Não foi possível trocar a cor do personagem.', characterColorId(color));
+  };
+
   const onBuyKit = (kit: CosmeticKit) => {
     void run(() => purchaseKit(kit.id), `${kit.name} agora está no seu acervo. Equipe as peças pela coleção.`, 'Não foi possível comprar o kit.', characterKitId(kit.id));
   };
@@ -113,7 +120,13 @@ export function CharacterFittingRoom({ shop, shopState, trail, user, level, earn
       <p className="sr-only" aria-live="polite">{trying ? `Prévia no personagem: ${trying.name}.` : ''}</p>
       <div className="chr-grid">
         <div className="chr-work">
-          <CharacterPreview look={look} user={user} level={level} />
+          <CharacterPreview
+            look={look}
+            user={user}
+            level={level}
+            color={bodyColor}
+            colors={<CharacterColors color={bodyColor} changing={changingColor} locked={locked} onChoose={onChooseColor} />}
+          />
           <div className="cole-act">
             <FeedbackRegions feedback={feedback} />
             <CharacterItemPanel

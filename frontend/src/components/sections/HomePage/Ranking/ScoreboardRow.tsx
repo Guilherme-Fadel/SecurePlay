@@ -1,5 +1,6 @@
 import type { CSSProperties } from 'react';
 import { CharacterAvatar } from '@/components/shared/Character/CharacterAvatar';
+import { bodyColorOrFallback } from '@/components/shared/Character/characterColor';
 import type { RankingCategory, RankingEntry } from '@/services/dashboard';
 import { rowSub, rowTrend, toBoardEntry, turmaChip, valueParts, type BoardEntry } from './boardModel';
 import { pedestalTier } from './hallModel';
@@ -21,7 +22,7 @@ interface ScoreboardRowProps {
 function RowLead({ entry }: { entry: BoardEntry }) {
   const tone = avatarTone(entry.rankKey, false);
   if (entry.kind === 'turma') return <span className="sb-tchip" style={{ background: tone.background, color: tone.color }} aria-hidden="true">{turmaChip(entry.name)}</span>;
-  return <span className="sb-pet" aria-hidden="true"><CharacterAvatar look={entry.look ?? {}} color={tone.background} variant="compact" /></span>;
+  return <span className="sb-pet" aria-hidden="true"><CharacterAvatar look={entry.look ?? {}} color={bodyColorOrFallback(entry.look, tone.background)} variant="compact" /></span>;
 }
 
 /** Valor da categoria com a unidade e, embaixo, a tendência da semana (ou "total da turma"). */

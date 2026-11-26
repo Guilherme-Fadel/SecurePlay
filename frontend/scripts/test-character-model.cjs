@@ -5,6 +5,7 @@ const { test } = require('node:test');
 const { load } = require('./helpers/react-hooks.cjs');
 
 const look = load('src/components/shared/Character/characterLook.ts', {});
+const bodyColor = load('src/components/shared/Character/characterColor.ts', {});
 const collectibles = load('src/components/sections/HomePage/Awards/collectiblesModel.ts', {
   './albumModel': load('src/components/sections/HomePage/Awards/albumModel.ts', {}),
 });
@@ -220,4 +221,20 @@ test('comemorativo: evento e prazo em data de Brasília, só se o backend mandar
   assert.equal(model.festiveLabel({ festiveEvent: 'Natal', availableUntil: null }), 'Natal');
   assert.equal(model.festiveLabel({ festiveEvent: null, availableUntil: '2026-12-31T23:59:59.999-03:00' }), null);
   assert.equal(collectibles.rarityLabel.festive, 'Comemorativa');
+});
+
+test('cor base: mapa CSS na ordem da paleta do ranking e queda para o azul', () => {
+  assert.deepEqual(plain(bodyColor.CHARACTER_COLORS.map((entry) => [entry.color, entry.css])), [
+    ['azul', 'var(--sp-blue)'], ['laranja', 'var(--sp-orange)'], ['rosa', 'var(--sp-pink)'], ['preto', 'var(--sp-black)'], ['vermelho', 'var(--sp-red)'],
+  ]);
+  assert.equal(bodyColor.characterColorCss('rosa'), 'var(--sp-pink)');
+  assert.equal(bodyColor.characterColorCss(undefined), 'var(--sp-blue)');
+  assert.equal(bodyColor.characterColorCss('verde'), 'var(--sp-blue)');
+});
+
+test('cor do corpo no ranking: bodyColor do look vence; sem ele (ou inválido) vale a reserva', () => {
+  assert.equal(bodyColor.bodyColorOrFallback({ bodyColor: 'vermelho' }, 'var(--sp-orange)'), 'var(--sp-red)');
+  assert.equal(bodyColor.bodyColorOrFallback({}, 'var(--sp-orange)'), 'var(--sp-orange)');
+  assert.equal(bodyColor.bodyColorOrFallback(undefined, 'var(--sp-orange)'), 'var(--sp-orange)');
+  assert.equal(bodyColor.bodyColorOrFallback({ bodyColor: 'verde' }, 'var(--sp-orange)'), 'var(--sp-orange)');
 });

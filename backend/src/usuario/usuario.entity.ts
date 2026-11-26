@@ -104,6 +104,10 @@ export class Usuario {
   @Column({ type: 'int', default: 0 })
   session_version: number;
 
+  /** Cor base do personagem escolhida pelo aluno; nula usa a padrão pela rankKey. */
+  @Column({ type: 'varchar', length: 16, nullable: true, default: null })
+  character_color: string | null;
+
   @Column({ type: 'varchar', length: 20, default: 'user' })
   role: Role;
 

@@ -20,16 +20,20 @@ function CardArt({ row }: { row: CollectibleRow }) {
   return <CharacterAvatar look={kitLook(row)} color={BRAND_CHARACTER_BODY} variant="full" />;
 }
 
+/** Tema do card: a arte é uma faixa 8:1 e o cartão a mostra inteira, em largura maior. */
+const isStrip = (row: CollectibleRow) => !isKit(row) && row.type === 'card';
+
 /** Cartão clicável inteiro (abre a edição); publicar/tirar da loja é um botão só de ícone ao lado, fora do botão principal. */
 export function CollectibleCard({ row, busy, onEdit, onToggle }: CollectibleCardProps) {
   const publish = rowActions(row).publish;
   const status = collectibleStatus(row);
   const badges = cardBadges(row);
+  const strip = isStrip(row);
   const detailId = `collectible-card-${isKit(row) ? 'kit' : 'item'}-${row.id}`;
   const toggleLabel = `${publish ? 'Publicar' : 'Tirar da loja'} ${row.name}`;
-  return <li className="collectible-card-cell">
+  return <li className={cn('collectible-card-cell', strip && 'is-strip')}>
     <button type="button" className={cn('collectible-card', `is-${row.rarity}`, !row.active && 'is-draft')} aria-label={`Editar ${row.name}`} aria-describedby={detailId} onClick={() => onEdit(row)}>
-      <span className={cn('collectible-card-art', isKit(row) && 'is-kit')}><CardArt row={row} /></span>
+      <span className={cn('collectible-card-art', isKit(row) ? 'is-kit' : strip && 'is-strip')}><CardArt row={row} /></span>
       <strong className="collectible-card-name">{row.name}</strong>
       <span id={detailId} className="collectible-card-info">
         <span className="collectible-card-tags">

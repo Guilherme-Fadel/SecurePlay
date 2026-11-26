@@ -2,6 +2,7 @@ import { useId } from 'react';
 import { useReducedMotion } from 'motion/react';
 import '@/styles/character-fitting.css';
 import type { RankingCategory, RankingData, RankingEntry, RankingMode, RankingUnit } from '@/services/dashboard';
+import { bodyColorOrFallback } from '@/components/shared/Character/characterColor';
 import { avatarTone } from './rankingAvatarTone';
 import { HallActor } from './HallActor';
 import { HallCastLayer } from './HallCast';
@@ -75,7 +76,7 @@ export function HallStage(props: HallStageProps) {
         <HallActor
           entryId={entry.rankKey}
           look={entry.look ?? {}}
-          color={avatarTone(entry.rankKey, false).background}
+          color={bodyColorOrFallback(entry.look, avatarTone(entry.rankKey, false).background)}
           pokeLabel={hallPokeLabel(entry, me)}
           open={live}
           interactive={mounted}

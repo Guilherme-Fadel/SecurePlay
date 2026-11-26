@@ -120,7 +120,7 @@ export function kitLook(kit: Pick<CollectibleKit, 'pieces'>): CharacterLook {
   const look: CharacterLook = {};
   for (const piece of kit.pieces) {
     if (!PIECE_ORDER.includes(piece.type)) continue;
-    look[piece.type as keyof CharacterLook] = { visualValue: piece.visualValue, artUrl: piece.artUrl, color: null, adjust: piece.adjust, layer: piece.layer };
+    look[piece.type as Exclude<keyof CharacterLook, 'bodyColor'>] = { visualValue: piece.visualValue, artUrl: piece.artUrl, color: null, adjust: piece.adjust, layer: piece.layer };
   }
   return look;
 }

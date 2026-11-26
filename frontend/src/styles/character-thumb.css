@@ -1,0 +1,39 @@
+/*
+ * Miniatura do tema do card: faixa 8:1 com a arte inteira (degradê escuro à esquerda,
+ * cena à direita), como o cartão do placar. Complementa as miniaturas de character-fitting.css.
+ */
+.chr-thumb.chr-thumb--strip {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 8 / 1;
+  padding-inline: 8px;
+  border: 2px solid var(--sp-black);
+  border-radius: 8px;
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.chr-thumb.chr-thumb--strip.chr-art { color: var(--sp-cream); text-shadow: 0 1px 2px color-mix(in srgb, var(--sp-black) 60%, transparent); }
+
+/* Linha da loja: a faixa ocupa a largura de cima e nome, raridade e preço vêm embaixo. */
+.cole-tile.cole-tile--strip { display: block; width: min(100%, 360px); height: auto; border-radius: 0; background: none; }
+.cole-row.cole-row--strip {
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-areas: 'tile tile' 'text end';
+  row-gap: 8px;
+}
+.cole-row--strip > .cole-tile { grid-area: tile; }
+.cole-row--strip > .cole-row-text { grid-area: text; }
+.cole-row--strip > .cole-row-end { grid-area: end; grid-column: auto; flex-direction: column; align-items: flex-end; }
+@container (max-width: 440px) {
+  .cole-row.cole-row--strip { grid-template-columns: minmax(0, 1fr); grid-template-areas: 'tile' 'text' 'end'; }
+  .cole-row--strip > .cole-row-end { flex-direction: row; flex-wrap: wrap; align-items: center; }
+}
+
+/* Painel do item em prova e peças de kit. */
+.cole-act-head.cole-act-head--strip { flex-direction: column; align-items: stretch; }
+.chr-kit-piece .cole-tile:has(> .chr-thumb--strip) { width: 100%; height: auto; }

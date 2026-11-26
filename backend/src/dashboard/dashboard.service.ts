@@ -399,6 +399,7 @@ export class DashboardService implements OnApplicationBootstrap, OnModuleDestroy
       return await loadLooks(
         {
           userItems: this.dataSource.getRepository(UsuarioCosmetic),
+          users: this.dataSource.getRepository(Usuario),
           s3: this.s3Service,
           logger: this.logger,
         },

@@ -43,6 +43,8 @@ import { isOnSale } from './availability';
 import { UnlockFactsLoader } from './unlock-evaluator';
 import { assertUnlocked } from './unlock-requirements';
 import { COSMETIC_COLOR_PATTERN } from './dto/equip-cosmetic.dto';
+import { CHARACTER_COLORS, isCharacterColor } from './character-color';
+import { Usuario } from '../usuario/usuario.entity';
 import { S3Service } from '../conteudo/s3/s3.service';
 
 // A interface publica deste arquivo nao muda: quem importava os tipos daqui
@@ -367,10 +369,23 @@ export class AchievementsService {
       userItems: this.usuarioCosmeticRepository,
       kits: this.dataSource.getRepository(CosmeticKit),
       userKits: this.dataSource.getRepository(UsuarioCosmeticKit),
+      users: this.dataSource.getRepository(Usuario),
       unlockFacts: this.unlockFacts,
       s3: this.s3,
       logger: this.logger,
     });
+  }
+
+  /** Grava a cor base do personagem (gratuita); o servidor só aceita as cores da lista. */
+  async setCharacterColor(usuario_id: number, color: unknown) {
+    if (!isCharacterColor(color))
+      throw new BadRequestException(
+        `A cor deve ser uma de: ${CHARACTER_COLORS.join(', ')}`,
+      );
+    await this.dataSource
+      .getRepository(Usuario)
+      .update({ id: usuario_id }, { character_color: color });
+    return this.getShop(usuario_id);
   }
 
   async purchase(usuario_id: number, itemId: number) {

@@ -1,4 +1,5 @@
 import { api } from './api';
+import type { CharacterColor } from '@/components/shared/Character/characterColor';
 import type { LookPiece } from './dashboard';
 
 export type AchievementCategory = 'sentinel' | 'specialist' | 'investigator' | 'consistency' | 'elite';
@@ -144,6 +145,8 @@ export interface AchievementShop {
   equipped: EquippedCosmetic[];
   items: CosmeticItem[];
   kits: CosmeticKit[];
+  /** Cor base do personagem (a escolhida ou a padrão); API antiga não envia. */
+  character?: { color: CharacterColor; chosen: boolean };
 }
 
 export async function getAchievementTrail(): Promise<AchievementTrail> {
@@ -179,5 +182,11 @@ export async function equipCosmetic(itemId: number, color?: string): Promise<Ach
 
 export async function unequipCosmetic(type: CosmeticType): Promise<AchievementShop> {
   const response = await api.post(`/achievements/shop/type/${type}/unequip`);
+  return response.data as AchievementShop;
+}
+
+/** Escolhe a cor base do personagem (grátis e imediata); devolve o shop atualizado. */
+export async function chooseCharacterColor(color: CharacterColor): Promise<AchievementShop> {
+  const response = await api.post('/achievements/character/color', { color });
   return response.data as AchievementShop;
 }

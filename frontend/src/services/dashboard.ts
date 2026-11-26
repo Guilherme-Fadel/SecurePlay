@@ -1,4 +1,5 @@
 import type { LockReason } from '@/components/sections/HomePage/Conteudos/lockCopy';
+import type { CharacterColor } from '@/components/shared/Character/characterColor';
 import { api } from '@/services/api';
 
 export interface DashboardStats {
@@ -55,6 +56,8 @@ export interface LookPiece {
 }
 
 export interface CharacterLook {
+  /** Cor base do corpo escolhida pelo aluno; não é encaixe. */
+  bodyColor?: CharacterColor;
   skin?: LookPiece;
   head?: LookPiece;
   face?: LookPiece;
