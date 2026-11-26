@@ -14,7 +14,8 @@ import type {
 } from './dto/collectible-item.dto';
 import type { CollectibleKitDto } from './dto/collectible-kit.dto';
 
-export type ArtAsserter = (artKey: string) => Promise<void>;
+/** Confere se a arte existe no bucket e tem o formato do encaixe (faixa no tema do card). */
+export type ArtAsserter = (artKey: string, type: string) => Promise<void>;
 
 /** Evento, janela de venda e regra de liberação (itens e kits). */
 export function applySchedule(
@@ -67,7 +68,7 @@ export async function applyArt(
     item.art_mime ??= null;
     return;
   }
-  if (artKey && artKey !== item.art_key) await assertArt(artKey);
+  if (artKey && artKey !== item.art_key) await assertArt(artKey, item.type);
   item.art_key = artKey;
   item.art_mime = artKey ? ART_MIME_BY_EXT[artExtensionOf(artKey)] : null;
 }

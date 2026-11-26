@@ -221,10 +221,10 @@ const LEGACY_BACKGROUND = /^background-[a-z0-9-]+$/;
 // A URL entra em `url("...")`: nada que feche aspas ou parênteses.
 const CSS_URL_SAFE = /^[^"'()\\\s]+$/;
 
-function artTheme(piece: LookPiece | undefined): ThemeView | null {
+function artTheme(piece: LookPiece | undefined, className = 'chr-art'): ThemeView | null {
   const url = piece?.artUrl;
   if (!isSafeArtUrl(url) || !CSS_URL_SAFE.test(url)) return null;
-  return { className: 'chr-art', style: { backgroundImage: `url("${url}")` } };
+  return { className, style: { backgroundImage: `url("${url}")` } };
 }
 
 /** Fundo do palco: arte enviada, fundo antigo do catálogo, tema conhecido ou o palco padrão. */
@@ -238,8 +238,9 @@ export function stageTheme(piece: LookPiece | undefined): ThemeView {
   return { className: `chr-bg--${value}`, style: color ? { backgroundColor: color } : undefined };
 }
 
+/** Tema do card: arte enviada (faixa 8:1 com a decoração à direita), tema conhecido ou o clássico. */
 export function cardTheme(piece: LookPiece | undefined): ThemeView {
-  const art = artTheme(piece);
+  const art = artTheme(piece, 'chr-art chr-art--card');
   if (art) return art;
   const value = piece?.visualValue ?? '';
   return { className: `chr-card--${CARD_THEMES.includes(value) ? value : 'classico'}`, style: undefined };

@@ -15,6 +15,9 @@ function png(width: number, height: number, extra = 0) {
   return buffer;
 }
 
+const BOARD = { ok: true, format: 'board' };
+const BANNER = { ok: true, format: 'banner' };
+
 const svg = (body = '', attrs = 'viewBox="0 0 956 1080"') =>
   Buffer.from(`<svg xmlns="http://www.w3.org/2000/svg" ${attrs}>${body}</svg>`);
 
@@ -22,7 +25,7 @@ describe('validateArt — SVG', () => {
   it('aceita SVG limpo com viewBox 956x1080', () => {
     expect(
       validateArt(svg('<rect width="10" height="10"/>'), 'image/svg+xml'),
-    ).toEqual({ ok: true });
+    ).toEqual(BOARD);
   });
 
   it('aceita width/height dobrados e referência local', () => {
@@ -32,7 +35,7 @@ describe('validateArt — SVG', () => {
         svg(body, 'viewBox="0 0 956 1080" width="1912" height="2160"'),
         'image/svg+xml',
       ),
-    ).toEqual({ ok: true });
+    ).toEqual(BOARD);
   });
 
   it.each([
@@ -95,7 +98,7 @@ describe('validateArt — SVG', () => {
     const buffer = Buffer.from(
       `<svg xmlns="http://www.w3.org/2000/svg" ${INKSCAPE} viewBox="0 0 956 1080">${body}</svg>`,
     );
-    expect(validateArt(buffer, 'image/svg+xml')).toEqual({ ok: true });
+    expect(validateArt(buffer, 'image/svg+xml')).toEqual(BOARD);
   });
 
   it('aceita exportação Inkscape SVG com sodipodi:namedview', () => {
@@ -104,7 +107,7 @@ describe('validateArt — SVG', () => {
     const buffer = Buffer.from(
       `<svg xmlns="http://www.w3.org/2000/svg" ${INKSCAPE} ${SODIPODI} sodipodi:docname="a.svg" viewBox="0 0 956 1080">${body}</svg>`,
     );
-    expect(validateArt(buffer, 'image/svg+xml')).toEqual({ ok: true });
+    expect(validateArt(buffer, 'image/svg+xml')).toEqual(BOARD);
   });
 
   it('com namespaces de editor, ainda recusa elemento prefixado qualquer e xmlns padrão alheio', () => {
@@ -123,7 +126,7 @@ describe('validateArt — SVG', () => {
   it('aceita elementos SVG comuns, xlink e comentários', () => {
     const body =
       '<!-- <x:y/> --><defs><linearGradient id="g"><stop offset="0"/></linearGradient><clipPath id="c"><path d="M0 0"/></clipPath></defs><g><use xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="#c"/><text><tspan>a</tspan></text></g>';
-    expect(validateArt(svg(body), 'image/svg+xml')).toEqual({ ok: true });
+    expect(validateArt(svg(body), 'image/svg+xml')).toEqual(BOARD);
   });
 
   it('aceita url() com fragmento local, com e sem aspas', () => {
@@ -135,13 +138,28 @@ describe('validateArt — SVG', () => {
       '<rect style="fill:url(#a)"/>',
       '<rect fill=\'url("#a")\'/>',
     ].join('');
-    expect(validateArt(svg(body), 'image/svg+xml')).toEqual({ ok: true });
+    expect(validateArt(svg(body), 'image/svg+xml')).toEqual(BOARD);
   });
 
   it('aceita style sem escapes', () => {
     expect(
       validateArt(svg('<style>.a{fill:#fff}</style>'), 'image/svg+xml'),
-    ).toEqual({ ok: true });
+    ).toEqual(BOARD);
+  });
+
+  it('aceita SVG na faixa do tema do card', () => {
+    expect(
+      validateArt(
+        svg('', 'viewBox="0 0 1600 200" width="3200" height="400"'),
+        'image/svg+xml',
+      ),
+    ).toEqual(BANNER);
+    expect(
+      validateArt(
+        svg('', 'viewBox="0 0 1600 200" width="956"'),
+        'image/svg+xml',
+      ).ok,
+    ).toBe(false);
   });
 
   it('recusa viewBox diferente', () => {
@@ -166,8 +184,14 @@ describe('validateArt — SVG', () => {
 
 describe('validateArt — PNG', () => {
   it('aceita 956x1080 e o dobro exato', () => {
-    expect(validateArt(png(956, 1080), 'image/png')).toEqual({ ok: true });
-    expect(validateArt(png(1912, 2160), 'image/png')).toEqual({ ok: true });
+    expect(validateArt(png(956, 1080), 'image/png')).toEqual(BOARD);
+    expect(validateArt(png(1912, 2160), 'image/png')).toEqual(BOARD);
+  });
+
+  it('aceita a faixa do tema do card 1600x200 e o dobro', () => {
+    expect(validateArt(png(1600, 200), 'image/png')).toEqual(BANNER);
+    expect(validateArt(png(3200, 400), 'image/png')).toEqual(BANNER);
+    expect(validateArt(png(1600, 400), 'image/png').ok).toBe(false);
   });
 
   it('recusa 500x500 e proporção parcial', () => {

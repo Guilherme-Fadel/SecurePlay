@@ -21,7 +21,7 @@ interface ItemFormProps {
 }
 
 const ART_HELP = 'Envie um PNG ou SVG de até 200 KB feito no modelo oficial do personagem: ele entra na posição certa, sem ajuste. O ajuste fino é só para pequenas correções.';
-const THEME_HELP = 'Escolha um tema da biblioteca ou envie uma imagem (PNG ou SVG de até 200 KB) que cobre a área toda. Se houver os dois, vale a arte enviada. Esse encaixe não tem ajuste fino.';
+const THEME_HELP = 'Escolha um tema da biblioteca ou envie uma imagem (PNG ou SVG de até 200 KB). O fundo do palco cobre a área toda (956 × 1080). O tema do card é uma faixa de 1600 × 200, alinhada à direita: deixe a decoração desse lado. Se houver os dois, vale a arte enviada. Esse encaixe não tem ajuste fino.';
 const BASICS_HELP = 'Nome, identificador, raridade e preço do item avulso. Em raridade Comemorativa, informe também a data e o período de venda.';
 
 /** Item avulso: dados comuns, exigências e encaixe; a arte e o ajuste fino ficam em `ItemArt`. */

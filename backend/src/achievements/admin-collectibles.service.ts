@@ -11,6 +11,13 @@ import { AdminAuditService } from '../admin/admin-audit.service';
 import { S3Service } from '../conteudo/s3/s3.service';
 import { CosmeticItem } from './entities/cosmetic-item.entity';
 import { CosmeticKit } from './entities/cosmetic-kit.entity';
+import {
+  ART_MIME_BY_EXT,
+  artExtensionOf,
+  artFormatFor,
+  artFormatLabel,
+  validateArt,
+} from './collectible-art';
 import { applyItemFields, applyKitFields } from './collectible-fields';
 import {
   assertFestiveSchedule,
@@ -60,14 +67,29 @@ export class AdminCollectiblesService {
   private readonly resolveArt = (key: string | null) =>
     this.s3.resolveImageUrl(key);
 
-  /** A arte salva precisa estar no bucket configurado e existir (já confirmada). */
-  private readonly assertArt = async (artKey: string) => {
+  /**
+   * A arte salva precisa estar no bucket configurado, existir (já confirmada) e ter o formato do
+   * encaixe: a faixa no tema do card, a prancheta nas demais peças.
+   */
+  private readonly assertArt = async (artKey: string, type: string) => {
     await this.s3.resolveImageUrl(artKey);
     const prefix = this.s3.toS3Uri('');
     const key = artKey.slice(prefix.length);
     if (!artKey.startsWith(prefix) || !(await this.s3.headObject(key))) {
       throw new BadRequestException(
         'Arte não encontrada: envie e confirme de novo.',
+      );
+    }
+    const expected = artFormatFor(type);
+    const verdict = validateArt(
+      await this.s3.getObjectBuffer(key),
+      ART_MIME_BY_EXT[artExtensionOf(key)],
+    );
+    if (!verdict.ok || verdict.format !== expected) {
+      throw new BadRequestException(
+        expected === 'banner'
+          ? `O tema do card usa a faixa de ${artFormatLabel('banner')}.`
+          : `Esta peça usa a prancheta de ${artFormatLabel('board')}.`,
       );
     }
   };

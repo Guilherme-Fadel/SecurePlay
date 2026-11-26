@@ -88,6 +88,8 @@
 
 /* Fundo enviado como arte ou fundo escolhido pela cor: cobre o palco sem esticar. */
 .chr-art { background-color: var(--sp-ink-800); background-position: center; background-size: cover; background-repeat: no-repeat; }
+/* Tema do card: faixa 8:1 com a decoração à direita; em card mais estreito, corta a esquerda (só degradê). */
+.chr-art.chr-art--card { background-position: right center; }
 
 /* Fundos do palco (canvas aprovado), com a paleta fixa da marca. */
 .chr-bg--palco {

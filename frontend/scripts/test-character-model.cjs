@@ -184,6 +184,10 @@ test('fundo e tema do card: classes conhecidas, arte segura e cor só em hexadec
   assert.equal(model.cardTheme(undefined).className, 'chr-card--classico');
   assert.equal(model.cardTheme(piece('ouro')).className, 'chr-card--ouro');
   assert.equal(model.cardTheme(piece('qualquer')).className, 'chr-card--classico');
+  // Arte do tema do card: alinhada à direita (a decoração da faixa fica desse lado).
+  const cardArt = model.cardTheme(piece('x', { artUrl: 'https://cdn.exemplo/card.png' }));
+  assert.equal(cardArt.className, 'chr-art chr-art--card');
+  assert.equal(cardArt.style.backgroundImage, 'url("https://cdn.exemplo/card.png")');
 });
 
 test('cor: só recolorível ou fundo "do seu jeito"; a paleta espelha os tokens da marca', () => {

@@ -78,6 +78,17 @@ export const art = (n = 1) =>
   `s3://media/collectibles/3f2b8c1e-9a4d-4e7a-8b6c-0d1e2f3a4b5${n}.png`;
 export const ACTOR = 9;
 
+/** Cabeçalho de PNG com as dimensões dadas (o bastante para a validação de formato). */
+export function pngHeader(width: number, height: number) {
+  const buffer = Buffer.alloc(33);
+  Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]).copy(buffer);
+  buffer.writeUInt32BE(13, 8);
+  buffer.write('IHDR', 12, 'ascii');
+  buffer.writeUInt32BE(width, 16);
+  buffer.writeUInt32BE(height, 20);
+  return buffer;
+}
+
 export function setup() {
   const db = fakeCollectiblesDb();
   const audit = { registrar: jest.fn().mockResolvedValue(undefined) };
@@ -88,6 +99,7 @@ export function setup() {
     headObject: jest
       .fn()
       .mockResolvedValue({ contentLength: 1, contentType: '' }),
+    getObjectBuffer: jest.fn().mockResolvedValue(pngHeader(956, 1080)),
     toS3Uri: (key: string) => `s3://media/${key}`,
   };
   const service = new AdminCollectiblesService(

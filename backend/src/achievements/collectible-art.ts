@@ -4,13 +4,47 @@ export const MAX_ART_BYTES = 200 * 1024;
 export const ART_WIDTH = 956;
 export const ART_HEIGHT = 1080;
 
+/**
+ * Formatos aceitos: a prancheta do personagem (peças, skin, efeito e fundo do palco) e a faixa do
+ * tema do card (8:1, alinhada à direita no card). Cada um no tamanho base ou no dobro.
+ */
+export const ART_FORMATS = {
+  board: { width: ART_WIDTH, height: ART_HEIGHT },
+  banner: { width: 1600, height: 200 },
+} as const;
+export type ArtFormat = keyof typeof ART_FORMATS;
+
+/** O tema do card usa a faixa; todo o resto, a prancheta. */
+export function artFormatFor(type: string): ArtFormat {
+  return type === 'card' ? 'banner' : 'board';
+}
+
+export function artFormatLabel(format: ArtFormat) {
+  const { width, height } = ART_FORMATS[format];
+  return `${width}×${height} px (ou o dobro)`;
+}
+
+const ACCEPTED_SIZES = `${artFormatLabel('board')} nas peças ou ${artFormatLabel('banner')} no tema do card`;
+
+function formatOfSize(width: number, height: number): ArtFormat | null {
+  const found = (Object.keys(ART_FORMATS) as ArtFormat[]).find((format) => {
+    const size = ART_FORMATS[format];
+    return [1, 2].some(
+      (k) => width === size.width * k && height === size.height * k,
+    );
+  });
+  return found ?? null;
+}
+
 export const ART_MIME_BY_EXT = {
   png: 'image/png',
   svg: 'image/svg+xml',
 } as const;
 export type ArtExtension = keyof typeof ART_MIME_BY_EXT;
 
-export type ArtValidation = { ok: true } | { ok: false; reason: string };
+export type ArtValidation =
+  | { ok: true; format: ArtFormat }
+  | { ok: false; reason: string };
 
 const TMP_KEY_PATTERN =
   /^collectibles\/tmp\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\.(png|svg)$/;
@@ -50,14 +84,13 @@ function validatePng(buffer: Buffer): ArtValidation {
   }
   const width = buffer.readUInt32BE(16);
   const height = buffer.readUInt32BE(20);
-  const base = width === ART_WIDTH && height === ART_HEIGHT;
-  const double = width === ART_WIDTH * 2 && height === ART_HEIGHT * 2;
-  if (!base && !double) {
+  const format = formatOfSize(width, height);
+  if (!format) {
     return invalid(
-      `O PNG deve ter ${ART_WIDTH}×${ART_HEIGHT} px (ou o dobro); recebido ${width}×${height}.`,
+      `O PNG deve ter ${ACCEPTED_SIZES}; recebido ${width}×${height}.`,
     );
   }
-  return { ok: true };
+  return { ok: true, format };
 }
 
 const ROOT_TAG = /<svg\b[^>]*>/i;
@@ -242,20 +275,24 @@ function validateSvg(buffer: Buffer): ArtValidation {
     ?.trim()
     .split(/[\s,]+/)
     .join(' ');
-  if (viewBox !== `0 0 ${ART_WIDTH} ${ART_HEIGHT}`) {
+  const format = (Object.keys(ART_FORMATS) as ArtFormat[]).find(
+    (f) => viewBox === `0 0 ${ART_FORMATS[f].width} ${ART_FORMATS[f].height}`,
+  );
+  if (!format) {
     return invalid(
-      `O viewBox do SVG deve ser "0 0 ${ART_WIDTH} ${ART_HEIGHT}".`,
+      `O viewBox do SVG deve ser "0 0 ${ART_WIDTH} ${ART_HEIGHT}" nas peças ou "0 0 ${ART_FORMATS.banner.width} ${ART_FORMATS.banner.height}" no tema do card.`,
     );
   }
+  const size = ART_FORMATS[format];
   const width = attributeOf(root, 'width');
   const height = attributeOf(root, 'height');
   if (
-    (width !== null && !sameSize(width, [ART_WIDTH, ART_WIDTH * 2])) ||
-    (height !== null && !sameSize(height, [ART_HEIGHT, ART_HEIGHT * 2]))
+    (width !== null && !sameSize(width, [size.width, size.width * 2])) ||
+    (height !== null && !sameSize(height, [size.height, size.height * 2]))
   ) {
     return invalid('width/height do SVG devem ser o tamanho base ou o dobro.');
   }
-  return { ok: true };
+  return { ok: true, format };
 }
 
 export function validateArt(buffer: Buffer, mime: string): ArtValidation {

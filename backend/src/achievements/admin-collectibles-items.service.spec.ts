@@ -4,6 +4,7 @@ import {
   art,
   itemDto,
   kitDto,
+  pngHeader,
   setup,
 } from '../../test/fixtures/collectibles-fixture';
 import { CosmeticRarity } from './entities/cosmetic-rarity';
@@ -89,7 +90,10 @@ describe('AdminCollectiblesService — itens avulsos', () => {
   it.each([CosmeticType.BACKGROUND, CosmeticType.CARD])(
     'cadastra %s com tema da biblioteca ou arte e recusa valor fora do padrão',
     async (type) => {
-      const { service, db } = setup();
+      const { service, db, s3 } = setup();
+      if (type === CosmeticType.CARD) {
+        s3.getObjectBuffer.mockResolvedValue(pngHeader(1600, 200));
+      }
       const themed = await service.createItem(
         ACTOR,
         itemDto({ type, slug: `tema-${type}`, visualValue: 'por-do-sol' }),
@@ -140,6 +144,26 @@ describe('AdminCollectiblesService — itens avulsos', () => {
     await expect(
       service.createItem(ACTOR, itemDto({ artKey: art(6) })),
     ).rejects.toThrow(BadRequestException);
+  });
+
+  it('exige a faixa no tema do card e a prancheta nas peças', async () => {
+    const { service, s3 } = setup();
+    const card = { type: CosmeticType.CARD, visualValue: '', artKey: art(6) };
+    await expect(
+      service.createItem(ACTOR, itemDto({ ...card, slug: 'card-prancheta' })),
+    ).rejects.toThrow(/1600×200/);
+    s3.getObjectBuffer.mockResolvedValue(pngHeader(1600, 200));
+    await expect(
+      service.createItem(
+        ACTOR,
+        itemDto({ type: CosmeticType.HEAD, visualValue: '', artKey: art(5) }),
+      ),
+    ).rejects.toThrow(/956×1080/);
+    const ok = await service.createItem(
+      ACTOR,
+      itemDto({ ...card, slug: 'card-faixa' }),
+    );
+    expect(ok.artKey).toBe(art(6));
   });
 });
 
