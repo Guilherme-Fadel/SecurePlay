@@ -35,6 +35,11 @@ export class S3Service {
     const forcePathStyle =
       this.configService.get<string>('S3_FORCE_PATH_STYLE')?.toLowerCase() ===
       'true';
+    // Na AWS, as URLs saem no endereço dualstack (IPv4 e IPv6): redes com rota IPv4 instável até o
+    // S3 ainda carregam pelo IPv6. Provedores com endpoint próprio (R2, MinIO) não têm esse endereço.
+    const useDualstackEndpoint =
+      !endpoint &&
+      this.configService.get<string>('S3_DUALSTACK')?.toLowerCase() !== 'false';
 
     this.s3Client = new S3Client({
       region: this.configService.get<string>(
@@ -43,6 +48,7 @@ export class S3Service {
       ),
       endpoint: endpoint || undefined,
       forcePathStyle,
+      useDualstackEndpoint,
       credentials: {
         accessKeyId: this.configService.get<string>('AWS_ACCESS_KEY_ID', ''),
         secretAccessKey: this.configService.get<string>(

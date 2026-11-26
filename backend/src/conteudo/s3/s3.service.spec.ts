@@ -175,3 +175,43 @@ describe('S3 object operations', () => {
     );
   });
 });
+
+describe('S3 endpoint', () => {
+  const config = (extra: Record<string, string> = {}) =>
+    new ConfigService({
+      S3_BUCKET_NAME: 'test-media',
+      AWS_REGION: 'us-east-1',
+      AWS_ACCESS_KEY_ID: 'AKIATEST',
+      AWS_SECRET_ACCESS_KEY: 'secret',
+      ...extra,
+    });
+
+  it('signs reads and uploads on the AWS dualstack host', async () => {
+    const service = new S3Service(config());
+    const read = await service.generatePresignedGetUrl('ui/image.png');
+    const upload = await service.generatePresignedUploadPost(
+      'collectibles/a.png',
+      'image/png',
+      1024,
+    );
+    expect(new URL(read).host).toBe(
+      'test-media.s3.dualstack.us-east-1.amazonaws.com',
+    );
+    expect(new URL(upload.url).host).toBe(
+      'test-media.s3.dualstack.us-east-1.amazonaws.com',
+    );
+  });
+
+  it('keeps the regular host when disabled or with a custom endpoint', async () => {
+    const plain = new S3Service(config({ S3_DUALSTACK: 'false' }));
+    expect(
+      new URL(await plain.generatePresignedGetUrl('ui/image.png')).host,
+    ).toBe('test-media.s3.us-east-1.amazonaws.com');
+    const r2 = new S3Service(
+      config({ S3_ENDPOINT: 'https://account.r2.cloudflarestorage.com' }),
+    );
+    expect(new URL(await r2.generatePresignedGetUrl('ui/image.png')).host).toBe(
+      'test-media.account.r2.cloudflarestorage.com',
+    );
+  });
+});
