@@ -3,15 +3,6 @@
  * (collectibles.css): usa os mesmos tokens `--cole-*` e reaproveita `.cole-tab`, `.cole-row`,
  * `.cole-act` e `.cole-pill`. Cores vêm de `--sp-*` (marca fixa) e dos tokens do tema.
  */
-.cole-sections {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-bottom: 16px;
-}
-
-.cole-v .cole-sections .app-filter-chip { min-height: 44px; }
-
 .chr { display: flex; min-width: 0; flex-direction: column; gap: 16px; }
 .chr-head { display: flex; flex-direction: column; gap: 4px; }
 .chr-title { font-size: 30px; color: var(--cole-heading); }
@@ -336,7 +327,6 @@
 /* Desktop (>= 1100 x 700): mesma regra de Colecionáveis; a aba cabe em --sp-fit-h e as
    duas colunas rolam por dentro, sem rolar a página. */
 @media (min-width: 1100px) and (min-height: 700px) {
-  .cole-sections { flex: none; margin-bottom: clamp(8px, 1.4vh, 14px); }
   .chr { min-height: 0; flex: 1 1 auto; gap: clamp(8px, 1.4vh, 14px); }
   .chr-head { flex: none; flex-direction: row; align-items: baseline; gap: 12px; }
   .chr-title { font-size: clamp(22px, 3.2vh, 30px); }

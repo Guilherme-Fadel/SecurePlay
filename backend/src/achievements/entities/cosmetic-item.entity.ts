@@ -13,6 +13,11 @@ import { CosmeticRarity } from './cosmetic-rarity';
 
 export { CosmeticRarity };
 
+/**
+ * `frame`, `title` e `badge` são LEGADOS: o produto os descontinuou (ver
+ * `retired-types.ts`). Ficam aqui só para ler linhas e posses antigas do banco;
+ * não crie, venda nem equipe itens desses tipos.
+ */
 export enum CosmeticType {
   FRAME = 'frame',
   BACKGROUND = 'background',

@@ -39,7 +39,6 @@ export interface CategoryStudentEntry {
   companyName: string | null;
   isCurrentUser: boolean;
   look: CharacterLook;
-  profileImageUrl: string | null;
   /** Mudança de posição na semana; só em category=xp, período atual e alunos. */
   weeklyChange: number | null;
   /** Métrica da categoria pedida, no período. */
@@ -64,7 +63,6 @@ export interface CategoryRankingContext {
   historicalCompanies: Map<number, string | null>;
   /** Estatísticas do próprio usuário (com `usuario`), para quem não está no conjunto. */
   viewerStats: UsuarioStats | null;
-  includeImages: boolean;
   includeWeekly: boolean;
   deps: {
     dataSource: DataSource;
@@ -74,7 +72,6 @@ export interface CategoryRankingContext {
       ids: number[],
       viewerId: number | null,
     ) => Promise<Map<number, CharacterLook>>;
-    photo: (key: string | null | undefined) => Promise<string | null>;
     warn: (message: string, error: unknown) => void;
   };
 }

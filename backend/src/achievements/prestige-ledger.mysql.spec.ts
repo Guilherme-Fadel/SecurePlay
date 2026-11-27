@@ -223,7 +223,7 @@ isolated('C08 — ledger, conquistas e carteira transacionais', () => {
       description: 'Fixture',
       rarity: CosmeticRarity.COMMON,
       visual_value: 'fixture',
-      type: CosmeticType.FRAME,
+      type: CosmeticType.HEAD,
       price: 2,
     });
     await Promise.all([
@@ -250,7 +250,7 @@ isolated('C08 — ledger, conquistas e carteira transacionais', () => {
       description: 'Fixture',
       rarity: CosmeticRarity.COMMON,
       visual_value: 'fixture',
-      type: CosmeticType.FRAME,
+      type: CosmeticType.HEAD,
       price: 2,
     });
     const results = await Promise.allSettled([

@@ -8,7 +8,7 @@ import { useNavigate } from 'react-router-dom';
 import { useSectionContext } from '@/contexts/SectionContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useAchievementShop } from '@/hooks/useAchievements';
-import { Avatar } from '@/components/ui/visuals/Avatar';
+import { UserCharacter } from '@/components/shared/Character/UserCharacter';
 import { useCompanyFeatures } from '@/hooks/useCompanyFeatures';
 import type { CurrentUser } from '@/services/me';
 import { RailPopover } from './RailPopover';
@@ -30,13 +30,11 @@ function useEquippedCosmetics() {
   const features = useCompanyFeatures();
   const { data: cosmeticShop } = useAchievementShop(features.achievements);
   return {
-    frame: cosmeticShop?.equipped.find((item) => item.type === 'frame')?.visualValue ?? '',
     background: cosmeticShop?.equipped.find((item) => item.type === 'background')?.visualValue ?? '',
   };
 }
 
 export function UserMenu({ open, onToggle, onClose, showAdmin, profileActive }: UserMenuProps) {
-  const { user } = useCurrentUser();
   const cosmetics = useEquippedCosmetics();
 
   return (
@@ -51,12 +49,12 @@ export function UserMenu({ open, onToggle, onClose, showAdmin, profileActive }: 
         aria-label="Abrir menu da conta"
         title="Conta"
       >
-        <UserAvatar user={user} className={cn('sp-rail-avatar cosmetic-avatar', cosmetics.frame)} />
+        <UserCharacter className="sp-rail-avatar" />
       </button>
 
       {open && (
         <RailPopover id={ACCOUNT_PANEL_ID} label="Conta" className="sp-account-menu" onClose={onClose}>
-          <AccountSummary frame={cosmetics.frame} background={cosmetics.background} />
+          <AccountSummary background={cosmetics.background} />
           <AccountActions showAdmin={showAdmin} onClose={onClose} />
         </RailPopover>
       )}
@@ -64,12 +62,12 @@ export function UserMenu({ open, onToggle, onClose, showAdmin, profileActive }: 
   );
 }
 
-function AccountSummary({ frame, background }: { frame: string; background: string }) {
+function AccountSummary({ background }: { background: string }) {
   const { user, loading } = useCurrentUser();
 
   return (
     <div className={cn('sp-account-summary cosmetic-background-host', background)}>
-      <UserAvatar user={user} className={cn('sp-account-summary-avatar cosmetic-avatar', frame)} />
+      <UserCharacter className="sp-account-summary-avatar" />
       <div className="sp-account-summary-copy">
         <strong>{loading ? '...' : user?.nickname ?? user?.name}</strong>
         <AccountLevel user={user} loading={loading} />
@@ -77,10 +75,6 @@ function AccountSummary({ frame, background }: { frame: string; background: stri
       </div>
     </div>
   );
-}
-
-function UserAvatar({ user, className }: { user: CurrentUser | null; className: string }) {
-  return <Avatar name={user?.name} nickname={user?.nickname} imageUrl={user?.profile_image_url} className={className} />;
 }
 
 function AccountLevel({ user, loading }: { user: CurrentUser | null; loading: boolean }) {

@@ -1,6 +1,7 @@
 import { BadRequestException } from '@nestjs/common';
 import { CosmeticType } from './entities/cosmetic-item.entity';
 import { CosmeticRarity } from './entities/cosmetic-rarity';
+import { isRetiredType, RETIRED_TYPE_MESSAGE } from './retired-types';
 import { parseUnlockRule, UnlockRule } from './unlock-rule';
 
 const DATE_ONLY = /^\d{4}-\d{2}-\d{2}$/;
@@ -30,6 +31,11 @@ export function parseAvailability(
 /** Regra de liberação: ausente ou nula significa sem requisitos. */
 export function parseOptionalRule(input: unknown): UnlockRule | null {
   return input === null || input === undefined ? null : parseUnlockRule(input);
+}
+
+/** Moldura, título e emblema foram descontinuados: o console não cria nem muda itens para eles. */
+export function assertActiveType(type: string) {
+  if (isRetiredType(type)) throw new BadRequestException(RETIRED_TYPE_MESSAGE);
 }
 
 /** Quem já tem o item o equipa pelo tipo: o encaixe de um registro existente é fixo. */
@@ -108,7 +114,7 @@ type ItemVisual = {
   visual_value: string;
 };
 
-/** Item avulso precisa de arte ou de um valor visual (molduras, fundos etc.). */
+/** Item avulso precisa de arte ou de um valor visual (fundos, cartões etc.). */
 export function assertItemVisual(item: ItemVisual) {
   if (item.art_key || item.visual_value.trim()) return;
   const label = SLOT_LABELS[item.type];
@@ -124,7 +130,7 @@ const THEME_VALUE = /^[a-z0-9-]{1,64}$/;
 /**
  * Fundo e tema do card escolhem um tema da biblioteca pelo `visualValue`, que
  * vira classe CSS no cliente: só letras minúsculas, números e hífens. Vazio vale
- * (o item usa a arte enviada). Os demais encaixes seguem livres (títulos guardam texto).
+ * (o item usa a arte enviada). Os demais encaixes seguem livres.
  */
 export function assertThemeValue(type: CosmeticType, visualValue: string) {
   const isTheme =

@@ -10,6 +10,7 @@ const collectibles = load('src/components/sections/HomePage/Awards/collectiblesM
 const character = load('src/components/sections/HomePage/Awards/characterModel.ts', {
   './collectiblesModel': collectibles,
   '@/components/shared/Character/characterLook': look,
+  '@/components/shared/Character/characterColor': load('src/components/shared/Character/characterColor.ts', {}),
 });
 const board = load('src/components/sections/HomePage/Ranking/boardModel.ts', { './rankingModel': ranking });
 const hall = load('src/components/sections/HomePage/Ranking/hallModel.ts', {

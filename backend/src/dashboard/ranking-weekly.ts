@@ -1,3 +1,4 @@
+import type { CharacterLook } from '../achievements/look';
 import type { UsuarioStats } from '../usuario-stats/usuario-stats.entity';
 import type { RedisService } from '../redis/redis.service';
 import { calcLevel } from '../common/utils/xp.utils';
@@ -28,7 +29,7 @@ export interface RankingWeekData {
       level: number;
       companyName: string | null;
       isCurrentUser: boolean;
-      profileImageUrl: string | null;
+      look: CharacterLook;
     };
     value: number;
     unit: string;
@@ -103,11 +104,8 @@ export async function loadRankingWeek(options: {
   getScopedStats: () => Promise<UsuarioStats[]>;
   currentUserId: number;
   seasonPoints: Map<number, number>;
-  resolveProfileImageUrl: (
-    key: string | null | undefined,
-  ) => Promise<string | null>;
-  /** M5: foto só quando quem consulta pode vê-la (mesma escola no ranking global). */
-  showPhoto?: (entry: UsuarioStats) => boolean;
+  /** Visual dos ids pedidos (uma consulta só); falha deve cair em mapa vazio. */
+  looks: (ids: number[]) => Promise<Map<number, CharacterLook>>;
 }): Promise<RankingWeekData> {
   const week = getRankingWeekStart();
 
@@ -131,6 +129,7 @@ export async function loadRankingWeek(options: {
   }));
   const summary = summarizeRankingWeek(candidates, week);
   const highlights: RankingWeekData['highlights'] = [];
+  const userIdByRankKey = new Map<string, number>();
   for (const [kind, winner, unit, label, value] of [
     [
       'streak',
@@ -151,6 +150,7 @@ export async function loadRankingWeek(options: {
     if (!winner || !value) continue;
     const entry = allStats.find((item) => item.usuario_id === winner.id);
     if (!entry) continue;
+    userIdByRankKey.set(rankKey(entry.usuario_id), entry.usuario_id);
     highlights.push({
       kind,
       label,
@@ -173,14 +173,18 @@ export async function loadRankingWeek(options: {
         level: calcLevel(entry.total_points),
         companyName: entry.usuario?.empresa?.nome ?? null,
         isCurrentUser: entry.usuario_id === options.currentUserId,
-        profileImageUrl:
-          options.showPhoto?.(entry) === false
-            ? null
-            : await options.resolveProfileImageUrl(
-                entry.usuario?.profile_image_key,
-              ),
+        look: {},
       },
     });
+  }
+  if (highlights.length) {
+    const looks = await options
+      .looks(
+        [...new Set(highlights.map((item) => userIdByRankKey.get(item.user.rankKey)!))],
+      )
+      .catch(() => new Map<number, CharacterLook>());
+    for (const item of highlights)
+      item.user.look = looks.get(userIdByRankKey.get(item.user.rankKey)!) ?? {};
   }
   return { changes: summary.changes, available: true, highlights };
 }

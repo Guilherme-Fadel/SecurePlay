@@ -13,6 +13,7 @@ import { useHomeLoading } from '@/hooks/useHomeLoading';
 import { useEmpresaTema } from '@/hooks/useEmpresaTema';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { useVisualPreload } from '@/hooks/useVisualPreload';
+import { useMyCharacterReady } from '@/hooks/useMyCharacter';
 import '@/styles/app-ui.css';
 import '@/styles/dashboard-ui.css';
 import '@/styles/notebook-ui.css';
@@ -89,6 +90,9 @@ function HomeContent() {
 
     const { isLoading, setLoading, bootstrapReady, registerBootstrap } = useHomeLoading();
     usePageLoading(!bootstrapReady || isLoading);
+    const characterReady = useMyCharacterReady();
+    // Só segura a tela com usuário logado: sem ele não há personagem a esperar.
+    usePageLoading(Boolean(user) && !characterReady);
 
     // Gate de bootstrap sempre presente, independente da secao inicial. Sem isto,
     // recarregar fora do dashboard (ex.: /jogos) deixaria a LoadingScreen

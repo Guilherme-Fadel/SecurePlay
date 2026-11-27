@@ -23,10 +23,7 @@ import { UsuarioChallenge } from '../usuario-challenge/usuario-challenge.entity'
 import { UsuarioAula } from '../conteudo/usuario-aula/usuario-aula.entity';
 import { UsuarioArcadeStats } from '../arcade/entities/usuario-arcade-stats.entity';
 import { EventEmitter2, OnEvent } from '@nestjs/event-emitter';
-import {
-  emitirNovidades,
-  novidadesVazias,
-} from './achievement-events';
+import { emitirNovidades, novidadesVazias } from './achievement-events';
 import {
   AchievementMetrics,
   AchievementTrailNode,
@@ -42,6 +39,7 @@ import { lockPrestigeWallet } from './prestige-ledger';
 import { isOnSale } from './availability';
 import { UnlockFactsLoader } from './unlock-evaluator';
 import { assertUnlocked } from './unlock-requirements';
+import { isRetiredType, RETIRED_TYPE_MESSAGE } from './retired-types';
 import { COSMETIC_COLOR_PATTERN } from './dto/equip-cosmetic.dto';
 import { CHARACTER_COLORS, isCharacterColor } from './character-color';
 import { Usuario } from '../usuario/usuario.entity';
@@ -252,7 +250,9 @@ export class AchievementsService {
         }),
       ]);
       // Uma consulta traz todas as chaves já lançadas; sem isso eram ~1 SELECT por conquista e por nível.
-      const knownKeys = new Set((ledger ?? []).map((entry) => entry.source_key));
+      const knownKeys = new Set(
+        (ledger ?? []).map((entry) => entry.source_key),
+      );
       // Em retry da transação o que sobrou da tentativa anterior não vale.
       novidades.conquistas.length = 0;
       novidades.niveis = await this.grantLevelPrestige(
@@ -392,7 +392,9 @@ export class AchievementsService {
     const item = await this.cosmeticRepository.findOne({
       where: { id: itemId, active: true },
     });
-    if (!item) throw new NotFoundException('Item cosmético não encontrado');
+    if (!item || isRetiredType(item.type)) {
+      throw new NotFoundException('Item cosmético não encontrado');
+    }
     if (item.kit_id) {
       throw new BadRequestException('Esta peça só vem com o kit');
     }
@@ -417,7 +419,9 @@ export class AchievementsService {
     if (!isOnSale(kit)) {
       throw new BadRequestException('Este kit não está mais à venda');
     }
-    const pieces = kit.pieces.filter((piece) => piece.active);
+    const pieces = kit.pieces.filter(
+      (piece) => piece.active && !isRetiredType(piece.type),
+    );
     if (pieces.length === 0) {
       throw new BadRequestException('Este kit não tem peças disponíveis');
     }
@@ -439,6 +443,9 @@ export class AchievementsService {
     });
     if (!selected)
       throw new NotFoundException('Adquira o item antes de equipar');
+    if (isRetiredType(selected.cosmetic_item.type)) {
+      throw new NotFoundException('Item cosmético não encontrado');
+    }
     const owned = await this.usuarioCosmeticRepository.find({
       where: { usuario_id },
       relations: ['cosmetic_item'],
@@ -459,6 +466,8 @@ export class AchievementsService {
   }
 
   async unequip(usuario_id: number, type: CosmeticType) {
+    if (isRetiredType(type))
+      throw new BadRequestException(RETIRED_TYPE_MESSAGE);
     const owned = await this.usuarioCosmeticRepository.find({
       where: { usuario_id },
       relations: ['cosmetic_item'],

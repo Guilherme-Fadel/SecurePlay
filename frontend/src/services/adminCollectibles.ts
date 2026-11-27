@@ -1,12 +1,14 @@
 import { adminQueryKey } from '@/lib/adminCache';
 import { invalidatePrefix } from '@/lib/queryCache';
 import { api } from './api';
-import type { CosmeticRarity, CosmeticType } from './achievements';
+import type { CosmeticRarity, CosmeticType, LegacyCosmeticType } from './achievements';
 
 /** Tipos espelhando as views e DTOs do backend (`collectible-views.ts`, `dto/collectible-*.dto.ts`). Só `platform_admin`. */
 
 export type CollectibleKind = 'items' | 'kits';
 export type CollectibleLayer = 'back' | 'front';
+/** O catálogo do console ainda pode trazer itens antigos (moldura, título, emblema): só leitura, não se cria nem se salva. */
+export type CollectibleItemType = CosmeticType | LegacyCosmeticType;
 export type CollectibleSlotType = 'skin' | 'head' | 'face' | 'neck' | 'effect';
 
 export interface CollectibleAdjust { x: number; y: number; scale: number }
@@ -22,7 +24,7 @@ export interface CollectibleItem {
   slug: string;
   name: string;
   description: string;
-  type: CosmeticType;
+  type: CollectibleItemType;
   rarity: CosmeticRarity;
   price: number;
   visualValue: string;

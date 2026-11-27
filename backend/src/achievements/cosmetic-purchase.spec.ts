@@ -18,7 +18,7 @@ const freshItem = (overrides: Record<string, unknown> = {}) => ({
   id: 10,
   slug: 'moldura-violeta',
   name: 'Moldura Violeta',
-  type: CosmeticType.FRAME,
+  type: CosmeticType.HEAD,
   price: 2,
   active: true,
   kit_id: null,

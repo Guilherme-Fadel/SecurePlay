@@ -54,10 +54,11 @@ export interface RecentAchievements {
   nodes: AchievementNode[];
 }
 
-/** Encaixes do personagem (skin a card) vêm ao lado dos tipos antigos; o backend é quem os cataloga. */
-export type CosmeticType =
-  | 'frame' | 'background' | 'title' | 'badge' | 'effect'
-  | 'skin' | 'head' | 'face' | 'neck' | 'card';
+/** Encaixes do personagem e temas (fundo e card); o backend é quem os cataloga. Moldura, título e emblema foram descontinuados (ver `LegacyCosmeticType`). */
+export type CosmeticType = 'background' | 'effect' | 'skin' | 'head' | 'face' | 'neck' | 'card';
+
+/** Tipos descontinuados: o banco ainda guarda os registros antigos, mas a loja não os lista nem aceita. Só o console admin pode encontrá-los. */
+export type LegacyCosmeticType = 'frame' | 'title' | 'badge';
 
 /** `festive` só existe em colecionáveis (não em conquistas). */
 export type CosmeticRarity = AchievementRarity | 'festive';

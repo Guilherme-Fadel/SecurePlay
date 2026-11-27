@@ -241,7 +241,6 @@ describe('UnlockFactsLoader', () => {
     const { loader, dashboard } = build();
     const result = await loader.load(1, needs('rank'));
     expect(dashboard.getRanking).toHaveBeenCalledWith(1, 'company', false, {
-      includeImages: false,
       includeEntries: false,
     });
     expect(result.rank).toEqual({ empresa: 7, global: null });
@@ -255,7 +254,7 @@ describe('UnlockFactsLoader', () => {
       1,
       'company',
       false,
-      { includeImages: false, includeEntries: false },
+      { includeEntries: false },
     );
     const globalOnly = build();
     await globalOnly.loader.load(1, needs('rank'), new Set(['global']));
@@ -264,7 +263,7 @@ describe('UnlockFactsLoader', () => {
       1,
       'global',
       false,
-      { includeImages: false, includeEntries: false },
+      { includeEntries: false },
     );
     const both = build();
     await both.loader.load(1, needs('rank'));

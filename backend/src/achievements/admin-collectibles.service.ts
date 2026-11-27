@@ -20,6 +20,7 @@ import {
 } from './collectible-art';
 import { applyItemFields, applyKitFields } from './collectible-fields';
 import {
+  assertActiveType,
   assertFestiveSchedule,
   assertItemVisual,
   assertKitArt,
@@ -272,6 +273,7 @@ export class AdminCollectiblesService {
   ) {
     const item = await this.findItem(manager, id);
     if (active) {
+      assertActiveType(item.type);
       assertFestiveSchedule(item);
       assertItemVisual(item);
     }

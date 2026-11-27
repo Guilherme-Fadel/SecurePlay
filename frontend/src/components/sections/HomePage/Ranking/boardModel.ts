@@ -65,7 +65,7 @@ export function toBoardEntry(entry: RankingEntry | RankingTurmaEntry | BoardEntr
   if (isTurma(entry)) {
     return {
       kind: 'turma', rankKey: entry.rankKey, position: entry.position ?? 0, name: entry.name, points: entry.value, level: 0,
-      companyName: entry.companyName, isCurrentUser: entry.mine, profileImageUrl: null, weeklyChange: null, look: {},
+      companyName: entry.companyName, isCurrentUser: entry.mine, weeklyChange: null, look: {},
       value: entry.value, stats: entry.stats, studentCount: entry.studentCount,
     };
   }

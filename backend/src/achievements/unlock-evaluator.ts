@@ -246,7 +246,6 @@ export class UnlockFactsLoader {
   ): Promise<number | null> {
     try {
       const ranking = await this.dashboard.getRanking(usuarioId, scope, false, {
-        includeImages: false,
         includeEntries: false,
       });
       if (ranking.scope !== scope) return null;

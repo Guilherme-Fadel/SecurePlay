@@ -215,33 +215,15 @@
 .rk-card-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 4px 16px; margin-bottom: 16px; }
 .rk-card-title { color: var(--rk-text); font-size: 26px; font-weight: 800; letter-spacing: -0.02em; line-height: 1.1; }
 
-/* Avatares: foto de perfil ou iniciais sobre cor fixa (tamanho por --rk-av). */
-.rk-avatar {
-  --rk-av: 40px;
-  display: grid;
-  width: var(--rk-av);
-  height: var(--rk-av);
-  flex: 0 0 auto;
-  place-items: center;
-  overflow: hidden;
-  border-radius: 50%;
-  font-size: calc(var(--rk-av) * 0.38);
-  font-weight: 800;
-  line-height: 1;
-  letter-spacing: 0.02em;
-  user-select: none;
-}
-.rk-avatar img { display: block; width: 100%; height: 100%; object-fit: cover; }
-.rk-avatar.has-photo { background: var(--rk-row); box-shadow: inset 0 0 0 1.5px var(--dashboard-border); }
-
 /* ---------- Destaques ---------- */
 /* Compactos: ficam sob o palco (ou depois do placar no celular) sem roubar altura da tela. */
 .rk-highlights { padding: 14px 16px; }
 .rk-highlights .rk-card-head { margin-bottom: 10px; }
 .rk-highlights .rk-card-title { font-size: 20px; }
 .rk-hl { display: flex; flex-direction: column; gap: 6px; }
-.rk-hl li { display: grid; grid-template-columns: 32px minmax(0, 1fr) auto; align-items: center; gap: 10px; padding: 6px 10px; border-radius: 12px; background: var(--rk-row); }
-.rk-hl .rk-avatar { --rk-av: 32px; }
+.rk-hl li { display: grid; grid-template-columns: 34px minmax(0, 1fr) auto; align-items: center; gap: 10px; padding: 6px 10px; border-radius: 12px; background: var(--rk-row); }
+.rk-hl-pet { display: block; width: 30px; }
+.rk-hl-pet .character-avatar { display: block; width: 100%; }
 .rk-hl-who { display: flex; min-width: 0; flex-direction: column; line-height: 1.25; }
 .rk-hl-who small { color: var(--rk-muted); font-size: 12px; font-weight: 700; }
 .rk-hl-who strong { overflow: hidden; font-size: 15px; font-weight: 800; text-overflow: ellipsis; white-space: nowrap; }

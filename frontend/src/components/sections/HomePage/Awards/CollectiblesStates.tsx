@@ -2,15 +2,19 @@ import { RefreshCw } from 'lucide-react';
 import { AppButton } from '@/components/ui/buttons/AppButton';
 import { BrandCharacter } from '@/components/shared/BrandCharacter';
 
-/** Silhuetas do provador e da lista, sem dados fictícios nem controles ativos. */
+/** Silhuetas do palco e da lista de encaixes, sem dados fictícios nem controles ativos. */
 export function CollectiblesLoading() {
   return (
     <div className="cole-v cole-loading" role="status" aria-label="Carregando colecionáveis" aria-busy="true">
-      <div className="cole-grid" aria-hidden="true">
-        <div className="cole-stage cole-skeleton"><span /><span /><span /></div>
-        <div className="cole-shop">
-          <div className="cole-tabs cole-skeleton-tabs"><i /><i /><i /></div>
-          <div className="cole-list cole-skeleton-list"><i /><i /><i /></div>
+      <div className="chr-grid" aria-hidden="true">
+        <div className="chr-work">
+          <div className="cole-skeleton"><span /><span /><span /></div>
+        </div>
+        <div className="chr-side">
+          <div className="cole-shop">
+            <div className="cole-tabs cole-skeleton-tabs"><i /><i /><i /></div>
+            <div className="cole-list cole-skeleton-list"><i /><i /><i /></div>
+          </div>
         </div>
       </div>
     </div>

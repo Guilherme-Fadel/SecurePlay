@@ -1,10 +1,11 @@
 import type { Dispatch, ReactNode, SetStateAction } from 'react';
 import { AppSelect } from '@/components/ui/forms/AppSelect';
 import type { CosmeticType } from '@/services/achievements';
+import type { CollectibleItemType } from '@/services/adminCollectibles';
 import { ITEM_TYPES, changeItemType, isItemSlot, isThemeSlot, type FormErrors, type ItemForm as ItemFormState } from './adminCollectiblesForm';
 import { slotLabel } from './adminCollectiblesModel';
 import { CommonFields } from './CommonFields';
-import { FormSection } from './FormSection';
+import { FieldError, FormSection } from './FormSection';
 import { ItemArt } from './ItemArt';
 import { ItemImportBar } from './ItemImportBar';
 import { RequirementsEditor } from './RequirementsEditor';
@@ -27,7 +28,7 @@ const BASICS_HELP = 'Nome, identificador, raridade e preço do item avulso. Em r
 /** Item avulso: dados comuns, exigências e encaixe; a arte e o ajuste fino ficam em `ItemArt`. */
 export function ItemForm({ value, errors, onChange, locked, kindSwitch }: ItemFormProps) {
   const patch = (change: Partial<ItemFormState>) => onChange((previous) => ({ ...previous, ...change }));
-  const types: CosmeticType[] = isItemSlot(value.type) ? [...ITEM_TYPES] : [value.type, ...ITEM_TYPES];
+  const types: CollectibleItemType[] = isItemSlot(value.type) ? [...ITEM_TYPES] : [value.type, ...ITEM_TYPES];
   const theme = isThemeSlot(value.type);
   return <>
     <FormSection title="Dados do item" help={BASICS_HELP}>
@@ -41,7 +42,7 @@ export function ItemForm({ value, errors, onChange, locked, kindSwitch }: ItemFo
           <AppSelect aria-label="Encaixe" value={value.type} disabled={locked} onChange={(event) => onChange((previous) => changeItemType(previous, event.target.value as CosmeticType))}>
             {types.map((type) => <option key={type} value={type}>{slotLabel(type)}</option>)}
           </AppSelect>
-          {locked && <small>O encaixe não muda depois de salvo.</small>}
+          {errors.type ? <FieldError>{errors.type}</FieldError> : locked && <small>O encaixe não muda depois de salvo.</small>}
         </label>
         {theme && <ThemeSelect type={value.type} value={value.visualValue} onChange={(visualValue) => patch({ visualValue })} />}
       </div>

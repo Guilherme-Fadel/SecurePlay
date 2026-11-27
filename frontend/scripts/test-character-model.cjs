@@ -12,6 +12,7 @@ const collectibles = load('src/components/sections/HomePage/Awards/collectiblesM
 const model = load('src/components/sections/HomePage/Awards/characterModel.ts', {
   './collectiblesModel': collectibles,
   '@/components/shared/Character/characterLook': look,
+  '@/components/shared/Character/characterColor': bodyColor,
 });
 const plain = (value) => JSON.parse(JSON.stringify(value));
 
@@ -148,7 +149,7 @@ test('prévia: o equipado monta o personagem e o item em prova troca só o seu e
   assert.equal(tried.head.layer, 'back');
   assert.equal(tried.skin.visualValue, 'veludo');
 
-  // Moldura, título e emblema não fazem parte do personagem.
+  // Tipos descontinuados (moldura, título, emblema) que o banco ainda guarda não fazem parte do personagem.
   assert.deepEqual(plain(model.buildCharacterLook(shop, item(10, 'badge'))), plain(worn));
   // Item já equipado em prova mantém cor e ajuste que o backend enviou.
   const same = model.buildCharacterLook(shop, item(2, 'head', { slug: 'bone', equipped: true, owned: true }));
@@ -237,4 +238,30 @@ test('cor do corpo no ranking: bodyColor do look vence; sem ele (ou inválido) v
   assert.equal(bodyColor.bodyColorOrFallback({}, 'var(--sp-orange)'), 'var(--sp-orange)');
   assert.equal(bodyColor.bodyColorOrFallback(undefined, 'var(--sp-orange)'), 'var(--sp-orange)');
   assert.equal(bodyColor.bodyColorOrFallback({ bodyColor: 'verde' }, 'var(--sp-orange)'), 'var(--sp-orange)');
+});
+
+test('personagem do próprio usuário: peças da loja e cor da loja; sem loja, padrão na cor da conta', () => {
+  const shop = { equipped: [equippedPiece('head', 'cartola')], character: { color: 'rosa', chosen: true } };
+  const own = model.ownCharacter(shop, 'vermelho');
+  assert.equal(own.color, 'var(--sp-pink)');
+  assert.deepEqual(Object.keys(own.look), ['head']);
+  const bare = model.ownCharacter(undefined, 'vermelho');
+  assert.deepEqual(plain(bare), { look: {}, color: 'var(--sp-red)' });
+  assert.equal(model.ownCharacter(null, undefined).color, 'var(--sp-blue)');
+  assert.equal(model.ownCharacter({ equipped: [] }, 'laranja').color, 'var(--sp-orange)');
+});
+
+test('lookArtUrls: só artes seguras do corpo, sem repetição; fundo e card ficam de fora', () => {
+  const piece = (artUrl) => ({ visualValue: 'v', artUrl, color: null, adjust: { x: 0, y: 0, scale: 1 }, layer: 'front' });
+  const urls = model.lookArtUrls({
+    skin: piece('https://cdn/skin.png'),
+    head: piece('/art/head.png'),
+    face: piece('https://cdn/skin.png'),
+    neck: piece('javascript:alert(1)'),
+    effect: piece(null),
+    background: piece('https://cdn/bg.png'),
+    card: piece('https://cdn/card.png'),
+  });
+  assert.deepEqual(plain(urls), ['https://cdn/skin.png', '/art/head.png']);
+  assert.deepEqual(plain(model.lookArtUrls({})), []);
 });

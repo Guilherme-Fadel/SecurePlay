@@ -24,7 +24,7 @@ const baseItem = {
   id: 10,
   slug: 'moldura',
   name: 'Moldura',
-  type: CosmeticType.FRAME,
+  type: CosmeticType.HEAD,
   price: 2,
   active: true,
   kit_id: null,
@@ -230,7 +230,7 @@ describe('AchievementsService.equip (cor)', () => {
     equipped: false,
     color,
     cosmetic_item: {
-      type: CosmeticType.FRAME,
+      type: CosmeticType.HEAD,
       recolorable: false,
       visual_value: 'x',
       ...item,

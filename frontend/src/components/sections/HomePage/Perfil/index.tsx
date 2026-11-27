@@ -3,7 +3,6 @@ import { PageTransition } from '@/components/shared/PageTransition';
 import { AppButton } from '@/components/ui/buttons/AppButton';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { useDashboardStats } from '@/hooks/useDashboard';
-import { useAchievementShop } from '@/hooks/useAchievements';
 import { useSectionContext } from '@/contexts/SectionContext';
 import { useCompanyFeatures } from '@/hooks/useCompanyFeatures';
 import { ProfileIdentity } from './ProfileIdentity';
@@ -11,21 +10,13 @@ import { ProfileAccount } from './ProfileAccount';
 import { ProfileSecurity } from './ProfileSecurity';
 import { ProfileNextStep, ProfileProgress } from './ProfileProgress';
 import { isManagementRole, profileDisplayName } from './profileModel';
-import '@/styles/cosmetics.css';
 import '@/styles/profile-ui.css';
-
-/** Moldura equipada, no mesmo modelo do avatar do trilho (UserMenu) e do provador. */
-function useEquippedFrame(enabled: boolean) {
-  const { data: cosmeticShop } = useAchievementShop(enabled);
-  return cosmeticShop?.equipped.find((item) => item.type === 'frame')?.visualValue ?? '';
-}
 
 export function Perfil() {
   const features = useCompanyFeatures();
   const { user, loading: userLoading, status, error: userError, refreshSession } = useCurrentUser();
   const { stats, loading: statsLoading, error: statsError } = useDashboardStats();
   const { navigateToSection } = useSectionContext();
-  const frame = useEquippedFrame(features.achievements);
 
   const isManagementUser = isManagementRole(user?.role);
   const displayName = profileDisplayName(user, isManagementUser, userLoading);
@@ -47,7 +38,7 @@ export function Perfil() {
           // As colunas só agrupam no desktop que cabe na janela (rolam por dentro); fora dele usam display: contents.
           <div className="pv-grid is-columns">
             <div className="pv-col">
-              <ProfileIdentity user={user} displayName={displayName} isManagementUser={isManagementUser} frame={frame} />
+              <ProfileIdentity user={user} displayName={displayName} isManagementUser={isManagementUser} />
               <ProfileProgress
                 stats={stats}
                 statsLoading={statsLoading}

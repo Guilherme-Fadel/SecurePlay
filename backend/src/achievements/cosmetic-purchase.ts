@@ -4,6 +4,7 @@ import { isOnSale } from './availability';
 import { CosmeticItem } from './entities/cosmetic-item.entity';
 import { UsuarioCosmetic } from './entities/usuario-cosmetic.entity';
 import { PrestigeWallet } from './entities/prestige-wallet.entity';
+import { isRetiredType } from './retired-types';
 import { lockPrestigeWallet } from './prestige-ledger';
 import {
   PrestigeTransaction,
@@ -19,7 +20,7 @@ async function loadFreshItem(manager: EntityManager, itemId: number) {
   const item = await manager
     .getRepository(CosmeticItem)
     .findOne({ where: { id: itemId } });
-  if (!item?.active) {
+  if (!item?.active || isRetiredType(item.type)) {
     throw new NotFoundException('Item cosmético não encontrado');
   }
   // Defesa em profundidade: peça de kit nunca é comprada avulsa.

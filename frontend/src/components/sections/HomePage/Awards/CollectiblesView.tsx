@@ -1,67 +1,27 @@
-import { useRef, useState } from 'react';
+import { useRef } from 'react';
 import { useReducedMotion } from 'motion/react';
-import { AppFilterChip } from '@/components/ui/buttons/AppFilterChip';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import type { useAchievementShop } from '@/hooks/useAchievements';
-import type { getAchievementTrail, CosmeticItem } from '@/services/achievements';
+import type { getAchievementTrail } from '@/services/achievements';
 import { CharacterFittingRoom } from './CharacterFittingRoom';
-import type { Feedback } from './CollectiblesFeedback';
-import { CollectiblesFittingRoom } from './CollectiblesFittingRoom';
-import { CollectiblesShop, collectibleItemId } from './CollectiblesShop';
-import { CollectiblesEarn } from './CollectiblesEarn';
 import { CollectiblesEmpty, CollectiblesError, CollectiblesLoading } from './CollectiblesStates';
-import { buildLook, extractErrorMessage, initialTab, profileLevel, requirementInfo, SHELF_TYPES, type ProfileType } from './collectiblesModel';
+import { profileLevel } from './collectiblesModel';
 import '@/styles/collectibles.css';
 
 type Trail = Awaited<ReturnType<typeof getAchievementTrail>>;
-type CollectiblesSection = 'character' | 'shelf';
-
-const SECTIONS: ReadonlyArray<{ value: CollectiblesSection; label: string }> = [
-  { value: 'character', label: 'Personagem' },
-  { value: 'shelf', label: 'Molduras, títulos e emblemas' },
-];
 
 /**
- * Conquistas › Colecionáveis: Personagem (palco, placar, encaixes e kits) e a
- * prateleira de molduras, títulos e emblemas, com "Como ganhar mais chaves".
- * Saldo, posse, exigência e compra vêm do backend via `useAchievementShop`.
+ * Conquistas › Colecionáveis: o Personagem (palco, placar, encaixes e kits) com
+ * "Como ganhar mais chaves". Saldo, posse, exigência e compra vêm do backend via `useAchievementShop`.
  */
 export function CollectiblesView({ shopState, trail }: { shopState: ReturnType<typeof useAchievementShop>; trail: Trail | null }) {
-  const { data: shop, error, refetch, changingItem, purchase, equip, unequip } = shopState;
+  const { data: shop, error, refetch } = shopState;
   const { user } = useCurrentUser();
   const reduceMotion = useReducedMotion() === true;
-  const [section, setSection] = useState<CollectiblesSection>('character');
-  const [tabChoice, setTabChoice] = useState<ProfileType | null>(null);
-  const [selectedId, setSelectedId] = useState<number | null>(null);
-  const [feedback, setFeedback] = useState<Feedback | null>(null);
   const earnHeadingRef = useRef<HTMLHeadingElement>(null);
 
   if (!shop) return error ? <CollectiblesError onRetry={refetch} /> : <CollectiblesLoading />;
   if (shop.items.length === 0 && shop.kits.length === 0) return <CollectiblesEmpty />;
-
-  const tab = tabChoice ?? initialTab(shop.items, SHELF_TYPES);
-  const selected = shop.items.find((item) => item.id === selectedId) ?? null;
-  const look = buildLook(shop, selected);
-  const level = profileLevel(trail, user);
-
-  const select = (item: CosmeticItem) => {
-    setFeedback(null);
-    setSelectedId((current) => (current === item.id ? null : item.id));
-  };
-
-  const run = async (item: CosmeticItem, action: () => Promise<unknown>, success: string, fallback: string) => {
-    setFeedback(null);
-    try {
-      await action();
-      setSelectedId(null);
-      setFeedback({ kind: 'success', text: success });
-      document.getElementById(collectibleItemId(item.id))?.focus();
-    } catch (requestError: unknown) {
-      setFeedback({ kind: 'error', text: extractErrorMessage(requestError) ?? fallback });
-      // A recusa pode vir de estado desatualizado (saldo, posse): busca o estado real do backend.
-      void refetch();
-    }
-  };
 
   const showEarn = () => {
     const heading = earnHeadingRef.current;
@@ -72,46 +32,7 @@ export function CollectiblesView({ shopState, trail }: { shopState: ReturnType<t
 
   return (
     <div className="cole-v">
-      <div className="cole-sections" role="group" aria-label="Seção de Colecionáveis">
-        {SECTIONS.map((entry) => (
-          <AppFilterChip key={entry.value} selected={section === entry.value} onClick={() => setSection(entry.value)}>
-            {entry.label}
-          </AppFilterChip>
-        ))}
-      </div>
-      {section === 'character' ? (
-        <CharacterFittingRoom shop={shop} shopState={shopState} trail={trail} user={user} level={level} earnRef={earnHeadingRef} onShowEarn={showEarn} />
-      ) : (
-        <div className="cole-grid">
-          <CollectiblesFittingRoom
-            user={user}
-            level={level}
-            look={look}
-            selected={selected}
-            requirement={selected ? requirementInfo(selected, trail) : null}
-            balance={shop.prestigeBalance}
-            changingItem={changingItem}
-            feedback={feedback}
-            onBuy={(item) => run(item, () => purchase(item.id), `${item.name} agora é seu e já está no seu perfil.`, 'Não foi possível adquirir o item.')}
-            onEquip={(item) => run(item, () => equip(item.id), `${item.name} equipado.`, 'Não foi possível equipar o item.')}
-            onUnequip={(item) => run(item, () => unequip(item.type, item.id), `${item.name} saiu do seu perfil.`, 'Não foi possível desequipar o item.')}
-            onClear={() => setSelectedId(null)}
-            onShowEarn={showEarn}
-          />
-          <div className="cole-side">
-            <CollectiblesShop
-              items={shop.items}
-              tab={tab}
-              onTabChange={setTabChoice}
-              selectedId={selectedId}
-              onSelect={select}
-              balance={shop.prestigeBalance}
-              trail={trail}
-            />
-            <CollectiblesEarn ref={earnHeadingRef} trail={trail} balance={shop.prestigeBalance} />
-          </div>
-        </div>
-      )}
+      <CharacterFittingRoom shop={shop} shopState={shopState} trail={trail} user={user} level={profileLevel(trail, user)} earnRef={earnHeadingRef} onShowEarn={showEarn} />
     </div>
   );
 }

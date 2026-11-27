@@ -49,3 +49,9 @@ export async function preloadImagesInBackground(
   const workerCount = Math.min(Math.max(1, concurrency), queue.length);
   await Promise.all(Array.from({ length: workerCount }, () => worker()));
 }
+
+/** Resolve quando a imagem terminou de carregar (sucesso ou erro); nunca rejeita. */
+export function waitForImages(urls: ReadonlyArray<string | null | undefined>): Promise<void> {
+  const unique = Array.from(new Set(urls.filter((url): url is string => Boolean(url))));
+  return Promise.all(unique.map((url) => loadImage(url))).then(() => undefined);
+}

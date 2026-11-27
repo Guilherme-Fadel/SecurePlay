@@ -76,7 +76,6 @@ export interface RankingEntry {
   level: number;
   companyName?: string | null;
   isCurrentUser?: boolean;
-  profileImageUrl?: string | null;
   weeklyChange?: number | null;
   /** Visual equipado do aluno; `{}` quando não há nada equipado. */
   look?: CharacterLook;

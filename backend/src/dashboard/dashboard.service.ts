@@ -99,16 +99,6 @@ export class DashboardService implements OnApplicationBootstrap, OnModuleDestroy
       this.scheduleNextClose(failed ? 60_000 : undefined);
     }
   }
-  private async resolveProfileImageUrl(
-    key: string | null | undefined,
-  ): Promise<string | null> {
-    if (!key) return null;
-    try {
-      return await this.s3Service.generatePresignedGetUrl(key);
-    } catch {
-      return null;
-    }
-  }
   private async getOrCreateStats(usuario_id: number): Promise<UsuarioStats> {
     let stats = await this.statsRepository.findOne({ where: { usuario_id } });
     if (!stats) {
@@ -134,11 +124,10 @@ export class DashboardService implements OnApplicationBootstrap, OnModuleDestroy
     usuario_id: number,
     requestedScope: 'global' | 'company' = 'global',
     includeWeekly = true,
-    options: { includeImages?: boolean; includeEntries?: boolean; companyId?: number; mode?: RankingMode; selectedSeason?: string | null; parameters?: CompanyParameters; category?: RankingCategory; unit?: RankingUnit } = {},
+    options: { includeEntries?: boolean; companyId?: number; mode?: RankingMode; selectedSeason?: string | null; parameters?: CompanyParameters; category?: RankingCategory; unit?: RankingUnit } = {},
   ) {
     const mode = options.mode ?? 'current';
     const selectedSeason = options.selectedSeason ?? (mode === 'current' ? getRankingSeason().startsAt.slice(0, 7) : null);
-    const includeImages = options.includeImages ?? true;
     const includeEntries = options.includeEntries ?? true;
     // Etapa 1 em paralelo: cada ida ao banco custa a latência de rede.
     const [parameters, currentEntry] = await Promise.all([
@@ -233,14 +222,12 @@ export class DashboardService implements OnApplicationBootstrap, OnModuleDestroy
         seasonPoints,
         historicalCompanies,
         viewerStats: currentEntry,
-        includeImages,
         includeWeekly,
         deps: {
           dataSource: this.dataSource,
           redis: this.redisService,
           cache: this.categoryBoards,
           looks: (ids, viewerId) => this.rankingLooks(ids, viewerId),
-          photo: (key) => this.resolveProfileImageUrl(key),
           warn: (message, error) => this.logger.warn(message, error),
         },
       }) as never;
@@ -262,11 +249,6 @@ export class DashboardService implements OnApplicationBootstrap, OnModuleDestroy
     const historicalCurrentEntry = mode === 'season' ? allStats.find((entry) => entry.usuario_id === usuario_id) : null;
     let previousPoints: number | null = null;
     let previousPosition = 0;
-    // M5: no ranking global, foto só de alunos da mesma escola de quem consulta.
-    const showPhoto = (entry: UsuarioStats) =>
-      scope === 'company' ||
-      entry.usuario_id === usuario_id ||
-      (!!company && entry.usuario?.empresa_id === company.id);
     const leaderboard = includeEntries
       ? await Promise.all(
           leaderboardEntries.map(async (entry, index) => {
@@ -292,12 +274,6 @@ export class DashboardService implements OnApplicationBootstrap, OnModuleDestroy
               companyName: mode === 'season' ? historicalCompanies.get(entry.usuario_id) ?? null : null,
               isCurrentUser: entry.usuario_id === usuario_id,
               look: looks.get(entry.usuario_id) ?? {},
-              profileImageUrl:
-                includeImages && showPhoto(entry)
-                  ? await this.resolveProfileImageUrl(
-                      entry.usuario?.profile_image_key,
-                    )
-                  : null,
             };
           }),
         )
@@ -336,11 +312,6 @@ export class DashboardService implements OnApplicationBootstrap, OnModuleDestroy
       companyName: mode === 'season' ? historicalCompanies.get(usuario_id) ?? null : company?.nome ?? null,
       isCurrentUser: true,
       look: looks.get(usuario_id),
-      profileImageUrl: includeImages
-        ? await this.resolveProfileImageUrl(
-            mode === 'season' ? historicalCurrentEntry?.usuario?.profile_image_key : currentEntry?.usuario?.profile_image_key,
-          )
-        : null,
     };
     let weekly = unavailableRankingWeek();
     if (includeWeekly && mode === 'current') {
@@ -350,8 +321,7 @@ export class DashboardService implements OnApplicationBootstrap, OnModuleDestroy
           getScopedStats: () => Promise.resolve(allStats),
           seasonPoints,
       currentUserId: isManagementUser ? 0 : usuario_id,
-          resolveProfileImageUrl: (key) => this.resolveProfileImageUrl(key),
-          showPhoto,
+          looks: (ids) => this.rankingLooks(ids, null),
         });
       } catch (error) {
         this.logger.warn(
@@ -524,7 +494,6 @@ export class DashboardService implements OnApplicationBootstrap, OnModuleDestroy
       ReturnType<typeof this.getRanking>
     > | null> = globalRankingEnabled
       ? this.getRanking(usuario_id, 'global', false, {
-          includeImages: false,
           includeEntries: false,
           parameters,
         }).catch((error: unknown) => {

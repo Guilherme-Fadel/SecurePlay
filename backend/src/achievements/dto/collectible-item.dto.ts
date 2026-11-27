@@ -15,7 +15,8 @@ import {
   MinLength,
   ValidateNested,
 } from 'class-validator';
-import { CosmeticType } from '../entities/cosmetic-item.entity';
+import { ACTIVE_TYPES, RETIRED_TYPE_MESSAGE } from '../retired-types';
+import type { CosmeticType } from '../entities/cosmetic-item.entity';
 import { CosmeticRarity } from '../entities/cosmetic-rarity';
 
 export const SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
@@ -86,7 +87,7 @@ export class CollectibleItemDto extends CollectibleScheduleDto {
   @MaxLength(400)
   description: string;
 
-  @IsEnum(CosmeticType)
+  @IsIn(ACTIVE_TYPES, { message: RETIRED_TYPE_MESSAGE })
   type: CosmeticType;
 
   @IsEnum(CosmeticRarity)

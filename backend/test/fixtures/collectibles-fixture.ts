@@ -131,7 +131,7 @@ export const itemDto = (
   name: 'Moldura azul',
   slug: 'moldura-azul',
   description: 'Moldura',
-  type: CosmeticType.FRAME,
+  type: CosmeticType.HEAD,
   rarity: CosmeticRarity.COMMON,
   price: 2,
   visualValue: 'blue',

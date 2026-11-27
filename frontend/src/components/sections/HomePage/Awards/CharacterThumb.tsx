@@ -2,7 +2,7 @@ import { BRAND_CHARACTER_BODY } from '@/components/shared/BrandCharacter';
 import { CharacterAvatar } from '@/components/shared/Character/CharacterAvatar';
 import { isSafeArtUrl, type CharacterLook, type LookPiece } from '@/components/shared/Character/characterLook';
 import { cn } from '@/lib/utils';
-import type { CosmeticType } from '@/services/achievements';
+import type { CosmeticType, LegacyCosmeticType } from '@/services/achievements';
 import { CosmeticArt, hasCosmeticArtwork } from './CollectiblesArt';
 import { cardTheme, isCharacterSlot, stageTheme } from './characterModel';
 import { PieceArtThumb } from './PieceArtThumb';
@@ -11,7 +11,8 @@ import '@/styles/character-thumb.css';
 export interface ThumbSource {
   slug?: string;
   name: string;
-  type: CosmeticType;
+  /** Itens antigos (moldura, título, emblema) só chegam pelo console admin e viram a inicial do nome. */
+  type: CosmeticType | LegacyCosmeticType;
   visualValue: string;
   artUrl: string | null;
   adjust: LookPiece['adjust'];

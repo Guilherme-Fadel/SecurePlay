@@ -1,0 +1,10 @@
+/*
+ * Personagem do usuário solto: o wrapper é neutro (sem fundo, borda, raio ou corte) e o tamanho vem da
+ * largura que cada tela dá à classe. :where mantém a especificidade zero para a tela sempre vencer.
+ */
+:where(.user-character) {
+  display: block;
+  line-height: 0;
+}
+
+.user-character .character-avatar { display: block; width: 100%; }

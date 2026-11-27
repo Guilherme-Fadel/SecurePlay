@@ -3,12 +3,14 @@ import { In, IsNull, Repository } from 'typeorm';
 import { isOnSale } from './availability';
 import { CosmeticItem } from './entities/cosmetic-item.entity';
 import { CosmeticKit } from './entities/cosmetic-kit.entity';
+import { isRetiredType } from './retired-types';
 import type { S3Service } from '../conteudo/s3/s3.service';
 
 /**
  * O que o aluno enxerga no Shop: avulsos ativos e à venda, kits ativos e à
  * venda, e tudo o que ele já possui mesmo fora de venda (inclusive as peças
- * dos kits comprados, que ele equipa uma a uma).
+ * dos kits comprados, que ele equipa uma a uma). Tipos descontinuados
+ * (`RETIRED_TYPES`) nunca entram, nem os que ele já possuía.
  */
 export async function loadShopCatalog(
   repositories: {
@@ -40,7 +42,9 @@ export async function loadShopCatalog(
   const owned = new Set(ownedItemIds);
   return {
     items: candidateItems.filter(
-      (item) => owned.has(item.id) || isOnSale(item, now),
+      (item) =>
+        !isRetiredType(item.type) &&
+        (owned.has(item.id) || isOnSale(item, now)),
     ),
     kits: candidateKits.filter(
       (kit) => ownedKitIds.has(kit.id) || isOnSale(kit, now),

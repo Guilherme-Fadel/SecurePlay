@@ -101,5 +101,5 @@ export function useVisualPreload(user: CurrentUser | null) {
       void warmVisualCache(user);
     }, 250);
     return () => window.clearTimeout(timer);
-  }, [user?.userId, user?.profile_image_url, user?.empresa_logo]);
+  }, [user?.userId, user?.empresa_logo]);
 }

@@ -5,7 +5,10 @@ const { load } = require('./helpers/react-hooks.cjs');
 const collectiblesModel = load('src/components/sections/HomePage/Awards/collectiblesModel.ts', {
   './albumModel': load('src/components/sections/HomePage/Awards/albumModel.ts', {}),
 });
+const legacy = load('src/components/admin/collectibles/legacyTypes.ts', {});
+const form = load('src/components/admin/collectibles/adminCollectiblesForm.ts', { './legacyTypes': legacy });
 const model = load('src/components/admin/collectibles/adminCollectiblesModel.ts', {
+  './legacyTypes': legacy,
   '@/components/sections/HomePage/Awards/collectiblesModel': collectiblesModel,
 });
 const plain = (value) => JSON.parse(JSON.stringify(value));
@@ -31,7 +34,9 @@ test('encaixe e raridade em português, reaproveitando os rótulos da loja', () 
   assert.equal(model.slotLabel('face'), 'Rosto');
   assert.equal(model.slotLabel('neck'), 'Pescoço');
   assert.equal(model.slotLabel('effect'), 'Efeito');
-  assert.equal(model.slotLabel('frame'), 'Borda');
+  // Moldura, título e emblema foram descontinuados: itens antigos aparecem como "Legado".
+  for (const legacy of ['frame', 'title', 'badge']) assert.equal(model.slotLabel(legacy), 'Legado');
+  assert.equal(model.piecesLabel([{ type: 'head' }, { type: 'frame' }]), '2 peças: Cabeça, Legado');
   assert.equal(model.rarityName('common'), 'Comum');
   assert.equal(model.rarityName('uncommon'), 'Incomum');
   assert.equal(model.rarityName('rare'), 'Rara');
@@ -207,7 +212,6 @@ test('criar e editar chamam POST e PATCH e invalidam o cache', async () => {
 });
 
 // Formulário: lógica pura de montagem do corpo, resumo da regra e validação no cliente.
-const form = load('src/components/admin/collectibles/adminCollectiblesForm.ts', {});
 const rule = (mode, ...requirements) => ({ mode, requirements: requirements.map((entry, index) => ({ id: index + 1, metric: 'xp_season', value: '', scope: 'empresa', slug: '', ...entry })) });
 const validItem = (patch = {}) => ({ ...form.emptyItemForm(), name: 'Cartola dourada', slug: 'cartola-dourada', price: '40', ...patch });
 
@@ -419,8 +423,24 @@ test('aviso da prévia: só some com arte enviada ou valor conhecido da bibliote
   assert.equal(previewVisual.previewHasVisual({ card: piece({ visualValue: 'noite' }) }), false);
 });
 
+test('item legado (moldura, título, emblema): abre para consulta, mas o formulário recusa salvar', () => {
+  const record = { id: 6, slug: 'moldura-velha', name: 'Moldura velha', description: '', type: 'frame', rarity: 'rare', price: 5, visualValue: 'gold', kitId: null,
+    festiveEvent: null, availableFrom: null, availableUntil: null, unlockRule: null, requiredAchievementSlug: null,
+    artKey: null, artUrl: null, layer: 'front', recolorable: false, adjust: { x: 0, y: 0, scale: 1 }, active: false };
+  const state = form.itemFormFromRecord(record);
+  assert.equal(state.type, 'frame');
+  assert.equal(legacy.isLegacyType('frame'), true);
+  assert.equal(legacy.isLegacyType('head'), false);
+  assert.equal(form.isItemSlot('frame'), false);
+  assert.match(form.validateItemForm(state).type, /descontinuados/);
+  assert.throws(() => form.buildItemBody(state), /descontinuado/);
+  // Os encaixes que o cadastro oferece não incluem os legados.
+  assert.deepEqual(plain(form.ITEM_TYPES), ['skin', 'head', 'face', 'neck', 'effect', 'background', 'card']);
+  assert.equal(form.validateItemForm({ ...state, type: 'head' }).type, undefined);
+});
+
 test('conquista antiga do registro: vem do backend, fica só para leitura e não entra no corpo', () => {
-  const record = { id: 5, slug: 'moldura', name: 'Moldura', description: '', type: 'frame', rarity: 'rare', price: 5, visualValue: 'gold', kitId: null,
+  const record = { id: 5, slug: 'chapeu', name: 'Chapéu', description: '', type: 'head', rarity: 'rare', price: 5, visualValue: 'gold', kitId: null,
     festiveEvent: null, availableFrom: null, availableUntil: null, unlockRule: null, requiredAchievementSlug: 'veterano',
     artKey: null, artUrl: null, layer: 'front', recolorable: false, adjust: { x: 0, y: 0, scale: 1 }, active: true };
   const state = form.itemFormFromRecord(record);

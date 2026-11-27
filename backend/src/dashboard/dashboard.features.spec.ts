@@ -306,7 +306,7 @@ describe('DashboardService company parameters', () => {
     expect(query.getMany).toHaveBeenCalledTimes(1);
   });
 
-  it('ranking global não expõe foto de outra escola nem usuario_id (M5/B8)', async () => {
+  it('ranking global não expõe foto nem usuario_id (B8)', async () => {
     const school = { id: 3, nome: 'Escola' };
     const parameters = { globalRankingEnabled: true };
     const { service, query } = buildService(school, parameters);
@@ -317,7 +317,7 @@ describe('DashboardService company parameters', () => {
         usuario: {
           nickname: 'Outra',
           empresa_id: 4,
-          profile_image_key: 'fotos/1.png',
+          profile_image_key: 'fotos/1.png', // dado antigo preservado, nunca exposto
         },
       },
       {
@@ -330,18 +330,13 @@ describe('DashboardService company parameters', () => {
         },
       },
     ]);
-    Object.assign(service as unknown as Record<string, unknown>, {
-      s3Service: {
-        generatePresignedGetUrl: (key: string) =>
-          Promise.resolve(`https://bucket.test/${key}`),
-      },
-    });
     const ranking = await service.getRanking(7, 'global', false);
     const outra = ranking.leaderboard.find((entry) => entry.name === 'Outra');
     const colega = ranking.leaderboard.find((entry) => entry.name === 'Colega');
     expect(outra).not.toHaveProperty('id');
     expect(outra?.rankKey).toMatch(/^[0-9a-f]{16}$/);
-    expect(outra?.profileImageUrl).toBeNull();
-    expect(colega?.profileImageUrl).not.toBeNull();
+    for (const entry of ranking.leaderboard)
+      expect(entry).not.toHaveProperty('profileImageUrl');
+    expect(JSON.stringify(ranking)).not.toContain('fotos/');
   });
 });

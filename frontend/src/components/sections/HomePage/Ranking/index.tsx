@@ -10,7 +10,6 @@ import {
   defaultScope, hostSpeech, isManagementRole, raceModel, scopeOptions, seasonBand, type RaceModel, type RankingScope, type SeasonBand,
 } from './rankingModel';
 import { boardRanking, categoryOf, unitOf } from './boardModel';
-import { withViewerPhoto } from './rankingAvatarTone';
 import { RankingBanner } from './RankingBanner';
 import { RankingArea } from './RankingArea';
 import '@/styles/ranking-ui.css';
@@ -117,9 +116,7 @@ export function Ranking() {
     { season: mode === 'season' && seasonId ? seasonId : undefined, category: filters.category, unit: filters.unit },
   );
 
-  // Sua foto do perfil quando o ranking envia a sua linha sem foto (só exibição).
-  const viewerPhoto = user?.profile_image_url ?? null;
-  const board = useMemo(() => (rawRanking ? boardRanking(withViewerPhoto(rawRanking, viewerPhoto)) : null), [rawRanking, viewerPhoto]);
+  const board = useMemo(() => (rawRanking ? boardRanking(rawRanking) : null), [rawRanking]);
   const waitingForSeasonChoice = mode === 'season' && !seasonId;
   const { ranking, stale } = useKeptRanking(board, loading && !waitingForSeasonChoice);
 

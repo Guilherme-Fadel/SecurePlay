@@ -1,14 +1,11 @@
-import { useEffect, useRef, useState } from 'react';
-import { BadgeCheck, Building2, Camera, Loader2, ShieldCheck } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { BadgeCheck, Building2, ShieldCheck } from 'lucide-react';
 import { toast } from 'sonner';
 import { AppButton } from '@/components/ui/buttons/AppButton';
 import { AppInput } from '@/components/ui/forms/AppInput';
-import { Avatar } from '@/components/ui/visuals/Avatar';
+import { UserCharacter } from '@/components/shared/Character/UserCharacter';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
-import { presignProfileImage, requestNickname, saveProfileImage } from '@/services/profile';
-import { preloadImages } from '@/lib/imageCache';
-import { optimizeImageUpload } from '@/lib/optimizeImageUpload';
-import { cn } from '@/lib/utils';
+import { requestNickname } from '@/services/profile';
 import type { CurrentUser } from '@/services/me';
 import { apiErrorMessage, roleLabel } from './profileModel';
 
@@ -16,16 +13,14 @@ interface ProfileIdentityProps {
   user: CurrentUser | null;
   displayName: string;
   isManagementUser: boolean;
-  /** visualValue da moldura equipada (cosmetics.css); vazio sem conquistas. */
-  frame: string;
 }
 
-/** Card principal (cor da escola): foto, nome, papel, instituição e pedido de apelido. */
-export function ProfileIdentity({ user, displayName, isManagementUser, frame }: ProfileIdentityProps) {
+/** Card principal (cor da escola): personagem, nome, papel, instituição e pedido de apelido. */
+export function ProfileIdentity({ user, displayName, isManagementUser }: ProfileIdentityProps) {
   return (
     <section className="pv-card pv-identity" aria-labelledby="pv-identity-name">
       <div className="pv-identity-main">
-        <ProfilePhoto user={user} frame={frame} useNickname={!isManagementUser} />
+        <ProfilePhoto />
         <div className="pv-identity-copy">
           <p className="pv-eyebrow pv-on-primary">Sua identidade</p>
           <h2 id="pv-identity-name" className="pv-display pv-identity-name">{displayName}</h2>
@@ -41,91 +36,9 @@ export function ProfileIdentity({ user, displayName, isManagementUser, frame }: 
   );
 }
 
-/** useNickname: gestão usa o nome do cadastro nas iniciais (paridade com o HEAD). */
-function ProfilePhoto({ user, frame, useNickname }: { user: CurrentUser | null; frame: string; useNickname: boolean }) {
-  const { refreshSession } = useCurrentUser();
-  const [photoUploading, setPhotoUploading] = useState(false);
-  const [photoPreviewUrl, setPhotoPreviewUrl] = useState<string | null>(null);
-  const photoInputRef = useRef<HTMLInputElement>(null);
-  const photoPreviewObjectUrlRef = useRef<string | null>(null);
-
-  useEffect(() => () => {
-    if (photoPreviewObjectUrlRef.current) {
-      URL.revokeObjectURL(photoPreviewObjectUrlRef.current);
-    }
-  }, []);
-
-  const handlePhotoUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-    const allowedTypes = ['image/png', 'image/jpeg', 'image/webp'];
-    if (!allowedTypes.includes(file.type)) {
-      toast.error('Escolha uma imagem PNG, JPEG ou WebP.');
-      return;
-    }
-    if (file.size > 2 * 1024 * 1024) {
-      toast.error('A imagem deve ter no máximo 2 MB.');
-      return;
-    }
-
-    setPhotoUploading(true);
-    let nextPreviewUrl: string | null = null;
-    try {
-      const uploadFile = await optimizeImageUpload(file, {
-        maxWidth: 512,
-        maxHeight: 512,
-      });
-      nextPreviewUrl = URL.createObjectURL(uploadFile);
-      const { uploadUrl, fields, key } = await presignProfileImage(uploadFile.type);
-      const formData = new FormData();
-      Object.entries(fields).forEach(([name, value]) => formData.append(name, value));
-      formData.append('file', uploadFile);
-      const uploadResponse = await fetch(uploadUrl, { method: 'POST', body: formData });
-      if (!uploadResponse.ok) throw new Error('Falha ao enviar a imagem');
-      const result = await saveProfileImage(key);
-      if (photoPreviewObjectUrlRef.current) URL.revokeObjectURL(photoPreviewObjectUrlRef.current);
-      photoPreviewObjectUrlRef.current = nextPreviewUrl;
-      setPhotoPreviewUrl(nextPreviewUrl);
-      nextPreviewUrl = null;
-      preloadImages([result.profile_image_url]);
-      await refreshSession();
-      toast.success(result.message);
-    } catch {
-      toast.error('Não foi possível atualizar sua foto agora.');
-    } finally {
-      if (nextPreviewUrl) URL.revokeObjectURL(nextPreviewUrl);
-      setPhotoUploading(false);
-      if (photoInputRef.current) photoInputRef.current.value = '';
-    }
-  };
-
-  return (
-    <div className="pv-photo">
-      <label
-        className={cn('pv-photo-upload', photoUploading && 'is-uploading')}
-        title={photoUploading ? 'Enviando nova foto...' : 'Clique para alterar sua foto'}
-      >
-        <Avatar
-          name={user?.name}
-          nickname={useNickname ? user?.nickname : null}
-          imageUrl={photoPreviewUrl || user?.profile_image_url}
-          className={cn('pv-avatar cosmetic-avatar', frame)}
-        />
-        <span className="pv-photo-action" aria-hidden="true">
-          {photoUploading ? <Loader2 size={18} className="pv-spin" /> : <Camera size={18} />}
-        </span>
-        <input
-          ref={photoInputRef}
-          type="file"
-          accept="image/png,image/jpeg,image/webp"
-          aria-label={photoUploading ? 'Enviando nova foto de perfil' : 'Alterar foto de perfil'}
-          onChange={handlePhotoUpload}
-          disabled={photoUploading}
-        />
-      </label>
-      <p className="pv-sr" role="status">{photoUploading ? 'Enviando nova foto de perfil.' : ''}</p>
-    </div>
-  );
+/** O personagem montável do aluno (sem foto nem upload), solto, sem placa, moldura ou fundo. */
+function ProfilePhoto() {
+  return <UserCharacter className="pv-avatar" />;
 }
 
 function NicknameForm({ user }: { user: CurrentUser | null }) {

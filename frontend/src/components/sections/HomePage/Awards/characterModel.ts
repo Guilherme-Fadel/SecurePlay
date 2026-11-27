@@ -1,3 +1,4 @@
+import { characterColorCss, type CharacterColor } from '@/components/shared/Character/characterColor';
 import { isSafeArtUrl } from '@/components/shared/Character/characterLook';
 import type {
   AchievementNode,
@@ -5,6 +6,7 @@ import type {
   CosmeticItem,
   CosmeticKit,
   CosmeticType,
+  LegacyCosmeticType,
   UnlockCondition,
   UnlockState,
 } from '@/services/achievements';
@@ -29,7 +31,7 @@ export const CHARACTER_SLOTS: ReadonlyArray<{ slot: CharacterSlot; label: string
   { slot: 'card', label: 'Tema do card' },
 ];
 
-export function isCharacterSlot(type: CosmeticType): type is CharacterSlot {
+export function isCharacterSlot(type: CosmeticType | LegacyCosmeticType): type is CharacterSlot {
   return CHARACTER_SLOTS.some((entry) => entry.slot === type);
 }
 
@@ -204,6 +206,29 @@ export function buildCharacterLook(shop: Pick<AchievementShop, 'equipped'>, tryi
     look[item.type] = worn ? equippedPiece(worn) : trialPiece(item);
   }
   return look;
+}
+
+/**
+ * O personagem do próprio usuário fora do provador: peças equipadas e cor base. Sem a loja (gestão,
+ * empresa sem colecionáveis, carregando) vale o personagem padrão na cor base da conta.
+ */
+export function ownCharacter(
+  shop: Pick<AchievementShop, 'equipped' | 'character'> | null | undefined,
+  accountColor: CharacterColor | null | undefined,
+): { look: CharacterLook; color: string } {
+  return {
+    look: shop ? buildCharacterLook(shop, null) : {},
+    color: characterColorCss(shop?.character?.color ?? accountColor),
+  };
+}
+
+/** Encaixes do corpo cuja arte precisa estar baixada antes de mostrar o personagem. */
+const BODY_ART_SLOTS = ['skin', 'head', 'face', 'neck', 'effect'] as const;
+
+/** URLs de arte (seguras e sem repetição) das peças do corpo de um look, para aguardar o download. */
+export function lookArtUrls(look: CharacterLook): string[] {
+  const urls = BODY_ART_SLOTS.map((slot) => look[slot]?.artUrl).filter(isSafeArtUrl);
+  return Array.from(new Set(urls));
 }
 
 /* ---------- Fundo do palco e tema do card ---------- */

@@ -29,20 +29,3 @@ export async function dismissNicknameOnboarding(): Promise<{ nickname_onboarding
   const response = await api.patch('/usuarios/perfil/boas-vindas/apelido');
   return response.data;
 }
-
-export async function presignProfileImage(contentType: string): Promise<{
-  uploadUrl: string;
-  fields: Record<string, string>;
-  key: string;
-}> {
-  const response = await api.post('/usuarios/perfil/foto/presign', { contentType });
-  return response.data;
-}
-
-export async function saveProfileImage(key: string): Promise<{
-  profile_image_url: string | null;
-  message: string;
-}> {
-  const response = await api.patch('/usuarios/perfil/foto', { key });
-  return response.data;
-}

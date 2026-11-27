@@ -2,6 +2,7 @@ import { CosmeticItem } from './entities/cosmetic-item.entity';
 import { CosmeticKit } from './entities/cosmetic-kit.entity';
 import { ART_MIME_BY_EXT, artExtensionOf } from './collectible-art';
 import {
+  assertActiveType,
   assertSlotUnchanged,
   assertThemeValue,
   parseAvailability,
@@ -78,6 +79,7 @@ export async function applyItemFields(
   dto: CollectibleItemDto,
   assertArt: ArtAsserter,
 ) {
+  assertActiveType(dto.type);
   assertSlotUnchanged(item.type, dto.type);
   item.slug = dto.slug;
   item.name = dto.name;

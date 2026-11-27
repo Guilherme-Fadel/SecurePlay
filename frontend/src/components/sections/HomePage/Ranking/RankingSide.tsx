@@ -1,9 +1,9 @@
 import type { RankingData } from '@/services/dashboard';
 import { unitFor } from './boardModel';
 import { formatNumber } from './rankingModel';
-import { RankingAvatar } from './RankingAvatar';
+import { RankingPet } from './RankingPet';
 
-/** Destaques da semana: a foto (ou as iniciais) identifica o participante; sem ícones soltos (UI-GUIDELINES). */
+/** Destaques da semana: o personagem identifica o participante; sem ícones soltos (UI-GUIDELINES). */
 export function RankingHighlights({ ranking }: { ranking: RankingData }) {
   const highlights = ranking.weeklyHighlights ?? [];
   return (
@@ -15,7 +15,7 @@ export function RankingHighlights({ ranking }: { ranking: RankingData }) {
           <ul className="rk-hl">
             {highlights.map((item) => (
               <li key={item.kind}>
-                <RankingAvatar entry={item.user} me={item.user.isCurrentUser === true && ranking.viewerParticipates} />
+                <RankingPet className="rk-hl-pet" rankKey={item.user.rankKey} look={item.user.look} me={item.user.isCurrentUser === true && ranking.viewerParticipates} />
                 <span className="rk-hl-who"><small>{item.label}</small><strong title={item.user.name}>{item.user.name}</strong></span>
                 <span className="rk-hl-value">{formatNumber(item.value)} {unitFor(item.value, item.unit)}</span>
               </li>

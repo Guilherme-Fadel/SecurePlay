@@ -112,8 +112,7 @@ async function studentsRanking(ctx: Ctx) {
         getScopedStats: () => Promise.resolve(ctx.allStats),
         seasonPoints: ctx.seasonPoints,
         currentUserId: management ? 0 : viewerId,
-        resolveProfileImageUrl: deps.photo,
-        showPhoto: (e) => showPhoto(ctx, e),
+        looks: (ids) => deps.looks(ids, null),
       });
     } catch (error) {
       deps.warn(
@@ -122,11 +121,11 @@ async function studentsRanking(ctx: Ctx) {
       );
     }
   }
-  const build = async (
+  const build = (
     id: number,
     row: RankedRow<StudentRow> | undefined,
     stats: RankingStats,
-  ): Promise<CategoryStudentEntry> => {
+  ): CategoryStudentEntry => {
     const record =
       records.get(id) ?? (id === viewerId ? viewerRecord : undefined);
     return {
@@ -143,18 +142,14 @@ async function studentsRanking(ctx: Ctx) {
             : null,
       isCurrentUser: id === viewerId && !management,
       look: looks.get(id) ?? {},
-      profileImageUrl:
-        ctx.includeImages && record && showPhoto(ctx, record)
-          ? await deps.photo(record.usuario?.profile_image_key)
-          : null,
       // Sem posição (valor 0) não há movimento a mostrar.
       weeklyChange: row ? (weekly.changes?.get(id) ?? null) : null,
       value: stats[ctx.category],
       stats,
     };
   };
-  const leaderboard = await Promise.all(
-    top.map((row) => build(row.id, row, board.topStats.get(row.id)!)),
+  const leaderboard = top.map((row) =>
+    build(row.id, row, board.topStats.get(row.id)!),
   );
   let currentUser: CategoryStudentEntry | null = null;
   if (!management && viewerRecord) {
@@ -162,7 +157,7 @@ async function studentsRanking(ctx: Ctx) {
     const stats =
       board.topStats.get(viewerId) ??
       (await statsFor(ctx, [viewerId], window)).get(viewerId)!;
-    currentUser = await build(viewerId, row, stats);
+    currentUser = build(viewerId, row, stats);
   }
   const summary = summarize(
     board.rows.map((row) => row.value),
@@ -185,15 +180,6 @@ async function studentsRanking(ctx: Ctx) {
     weeklyHighlights: weekly.highlights,
     summary,
   };
-}
-
-/** Foto só de quem é da mesma escola de quem consulta (no global) ou do próprio escopo da escola. */
-function showPhoto(ctx: Ctx, entry: UsuarioStats): boolean {
-  return (
-    ctx.scope === 'company' ||
-    entry.usuario_id === ctx.viewerId ||
-    (!!ctx.company && entry.usuario?.empresa_id === ctx.company.id)
-  );
 }
 
 /** Ranking por categoria (XP, sequência, desafios) de alunos ou turmas, sobre o conjunto já filtrado por escopo. */

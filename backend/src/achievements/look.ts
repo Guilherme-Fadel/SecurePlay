@@ -29,7 +29,7 @@ export interface CharacterLook {
   card?: LookPiece;
 }
 
-/** Encaixes do personagem; moldura, título e emblema não fazem parte do visual. */
+/** Encaixes do personagem; moldura, título e emblema são tipos legados (ver `retired-types.ts`) e não fazem parte do visual. */
 export const LOOK_SLOTS = [
   CosmeticType.SKIN,
   CosmeticType.HEAD,

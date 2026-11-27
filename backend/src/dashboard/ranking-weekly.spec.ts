@@ -84,7 +84,7 @@ describe('weekly ranking summary', () => {
         [1, 200],
         [2, 250],
       ]),
-      resolveProfileImageUrl: () => Promise.resolve(null),
+      looks: () => Promise.resolve(new Map()),
     });
 
     expect(result.available).toBe(true);
@@ -95,6 +95,59 @@ describe('weekly ranking summary', () => {
     expect(
       result.highlights.find((item) => item.kind === 'challenges')?.value,
     ).toBe(2);
+  });
+
+  it('destaques trazem o look (com bodyColor) e nenhuma foto', async () => {
+    const looks = jest.fn().mockResolvedValue(
+      new Map([[1, { bodyColor: 'rosa', skin: { visualValue: 'x' } }]]),
+    );
+    const result = await loadRankingWeek({
+      redis: {
+        mget: jest.fn().mockResolvedValue(['100', '2']),
+      } as unknown as RedisService,
+      getScopedStats: () =>
+        Promise.resolve([
+          {
+            usuario_id: 1,
+            total_points: 783,
+            current_streak: 0,
+            last_checkin_date: null,
+            usuario: { name: 'Belo', profile_image_key: 'fotos/1.png' },
+          },
+        ] as unknown as UsuarioStats[]),
+      currentUserId: 1,
+      seasonPoints: new Map([[1, 100]]),
+      looks,
+    });
+    expect(looks).toHaveBeenCalledTimes(1);
+    expect(looks).toHaveBeenCalledWith([1]);
+    expect(result.highlights.length).toBeGreaterThan(0);
+    for (const item of result.highlights) {
+      expect(item.user.look.bodyColor).toBe('rosa');
+      expect(item.user).not.toHaveProperty('profileImageUrl');
+    }
+  });
+
+  it('falha ao carregar looks não derruba os destaques', async () => {
+    const result = await loadRankingWeek({
+      redis: {
+        mget: jest.fn().mockResolvedValue(['100', '2']),
+      } as unknown as RedisService,
+      getScopedStats: () =>
+        Promise.resolve([
+          {
+            usuario_id: 1,
+            total_points: 783,
+            current_streak: 0,
+            last_checkin_date: null,
+            usuario: { name: 'Belo' },
+          },
+        ] as unknown as UsuarioStats[]),
+      currentUserId: 1,
+      seasonPoints: new Map([[1, 100]]),
+      looks: () => Promise.reject(new Error('db')),
+    });
+    expect(result.highlights[0].user.look).toEqual({});
   });
 
   it('publishes current-week activity even when tracking starts midweek', async () => {
@@ -114,7 +167,7 @@ describe('weekly ranking summary', () => {
       getScopedStats,
       currentUserId: 1,
       seasonPoints: new Map([[1, 100]]),
-      resolveProfileImageUrl: () => Promise.resolve(null),
+      looks: () => Promise.resolve(new Map()),
     });
 
     expect(result.available).toBe(true);

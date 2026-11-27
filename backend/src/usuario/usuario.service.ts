@@ -4,7 +4,6 @@ import {
   Inject,
   NotFoundException,
   Optional,
-  ServiceUnavailableException,
   UnauthorizedException,
 } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
@@ -15,13 +14,9 @@ import { ResultadoDto } from 'src/resultado.dto';
 import * as bcrypt from 'bcrypt';
 import { ChangePasswordDto } from '../auth/dto/change-password.dto';
 import { S3Service } from '../conteudo/s3/s3.service';
-import {
-  extensionForLogo,
-  LOGO_CONTENT_TYPES,
-  MAX_UPLOAD_BYTES,
-} from '../conteudo/s3/upload-policy';
-import { randomUUID } from 'crypto';
 import { Role } from '../auth/roles.enum';
+import { resolveCharacterColor } from '../achievements/character-color';
+import { rankKey } from '../dashboard/rank-key';
 import { ensurePendingRankingSeasonsClosed } from '../dashboard/ranking-history';
 import { activeAccountSession } from '../auth/session';
 import { NOTIFICATION_EVENTS } from '../notification/notification-events';
@@ -90,9 +85,10 @@ export class UsuarioService {
       nickname_pending: usuario.nickname_pending,
       nickname_request_status: usuario.nickname_request_status,
       nickname_onboarding_pending: Boolean(usuario.nickname_onboarding_pending),
-      profile_image_url: await this.resolveProfileImageUrl(
-        usuario.profile_image_key,
-      ),
+      character_color: resolveCharacterColor(
+        usuario.character_color,
+        rankKey(usuario.id),
+      ).color,
     };
   }
   async getUsuarioByEmail(email: string): Promise<Usuario | undefined> {
@@ -258,58 +254,6 @@ export class UsuarioService {
     return { nickname_onboarding_pending: false };
   }
 
-  async presignProfileImage(userId: number, contentType: string) {
-    const extension = extensionForLogo(contentType);
-    const key = `profiles/${userId}/avatar-${randomUUID()}.${extension}`;
-    const { url: uploadUrl, fields } =
-      await this.s3Service.generatePresignedUploadPost(
-        key,
-        contentType,
-        MAX_UPLOAD_BYTES.logo,
-      );
-    return { uploadUrl, fields, key };
-  }
-
-  /** B8/M5: a foto precisa existir no bucket, com tipo de imagem e tamanho do envio permitido. */
-  private async assertUploadedProfileImage(key: string): Promise<void> {
-    let head: { contentLength: number; contentType: string } | null;
-    try {
-      head = await this.s3Service.headObject(key);
-    } catch {
-      throw new ServiceUnavailableException(
-        'Não foi possível conferir a foto agora. Tente de novo em instantes.',
-      );
-    }
-    if (!head) throw new BadRequestException('Envie a foto antes de salvá-la.');
-    const allowedType = (LOGO_CONTENT_TYPES as readonly string[]).includes(
-      head.contentType,
-    );
-    if (!allowedType || head.contentLength > MAX_UPLOAD_BYTES.logo)
-      throw new BadRequestException(
-        'Foto inválida: use PNG, JPEG ou WebP de até 2 MB.',
-      );
-  }
-
-  async saveProfileImage(userId: number, key: string) {
-    const validPrefix = `profiles/${userId}/`;
-    if (!key.startsWith(validPrefix)) {
-      throw new BadRequestException('Arquivo de perfil inválido');
-    }
-
-    const usuario = await this.getUsuarioById(userId);
-    if (!usuario) throw new NotFoundException('Usuário não encontrado');
-    await this.assertUploadedProfileImage(key);
-    await ensurePendingRankingSeasonsClosed(
-      this.usuarioRepository.manager.connection,
-    );
-    usuario.profile_image_key = key;
-    await this.usuarioRepository.update(userId, { profile_image_key: key });
-
-    return {
-      profile_image_url: await this.resolveProfileImageUrl(key),
-      message: 'Foto do perfil atualizada com sucesso.',
-    };
-  }
   async insertUsuario(data: UsuarioCadastrarDto): Promise<ResultadoDto> {
     const usuarioExistente = await this.getUsuarioByEmail(data.email);
     if (usuarioExistente) {
@@ -349,17 +293,6 @@ export class UsuarioService {
         sucesso: false,
         mensagem: 'Erro ao criar usuário',
       };
-    }
-  }
-
-  private async resolveProfileImageUrl(
-    key: string | null,
-  ): Promise<string | null> {
-    if (!key) return null;
-    try {
-      return await this.s3Service.generatePresignedGetUrl(key);
-    } catch {
-      return null;
     }
   }
 }

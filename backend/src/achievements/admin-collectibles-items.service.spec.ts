@@ -183,7 +183,10 @@ describe('AdminCollectiblesService — listagem', () => {
 
   it('filtra itens por encaixe e estado, e kits por estado', async () => {
     const { service } = setup();
-    const frame = await service.createItem(ACTOR, itemDto());
+    const frame = await service.createItem(
+      ACTOR,
+      itemDto({ type: CosmeticType.BACKGROUND }),
+    );
     await service.createItem(
       ACTOR,
       itemDto({ slug: 'bone', type: CosmeticType.HEAD }),

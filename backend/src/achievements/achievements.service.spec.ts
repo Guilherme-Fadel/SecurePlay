@@ -232,14 +232,14 @@ describe('AchievementsService', () => {
     const previousFrame = {
       id: 2,
       usuario_id: 7,
-      cosmetic_item: { type: CosmeticType.FRAME },
+      cosmetic_item: { type: CosmeticType.HEAD },
       equipped: true,
     };
     const item = {
       id: 10,
       slug: 'moldura-violeta',
       name: 'Moldura Violeta',
-      type: CosmeticType.FRAME,
+      type: CosmeticType.HEAD,
       price: 2,
       required_achievement_slug: null,
       active: true,
@@ -312,7 +312,11 @@ describe('AchievementsService', () => {
     const stats = repo();
     const counts = { count: jest.fn().mockResolvedValue(0) };
     const arcade = repo();
-    wallets.findOne.mockResolvedValue({ usuario_id: 7, balance: 2, total_earned: 2 });
+    wallets.findOne.mockResolvedValue({
+      usuario_id: 7,
+      balance: 2,
+      total_earned: 2,
+    });
     definitions.find.mockResolvedValue([
       {
         id: 1,
@@ -333,7 +337,12 @@ describe('AchievementsService', () => {
       },
     ]);
     records.find.mockResolvedValue([
-      { achievement_id: 1, progress: 2, unlocked: true, unlocked_at: new Date('2026-01-01') },
+      {
+        achievement_id: 1,
+        progress: 2,
+        unlocked: true,
+        unlocked_at: new Date('2026-01-01'),
+      },
     ]);
     ledger.find.mockResolvedValue([
       { source_key: 'level:2' },

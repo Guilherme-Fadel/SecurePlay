@@ -1,25 +1,11 @@
-import molduraVioletaArtwork from '@/assets/static/cosmetics/moldura-violeta.png';
-import molduraSentinelaArtwork from '@/assets/static/cosmetics/moldura-sentinela.png';
-import molduraEliteArtwork from '@/assets/static/cosmetics/moldura-elite.png';
 import fundoAcademiaArtwork from '@/assets/static/cosmetics/fundo-academia.png';
 import fundoInvestigadorArtwork from '@/assets/static/cosmetics/fundo-investigador.png';
-import tituloAprendizArtwork from '@/assets/static/cosmetics/titulo-aprendiz.png';
-import tituloSentinelaArtwork from '@/assets/static/cosmetics/titulo-sentinela.png';
-import emblemaChamaArtwork from '@/assets/static/cosmetics/emblema-chama.png';
-import emblemaInvestigadorArtwork from '@/assets/static/cosmetics/emblema-investigador.png';
 import efeitoAscensaoArtwork from '@/assets/static/cosmetics/efeito-ascensao.png';
 
 /** Pixel art aprovada dos cosméticos, pelo slug do catálogo. */
 const cosmeticArtwork: Record<string, string> = {
-  'moldura-violeta': molduraVioletaArtwork,
-  'moldura-sentinela': molduraSentinelaArtwork,
-  'moldura-elite': molduraEliteArtwork,
   'fundo-academia': fundoAcademiaArtwork,
   'fundo-investigador': fundoInvestigadorArtwork,
-  'titulo-aprendiz': tituloAprendizArtwork,
-  'titulo-sentinela': tituloSentinelaArtwork,
-  'emblema-chama': emblemaChamaArtwork,
-  'emblema-investigador': emblemaInvestigadorArtwork,
   'efeito-ascensao': efeitoAscensaoArtwork,
 };
 

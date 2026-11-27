@@ -2,6 +2,7 @@ import { CosmeticItem, CosmeticType } from './entities/cosmetic-item.entity';
 import { CosmeticKit } from './entities/cosmetic-kit.entity';
 import { UsuarioCosmetic } from './entities/usuario-cosmetic.entity';
 import { toLookPiece } from './look';
+import { isRetiredType } from './retired-types';
 import { noRequirement } from './unlock-requirements';
 import type { UnlockTarget, UnlockView } from './unlock-requirements';
 
@@ -49,7 +50,9 @@ export function collectArtKeys(
 
 export function buildEquippedList(owned: UsuarioCosmetic[], artUrls: ArtUrls) {
   return owned
-    .filter((entry) => entry.equipped)
+    .filter(
+      (entry) => entry.equipped && !isRetiredType(entry.cosmetic_item.type),
+    )
     .map(({ cosmetic_item: item, color }) => ({
       type: item.type,
       slug: item.slug,
@@ -122,6 +125,7 @@ export function buildShopKits(params: {
     // Kit do aluno mostra só o que ele tem (peça nova ou arquivada depois da
     // compra não aparece); kit à venda mostra as peças atuais da loja.
     pieces: kit.pieces
+      .filter((piece) => !isRetiredType(piece.type))
       .filter((piece) =>
         ownedKitIds.has(kit.id)
           ? ownedItemIds.has(piece.id)

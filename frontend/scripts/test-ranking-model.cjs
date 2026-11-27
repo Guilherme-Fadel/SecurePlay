@@ -106,34 +106,11 @@ test('temporada encerrada e começo da temporada têm mensagens próprias; falas
   assert.ok(speech.lines.every((line) => !/jog/i.test(line)));
 });
 
-test('avatar sem foto: cor fixa pela rankKey e amarelo para você', () => {
+test('avatar: cor de reserva fixa pela rankKey e amarelo para você', () => {
   assert.deepEqual(avatar.avatarTone('k12', false), avatar.avatarTone('k12', false));
   assert.notDeepEqual(avatar.avatarTone('k12', false), avatar.avatarTone('k13', false));
   assert.equal(avatar.avatarTone('k12', true).background, 'var(--sp-yellow)');
   assert.equal(avatar.avatarTone('k12', true).color, 'var(--sp-black)');
-});
-
-test('sua foto do perfil completa só as suas linhas sem foto, sem mudar posição nem XP', () => {
-  const me = entry(5, 2, 40, { isCurrentUser: true, profileImageUrl: null });
-  const other = entry(1, 1, 90);
-  const withPhoto = entry(7, 3, 10, { profileImageUrl: 'https://cdn/7.png' });
-  const data = ranking({
-    leaderboard: [other, me, withPhoto], top: [other, me, withPhoto], currentUser: { ...me, isCurrentUser: undefined },
-    viewerParticipates: true, totalParticipants: 3,
-    weeklyHighlights: [{ kind: 'xp', label: 'Mais XP', user: { ...me }, value: 40, unit: 'XP' }],
-  });
-  const filled = avatar.withViewerPhoto(data, ' https://cdn/me.png ');
-  assert.equal(filled.leaderboard[1].profileImageUrl, 'https://cdn/me.png');
-  assert.equal(filled.currentUser.profileImageUrl, 'https://cdn/me.png');
-  assert.equal(filled.weeklyHighlights[0].user.profileImageUrl, 'https://cdn/me.png');
-  assert.equal(filled.leaderboard[0].profileImageUrl, undefined);
-  assert.equal(filled.leaderboard[2].profileImageUrl, 'https://cdn/7.png');
-  assert.deepEqual(filled.leaderboard.map((item) => [item.position, item.points]), [[1, 90], [2, 40], [3, 10]]);
-  // Foto já enviada pelo ranking prevalece; sem foto no perfil, nada muda.
-  const sent = ranking({ leaderboard: [{ ...me, profileImageUrl: 'https://cdn/sent.png' }], currentUser: me });
-  assert.equal(avatar.withViewerPhoto(sent, 'https://cdn/me.png').leaderboard[0].profileImageUrl, 'https://cdn/sent.png');
-  assert.equal(avatar.withViewerPhoto(data, null), data);
-  assert.equal(avatar.withViewerPhoto(data, '  '), data);
 });
 
 test('fora da lista exibida (abaixo da 50ª) a corrida não nomeia ninguém, mesmo se a distância bater', () => {

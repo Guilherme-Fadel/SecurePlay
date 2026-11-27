@@ -1,7 +1,8 @@
 import { keysLabel, rarityLabel, typeLabel } from '@/components/sections/HomePage/Awards/collectiblesModel';
+import { isLegacyType } from './legacyTypes';
 import type { CharacterLook } from '@/services/dashboard';
 import type { CosmeticRarity, CosmeticType } from '@/services/achievements';
-import type { CollectibleItem, CollectibleKind, CollectibleKit, CollectiblePage } from '@/services/adminCollectibles';
+import type { CollectibleItem, CollectibleItemType, CollectibleKind, CollectibleKit, CollectiblePage } from '@/services/adminCollectibles';
 
 /** Regras puras das listagens de Colecionáveis do console. O backend decide estado e publicação. */
 
@@ -43,19 +44,21 @@ export function rowActions(entry: { active: boolean }) {
   return { edit: true, publish: !entry.active, archive: entry.active };
 }
 
-export const slotLabel = (type: CosmeticType): string => typeLabel[type];
+/** Itens antigos (moldura, título, emblema) aparecem como "Legado" em vez de quebrar a listagem. */
+export const LEGACY_LABEL = 'Legado';
+export const slotLabel = (type: CollectibleItemType): string => (isLegacyType(type) ? LEGACY_LABEL : typeLabel[type as CosmeticType]);
 export const rarityName = (rarity: CosmeticRarity): string => rarityLabel[rarity];
 
 export function priceLabel(price: number): string {
   return keysLabel(price);
 }
 
-const PIECE_ORDER: readonly CosmeticType[] = ['skin', 'head', 'face', 'neck', 'effect'];
+const PIECE_ORDER: readonly CollectibleItemType[] = ['skin', 'head', 'face', 'neck', 'effect'];
 
 /** "3 peças: Skin, Cabeça, Efeito", na ordem das camadas do personagem. */
-export function piecesLabel(pieces: ReadonlyArray<{ type: CosmeticType }>): string {
+export function piecesLabel(pieces: ReadonlyArray<{ type: CollectibleItemType }>): string {
   if (pieces.length === 0) return 'Sem peças';
-  const rank = (type: CosmeticType) => { const index = PIECE_ORDER.indexOf(type); return index === -1 ? PIECE_ORDER.length : index; };
+  const rank = (type: CollectibleItemType) => { const index = PIECE_ORDER.indexOf(type); return index === -1 ? PIECE_ORDER.length : index; };
   const slots = pieces.map((piece) => piece.type).sort((a, b) => rank(a) - rank(b)).map(slotLabel);
   return `${pieces.length} ${pieces.length === 1 ? 'peça' : 'peças'}: ${slots.join(', ')}`;
 }

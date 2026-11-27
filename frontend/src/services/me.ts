@@ -1,5 +1,6 @@
 import { api } from '@/services/api'
 import type { CompanyParameters } from '@/config/features';
+import type { CharacterColor } from '@/components/shared/Character/characterColor';
 
 export interface EmpresaPaleta {
   primary: string;
@@ -31,7 +32,8 @@ export interface CurrentUser {
   nickname_pending: string | null;
   nickname_request_status: 'none' | 'pending' | 'approved' | 'rejected';
   nickname_onboarding_pending: boolean;
-  profile_image_url: string | null;
+  /** Cor base do personagem; ausente em API antiga (o cliente cai no azul). */
+  character_color?: CharacterColor;
 }
 
 export async function getMe(): Promise<CurrentUser> {

@@ -1,9 +1,8 @@
 import { useId } from 'react';
-import { CharacterAvatar } from '@/components/shared/Character/CharacterAvatar';
-import { bodyColorOrFallback } from '@/components/shared/Character/characterColor';
 import { AppButton } from '@/components/ui/buttons/AppButton';
 import { turmaChip, type BoardEntry } from './boardModel';
 import { avatarTone } from './rankingAvatarTone';
+import { RankingPet } from './RankingPet';
 import type { MineBar } from './mineModel';
 
 interface ScoreboardMineProps {
@@ -16,7 +15,7 @@ interface ScoreboardMineProps {
 function MineLead({ entry }: { entry: BoardEntry }) {
   const tone = avatarTone(entry.rankKey, false);
   if (entry.kind === 'turma') return <span className="sb-tchip" style={{ background: tone.background, color: tone.color }} aria-hidden="true">{turmaChip(entry.name)}</span>;
-  return <span className="sb-mine-pet" aria-hidden="true"><CharacterAvatar look={entry.look ?? {}} color={bodyColorOrFallback(entry.look, tone.background)} variant="compact" /></span>;
+  return <RankingPet className="sb-mine-pet" rankKey={entry.rankKey} look={entry.look} />;
 }
 
 function MineActions({ mine, onSelect, onContinue }: ScoreboardMineProps) {

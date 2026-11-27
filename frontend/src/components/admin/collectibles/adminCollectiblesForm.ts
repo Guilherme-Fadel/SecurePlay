@@ -1,8 +1,9 @@
 import type { CosmeticRarity, CosmeticType } from '@/services/achievements';
+import { LEGACY_MESSAGE, isLegacyType, savableType } from './legacyTypes';
 import type { CharacterLook, LookPiece } from '@/services/dashboard';
 import type {
   CollectibleItem, CollectibleItemInput, CollectibleKit, CollectibleKitInput, CollectibleKitPieceInput,
-  CollectibleLayer, CollectibleSlotType, UnlockCondition, UnlockRule,
+  CollectibleItemType, CollectibleLayer, CollectibleSlotType, UnlockCondition, UnlockRule,
 } from '@/services/adminCollectibles';
 
 /**
@@ -42,8 +43,7 @@ export interface CommonForm {
 }
 
 export interface ItemForm extends CommonForm {
-  type: CosmeticType;
-  /** Tema da biblioteca (fundo e card) ou valor de encaixes sem arte própria (molduras); o formulário o devolve como veio. */
+  type: CollectibleItemType;
   visualValue: string;
   /** Exigência antiga (conquista) do item: só leitura aqui, ainda vale na compra. */
   requiredAchievementSlug: string | null;
@@ -224,7 +224,7 @@ function commonBody(form: CommonForm) {
 }
 
 export function buildItemBody(form: ItemForm): CollectibleItemInput {
-  return { ...commonBody(form), type: form.type, visualValue: form.visualValue, artKey: form.artKey, layer: form.layer, recolorable: form.recolorable, adjust: parseAdjust(form.adjust) };
+  return { ...commonBody(form), type: savableType(form.type, ITEM_TYPES), visualValue: form.visualValue, artKey: form.artKey, layer: form.layer, recolorable: form.recolorable, adjust: parseAdjust(form.adjust) };
 }
 
 function pieceBody(piece: PieceDraft): CollectibleKitPieceInput {
@@ -278,7 +278,7 @@ function commonErrors(form: CommonForm, slugMax: number): FormErrors {
 }
 
 export function validateItemForm(form: ItemForm): FormErrors {
-  const errors = commonErrors(form, 80);
+  const errors: FormErrors = { ...commonErrors(form, 80), ...(isLegacyType(form.type) ? { type: LEGACY_MESSAGE } : {}) };
   // Fundo e card não têm ajuste fino (o campo some do formulário): não há como corrigir o erro.
   const adjust = isThemeSlot(form.type) ? undefined : adjustError(form.adjust);
   if (adjust) errors.adjust = adjust;
@@ -323,8 +323,8 @@ export function pruneErrors(errors: FormErrors, before: AnyForm, after: AnyForm)
 
 export const hasErrors = (errors: FormErrors): boolean => Object.keys(errors).length > 0;
 
-export const isThemeSlot = (type: CosmeticType): boolean => THEME_TYPES.includes(type);
-export const isItemSlot = (type: CosmeticType): boolean => ITEM_TYPES.includes(type);
+export const isThemeSlot = (type: CollectibleItemType): boolean => THEME_TYPES.some((candidate) => candidate === type);
+export const isItemSlot = (type: CollectibleItemType): boolean => ITEM_TYPES.some((candidate) => candidate === type);
 
 interface PreviewPiece { artUrl: string | null; visualValue: string; layer: CollectibleLayer; adjust: AdjustDraft }
 

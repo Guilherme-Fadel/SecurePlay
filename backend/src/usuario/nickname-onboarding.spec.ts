@@ -20,7 +20,7 @@ describe('Boas-vindas para escolha de apelido', () => {
     };
     const service = new UsuarioService(
       users as never,
-      { resolveProfileImageUrl: jest.fn() } as never,
+      {} as never,
     );
     return { user, users, service };
   };

@@ -10,6 +10,7 @@ import {
   PrestigeTransactionType,
 } from './entities/prestige-transaction.entity';
 import { lockPrestigeWallet } from './prestige-ledger';
+import { isRetiredType } from './retired-types';
 
 /**
  * Relê o kit e suas peças ativas com o manager da transação, já com a carteira
@@ -25,7 +26,9 @@ async function loadFreshKit(manager: EntityManager, kitId: number) {
   if (!isOnSale(kit)) {
     throw new BadRequestException('Este kit não está mais à venda');
   }
-  const pieces = kit.pieces.filter((piece) => piece.active);
+  const pieces = kit.pieces.filter(
+    (piece) => piece.active && !isRetiredType(piece.type),
+  );
   if (pieces.length === 0) {
     throw new BadRequestException('Este kit não tem peças disponíveis');
   }

@@ -9,7 +9,7 @@ import { useAchievementShop, useAchievementTrail } from '@/hooks/useAchievements
 import type { AchievementTrail } from '@/services/achievements';
 import { AlbumView } from './AlbumView';
 import { CollectiblesView } from './CollectiblesView';
-// Cosméticos (`cosmetic-*`, molduras e fundos) usados pelo menu da conta no trilho.
+// Fundos antigos do catálogo (`cosmetic-background-host` + `background-*`), usados pelo menu da conta e pelo palco do Personagem.
 import '@/styles/cosmetics.css';
 import '@/styles/album.css';
 

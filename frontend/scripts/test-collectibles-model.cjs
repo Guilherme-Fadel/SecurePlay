@@ -8,6 +8,7 @@ const model = load('src/components/sections/HomePage/Awards/collectiblesModel.ts
 const character = load('src/components/sections/HomePage/Awards/characterModel.ts', {
   './collectiblesModel': model,
   '@/components/shared/Character/characterLook': load('src/components/shared/Character/characterLook.ts', {}),
+  '@/components/shared/Character/characterColor': load('src/components/shared/Character/characterColor.ts', {}),
 });
 const plain = (value) => JSON.parse(JSON.stringify(value));
 
@@ -24,12 +25,12 @@ const node = (id, extra = {}) => ({
 });
 
 test('estado do item segue as flags do backend, com prioridade equipado > seu > bloqueado > faltam > comprar', () => {
-  assert.equal(model.itemState(item(1, 'frame')), 'buy');
-  assert.equal(model.itemState(item(1, 'frame', { affordable: false })), 'save');
-  assert.equal(model.itemState(item(1, 'frame', { requirementMet: false, affordable: false })), 'lock');
-  assert.equal(model.itemState(item(1, 'frame', { requirementMet: false, affordable: true })), 'lock');
-  assert.equal(model.itemState(item(1, 'frame', { owned: true, affordable: false, requirementMet: false })), 'own');
-  assert.equal(model.itemState(item(1, 'frame', { owned: true, equipped: true })), 'equipped');
+  assert.equal(model.itemState(item(1, 'head')), 'buy');
+  assert.equal(model.itemState(item(1, 'head', { affordable: false })), 'save');
+  assert.equal(model.itemState(item(1, 'head', { requirementMet: false, affordable: false })), 'lock');
+  assert.equal(model.itemState(item(1, 'head', { requirementMet: false, affordable: true })), 'lock');
+  assert.equal(model.itemState(item(1, 'head', { owned: true, affordable: false, requirementMet: false })), 'own');
+  assert.equal(model.itemState(item(1, 'head', { owned: true, equipped: true })), 'equipped');
 });
 
 test('faltam chaves só exibe a diferença; se o saldo recebido não explica a recusa, não inventa número', () => {
@@ -43,47 +44,12 @@ test('faltam chaves só exibe a diferença; se o saldo recebido não explica a r
   assert.equal(model.keySegments(50, 3, 20).length, 20);
 });
 
-test('abas: os cinco tipos do backend na ordem fixa, com contagem (inclusive zero)', () => {
-  const items = [item(1, 'frame'), item(2, 'frame'), item(3, 'title'), item(4, 'effect')];
-  assert.deepEqual(plain(model.tabCounts(items)), [
-    { type: 'frame', label: 'Bordas', count: 2 },
-    { type: 'background', label: 'Fundos', count: 0 },
-    { type: 'title', label: 'Títulos', count: 1 },
-    { type: 'badge', label: 'Emblemas', count: 0 },
-    { type: 'effect', label: 'Efeitos', count: 1 },
-  ]);
-  assert.equal(model.initialTab([item(9, 'badge')]), 'badge');
-  assert.equal(model.initialTab([]), 'frame');
-  assert.deepEqual(plain(model.itemsOfType(items, 'frame').map((it) => it.id)), [1, 2]);
-});
-
 test('setas das abas são circulares e Home/End vão às pontas', () => {
   assert.equal(model.tabIndexAfterKey('ArrowRight', 4, 5), 0);
   assert.equal(model.tabIndexAfterKey('ArrowLeft', 0, 5), 4);
   assert.equal(model.tabIndexAfterKey('Home', 3, 5), 0);
   assert.equal(model.tabIndexAfterKey('End', 0, 5), 4);
   assert.equal(model.tabIndexAfterKey('Enter', 0, 5), null);
-});
-
-test('provador: equipado do backend com a prévia por cima só no tipo dela', () => {
-  const items = [item(1, 'frame', { owned: true, equipped: true, name: 'Moldura A' }), item(2, 'frame', { name: 'Moldura B' }), item(3, 'background', { owned: true, equipped: true })];
-  const shop = { equipped: [{ type: 'frame', slug: 'item-1', visualValue: 'frame-1' }, { type: 'background', slug: 'item-3', visualValue: 'background-3' }], items };
-  const worn = model.buildLook(shop, null);
-  assert.equal(worn.frame.name, 'Moldura A');
-  assert.equal(worn.frame.preview, false);
-  assert.equal(worn.title, null);
-  const tried = model.buildLook(shop, items[1]);
-  assert.deepEqual(plain(tried.frame), { type: 'frame', slug: 'item-2', name: 'Moldura B', visualValue: 'frame-2', preview: true });
-  assert.equal(tried.background.visualValue, 'background-3');
-});
-
-test('requisito vem da trilha pelo slug; sem trilha não revela o slug (pode ser de uma secreta)', () => {
-  const trail = { nodes: [node(1, { slug: 'sentinela-veterano', name: 'Sentinela veterano', description: 'Conclua 10 desafios.' })] };
-  assert.equal(model.requirementInfo({ requiredAchievementSlug: 'sentinela-veterano' }, trail).name, 'Sentinela veterano');
-  const withoutTrail = model.requirementInfo({ requiredAchievementSlug: 'investigador-lendario' }, null).name;
-  assert.equal(withoutTrail, 'uma conquista do álbum');
-  assert.doesNotMatch(withoutTrail, /investigador|lendario/i);
-  assert.equal(model.requirementInfo({ requiredAchievementSlug: null }, trail), null);
 });
 
 test('como ganhar chaves: só em progresso, com recompensa e não secretas; mais adiantadas primeiro', () => {
@@ -103,12 +69,6 @@ test('como ganhar chaves: só em progresso, com recompensa e não secretas; mais
   assert.deepEqual(plain(model.nearKeyAchievements(null)), { items: [], total: 0 });
 });
 
-test('rótulo acessível do item descreve o estado', () => {
-  assert.equal(model.itemAriaLabel(item(1, 'frame', { affordable: false, price: 7 }), 4, null), 'Item 1, Borda, custa 7 chaves, faltam 3 chaves. Experimentar no provador');
-  assert.equal(model.itemAriaLabel(item(1, 'title', { requirementMet: false }), 4, { name: 'Aprendiz dedicado', hint: null, node: null }), 'Item 1, Título, precisa da conquista Aprendiz dedicado. Experimentar no provador');
-  assert.match(model.itemAriaLabel(item(1, 'badge', { owned: true, equipped: true }), 0, null), /equipado/);
-});
-
 test('mensagem de erro do backend com string ou lista; formatos estranhos caem no texto padrão', () => {
   assert.equal(model.extractErrorMessage({ response: { data: { message: 'Chaves Digitais insuficientes' } } }), 'Chaves Digitais insuficientes');
   assert.equal(model.extractErrorMessage({ response: { data: { message: ['', 'Primeira'] } } }), 'Primeira');
@@ -117,7 +77,7 @@ test('mensagem de erro do backend com string ou lista; formatos estranhos caem n
   assert.equal(model.extractErrorMessage({ response: { data: { message: 42 } } }), undefined);
 });
 
-test('rótulo do item bloqueado na prateleira mostra a exigência real que falta, não só "Conquista"', () => {
+test('rótulo do item bloqueado mostra a exigência real que falta, não só "Conquista"', () => {
   const missing = (metric, current, target, extra = {}) => ({ metric, label: 'x', current, target, met: false, ...extra });
   const done = (metric, current, target) => ({ metric, label: 'x', current, target, met: true });
   assert.equal(character.lockLabel({ mode: 'all', conditions: [missing('xp_season', 40, 100)] }), 'XP na temporada');
@@ -137,6 +97,3 @@ test('rótulo do item bloqueado na prateleira mostra a exigência real que falta
   assert.equal(character.lockLabel({ mode: 'all', conditions: [] }), 'Exigência');
 });
 
-test('rótulo acessível de item bloqueado sem conquista não inventa "conquista"', () => {
-  assert.equal(model.itemAriaLabel(item(1, 'frame', { requirementMet: false }), 0, null), 'Item 1, Borda, bloqueado, veja as exigências. Experimentar no provador');
-});

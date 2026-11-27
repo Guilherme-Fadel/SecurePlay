@@ -1,8 +1,8 @@
 import { AppSelect } from '@/components/ui/forms/AppSelect';
-import type { CosmeticType } from '@/services/achievements';
+import type { CollectibleItemType } from '@/services/adminCollectibles';
 import { themeOptions } from './collectibleThemes';
 
-interface ThemeSelectProps { type: CosmeticType; value: string; onChange: (value: string) => void }
+interface ThemeSelectProps { type: CollectibleItemType; value: string; onChange: (value: string) => void }
 
 /** Tema da biblioteca de fundo ou de card; vazio deixa só a arte enviada valer. */
 export function ThemeSelect({ type, value, onChange }: ThemeSelectProps) {
